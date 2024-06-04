@@ -1,0 +1,58 @@
+{% extends "dashboard.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="container  mt-4">
+    <form method="post">
+        <div class="justify-content-center d-flex col-3 mb-4">
+            <h5>ข้อมูลซัพพลายเออร์</h5>
+        </div>
+        <div class="justify-content-center d-flex row mb-4">
+
+            <div class="row mb-2">
+                <div class="col-md-3"><b>บริษัท</b></div>
+                <div class="col-md-9">{{ sup.supname }}</div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-md-3"><b>ชื่อผู้ติดต่อ</b></div>
+                <div class="col-md-9">{{ sup.contactname }}</div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-md-3"><b>เบอร์โทรศัพท์มือถือ</b></div>
+                <div class="col-md-9">{{ sup.phone }}</div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-md-3"><b>ที่อยู่</b></div>
+                <div class="col-md-9">{{sup.address }}</div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3"><b>วันที่เพิ่ม</b></div>
+                <div class="col-md-9">{{sup.date_created }}</div>
+            </div>
+        </div>
+
+        <a class="btn-primary btn" onclick="history.back()">ย้อนกลับ</a>
+        <a class="btn-warning btn" href="{% url 'dashboard:edit_suppliers' sup.id %}">แก้ไข</a>
+
+
+        <script>
+            // สร้างฟังก์ชันเพื่อแสดงวันเดือนปี
+            function showDate() {
+                var today = new Date();
+                var options = { year: 'numeric', month: 'long', day: 'numeric' };
+                var formattedDate = today.toLocaleDateString('th-TH', options); // เปลี่ยนภาษาไทยตามความเหมาะสม
+
+                document.getElementById('date').textContent = formattedDate;
+            }
+
+            // เรียกใช้ฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
+            showDate();
+        </script>
+    </form>
+</div>
+{% endblock %}

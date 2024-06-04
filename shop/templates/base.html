@@ -1,0 +1,275 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- google fonts -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <!-- bootstrap css cdn -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <title>{% if title %} {{ title }} {% else %} Django Online Shop {% endif %}</title>
+  <style>
+    #watermark p {
+      position: absolute;
+      color: rgb(255, 0, 0);
+      font-size: 30px;
+      top: 30%;
+      text-align: center;
+      font-weight: bold;
+      width: 100%;
+      pointer-events: none;
+      -webkit-transform: rotate(-20deg);
+      -moz-transform: rotate(-45deg);
+      text-shadow: 2px 2px 4px rgba(255, 255, 0, 0.7);
+    }
+
+    .element {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="p-2 border-bottom">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <!-- cart icon -->
+        {% if request.user.is_authenticated %}
+        <b class="text-primary">{{ cart_count }}</b>
+        {% endif %}
+        <a href="{% url 'cart:show_cart' %}" class="text-primary mt-2 me-2"><i
+            class="material-icons h3">&#xe8cc;</i></a>
+        <!-- favorite icon -->
+        {% if request.user.is_authenticated %}
+        <b class="text-primary">{{ request.user.get_likes_count }}</b>
+        {% endif %}
+        <a href="{% url 'shop:favorites' %}" class="text-primary mt-2 me-2"><i
+            class="material-icons h3">&#xe87d;</i></a>
+        <!-- Menu -->
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="{% url 'shop:home_page' %}" class="nav-link px-2 text-dark">หน้าหลัก</a></li>
+          <!-- <li><a href="#" class="nav-link px-2 text-dark">Shop</a></li> -->
+
+          {% if request.user.is_authenticated %}
+          <!-- categories dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              หมวดหมู่หลัก
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              {% for category in categories %}
+              <li class="dropdown-item">
+                <a class="dropdown-item" href="{% url 'shop:filter_by_category' category.id %}">
+                  {{ category.name_cate }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </li>
+
+          <!-- subcategories dropdown -->
+          {% if selected_category %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownSub" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">หมวดหมู่ย่อย</a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownSub">
+              {% for subcategory in subcategories %}
+              <li class="dropdown-item">
+                <a class="dropdown-item" href="{% url 'shop:filter_by_category' selected_category.id subcategory.id %}">
+                  {{ subcategory.name_sub }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </li>
+          {% endif %}
+         
+          
+
+          <!-- favorite icon -->
+          <!-- <li><a href="#" class="nav-link px-2 text-dark">FAQs</a></li> -->
+          <!-- <li><a href="#" class="nav-link px-2 text-dark">เกี่ยวกับ</a></li> -->
+          <li><a href="#" class="nav-link px-2 text-dark"><div class="line-it-button" data-lang="th" data-type="friend" data-env="REAL text-end"
+            data-lineId="@339uiekk" style="display: none;">
+        </div>
+        <script src="https://www.line-website.com/social-plugins/js/thirdparty/loader.min.js" async="async"
+            defer="defer"></script></a></li>
+
+        </ul>
+        
+        <!-- search form -->
+       
+        <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3">
+          <input id="searchInput" type="search" class="form-control form-control-dark" placeholder="Search..."
+            aria-label="Search" onkeyup="searchProduct()">
+        </form>
+        
+        <!-- user profile dropdown -->
+        <div class="dropdown text-end">
+          <a href="#" class="btn btn-primary text-white me-4 d-block link-dark text-decoration-none dropdown-toggle"
+            id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">เมนู</a>
+          <ul class="dropdown-menu" aria-labelledby="dropdownUser1">
+            <!-- <li><a href="{% url 'cart:show_cart' %}" class="dropdown-item"><i class="bi bi-cart-fill"></i> รถเข็น <b
+                  class="text-primary">{{ cart_count }}</b></a></li> -->
+            <!-- <li><a href="{% url 'shop:favorites' %}" class="dropdown-item"><i class="bi bi-heart-fill"></i> รายการโปรด
+                <b class="text-primary">{{ request.user.get_likes_count }}</b></a></li> -->
+            <li><a href="{% url 'orders:user_orders' %}" class="dropdown-item"><i class="bi bi-bag-fill"></i>
+                รายการเบิก</a></li>
+            <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}"><i
+                  class="bi bi-person-lines-fill"></i> ดูโปรไฟล์</a></li>
+            <!-- <li><a class="dropdown-item" href="{% url 'accounts:edit_profile' %}"><i class="bi bi-person-fill-gear"></i>
+                แก้ไขโปรไฟล์</a></li> -->
+            <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key-fill"></i>
+                เปลี่ยนรหัสผ่าน</a></li>
+            {% if user.is_manager or user.is_admin %}
+            <li><a class="dropdown-item text-primary" href="{% url 'dashboard:orders' %}"><i
+                  class="bi bi-person-check"> Manager</i></a></li>
+            {% endif %}
+            <li><a class="dropdown-item text-danger" href="{% url 'accounts:user_logout' %}"><i
+                  class="bi bi-box-arrow-right"></i> Sign out</a></li>
+          </ul>
+        </div>
+        <div class="row"
+          style="box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px; 
+          font-size: 14px; background:rgb(58, 82, 114); padding: 0.5em; border-radius: 8px; font-weight:bold; color:rgb(255, 255, 255);">
+          <div class="col">
+            {% if user.profile.img.url == user.profile.img.url %}
+            <a href="{% url 'accounts:user_profile_detail' user.username %}">
+              <img src="{{ user.profile.img.url }}"
+                   style="width: 25px; height: 25px; object-fit: cover; border-radius: 50%;">
+            </a>
+              
+            {% else %}
+            <a href="{% url 'accounts:user_profile_detail' user.username %}">
+              <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg" 
+                   style="width: 25px; height: 25px; object-fit: cover; border-radius: 50%;">
+            </a>
+              
+            {% endif %}
+          </div>          
+          <div class="col " style="display: grid;
+            place-items: center;">
+            {{user.username}}
+          </div>
+        </div>
+        {% else %}
+        <!-- login, sign-up btn -->
+        <!-- <div class="text-end">
+          <a href="{% url 'accounts:user_login' %}" class="btn btn-outline-primary me-2">Login</a>
+          <a href="{% url 'accounts:user_register' %}" class="btn btn-primary">Sign-up</a>
+        </div> -->
+        {% endif %}
+      </div>
+    </div>
+  </header>
+  <main class="container">
+    <div class="row mt-2">
+      <!-- messages -->
+      {% if messages %}
+      <div class="messages justify-content-center">
+        {% for message in messages %}
+        {% if 'error' in message.tags %} <ul class="alert alert-danger text-center">
+          <h6>{{ message }}</h6>
+        </ul> {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if messages %}
+      <div class=" messages justify-content-center">
+        {% for message in messages %}
+        {% if 'success' in message.tags %} <ul class="alert alert-success text-center">
+          <h6>{{ message }}</h6>
+        </ul> {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      <!-- content -->
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+  <!-- Bootstrap JavaScript Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+    crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+
+      window.setTimeout(function () {
+        $(".alert").fadeTo(1000, 0).slideUp(1000, function () {
+          $(this).remove();
+        });
+      }, 1500);
+
+    });
+  </script>
+  <script>
+    const passwordInput = document.querySelector('[name="{{ user_form.password1.name }}"]');
+    const showPasswordButton = document.getElementById('show-password');
+  
+    showPasswordButton.addEventListener('click', function () {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        showPasswordButton.textContent = 'ซ่อนรหัสผ่าน';
+      } else {
+        passwordInput.type = 'password';
+        showPasswordButton.textContent = 'แสดงรหัสผ่าน';
+      }
+    });
+  </script>  
+
+<!-- search form home_page และ user_orders -->
+<script>
+  function searchProduct() {
+      // รับค่าของอินพุทที่กรอกเข้ามา
+      var input = document.getElementById("searchInput");
+      var filter = input.value.toUpperCase();
+      
+      // ตรวจสอบว่าอยู่ในหน้า home_page หรือ user_orders
+      if (document.body.classList.contains('home-page')) {
+          var cards = document.getElementsByClassName("card");
+          
+          // วนลูปทุกการ์ดในหน้า home_page
+          for (var i = 0; i < cards.length; i++) {
+              var title = cards[i].getElementsByClassName("card-title")[0];
+              var txtValue = title.textContent || title.innerText;
+              
+              // ตรวจสอบว่าชื่อสินค้าตรงกับคำค้นหาหรือไม่
+              if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                  cards[i].style.display = "";
+              } else {
+                  cards[i].style.display = "none";
+              }
+          }
+      } else if (document.body.classList.contains('user-orders')) {
+          var orders = document.getElementsByClassName("order-card");
+
+          // วนลูปทุกการ์ดในหน้า user_orders
+          for (var i = 0; i < orders.length; i++) {
+              var orderId = orders[i].getElementsByClassName("order-id")[0];
+              var txtValue = orderId.textContent || orderId.innerText;
+              
+              // ตรวจสอบว่า order.id ตรงกับคำค้นหาหรือไม่
+              if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                  orders[i].style.display = "";
+              } else {
+                  orders[i].style.display = "none";
+              }
+          }
+      }
+  }
+</script>
+
+   
+</body>
+
+
+</html>

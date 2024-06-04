@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<body class="user-orders">
+{% if orders %}
+{% for order in orders %}
+<div class="col-md-7 mb-4 border rounded p-3 justify-content-center container order-card">
+    <!-- order id on right -->
+        <b class="text-end element order-id" style="float: right;">ID คำร้องที่ : {{ order.id }}</b>
+
+
+    <!-- order payment status -->
+    <div class="row">
+        <div class="col">
+        <h class="text-end element order-id" style="float: right;">วันที่ทำรายการ {{ order.date_created | date:"d/m/Y เวลา H:i น." }}</h>
+
+            {% if order.status == True %}
+            <h3><b class="text-success">ดำเนินการสำเร็จ <i class="bi bi-check-circle-fill"></i></b></h3>
+            <h6><b style="font-weight: bold;">วันที่รับวัสดุ : </b><i class="bi bi-calendar-check-fill text-warning"> 
+                </i>{{ order.date_receive | date:"d  M  Y เวลา H:i น." }}</h6>
+            {% elif order.status == False %}
+            <h3><b class="text-danger">ปฏิเสธคำร้อง <i class="bi bi-heartbreak-fill"></i></b></h3>
+            <h6><b style="font-weight: bold;"  class="text-danger">หมายเหตุ : {{ order.other }}</i></b></h6>
+
+            {% else %}
+            <h4><b class="text-warning">รอดำเนินการ..</b></h4>
+            <!-- <h5><b style="font-weight: bold;">วันที่รับของ : 
+                <i class="bi bi-calendar-check-fill text-warning">รอดำเนินการ</i></b></h5> -->
+            {% endif %}
+        </div>
+    </div>
+
+
+    <div class="text-muted border-top pt-2"></div>
+    {% for item in order.items.all %}
+    <div class="border-bottom row p-2">
+        <div class="col-md-6">
+            <p>รายการ : <a class="text-decoration-none"
+                    href="{{ item.product.get_absolute_url }}">{{item.product.product_name}}</a></p>
+        </div>
+        <!-- <div class="col-md-3">
+            <p>ราคา  {{item.price}} บาท</p>
+        </div> -->
+        <div class="col-md-6 text-end">
+            <p>จำนวน  {{item.quantity}} ชิ้น</p>
+        </div>
+
+
+
+    </div>
+    {% endfor %}
+    <!-- <b style="float: right;">ราคารวม : {{ order.get_total_price }} บาท</b> -->
+    <b style="float: right;">รวมจำนวน : {{ order.get_total_sum }} ชิ้น</b>
+</div>
+{% endfor %}
+{% else %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 mt-5 pt-5 text-center">
+        <br>
+        <h3 class="text-muted text-capitalize">Orders list is empty..!</h3>
+        <a href="{% url 'shop:home_page' %}" class="text-primary text-decoration-none">Back</a>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endif %}
+</body>
+{% endblock %}

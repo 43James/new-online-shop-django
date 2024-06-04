@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+{% if products %}
+<h2>รายการโปรดของคุณ</h2>
+<hr>
+{% for product in products %}
+<!-- <div class="card me-2 mb-2" style="width: 11rem; margin-left: 10px;">
+  <img style="object-fit: cover;" class="card-img mt-2" width="268" height="150" src="{{ product.image.url }}">
+  <div class="mt-3 text-center">
+    <h5 class="card-title">{{ product.title }}</h5>
+    <p class="text-muted">${{ product.price }}</p>
+    <a href="{{ product.get_absolute_url }}" class="mb-3 btn btn-primary w-100">เลือก</a>
+  </div>
+  <a href="{% url 'shop:remove_from_favorites' product.id %}" class="mb-3 btn btn-outline-danger">Remove</a>
+</div> -->
+
+<div class="card me-1 mb-2" style="width: 11rem; margin-left: 10px;">
+
+  {% if product.total_quantity == 0 %}
+  <div id="watermark">
+    <a href="{{ product.get_absolute_url }}">
+      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150"
+      src="{{ product.image.url }}">
+    </a>
+    <p>สต๊อกหมด</p>
+  </div>
+  {% else %}
+  <a href="{{ product.get_absolute_url }}">
+    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
+  </a>
+  {% endif %}
+
+  <div class="mt-3 text-center">
+    <h6 class="card-title element">{{ product.product_name }}</h6>
+    <!-- <p class="text-muted">{{ product.price }} ฿</p> -->
+    <!-- <a href="{{ product.get_absolute_url }}" class="mb-3 btn btn-outline-primary w-100">เลือก</a> -->
+  </div>
+  <a href="{% url 'shop:remove_from_favorites' product.id %}" class="mb-3 btn btn-outline-danger">ลบ</a>
+</div>
+{% endfor %}
+{% else %}
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8 mt-5 pt-5 text-center">
+    <br>
+    <h3 class="text-muted text-capitalize">รายการโปรดว่างเปล่า..!</h3>
+    <!-- <h3 class="text-muted text-capitalize">favorites list is empty..!</h3> -->
+    <a href="{% url 'shop:home_page' %}" class="text-primary text-decoration-none"><i style="font-size: 30px;" class="bi bi-arrow-left-circle"></i></a>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+{% endif %}
+{% endblock %}

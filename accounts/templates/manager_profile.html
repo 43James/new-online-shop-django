@@ -1,0 +1,183 @@
+{% extends "dashboard.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<!-- <div class="col-md-6">
+        <div style="border-radius: 30px;" class="card page">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="margin-left: 20px; margin-right: 20px;" class="card-body">
+                    <div class="row  mb-3">
+                        <div class="col-md-4">
+                            <label style="font-weight: bold;">Username : </label>
+                            <h style="margin-left: 5px; color: rgb(8, 0, 255); font-weight: bold;"> {{ Br.id }}</h>
+                        </div>
+                        <div class="col-md-4">
+                            <label style="font-weight: bold;">Email : </label>
+                            <h style="margin-left: 5px; color: rgb(8, 0, 255); font-weight: bold;"> {{ Br.id }}</h>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                    
+                    <div class="row  mb-3">
+                        <div class="col-md-4">
+                            <label style="font-weight: bold;">ชื่อ : </label>
+                            <h style="margin-left: 5px; color: rgb(8, 0, 255); font-weight: bold;"> {{ Br.id }}</h>
+                        </div>
+                        <div class="col-md-4">
+                            <label style="font-weight: bold;">นามสกุล : </label>
+                            <h style="margin-left: 5px; color: rgb(8, 0, 255); font-weight: bold;"> {{ Br.id }}</h>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label style="font-weight: bold;">เพศ : </label>
+                        <h style="margin-left: 5px; color: rgb(8, 0, 255); font-weight: bold;"> {{ Br.id }}</h>
+                    </div>
+                    <div class="row  mb-3">
+                        <div class="col-md-4">
+                            <label style="font-weight: bold;">ตำแหน่ง : </label>
+                            <h style="margin-left: 5px; color: rgb(8, 0, 255); font-weight: bold;"> {{ Br.id }}</h>
+                        </div>
+                        <div class="col-md-4">
+                            <label style="font-weight: bold;">กลุ่มงาน : </label>
+                            <h style="margin-left: 5px; color: rgb(8, 0, 255); font-weight: bold;"> {{ Br.id }}</h>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label style="font-weight: bold;">เบอรืโทรศัพท์ : </label>
+                        <h style="margin-left: 5px; color: rgb(8, 0, 255); font-weight: bold;"> {{ Br.id }}</h>
+                    </div>
+    
+                    <div><img style="width: 100px;" src="{{Br.image.url}}" alt="image"></a></div>
+                </div>
+        </div>
+    </div> -->
+
+<div class="container mt-4">
+    {% if obj == 1 %}
+    <div class="row mb-4">
+        <div class="col mb-5" style="justify-content: center; display: flex;">
+            <div>
+                {% if user.profile.img.url == user.profile.img.url %}
+                <!-- <img src="{{ profile.img.url }}" style="max-height: 295px; border-radius: 50%; " class="mt-3 img-rounded mb-3" alt=""> -->
+                <canvas class="mt-5 mb-3" id="profileCanvas" width="300" height="300" style="border-radius: 50%;"></canvas>
+                <script>
+                    var canvas = document.getElementById('profileCanvas');
+                    var ctx = canvas.getContext('2d');
+
+                    var img = new Image();
+                    img.src = "{{ user.profile.img.url }}"; // ใส่ URL ของรูปภาพของคุณที่นี่
+
+                    img.onload = function () {
+                        ctx.beginPath();
+                        ctx.arc(150, 150, 150, 0, 2 * Math.PI);
+                        ctx.clip();
+                        ctx.drawImage(img, 0, 0, 300, 300);
+                    };
+                </script>
+
+                {% else %}
+                <br><br><br><br><br><br>
+                <p class="text-center">ไม่มีรูปโปรไฟล์</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="row mx-5">
+                <h5>ข้อมูลส่วนตัวของผู้ใช้</h5>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>ชื่อ-นามสกุล</b></div>
+                <div class="col">{{ user.get_full_name }}</div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-5"><b>เพศ</b></div>
+                <div class="col-lg">{{ profile.gender }}</div>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>เบอร์โทรศัพท์มือถือ</b></div>
+                <div class="col-lg">{{ profile.phone }}</div>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>ตำแหน่ง</b></div>
+                <div class="col-lg">{{ profile.position }}</div>
+            </div>
+            <div class="row mb-5">
+                <div class="col-lg-5"><b>กลุ่มงาน</b></div>
+                <div class="col-lg">{{ profile.workgroup }}</div>
+            </div>
+
+
+            <div class="row mx-5">
+                <h5>ข้อมูลบัญชี</h5>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>ชื่อผู้ใช้</b></div>
+                <div class="col">{{ user.username }}</div>
+            </div>
+            <div class="row mb-5">
+                <div class="col-lg-5"><b>ที่อยู่อีเมล์</b></div>
+                <div class="col-lg">{{ user.email }}</div>
+            </div>
+
+            <div class="row mx-5">
+                <h5>ข้อมูลการเข้าใช้งานระบบ</h5>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>กำลังใช้งานระบบ</b></div>
+                {% if is_active %}
+                <div class="col-lg">
+                    <i class="bi bi-x-circle-fill" style="color:red;"></i>
+                </div>
+                {% else %}
+                <div class="col-lg">
+                    <i class="bi bi-check-circle-fill" style="color:green;"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>วันที่สร้างข้อมูล</b></div>
+                <div class="col-lg">{{ user.date_joined }}</div>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>เข้าใช้งานล่าสุด</b></div>
+                <div class="col-lg">{{ user.last_login }}</div>
+            </div>
+            <div class="row col-12 mt-4 justify-content-center container">
+                <!-- <div class="col-3"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div> -->
+                <div class="col-3"><a class=" btn btn-warning mt-3 w-100" href="{% url 'accounts:edit_profile_manager' %}">แก้ไขข้อมูล</a></div>
+              </div>
+        </div>
+        
+    </div>
+    <script>
+        // สร้างฟังก์ชันเพื่อแสดงวันเดือนปี
+        function showDate() {
+            var today = new Date();
+            var options = { year: 'numeric', month: 'long', day: 'numeric' };
+            var formattedDate = today.toLocaleDateString('th-TH', options); // เปลี่ยนภาษาไทยตามความเหมาะสม
+
+            document.getElementById('date').textContent = formattedDate;
+        }
+
+        // เรียกใช้ฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
+        showDate();
+    </script>
+
+    {% else %}
+    <div class="d-flex align-items-center justify-content-center mt-5">
+        <div class="row justify-content-center " style="text-align: center; justify-content: center;">
+            <div>
+                <h5>{{ profile }}</h5>
+            </div>
+            <div class="mt-3">
+                <a class="btn btn-outline-success"
+                    href="{% url 'accounts:edit_profile_manager' %}">เพิ่มข้อมูลส่วนตัว</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

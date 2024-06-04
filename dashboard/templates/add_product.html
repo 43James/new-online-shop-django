@@ -1,0 +1,15 @@
+{% extends "dashboard.html" %}
+{% block content %}
+
+<div class="col-md-6 mt-4 justify-content-center container">
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {{ form.non_field_errors }}
+    <div class="row mb-5">
+      <div class="col-6"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div>
+      <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">Submit</button></div>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,512 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=TH-Sarabun">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+
+    <style>
+        body {
+        font-family: 'TH-Sarabun', sans-serif;
+        font-size: 16px;
+    }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+
+        /* ใช้ CSS เพื่อป้องกันข้อความไม่ตกไปบรรทัดใหม่ */
+        td,
+        tr {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+    </style>
+    <style>
+        .password-container {
+            position: relative;
+        }
+
+        /* input {
+            padding-right: 10px;
+        } */
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+        label {
+        font-weight: bold;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="row d-flex mt-3" style="margin-right: 10px; margin-left: 10px;">
+        <!-- <div class="col-md-1"></div> -->
+        <!-- content -->
+        <div class="col-md-10 justify-content-center">
+            <h2 class="text-capitalize border-bottom text-center" style="font-weight: bold;">{{ title }}</h2>
+            <div class="p-2">
+                <!-- messages -->
+                {% if messages %}
+                <div class="messages justify-content-center">
+                    {% for message in messages %}
+                    {% if 'error' in message.tags %} <ul class="alert alert-danger text-center">
+                        <h6>{{ message }}</h6>
+                    </ul> {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if messages %}
+                <div class=" messages justify-content-center">
+                    {% for message in messages %}
+                    {% if 'success' in message.tags %} <ul class="alert alert-success text-center">
+                        <h6>{{ message }}</h6>
+                    </ul> {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="col-6">
+                    <!-- search form -->
+                    {% if '/products/' in request.path %}
+                    <div class="row">
+                        <div class="col-2"><a class="btn-warning btn" href="{% url 'dashboard:add_product'%}">เพิ่มวัสดุ</a></div>
+                        <div class="col-5 mb-3" >
+                            <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:products' %}">
+                                <div class="input-group">
+                                    <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                    <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    {% elif '/suppliers/' in request.path %}
+                    <div class="row">
+                    <div class="col-2"><a class="btn-warning btn" href="{% url 'dashboard:add_suppliers'%}">เพิ่มข้อมูล</a></div>
+                    <div class="col-5 mb-3" >
+                        <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:suppliers' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                            </div>
+                        </form>
+                    </div>
+                    </div>
+
+                    {% elif '/receive_list/' in request.path %}
+                    <div class="row">
+                    <div class="col-2"><a class="btn-warning btn" href="{% url 'dashboard:receive_product'%}">เพิ่มข้อมูล</a></div>
+                    <div class="col-5 mb-3" >
+                        <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:receive_list' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                            </div>
+                        </form>
+                    </div>
+                    </div>
+
+                    {% elif '/stock/' in request.path %}
+                    <div class="row">
+                    <div class="col-5 mb-3" >
+                        <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:stock' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                            </div>
+                        </form>
+                    </div>
+                    </div>
+
+                    {% elif '/total_quantity/' in request.path %}
+                    <div class="row">
+                    <div class="col-5 mb-3" >
+                        <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:total_quantity' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                            </div>
+                        </form>
+                    </div>
+                    </div>
+
+                    {% elif '/orders_all/' in request.path %}
+                    <div class="col-4 mb-3" >
+                        <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:orders_all' %}">
+                        <input name="q" type="search" id="searchInput" class="form-control form-control-dark" placeholder="Search..."
+                        aria-label="Search">
+                        </form>
+                    </div>
+
+                    {% elif '/manage/user/' in request.path %}
+                    <div class="row">
+                        <div class="col-2"><a class="btn-warning btn" href="{% url 'accounts:user_register'%}">เพิ่มข้อมูล</a></div>
+                    <div class="col-5 mb-3" >
+                        <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'accounts:manage_user' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                            </div>
+                        </form>
+                    </div>
+                    </div>
+
+                    {% elif '/category/' in request.path %}
+                    <div class="row">
+                        <div class="col-2"><a class="btn-warning btn" href="{% url 'dashboard:add_category'%}">เพิ่มข้อมูล</a></div>
+                    <div class="col-5 mb-3" >
+                        <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:category' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                            </div>
+                        </form>
+                    </div>
+                    </div>
+
+                    {% elif '/subcategory/' in request.path %}
+                    <div class="row">
+                        <div class="col-2"><a class="btn-warning btn" href="{% url 'dashboard:add_subcategory'%}">เพิ่มข้อมูล</a></div>
+                    <div class="col-5 mb-3" >
+                        <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:subcategory' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                            </div>
+                        </form>
+                    </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+        <!-- sidebar -->
+        <div class="col-md-2 border-start sidebar">
+            <h4 class="text-muted">Dashboard</h4>
+            <a class="text-decoration-none " href="{% url 'dashboard:dashboard_home' %}">
+                <li
+                    class="rounded list-group-item mt-2  text-primary {% if '/dashboard_home/' in request.path %}active text-white{% endif %}">
+                    Dashboard Home</li>
+            </a>
+            <div class="dropdown">
+                <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
+                    type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                    รายงานอื่นๆ..
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:add_product' %}">...</a></li>
+                    <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:add_product' %}">...</a></li>
+                    </li>
+                </ul>
+            </div>
+            <hr>
+            {% if request.user.is_manager or user.is_admin %}
+            <h4 class="text-muted">จัดการวัสดุ</h4>
+            <a class="text-decoration-none" href="{% url 'dashboard:orders' %}">
+                {% if request.user.is_authenticated %}
+                <li
+                    class="rounded list-group-item mt-2  text-primary {% if '/orders/' in request.path %}active text-white{% endif %}">
+                    คำร้องใหม่ <b class="text-danger">{{ pending_orders_count }}</b></li>
+                {% endif %}
+            </a>
+            <a class="text-decoration-none" href="{% url 'dashboard:orders_all' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/orders_all/' in request.path %}active text-white{% endif %}">
+                    คำร้องทั้งหมด</li>
+            </a>
+            <hr>
+
+            <a class="text-decoration-none" href="{% url 'dashboard:receive_list' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/receive_list/' in request.path %}active text-white{% endif %}">
+                    รับเข้าวัสดุ</li>
+            </a>
+            <!-- <a class="text-decoration-none" href="{% url 'dashboard:stock' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/stock/' in request.path %}active text-white{% endif %}">
+                    สต๊อกคงเหลือ</li>
+            </a> -->
+            <a class="text-decoration-none" href="{% url 'dashboard:products' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/products/' in request.path %}active text-white{% endif %}">
+                    รายการวัสดุและสต๊อก</li>
+            </a>
+            <!-- <a class="text-decoration-none" href="{% url 'dashboard:total_quantity' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/total_quantity/' in request.path %}active text-white{% endif %}">
+                    จำนวนวัสดุที่รับเข้าทั้งหมด</li>
+            </a> -->
+            <div class="dropdown">
+                <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
+                    type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                    อื่นๆ..
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item {% if '/total_quantity/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:total_quantity' %}">จำนวนวัสดุที่รับเข้าทั้งหมด</a></li>
+                    <li><a class="dropdown-item {% if '/suppliers/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:suppliers' %}">ซัพพลายเออร์</a></li>
+                    <!-- <li><a class="dropdown-item {% if '/add-suppliers/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:add_suppliers' %}">เพิ่มซัพพลายเออร์ <b class="text-danger">ใหม่!</b></a></li> -->
+                    <!-- <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:add_product' %}">เพิ่มรายการวัสดุ <b class="text-danger">ใหม่!</b></a></li> -->
+                    <li><a class="dropdown-item {% if '/subcategory/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:subcategory' %}">เพิ่มหมวดหมู่ย่อย</a>
+                    <li><a class="dropdown-item {% if '/category/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:category' %}">เพิ่มหมวดหมู่หลัก</a></li>
+                    </li>
+                </ul>
+            </div>
+            <hr>
+            {% endif %}
+
+            <h4 class="text-muted">ข้อมูลของฉัน</h4>
+            <a class="text-decoration-none" href="{% url 'accounts:manager_profile_detail' user.username %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/profile/manager/' in request.path %}active text-white{% endif %}">
+                    โปรไฟล์ของฉัน</li>
+            </a>
+            <hr>
+            {% if request.user.is_admin %}
+            <h4 class="text-muted">จัดการข้อมูลผู้ใช้งาน</h4>
+            <div class="dropdown">
+                <a class="text-decoration-none" href="{% url 'accounts:manage_user' %}">
+                    <li class="rounded list-group-item mt-2  text-primary {% if '/manage/user/' in request.path %}active text-white{% endif %}">
+                        ข้อมูลผู้ใช้</li>
+                </a>
+                <!-- <a class="text-decoration-none" href="{% url 'accounts:manager_profile_detail' user.username %}">
+                    <li class="rounded list-group-item mt-2  text-primary {% if '/profile/manager/' in request.path %}active text-white{% endif %}">
+                        โปรไฟล์ของฉัน</li>
+                </a> -->
+                <!-- <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
+                    type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                    จัดการสมาชิก..
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item {% if '/profile/manager/' in request.path %}active text-white{% endif %}"
+                            href="{% url 'accounts:manager_profile_detail' user.username %}">โปรไฟล์ของฉัน
+                        </a></li>
+                    <li><a class="dropdown-item {% if '/profile/edit/manager/' in request.path %}active text-white{% endif %}" href="{% url 'accounts:edit_profile_manager' %}">แก้ไขโปรไฟล์ของฉัน </a></li>
+                </ul> -->
+            </div>
+            <hr>
+            {% endif %}
+            <div class="row ">
+                <div class="col-6">
+                    <a class="text-decoration-none" href="{% url 'shop:home_page' %}">
+                        <li class="rounded list-group-item bg-primary mt-2 text-center text-white">Back To shop</li>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a class="text-decoration-none" href="{% url 'accounts:user_logout' %}">
+                        <li class="rounded list-group-item bg-danger mt-2 text-center text-white">Logout</li>
+                    </a>
+                </div>
+            </div>
+            <div class="row d-flex justify-content-center mt-2 mb-2 mx-2 "
+                style="box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px; 
+            font-size: 15px; background:rgb(58, 82, 114); padding: 0.5em; border-radius: 8px;  color:rgb(255, 255, 255);">
+                <div class="col-2 d-flex justify-content-center">
+                    {% if user.profile.img %}
+                    <!-- <img src="{{ user.profile.img.url }}" style="border-radius: 50%; max-height: 50px; max-width: 50px;"> -->
+                    <canvas id="profileCanvas" width="50" height="50" style="border-radius: 50%;"></canvas>
+                    <script>
+                        var canvas = document.getElementById('profileCanvas');
+                        var ctx = canvas.getContext('2d');
+
+                        var img = new Image();
+                        img.src = "{{ user.profile.img.url }}"; // ใส่ URL ของรูปภาพของคุณที่นี่
+
+                        img.onload = function () {
+                            ctx.beginPath();
+                            ctx.arc(25, 25, 25, 0, 2 * Math.PI);
+                            ctx.clip();
+                            ctx.drawImage(img, 0, 0, 50, 50);
+                        };
+                    </script>
+                    {% else %}
+                    <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg"
+                        style="max-height: 50px; border-radius: 50%;">
+                    {% endif %}
+                </div>
+                <div class="col-9 " style="display: grid; place-items: center;">You logged in as:
+                    <h style="font-size: 20px; font-weight: bolder; color:rgb(26, 255, 0);">{{user.username}}</h>
+                </div>
+            </div>
+            <!-- <div class="text-muted mt-2">You logged in as: {{ request.user.email }}</div> -->
+        </div>
+        <!-- <div class="col-md-1 "></div> -->
+    </div>
+</body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        window.setTimeout(function () {
+            $(".alert").fadeTo(1000, 0).slideUp(1000, function () {
+                $(this).remove();
+            });
+        }, 1500);
+
+    });
+</script>
+
+<script>
+    var contentHtml = document.getElementById('content').innerHTML;
+    printA4(contentHtml);
+
+
+    function printA4(htmlContent) {
+        var a4Size = { width: 595.276, height: 841.890 };
+        var printWindow = window.open('', '_blank');
+        printWindow.document.open();
+
+        // เพิ่มลิงค์ไปยัง Bootstrap 5.1.3 CSS และ Bootstrap Icons CSS
+        printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">');
+        printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">');
+
+        // เพิ่ม CSS ที่คุณให้มา
+        printWindow.document.write('<style>');
+        printWindow.document.write('table { border-collapse: collapse; width: 100%; }');
+        printWindow.document.write('th, td { border: 1px solid #000; padding: 8px; text-align: center; }');
+        //   printWindow.document.write('th { width: 10%; }');
+        //   printWindow.document.write('td { width: 15%; }');
+        printWindow.document.write('td, tr { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }');
+        printWindow.document.write('</style>');
+
+        // กำหนดขนาดหน้ากระดาษเป็น A4
+        printWindow.document.pageWidth = a4Size.width;
+        printWindow.document.pageHeight = a4Size.height;
+
+        // เขียน HTML ลงในหน้าใหม่
+        printWindow.document.write('<html><head><title>Print</title></head><body>');
+        printWindow.document.write(htmlContent);
+        printWindow.document.write('</body></html>');
+
+        // เพิ่มลิงค์ไปยัง Bootstrap 5.1.3 JavaScript
+
+        // ปิดการเขียนเอกสารและทำการพิมพ์
+        printWindow.document.close();
+        printWindow.print();
+    }
+</script>
+
+<script>
+    function togglePassword1() {
+        const passwordField = document.getElementById("passwordField1");
+        const toggleBtn = document.querySelector(".toggle-password1");
+
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            toggleBtn.textContent = "👁️";
+        } else {
+            passwordField.type = "password";
+            toggleBtn.textContent = "👁️";
+        }
+    }
+</script>
+
+<script>
+    function togglePassword2() {
+        const passwordField = document.getElementById("passwordField2");
+        const toggleBtn = document.querySelector(".toggle-password2");
+
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            toggleBtn.textContent = "👁️";
+        } else {
+            passwordField2.type = "password";
+            toggleBtn.textContent = "👁️";
+        }
+    }
+</script>
+
+<!-- <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var searchInput = document.getElementById('searchInput');
+        var rows = document.querySelectorAll('.table tbody tr');
+
+        searchInput.addEventListener('keyup', function() {
+            var query = searchInput.value.trim().toLowerCase();
+
+            rows.forEach(function(row) {
+                var product = row.querySelector('td:nth-child(2)').textContent.trim().toLowerCase(); // เปลี่ยนตามคอลัมน์ที่ต้องการค้นหา
+
+                if (product.includes(query)) {
+                    row.style.display = ''; // แสดงรายการที่ตรงกับคำค้นหา
+                } else {
+                    row.style.display = 'none'; // ซ่อนรายการที่ไม่ตรงกับคำค้นหา
+                }
+            });
+        });
+    });
+</script> -->
+
+<!-- ฟังก์ชันค้นหาลิสในตาราง -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var searchInput = document.getElementById('searchInput');
+        var rows = document.querySelectorAll('.table tbody tr');
+
+        searchInput.addEventListener('keyup', function() {
+            var query = searchInput.value.trim().toLowerCase();
+
+            rows.forEach(function(row) {
+                // var cells = row.querySelectorAll('td'); // เลือกเซลล์ทั้งหมดในแถว
+                var cells = row.querySelectorAll('td:nth-child(2), td:nth-child(3), td:nth-child(4)'); // เลือกเซลล์ในคอลัมน์ที่ 2, 3, และ 4
+
+                var found = false;
+                cells.forEach(function(cell) {
+                    var content = cell.textContent.trim().toLowerCase();
+                    if (content.includes(query)) {
+                        found = true; // หากพบคำค้นหาในเซลล์ใดเซลล์หนึ่ง ให้กำหนด found เป็น true
+                    }
+                });
+
+                if (found) {
+                    row.style.display = ''; // แสดงรายการที่ตรงกับคำค้นหาในอย่างน้อยหนึ่งคอลัมน์
+                } else {
+                    row.style.display = 'none'; // ซ่อนรายการที่ไม่ตรงกับคำค้นหาในทุกคอลัมน์
+                }
+            });
+        });
+    });
+</script>
+
+<!-- ฟังชั่นกรอกฟอร์มอัตโนมัติในรับเข้า -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var quantityReceivedInput = document.getElementById('quantity_received');
+        var quantityRemainingInput = document.getElementById('id_quantity');
+    
+        if (quantityReceivedInput && quantityRemainingInput) {
+            quantityReceivedInput.addEventListener('input', function() {
+                var received = parseInt(quantityReceivedInput.value) || 0;
+                quantityRemainingInput.value = received;
+            });
+        }
+    });
+</script>
+    
+
+</html>

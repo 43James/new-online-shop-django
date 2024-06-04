@@ -1,0 +1,161 @@
+{% extends "dashboard.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="col-9 mt-3  mb-4 justify-content-center container">
+  <form method="POST">
+    {% csrf_token %}
+
+    {{ user_form.non_field_errors }}
+    {{ profile_form.non_field_errors }}
+
+    <div class="row">
+      <div class="col-md-2">
+        <label class="form-label required"><strong>คำนำหน้า</strong></label>
+        <select name="{{ user_form.perfix.name }}" required class="form-select mb-3">
+          <option value="" selected disabled hidden>เลือก..</option>
+          {% for value, display_name in user_form.perfix.field.choices %}
+            <option value="{{ value }}" {% if user_form.perfix.value == value %}selected{% endif %}>{{ display_name }}</option>
+          {% endfor %}
+        </select>
+        {{ user_form.perfix.errors }}
+      </div>
+
+      <div class="col-md-5 mb-3">
+        <label class="form-label"><strong>ชื่อ</strong></label>
+        <input type="text" name="{{ user_form.first_name.name }}" placeholder="ชื่อจริง" class="form-control" required>
+        {{ user_form.first_name.errors }}
+      </div>
+
+      <div class="col-md-5 mb-3">
+        <label class="form-label"><strong>นามสกุล</strong></label>
+        <input type="text" name="{{ user_form.last_name.name }}" placeholder="นามสกุลจริง" class="form-control" required>
+        {{ user_form.last_name.errors }}
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>Username</strong></label>
+      <input type="text" name="{{ user_form.username.name }}" placeholder="Username" class="form-control" required>
+      {{ user_form.username.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>Email</strong></label>
+      <input type="email" name="{{ user_form.email.name }}" placeholder="Email" class="form-control" required>
+      {{ user_form.email.errors }}
+    </div>
+
+
+    <!-- <div class="mb-3">
+      <label class="form-label"><strong>รหัสผ่าน</strong></label>
+      <input type="password" name="{{ user_form.password1.name }}" id="showpassword" class="form-control" required>
+      {{ user_form.password1.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>รหัสผ่านยืนยัน</strong></label>
+      <input type="password" name="{{ user_form.password2.name }}" id="showpassword" class="form-control" required>
+      {{ user_form.password2.errors }}
+    </div> -->
+
+    <div class="mb-3">
+      <label for="password" class="form-label"><strong>รหัสผ่าน</strong></label>
+      <div class="password-container ">
+        <input type="password" id="passwordField1" placeholder="Password" name="{{ user_form.password1.name }}" class="form-control">
+        <span class="toggle-password" onclick="togglePassword1()">👁️</span>
+      </div>
+      {{ user_form.password1.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label for="password" class="form-label"><strong>รหัสผ่านยืนยัน</strong></label>
+      <div class="password-container mb-3">
+        <input type="password" id="passwordField2" placeholder="Password Again" name="{{ user_form.password2.name }}" class="form-control">
+        <span class="toggle-password" onclick="togglePassword2()">👁️</span>
+      </div>
+      {{ user_form.password2.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>เพศ</strong></label>
+      <input type="text" name="{{ profile_form.gender.name }}" placeholder="เพศ" class="form-control" required>
+      {{ profile_form.gender.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>ตำแหน่ง</strong></label>
+      <input type="text" name="{{ profile_form.position.name }}" placeholder="ตำแหน่ง" class="form-control" required>
+      {{ profile_form.position.errors }}
+    </div>
+
+    <!-- <div class="mb-3">
+      <label class="form-label"><strong>กลุ่มงาน</strong></label>
+      <input type="text" name="{{ profile_form.work_group.name }}" placeholder="กลุ่มงาน" class="form-control" required>
+      {{ profile_form.work_group.errors }}
+    </div> -->
+
+    <div class="mb-3">
+      <label class="form-label required"><strong>กลุ่มงาน</strong></label>
+      <select name="{{ profile_form.workgroup.name }}" required class="form-select mb-3">
+        <option value="" selected disabled hidden>เลือก..</option>
+        {% for value, display_name in profile_form.workgroup.field.choices %}
+          <option value="{{ value }}" {% if profile_form.workgroup.value == value %}selected{% endif %}>{{ display_name }}</option>
+        {% endfor %}
+      </select>
+      {{ profile_form.workgroup.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>เบอร์โทรศัพท์มือถือ</strong></label>
+      <input type="text" name="{{ profile_form.phone.name }}" placeholder="+66.." class="form-control" required>
+      {{ profile_form.phone.errors }}
+    </div>
+
+    <div class="form-row field-is_general mb-2">
+      <div class="checkbox-row">
+        <input type="checkbox" name="{{ user_form.is_general.name }}" {% if user_form.is_general.value %}checked{% endif %}>
+        <label class="vCheckboxLabel"></label> <strong> ผู้ใช้งาน</strong>
+      </div>
+    </div>
+
+    <div class="form-row field-is_executive mb-2">
+      <div class="checkbox-row">
+        <input type="checkbox" name="{{ user_form.is_executive.name }}" {% if user_form.is_executive.value %}checked{% endif %}>
+        <label class="vCheckboxLabel"></label> <strong> ผู้บริหาร</strong>
+      </div>
+    </div>
+
+    <div class="form-row field-is_manager mb-2">
+      <div class="checkbox-row">
+        <input type="checkbox" name="{{ user_form.is_manager.name }}" {% if user_form.is_manager.value %}checked{% endif %}>
+        <label class="vCheckboxLabel"></label> <strong> ผู้จัดการระบบ</strong>
+      </div>
+    </div>
+
+    <div class="form-row field-is_admin mb-2">
+      <div class="checkbox-row">
+        <input type="checkbox" name="{{ user_form.is_admin.name }}" {% if user_form.is_admin.value %}checked{% endif %}>
+        <label class="vCheckboxLabel"></label> <strong> แอดมิน</strong>
+      </div>
+    </div>
+
+    <!-- <div class="mb-3">
+      <label class="form-label required"><strong>ผู้ใช้งาน</strong></label>
+      {{ user_form.is_general }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label required"><strong>ผู้จัดการระบบ</strong></label>
+      {{ user_form.is_manager }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label required"><strong>แอดมิน</strong></label>
+      {{ user_form.is_admin}}
+    </div> -->
+
+    <div class="row col-12 justify-content-center container">
+      <div class="col-3"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div>
+      <div class="col-3"><button class=" btn btn-success mt-3 w-100" type="submit">Submit</button></div>
+    </div>
+  </form>
+</div>
+{% endblock %}
