@@ -36,6 +36,8 @@ def home_page(request):
     context = {'products': paginat(request, products),}
     return render(request, 'home_page.html', context)
 
+
+
 @login_required
 def product_detail(request, slug):
 	form = QuantityForm()
@@ -54,6 +56,7 @@ def product_detail(request, slug):
 	if request.user.likes.filter(id=product.id).first():
 		context['favorites'] = 'remove'
 	return render(request, 'product_detail.html', context)
+
 
 
 @login_required
@@ -122,68 +125,3 @@ def filter_by_category(request, category_id=None, subcategory_id=None):
 
     return render(request, 'home_page.html', context)
 
-
-
-
-
-# ในกรณ๊ใช้กับตารางรับเข้า
-# @login_required
-# def home_page(request):
-# 	receiving = Receiving.objects.all()
-# 	context = {'receiving': paginat(request ,receiving),
-# 			'products':Product.objects.all() ,}
-# 	return render(request, 'home_page.html', context)
-
-# @login_required
-# def product_detail(request, id):
-#     form = QuantityForm()
-#     receiving = get_object_or_404(Receiving, id=id)
-#     related_products = Receiving.objects.filter(product__category=receiving.product.category).all()[:5]
-#     context = {
-#         'product_name': receiving.product.product_name,
-#         'receiving': receiving,
-#         'form': form,
-#         'favorites': 'favorites',
-#         'related_receivings': related_products,
-#         'stock': Stock.objects.all()
-#     }
-#     if request.user.likes.filter(id=receiving.product.id).first():
-#         context['favorites'] = 'remove'
-#     return render(request, 'product_detail.html', context)
-
-
-# @login_required
-# def search(request):
-# 	query = request.GET.get('q')
-# 	# products = Product.objects.filter(title__icontains=query).all()
-# 	receiving = Receiving.objects.filter(product__product_name__icontains=query)
-# 	context = {'receiving': paginat(request ,receiving)}
-# 	return render(request, 'home_page.html', context)
-
-
-# @login_required
-# def filter_by_category(request, category_id=None, subcategory_id=None):
-#     categories = Category.objects.all()
-
-#     if category_id:
-#         category = get_object_or_404(Category, pk=category_id)
-#         subcategories = Subcategory.objects.filter(category=category)
-#     else:
-#         category = None
-#         subcategories = None
-
-#     if subcategory_id:
-#         subcategory = get_object_or_404(Subcategory, pk=subcategory_id)
-#         receiving = Receiving.objects.filter(product__category=subcategory)  # Filter by subcategory
-#     else:
-#         subcategory = None
-#         receiving = Receiving.objects.all()  # Retrieve all products
-
-#     context = {
-#         'categories': categories,
-#         'selected_category': category,
-#         'subcategories': subcategories,
-#         'selected_subcategory': subcategory,
-#         'receiving': receiving,
-#     }
-#     return render(request, 'home_page.html', context)

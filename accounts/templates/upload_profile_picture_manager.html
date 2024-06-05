@@ -1,0 +1,83 @@
+{% extends "dashboard.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4 justify-content-center d-flex">
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary ">อัพโหลด</button> &nbsp;
+            <a href="{% url 'accounts:manager_profile_detail' request.user.username %}"
+                class="btn btn-secondary ml-2">ยกเลิก</a>
+        </div>
+
+        <!-- เพิ่มฟิลด์ที่ซ่อนไว้สำหรับรับภาพที่ครอปแล้ว -->
+        <input type="hidden" name="cropped_image" id="croppedImageField">
+    </form>
+</div>
+<div class="container mt-2">
+    <div class=" text-center mt-2">
+        <button id="cropButton" class="btn btn-success mt-4" style="width: 100px; " type="button">ครอปภาพ</button>
+        <canvas class="mt-3 container justify-content-center" id="croppedImageCanvas"
+            style="display: none; width: 20%;"></canvas>
+    </div>
+    <div class="mt-3">
+        <img id="imagePreview" style="max-width: 100%;">
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet" />
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var imagePreview = document.getElementById('imagePreview');
+        var cropButton = document.getElementById('cropButton');
+        var croppedImageCanvas = document.getElementById('croppedImageCanvas');
+        var croppedImageField = document.getElementById('croppedImageField');
+        var cropper;
+    
+        document.querySelector('input[type="file"]').addEventListener('change', function (e) {
+            var files = e.target.files;
+            if (files.length > 0) {
+                var file = files[0];
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.src = e.target.result;
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    cropper = new Cropper(imagePreview, {
+                        aspectRatio: 1,
+                        viewMode: 1
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    
+        cropButton.addEventListener('click', function () {
+            var canvas = cropper.getCroppedCanvas();
+            croppedImageCanvas.style.display = 'block';
+            croppedImageCanvas.width = canvas.width;
+            croppedImageCanvas.height = canvas.height;
+            var ctx = croppedImageCanvas.getContext('2d');
+            ctx.drawImage(canvas, 0, 0);
+            
+            // Get the cropped image as data URL
+            var croppedImageDataURL = canvas.toDataURL('image/png');
+            
+            // Set the data URL to the hidden input field
+            croppedImageField.value = croppedImageDataURL;
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', function (e) {
+            if (!croppedImageField.value) {
+                e.preventDefault();
+                alert('กรุณาครอปภาพก่อนทำการอัพโหลด');
+            }
+        });
+    });
+</script>
+{% endblock %}

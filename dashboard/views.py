@@ -37,38 +37,29 @@ def notify_user_rejected(order_id):
     send_mail(subject, plain_message, from_email, [to_email], html_message=html_message)
 
 
+from django.http import Http404
+
 def is_manager(user):
-    try:
-        if not user.is_manager:
-            raise Http404
-        return True
-    except:
+    if not user.is_manager:
         raise Http404
-    
+    return True
+
 def is_executive(user):
-    try:
-        if not user.is_executive:
-            raise Http404
-        return True
-    except:
+    if not user.is_executive:
         raise Http404
+    return True
 
 def is_admin(user):
-    try:
-        if not user.is_admin:
-            raise Http404
-        return True
-    except:
+    if not user.is_admin:
         raise Http404
-    
+    return True
+
 def is_authorized(user):
     try:
-        if is_manager(user) and is_executive(user) and is_admin(user):
-            return True
-        else:
-            return False
+        return is_manager(user) and is_executive(user) and is_admin(user)
     except Http404:
         return False
+
 
 # @user_passes_test(is_authorized)
 @login_required
@@ -314,44 +305,6 @@ def receive_product(request):
     return render(request, 'receive_product.html', context)
 
 
-# def edit_received_product(request, pk):
-#     # ดึงข้อมูลการรับสินค้าที่ต้องการแก้ไข
-#     receiving_product = get_object_or_404(Receiving, pk=pk)
-
-#     if request.method == 'POST':
-#         form = ReceivingForm(request.POST, instance=receiving_product)
-#         if form.is_valid():
-#             edited_product = form.save(commit=False)
-#             edited_product.save()
-
-#             # อัปเดตจำนวนสินค้าในสต็อก
-#             product = edited_product.product
-#             stock, created = Stock.objects.get_or_create(product=product)
-#             stock.quantity -= receiving_product.quantityreceived  # ลบจำนวนสินค้าที่เคยรับไว้ก่อนหน้า
-#             stock.quantity += edited_product.quantityreceived  # เพิ่มจำนวนสินค้าใหม่
-#             stock.save()
-
-#             # อัปเดตจำนวนทั้งหมดที่รับเข้า
-#             total, created = Total_Quantity.objects.get_or_create(product=product)
-#             total.totalquantity -= receiving_product.quantityreceived  # ลบจำนวนสินค้าที่เคยรับไว้ก่อนหน้า
-#             total.totalquantity += edited_product.quantityreceived  # เพิ่มจำนวนสินค้าใหม่
-#             total.save()
-
-#             messages.success(request, 'แก้ไขข้อมูลสำเร็จ')
-#             return redirect('dashboard:receive_list')  # หรือไปยังหน้าที่ต้องการ
-#         else:
-#             messages.error(request, 'แก้ไขข้อมูลไม่สำเร็จ')
-#     else:
-#         form = ReceivingForm(instance=receiving_product)
-
-#     context = {
-#         'title': 'แก้ไขรับเข้าวัสดุ',
-#         'form': form,
-#         'Product': Product.objects.all(),
-#         'Suppliers': Suppliers.objects.all(),
-#         'pending_orders_count': count_pending_orders(),
-#     }
-#     return render(request, 'edit_received_product.html', context)
 
 
 def update_received_product(request, id):
@@ -665,147 +618,6 @@ def orders(request):
         }
     return render(request, 'orders.html', context)
 
-# เดิม
-# @login_required
-# def approve_orders(request, order_id):
-#     ap = Order.objects.get(id = order_id)
-#     form = ApproveForm()
-    
-#     if request.method == 'POST':
-#         form = ApproveForm(request.POST, instance = ap)
-
-#         if form.is_valid():
-#             form.save()
-#             id=form.instance.id
-#             messages.success(request, 'ดำเนินการสำเร็จ')
-
-#             # Notify the user about the approval
-#             notify_user_approved(id)
-            
-#             return redirect(reverse('dashboard:order_detail', args=[order_id]))
-#         else :
-#             messages.error(request, 'ดำเนินการไม่สำเร็จ')
-            
-#     return render(request, 'orders.html', {
-#         'ap':ap,
-#         'form': form,
-#         'title' : 'แก้ไขข้อมูลสมาชิก',
-#         'pending_orders_count': count_pending_orders(),
-#     })
-
-# ใหม่1
-# def approve_orders(request, order_id):
-#     ap = get_object_or_404(Order, id=order_id)
-    
-#     if request.method == 'POST':
-#         form = ApproveForm(request.POST, instance=ap)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, 'ดำเนินการสำเร็จ')
-
-#             # Notify the user about the approval
-#             notify_user_approved(ap.id)
-            
-#             return redirect(reverse('dashboard:order_detail', args=[order_id]))
-#         else:
-#             messages.error(request, 'ดำเนินการไม่สำเร็จ')
-#     else:
-#         form = ApproveForm(instance=ap)
-        
-#     return render(request, 'orders.html', {
-#         'ap': ap,
-#         'form': form,
-#         'title': 'แก้ไขข้อมูลสมาชิก',
-#         'pending_orders_count': count_pending_orders(),
-#     })
-
-
-# ใหม่2
-# @login_required
-# def approve_orders(request, order_id):
-#     ap = get_object_or_404(Order, id=order_id)
-    
-#     if request.method == 'POST':
-#         form = ApproveForm(request.POST, instance=ap)
-#         if form.is_valid():
-#             old_status = ap.status  # เก็บสถานะเดิมก่อนการเปลี่ยนแปลง
-#             form.save()
-#             new_status = form.cleaned_data.get('status')
-            
-#             if old_status != new_status and new_status == False:
-#                 # คืนจำนวนสินค้ากลับไปยังสต๊อก
-#                 for item in ap.items.all():
-#                     product = item.product
-#                     product.quantityinstock += item.quantity
-#                     product.save()
-
-#                     # คืนจำนวนสินค้าที่รับเข้าใน Receiving
-#                     receiving = item.receiving
-#                     receiving.quantity += item.quantity
-#                     receiving.save()
-
-#             messages.success(request, 'ดำเนินการสำเร็จ')
-#             # Notify the user about the approval
-#             notify_user_approved(ap.id)
-            
-#             return redirect(reverse('dashboard:order_detail', args=[order_id]))
-#         else:
-#             messages.error(request, 'ดำเนินการไม่สำเร็จ')
-#     else:
-#         form = ApproveForm(instance=ap)
-        
-#     return render(request, 'orders.html', {
-#         'ap': ap,
-#         'form': form,
-#         'title': 'แก้ไขข้อมูลสมาชิก',
-#         'pending_orders_count': count_pending_orders(),
-#     })
-
-# ใหม่3
-# @login_required
-# def approve_orders(request, order_id):
-#     ap = get_object_or_404(Order, id=order_id)
-    
-#     if request.method == 'POST':
-#         form = ApproveForm(request.POST, instance=ap)
-#         if form.is_valid():
-#             old_status = ap.status  # เก็บสถานะเดิมก่อนการเปลี่ยนแปลง
-#             form.save()
-#             new_status = form.cleaned_data.get('status')
-            
-#             if old_status != new_status and new_status is False:
-#                 # Debug: ตรวจสอบค่า item ในออเดอร์
-#                 for item in ap.items.all():
-#                     print(f"Product: {item.product}, Quantity: {item.quantity}, Receiving: {item.receiving}")
-                
-#                 # คืนจำนวนสินค้ากลับไปยังสต๊อกและ Receiving
-#                 for item in ap.items.all():
-#                     product = item.product
-#                     product.quantityinstock += item.quantity
-#                     product.save()
-
-#                     # คืนจำนวนสินค้าที่รับเข้าใน Receiving
-#                     receiving = item.receiving
-#                     receiving.quantity += item.quantity
-#                     receiving.save()
-
-#             messages.success(request, 'ดำเนินการสำเร็จ')
-
-#             # Notify the user about the approval
-#             notify_user_approved(ap.id)
-            
-#             return redirect(reverse('dashboard:order_detail', args=[order_id]))
-#         else:
-#             messages.error(request, 'ดำเนินการไม่สำเร็จ')
-#     else:
-#         form = ApproveForm(instance=ap)
-        
-#     return render(request, 'orders.html', {
-#         'ap': ap,
-#         'form': form,
-#         'title': 'แก้ไขข้อมูลสมาชิก',
-#         'pending_orders_count': count_pending_orders(),
-#     })
 
 # ใหม่4
 # orders/views.py

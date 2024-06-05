@@ -58,7 +58,7 @@ class Profile(models.Model):
 
     def image(self):
         if self.img:
-            return format_html('<img src="' + self.img.url + '" height="40px">')
+            return format_html('<img src="' + self.img.url + '" height="50px">')
         return ''
     image.allow_tags = True
     # image.short_description = "รูปภาพ"

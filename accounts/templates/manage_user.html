@@ -7,6 +7,7 @@
             <thead class="table-secondary">
                 <tr>
                     <th scope="col">ลำดับ</th>
+                    <th scope="col">รูป</th>
                     <th scope="col">ชื่อผู้ใช้</th>
                     <th scope="col">ชื่อ-สกุล</th>
                     <th scope="col">อีเมลล์</th>
@@ -18,6 +19,7 @@
                 {% for l in my %}
                 <tr>
                     <th scope="row">{{ forloop.counter0|add:my.start_index }}</td>
+                    <td scope="row">{{ l.profile.image }}</td>
                     <td scope="row">{{ l.username }}</td>
                     <td scope="row">{{ l.get_full_name }}</td>
                     <td scope="row">{{ l.email }}</td>

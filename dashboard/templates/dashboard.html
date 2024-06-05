@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=TH-Sarabun">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
@@ -279,13 +281,14 @@
                 </ul>
             </div>
             <hr>
-            {% endif %}
 
             <h4 class="text-muted">ข้อมูลของฉัน</h4>
             <a class="text-decoration-none" href="{% url 'accounts:manager_profile_detail' user.username %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/profile/manager/' in request.path %}active text-white{% endif %}">
                     โปรไฟล์ของฉัน</li>
             </a>
+            {% endif %}
+            
             <hr>
             {% if request.user.is_admin %}
             <h4 class="text-muted">จัดการข้อมูลผู้ใช้งาน</h4>
@@ -328,8 +331,8 @@
             font-size: 15px; background:rgb(58, 82, 114); padding: 0.5em; border-radius: 8px;  color:rgb(255, 255, 255);">
                 <div class="col-2 d-flex justify-content-center">
                     {% if user.profile.img %}
-                    <!-- <img src="{{ user.profile.img.url }}" style="border-radius: 50%; max-height: 50px; max-width: 50px;"> -->
-                    <canvas id="profileCanvas" width="50" height="50" style="border-radius: 50%;"></canvas>
+                    <img src="{{ user.profile.img.url }}" style="border-radius: 50%; max-height: 50px; max-width: 50px;">
+                    <!-- <canvas id="profileCanvas" width="50" height="50" style="border-radius: 50%;"></canvas>
                     <script>
                         var canvas = document.getElementById('profileCanvas');
                         var ctx = canvas.getContext('2d');
@@ -343,7 +346,7 @@
                             ctx.clip();
                             ctx.drawImage(img, 0, 0, 50, 50);
                         };
-                    </script>
+                    </script> -->
                     {% else %}
                     <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg"
                         style="max-height: 50px; border-radius: 50%;">

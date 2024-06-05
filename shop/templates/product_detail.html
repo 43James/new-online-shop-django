@@ -24,8 +24,8 @@
         <h5 class="mt-3 text-dark">จำนวน : <h style="color: rgb(47, 0, 255); font-weight: bold;">{{ total_quantity }} {{ product.unit }}</h></h5>
         {% endif %}
         <!-- description -->
-        <!-- <p class="mt-4 pe-3">รายละเอียดเพิ่มเติม</p>
-        <p class="mt-3 pe-3 mb-3">{{ product.description }}</p> -->
+        <p class="mt-4 pe-3">รายละเอียดเพิ่มเติม</p>
+        <p class="mt-3 pe-3 mb-3">{{ product.description }}</p>
 
         <!-- cart btn -->
         <form method="post" action="{% url 'cart:add_to_cart' product.id %}">

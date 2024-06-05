@@ -110,13 +110,6 @@ class Stock(models.Model):
     def __str__(self):
         return str(self.product)
 
-    # def update_quantity(self):
-    #     # คำนวณและอัปเดตจำนวนสินค้าในสต็อก
-    #     receiving_quantity = Receiving.objects.filter(product=self.product).aggregate(total_quantity=models.Sum('quantity_received'))['total_quantity'] or 0
-    #     issuing_quantity = Issuing.objects.filter(product=self.product).aggregate(total_quantity=models.Sum('quantity_issued'))['total_quantity'] or 0
-    #     self.quantity = receiving_quantity - issuing_quantity
-    #     self.save()
-
 
 class TotalQuantity(models.Model):
     receiving = models.ForeignKey(Receiving, on_delete=models.CASCADE, related_name='receiving', verbose_name='IDสินค้า')

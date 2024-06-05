@@ -2,50 +2,77 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class="col-md-6 container justify-content-center">
-    <!-- <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <h3>Edit Profile</h3>
-        <hr>
-        {{ form|crispy  }}
-        {{ form.non_field_errors }}
-        {{ form.as_p }}
-        {{ extended_form.as_p }}
+<div class="col-9 container">
 
-        <div class="form-group">
-            <button class="btn btn-primary mt-2 mb-3 w-100" type="submit">Update</button>
+
+    <div class="row">
+        <div class="col-5">
+            <!-- Display User Profile Image -->
+            <div class="mb-5" style="justify-content: center; display: flex;">
+                <div>
+                    <!-- <div class="row text-center mx-4">
+                <h4>โปรไฟล์</h4>
+            </div> -->
+                    {% if user.profile.img.url == user.profile.img.url %}
+                    <!-- <img src="{{ profile.img.url }}" style="max-height: 295px; border-radius: 50%; " class="mt-3 img-rounded mb-3" alt=""> -->
+                    <canvas class="mt-5 mb-3" id="profileCanvas" width="300" height="300"
+                        style="border-radius: 50%;"></canvas>
+                    <script>
+                        var canvas = document.getElementById('profileCanvas');
+                        var ctx = canvas.getContext('2d');
+                        var img = new Image();
+                        img.src = "{{ user.profile.img.url }}"; // ใส่ URL ของรูปภาพของคุณที่นี่
+
+                        img.onload = function () {
+                            ctx.beginPath();
+                            ctx.arc(150, 150, 150, 0, 2 * Math.PI);
+                            ctx.clip();
+                            ctx.drawImage(img, 0, 0, 300, 300);
+                        };
+                    </script>
+                    <div class="container justify-content-center d-flex">
+                        <form method="post" action="{% url 'accounts:delete_profile_picture_manager' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger mt-3"><i class="bi bi-trash3-fill"></i></button>
+                        </form> &nbsp; &nbsp;
+                        <a href="{% url 'accounts:upload_profile_picture_manager' %}" class="btn btn-success mt-3 ml-2"><i
+                                class="bi bi-images"></i></a>
+                    </div>
+                    {% else %}
+                    <br><br><br><br><br><br>
+                    <p class="text-center">ไม่มีรูปโปรไฟล์</p>
+                    <div class="container justify-content-center d-flex">
+                        <a href="{% url 'accounts:upload_profile_picture_manager' %}"
+                            class="btn btn-success mt-3">อัพโหลดรูปโปรไฟล์
+                            <i class="bi bi-images"></i></a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-    </form> -->
+        <div class="col-md-7 container justify-content-center">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        
-        <!-- Display form errors -->
-        {% if form.errors %}
-            <ul>
-                {% for error in form.errors %}
+                <!-- Display form errors -->
+                {% if form.errors %}
+                <ul>
+                    {% for error in form.errors %}
                     <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        
-        {{ form.as_p }}
-        {{ extended_form.as_p }}
-        
-        <!-- Display User Profile Image -->
-        <div>
-            {% if img %}
-            <p>ไม่มีรูปภาพ</p>
-            {% else %}
-            {{ user.profile.image }}
-            {% endif %}
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {{ form.as_p }}
+                {{ extended_form.as_p }}
+
+                <!-- Submit Button -->
+                <div class="form-group">
+                    <button class="btn btn-primary mt-2 mb-3 w-100" type="submit">Update</button>
+                </div>
+            </form>
         </div>
-        
-        <!-- Submit Button -->
-        <div class="form-group">
-            <button class="btn btn-primary mt-2 mb-3 w-100" type="submit">Update</button>
-        </div>
-    </form>
+    </div>
 </div>
 {% endblock %}

@@ -12,7 +12,7 @@ from orders.models import Order
 from shop.models import Product, Receiving  # นำเข้าคลาส Cart ที่ใช้จัดการตะกร้า
 from django.db import transaction
 from django.contrib.auth import logout as auth_logout
-from .forms import RegistrationForm, ProfileForm, UserRegistrationForm, UserLoginForm, ManagerLoginForm, UserProfileForm, UserEditForm, ExtendedProfileForm
+from .forms import ProfileImageForm, RegistrationForm, ProfileForm, UserRegistrationForm, UserLoginForm, ManagerLoginForm, UserProfileForm, UserEditForm, ExtendedProfileForm
 from accounts.models import MyUser, Profile
 from django.contrib.auth import logout as django_logout
 
@@ -62,9 +62,7 @@ def change_password(request):
     return render(request, 'change_password.html', {'form': form})
 
 
-# @login_required
-# def register_pass(request):
-#     return render(request, 'home_page.html')
+
 
 @login_required
 def user_register(request):
@@ -168,199 +166,7 @@ def user_login(request):
         'title':'Login', 'form': form}
     return render(request, 'login.html', context)
 
-# อันเดิม
-# @login_required
-# def user_logout(request):
-#     cart = Cart(request)
-    
-#     # ลูปเพื่อนำจำนวนสินค้าในตะกร้ากลับไปยังสต็อก
-#     for item_id, item_data in cart.cart.items():
-#         product = get_object_or_404(Product, id=item_id)
-#         product.number += item_data['quantity']
-#         product.save()
 
-#     # cart.clear()  # ลบข้อมูลในตะกร้าหลังจากออกจากระบบ
-#     logout(request)
-    
-#     return redirect('accounts:user_login')
-
-# ใหม่1
-# @login_required
-# def user_logout(request):
-#     cart = Cart(request)
-    
-#     # ลูปเพื่อนำจำนวนสินค้าในตะกร้ากลับไปยังสต็อกและตารางรับเข้า
-#     for item_id, item_data in cart.cart.items():
-#         product = get_object_or_404(Product, id=item_id)
-        
-#         # คืนจำนวนสินค้าในตะกร้ากลับไปยังสต็อก
-#         product.quantityinstock += item_data['quantity']
-#         product.save()
-
-#         # คืนจำนวนสินค้าในตะกร้ากลับไปยังตารางรับเข้า
-#         receiving_id = item_data.get('receiving_id')
-#         if receiving_id:
-#             receiving = get_object_or_404(Receiving, id=receiving_id)
-#             with transaction.atomic():
-#                 receiving.quantity += item_data['quantity']
-#                 receiving.save()
-
-#     # cart.clear()  # ลบข้อมูลในตะกร้าหลังจากออกจากระบบ
-#     logout(request)
-    
-#     return redirect('accounts:user_login')
-
-
-# ใหม่2
-# @login_required
-# def user_logout(request):
-#     cart = Cart(request)
-    
-#     # ลูปเพื่อนำจำนวนสินค้าในตะกร้ากลับไปยังสต็อกและตารางรับเข้า
-#     for item_id, item_data in cart.cart.items():
-#         product = get_object_or_404(Product, id=item_id)
-        
-#         # ตรวจสอบว่าคีย์ 'quantity' และ 'receiving_id' อยู่ใน item_data
-#         quantity = item_data.get('quantity')
-#         receiving_id = item_data.get('receiving_id')
-        
-#         if quantity is not None:
-#             # คืนจำนวนสินค้าในตะกร้ากลับไปยังสต็อก
-#             product.quantityinstock += quantity
-#             product.save()
-
-#             if receiving_id is not None:
-#                 receiving = get_object_or_404(Receiving, id=receiving_id)
-#                 with transaction.atomic():
-#                     receiving.quantity += quantity
-#                     receiving.save()
-
-#     cart.clear()  # ลบข้อมูลในตะกร้าหลังจากออกจากระบบ
-#     logout(request)
-    
-#     return redirect('accounts:user_login')
-
-# ใหม่3
-# @login_required
-# def user_logout(request):
-#     cart = Cart(request)
-    
-#     # ลูปเพื่อนำจำนวนสินค้าในตะกร้ากลับไปยังสต็อกและตารางรับเข้า
-#     for item_data in cart.cart:
-#         item_id = item_data['product_id']
-#         product = get_object_or_404(Product, id=item_id)
-        
-#         # ตรวจสอบว่าคีย์ 'quantity' และ 'receiving_id' อยู่ใน item_data
-#         if 'quantity' in item_data and 'receiving_id' in item_data:
-#             quantity = item_data['quantity']
-#             receiving_id = item_data['receiving_id']
-            
-#             # คืนจำนวนสินค้าในตะกร้ากลับไปยังสต็อก
-#             product.quantityinstock += quantity
-#             product.save()
-
-#             # คืนจำนวนสินค้าในตะกร้ากลับไปยังตารางรับเข้า
-#             receiving = get_object_or_404(Receiving, id=receiving_id)
-#             with transaction.atomic():
-#                 receiving.quantity += quantity
-#                 receiving.save()
-
-#     cart.clear()  # ลบข้อมูลในตะกร้าหลังจากออกจากระบบ
-#     logout(request)
-    
-#     return redirect('accounts:user_login')
-
-# ใหม่4
-# @login_required
-# def user_logout(request):
-#     cart = Cart(request)
-    
-#     try:
-#         # ลูปเพื่อนำจำนวนสินค้าในตะกร้ากลับไปยังสต็อกและตารางรับเข้า
-#         for item_id, item_data in cart.cart.items():
-#             product = get_object_or_404(Product, id=item_id)
-            
-#             # ตรวจสอบว่าคีย์ 'quantity' และ 'receiving_id' อยู่ใน item_data
-#             if 'quantity' in item_data and 'receiving_id' in item_data:
-#                 quantity = item_data['quantity']
-#                 receiving_id = item_data['receiving_id']
-                
-#                 # คืนจำนวนสินค้าในตะกร้ากลับไปยังสต็อก
-#                 product.quantityinstock += quantity
-#                 product.save()
-
-#                 # คืนจำนวนสินค้าในตะกร้ากลับไปยังตารางรับเข้า
-#                 receiving = get_object_or_404(Receiving, id=receiving_id)
-#                 with transaction.atomic():
-#                     receiving.quantity += quantity
-#                     receiving.save()
-
-#         cart.clear()  # ลบข้อมูลในตะกร้าหลังจากออกจากระบบ
-#         logout(request)
-#         return redirect('accounts:user_login')
-#     except Exception as e:
-#         print("An error occurred:", str(e))
-#         # ตรวจสอบข้อผิดพลาดและจัดการตามต้องการ
-#         return redirect('accounts:user_login')  # หรือทำอย่างอื่นตามความเหมาะสม
-
-# ใหม่5
-# def user_logout(request):
-#     # เก็บรถเข็นของผู้ใช้ในเซสชัน
-#     user_cart = Cart(request)
-#     session_cart = user_cart.cart
-#     request.session[CART_SESSION_ID] = session_cart
-    
-#     # ออกจากระบบผู้ใช้
-#     auth_logout(request)
-    
-#     # ลิ้งค์ไปยังหน้าหลักหลังจากออกจากระบบ
-#     return redirect('accounts:user_login')
-
-# ใหม่6
-# @login_required
-# def user_logout(request):
-#     cart = Cart(request)
-#     print(type(cart.cart))  # เพิ่มบรรทัดนี้เพื่อตรวจสอบประเภทของข้อมูลที่เก็บใน cart.cart
-
-#     # ลูปเพื่อนำจำนวนสินค้าในตะกร้ากลับไปยังสต็อกและตารางรับเข้า
-#     for item_data in cart.cart:
-#         receiving_id = item_data.get('receiving_id')
-#         if receiving_id is not None:  # ตรวจสอบว่ามีรหัสการรับสินค้าอยู่ในรายการหรือไม่
-#             receiving = get_object_or_404(Receiving, id=receiving_id)
-#             quantity_to_return = item_data.get('quantity', 0)
-#             product = receiving.product
-#             # คืนจำนวนสินค้าไปยังสต็อก
-#             product.quantityinstock += quantity_to_return
-#             product.save()
-#             # คืนจำนวนสินค้าไปยังจำนวนคงเหลือในตารางรับเข้า
-#             receiving.quantity += quantity_to_return
-#             receiving.save()
-
-#     cart.clear()  # ลบข้อมูลในตะกร้าหลังจากออกจากระบบ
-#     logout(request)
-    
-#     return redirect('accounts:user_login')
-
-# ใหม่7
-# def user_logout(self):
-#     for product_id, items in self.cart.items():
-#         product = Product.objects.get(id=product_id)
-#         for item in items:
-#             quantity = item['quantity']
-#             receiving_id = item['receiving_id']
-#             receiving = Receiving.objects.get(id=receiving_id)
-            
-#             # คืนสินค้ากลับไปยังสต๊อกของ Product
-#             product.quantityinstock += quantity
-#             product.save()
-            
-#             # อัปเดตจำนวนสินค้าที่รับเข้าใน Receiving
-#             receiving.quantity += quantity
-#             receiving.save()
-    
-#     # เคลียร์ตะกร้าหลังจาก checkout
-#     self.clear()
-#     return redirect('accounts:user_login')
 
 # ใหม่8
 def user_logout(request):
@@ -386,6 +192,8 @@ def user_logout(request):
 #     # คืน session หลังจากที่ logout เสร็จสิ้น
 #     cart.logout()
 #     return redirect('accounts:manager_login')
+
+
 
 
 
@@ -499,6 +307,93 @@ def user_profile_detail(request, username):
     }
     return render(request, 'user_profile.html', context)
 
+
+@login_required
+def delete_profile_picture(request):
+    profile = request.user.profile
+    if profile.img:
+        profile.img.delete()
+        messages.success(request, 'รูปโปรไฟล์ถูกลบเรียบร้อยแล้ว')
+    else:
+        messages.error(request, 'ไม่มีรูปโปรไฟล์ให้ลบ')
+    return redirect('accounts:user_profile_detail', username=request.user.username)
+
+
+# @login_required
+# def upload_profile_picture(request):
+#     if request.method == 'POST':
+#         form = ProfileImageForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             profile = request.user.profile
+#             profile.img = form.cleaned_data['img']
+#             profile.save()
+#             messages.success(request, 'รูปโปรไฟล์ถูกอัพโหลดเรียบร้อยแล้ว')
+#             return redirect('accounts:user_profile_detail', username=request.user.username)
+#     else:
+#         form = ProfileImageForm()
+#     return render(request, 'upload_profile_picture.html', {'form': form})
+
+
+from django.core.files.base import ContentFile
+import base64
+@login_required
+def upload_profile_picture(request):
+    if request.method == 'POST':
+        form = ProfileImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            profile = request.user.profile
+            cropped_image_data = request.POST.get('cropped_image')
+            if cropped_image_data:
+                # Decode the image from base64
+                format, imgstr = cropped_image_data.split(';base64,') 
+                ext = format.split('/')[-1] 
+                img_data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+                profile.img.save(f'{request.user.username}.{ext}', img_data, save=False)
+            else:
+                profile.img = form.cleaned_data['img']
+            profile.save()
+            messages.success(request, 'รูปโปรไฟล์ถูกอัพโหลดเรียบร้อยแล้ว')
+            return redirect('accounts:user_profile_detail', username=request.user.username)
+    else:
+        form = ProfileImageForm()
+    context = {
+        'title' : 'อัพโหลดรูปโปรไฟล์',
+        'form': form,
+        'pending_orders_count': count_pending_orders(),
+    }
+    return render(request, 'upload_profile_picture.html', context)
+
+
+
+
+@login_required
+def upload_profile_picture_manager(request):
+    if request.method == 'POST':
+        form = ProfileImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            profile = request.user.profile
+            cropped_image_data = request.POST.get('cropped_image')
+            if cropped_image_data:
+                # Decode the image from base64
+                format, imgstr = cropped_image_data.split(';base64,') 
+                ext = format.split('/')[-1] 
+                img_data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+                profile.img.save(f'{request.user.username}.{ext}', img_data, save=False)
+            else:
+                profile.img = form.cleaned_data['img']
+            profile.save()
+            messages.success(request, 'รูปโปรไฟล์ถูกอัพโหลดเรียบร้อยแล้ว')
+            return redirect('accounts:manager_profile_detail', username=request.user.username)
+    else:
+        form = ProfileImageForm()
+    context = {
+        'title' : 'อัพโหลดรูปโปรไฟล์',
+        'form': form,
+        'pending_orders_count': count_pending_orders(),
+    }
+    return render(request, 'upload_profile_picture_manager.html', context)
+
+
 @login_required
 def manager_profile_detail(request, username):
     try:
@@ -519,6 +414,15 @@ def manager_profile_detail(request, username):
     }
     return render(request, 'manager_profile.html', context)
 
+@login_required
+def delete_profile_picture_manager(request):
+    profile = request.user.profile
+    if profile.img:
+        profile.img.delete()
+        messages.success(request, 'รูปโปรไฟล์ถูกลบเรียบร้อยแล้ว')
+    else:
+        messages.error(request, 'ไม่มีรูปโปรไฟล์ให้ลบ')
+    return redirect('accounts:manager_profile_detail', username=request.user.username)
 
 @login_required
 def manage_user(request):
@@ -541,6 +445,7 @@ def manage_user(request):
         'title':'จัดการสมาชิก',
         'pending_orders_count': count_pending_orders(),
     })
+
 
 @user_passes_test(is_manager)
 @login_required
@@ -567,6 +472,7 @@ def update_user(request, id):
         'title': 'แก้ไขข้อมูลสมาชิก',
         'pending_orders_count': count_pending_orders(),
     })
+
 
 @login_required 
 def delete_user(request, id):

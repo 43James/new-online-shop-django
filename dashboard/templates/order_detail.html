@@ -32,7 +32,7 @@
     <h4 class="text-center mt-2">รายการเบิกจ่ายวัสดุ โครงการอุทยานวิทยาศาสตร์</h4>
     <br>
 
-    <h3 class="text-end">เลขที่รายการ : {{ order.id }}</h3>
+    <h3 class="text-end">เลขที่เบิก : {{ order.id }}</h3>
     <h6 class="text-end">วันที่ทำรายการ : {{ order.date_created|date:"d  M  Y เวลา H:i น." }}</h6>
 
     <table border="1" style="width:100%;">
@@ -86,7 +86,7 @@
         <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p>
         <p>( {{ user.get_full_name }} )</p>
         <p>ตำแหน่ง เจ้าหน้าที่</p><br>
-        <p>วันที่รับวัสดุ &nbsp;&nbsp;{{ order.date_receive|date:"d / M / Y" }} </p><br>
+        <p>วันที่รับวัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_receive|date:"d / m / Y" }} </p><br>
     </div>
     {% endif %}
 </div>

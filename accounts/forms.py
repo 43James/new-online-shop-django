@@ -95,6 +95,17 @@ class ManagerLoginForm(forms.Form):
     )
 
 
+class ProfileImageForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['img']
+        labels = {
+            'img' : 'รูปโปรไฟล์'
+        }
+        widgets = {
+            'img': forms.FileInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);',}),
+        }
+
 
 # class UserProfileForm(forms.ModelForm):
 
@@ -167,17 +178,17 @@ class ExtendedProfileForm(forms.ModelForm):
     # workgroup = forms.CharField(label='กลุ่มงาน', widget=forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}))
     workgroup = forms.ModelChoiceField(queryset=WorkGroup.objects.all(), label='กลุ่มงาน', widget=forms.Select(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}))
     phone = forms.CharField(label='โทรศัพท์', widget=forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}))
-    img = forms.ImageField(label='รูปโปรไฟล์', required=False, widget=forms.FileInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}))
+    # img = forms.ImageField(label='รูปโปรไฟล์', required=False, widget=forms.FileInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}))
 
     class Meta:
         model = Profile
-        fields = ('gender', 'position', 'workgroup', 'phone', 'img' )
+        fields = ('gender', 'position', 'workgroup', 'phone' )
         labels = {
             'gender': 'เพศ',
             'position' : 'ตำแหน่ง',
             'workgroup': 'กลุ่มงาน',
             'phone' : 'โทรศัพท์',
-            'img' : 'รูปโปรไฟล์'
+            # 'img' : 'รูปโปรไฟล์'
         }
         
 # class ExtendedProfileForm(forms.ModelForm):
