@@ -27,6 +27,8 @@
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">all</td>
                     {% elif l.is_general and l.is_manager %}
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้ใช้งาน,ผู้จัดการระบบ</td>
+                    {% elif l.is_general and l.is_executive %}
+                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้ใช้งาน,ผู้บริหาร</td>
                     {% elif l.is_manager and l.is_admin %}
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้จัดการระบบ,แอดมิน</td>
                     {% elif l.is_general %}

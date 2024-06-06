@@ -21,7 +21,12 @@ class MyUser(AbstractUser):
     PREFIX_CHOICES = [
         ('นาย', 'นาย'),
         ('นาง', 'นาง'),
-        ('นางสาว', 'นางสาว')]
+        ('นางสาว', 'นางสาว'),
+        ('ดร.', 'ดร.'),
+        ('ผศ.ดร.', 'ผศ.ดร.'),
+        ('รศ.ดร.', 'รศ.ดร.'),
+        ('ศ.ดร.', 'ศ.ดร.'),
+        ('อาจารย์', 'อาจารย์'),]
     perfix = models.CharField(max_length=10, blank=True, null=True, verbose_name="คำนำหน้า", choices=PREFIX_CHOICES)
     email = models.EmailField(max_length=100, verbose_name="อีเมล", unique=True)
     is_general = models.BooleanField(default=False, verbose_name='ผู้ใช้งานทั่วไป' , blank=True, null=True)

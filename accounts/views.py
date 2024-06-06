@@ -480,7 +480,7 @@ def delete_user(request, id):
     delete_fil = data_input.filter(id=id).delete()
     data_all = MyUser.objects.all()
     messages.success(request, 'ลบสมาชิกสำเร็จ')
-    return redirect('manage_user')
+    return redirect('accounts:manage_user')
 
 def count_pending_orders():
     # ดึงข้อมูลออเดอร์ทั้งหมดที่รอการยืนยัน

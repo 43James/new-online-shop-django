@@ -281,13 +281,13 @@
                 </ul>
             </div>
             <hr>
-
+            {% endif %}
             <h4 class="text-muted">ข้อมูลของฉัน</h4>
             <a class="text-decoration-none" href="{% url 'accounts:manager_profile_detail' user.username %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/profile/manager/' in request.path %}active text-white{% endif %}">
                     โปรไฟล์ของฉัน</li>
             </a>
-            {% endif %}
+            
             
             <hr>
             {% if request.user.is_admin %}
