@@ -45,6 +45,9 @@ urlpatterns = [
     path('receive_list/', views.receive_list, name='receive_list'),
     path('update_received_product/<int:id>/', views.update_received_product, name='update_received_product'),
     path('receive/delete/<int:id>/', views.delete_receive, name='delete_receive'),
+    path('monthly_report/', views.monthly_report, name='monthly_report'),
+    path('monthly_report/<int:year>/<int:month>/', views.monthly_report, name='monthly_report_with_date'),
+    path('export/excel/', views.export_to_excel, name='export_to_excel'),
 
 ]
 

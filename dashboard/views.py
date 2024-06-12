@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.core.paginator import Paginator
 from app_linebot.views import notify_user_approved
-from django.db.models import Q, Sum, Max
+from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
 from shop.models import Category, Product, Stock, Subcategory, Suppliers, Total_Quantity, TotalQuantity, Receiving
 from accounts.models import MyUser, Profile
 from orders.models import Order, Issuing
@@ -15,6 +15,25 @@ from django.db.models import F
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from datetime import datetime, timedelta
+import openpyxl, re
+from django.http import HttpResponse
+from collections import defaultdict
+import calendar
+import locale
+locale.setlocale(locale.LC_TIME, 'th_TH.UTF-8')  # ตั้งค่า locale เป็นภาษาไทย
+
+def thai_month_name(month):
+    thai_months = [
+        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
+        'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
+        'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ]
+    return thai_months[month - 1] if 1 <= month <= 12 else ''
+
+def convert_to_buddhist_era(year):
+    return year + 543
+
 
 def count_pending_orders():
     # ดึงข้อมูลออเดอร์ทั้งหมดที่รอการยืนยัน
@@ -59,6 +78,219 @@ def is_authorized(user):
         return is_manager(user) and is_executive(user) and is_admin(user)
     except Http404:
         return False
+    
+
+
+
+def export_to_excel(request, month=None, year=None):
+    # Get current datetime
+    now = datetime.now()
+    
+    if request.GET.get('month'):
+        month = int(request.GET.get('month'))
+    if request.GET.get('year'):
+        year = int(request.GET.get('year'))
+    
+    if not month:
+        month = now.month
+    if not year:
+        year = now.year
+
+    start_date = datetime(year, month, 1)
+    end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
+
+    previous_month_start = (start_date - timedelta(days=1)).replace(day=1)
+    previous_month_end = start_date - timedelta(seconds=1)
+
+    products = Product.objects.all()
+
+    report_data = []
+    all_users = set()
+
+    for product in products:
+        # Calculate previous balance
+        previous_balance = Receiving.objects.filter(
+            product=product, date_created__lte=previous_month_end
+        ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+
+        received_current_month = Receiving.objects.filter(
+            product=product, date_created__range=(start_date, end_date)
+        ).aggregate(total_received=Sum('quantityreceived'))['total_received'] or 0
+
+        total_balance = previous_balance + received_current_month
+
+        issued_current_month = Issuing.objects.filter(
+            product=product, datecreated__range=(start_date, end_date), order__status=True
+        ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
+
+        remaining_balance = total_balance - issued_current_month
+
+        issued_items = Issuing.objects.filter(
+            product=product, datecreated__range=(start_date, end_date), order__status=True
+        )
+        total_issued_value = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or 0
+
+        user_issuings = defaultdict(int)
+        for issuing in issued_items:
+            user_full_name = issuing.order.user.get_first_name()
+            user_issuings[user_full_name] += issuing.quantity
+            all_users.add(user_full_name)
+
+        report_data.append({
+            'product': product.product_name,
+            'unit': product.unit,
+            'previous_balance': previous_balance,
+            'total_balance': total_balance,
+            **user_issuings,
+            'issued_current_month': issued_current_month,
+            'remaining_balance': remaining_balance,
+            'total_issued_value': total_issued_value,
+            'note': '',
+        })
+
+    # Create a new Excel workbook and worksheet
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+
+    # Add header rows to the worksheet
+    header_rows = [
+        ['รายการเบิกวัสดุ'],
+        ['ประจำเดือน', f'{month} พ.ศ. {year} ประจำปีงบประมาณ พ.ศ. 2567'],
+        ['หน่วยงาน โครงการอุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี']
+    ]
+
+    for header_row in header_rows:
+        worksheet.append(header_row)
+
+    # Add column headers to the worksheet
+    headers = ['ลำดับ', 'รายการสินค้า', 'หน่วยนับ', 'จำนวนคงเหลือ (ยกมา)', 'รวมจำนวนคงเหลือ'] + list(all_users) + ['รวมจำนวนที่เบิก', 'จำนวนคงเหลือทั้งหมด (หักจากที่เบิก)', 'มูลค่าสินค้าเบิกทั้งสิ้น (บาท)', 'หมายเหตุ']
+    worksheet.append(headers)
+
+    # Loop through to add data to the worksheet
+    for index, item in enumerate(report_data, start=1):
+        row = [
+            index,  # เปลี่ยน item['forloop.counter'] เป็น index
+            item['product'],
+            item['unit'],
+            item['previous_balance'],
+            item['total_balance'],
+            *[item.get(user, 0) for user in sorted(all_users)],
+            item['issued_current_month'],
+            item['remaining_balance'],
+            item['total_issued_value'],
+            item['note']
+        ]
+        worksheet.append(row)
+
+    # Create an HttpResponse for the Excel file and save the workbook into the response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=monthly_report_{}_{}.xlsx'.format(month, year)
+    workbook.save(response)
+
+    # Return the response
+    return response
+
+
+
+
+# รายงาน4 ทำคอลัมน์ผู้ใช้งานได้แล้ว
+def monthly_report(request, month=None, year=None):
+    # Get current datetime
+    now = datetime.now()
+    
+    if request.GET.get('month'):
+        month = int(request.GET.get('month'))
+    if request.GET.get('year'):
+        year = int(request.GET.get('year'))
+    
+    if not month:
+        month = now.month
+    if not year:
+        year = now.year
+
+    # Get Thai month name
+    month_name = thai_month_name(month)
+
+    # ในฟังก์ชัน monthly_report
+    buddhist_year = convert_to_buddhist_era(year)
+
+    start_date = datetime(year, month, 1)
+    end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
+
+    previous_month_start = (start_date - timedelta(days=1)).replace(day=1)
+    previous_month_end = start_date - timedelta(seconds=1)
+
+    products = Product.objects.all()
+
+    report_data = []
+    all_users = set()
+
+    for product in products:
+        # คำนวณจำนวนคงเหลือยกมา
+        previous_balance = Receiving.objects.filter(
+            product=product, date_created__lte=previous_month_end
+        ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+
+        received_current_month = Receiving.objects.filter(
+            product=product, date_created__range=(start_date, end_date)
+        ).aggregate(total_received=Sum('quantityreceived'))['total_received'] or 0
+
+        total_balance = previous_balance + received_current_month
+
+        issued_current_month = Issuing.objects.filter(
+            product=product, datecreated__range=(start_date, end_date), order__status=True
+        ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
+
+        remaining_balance = total_balance - issued_current_month
+
+        issued_items = Issuing.objects.filter(
+            product=product, datecreated__range=(start_date, end_date), order__status=True
+        )
+        total_issued_value = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or 0
+
+        user_issuings = defaultdict(int)
+        for issuing in issued_items:
+            user_full_name = issuing.order.user.get_first_name()
+            user_issuings[user_full_name] += issuing.quantity
+            all_users.add(user_full_name)
+
+        report_data.append({
+            'product': product.product_name,
+            'unit': product.unit,
+            'previous_balance': previous_balance,
+            'total_balance': total_balance,
+            'user_issuings': user_issuings,
+            'issued_current_month': issued_current_month,
+            'remaining_balance': remaining_balance,
+            'total_issued_value': total_issued_value,
+            'note': '',
+        })
+
+    context = {
+        'title': 'รายงานประจำเดือน',
+        'report_data': report_data,
+        'all_users': sorted(all_users),
+        'month': month,
+        'year': year,
+        'now': now,
+        'years': range(2020, now.year + 1),
+        'months': [
+            (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+            (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+            (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+        ],  # ลิสต์ของเดือน
+        
+        'pending_orders_count': count_pending_orders(),
+        'month_name': month_name,  # Pass month_name variable to template
+        'buddhist_year':buddhist_year,
+    }
+
+    return render(request, 'monthly_report.html', context)
+
+
+
+
+
 
 
 # @user_passes_test(is_authorized)

@@ -47,7 +47,6 @@ STATIC_DIR = BASE_DIR / 'static'
 
 INSTALLED_APPS = [
     'shop.apps.ShopConfig',
-
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

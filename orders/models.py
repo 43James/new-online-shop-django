@@ -48,3 +48,6 @@ class Issuing(models.Model):
     
     def get_total(self):
         return self.quantity
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)

@@ -26,7 +26,8 @@
         body {
         font-family: 'TH-Sarabun', sans-serif;
         font-size: 16px;
-    }
+        }
+        
         table {
             border-collapse: collapse;
             width: 100%;
@@ -228,8 +229,8 @@
                     รายงานอื่นๆ..
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:add_product' %}">...</a></li>
-                    <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:add_product' %}">...</a></li>
+                    <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report' %}">รายงานประจำเดือน</a></li>
+                    <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" >รายงานรับเข้าประจำเดือน</a></li>
                     </li>
                 </ul>
             </div>
