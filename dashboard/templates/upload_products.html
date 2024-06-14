@@ -1,0 +1,11 @@
+<!-- upload_products.html -->
+{% extends 'dashboard.html' %}
+
+{% block content %}
+  <h2>นำเข้าข้อมูลสินค้า</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">อัปโหลด</button>
+  </form>
+{% endblock %}

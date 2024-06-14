@@ -128,7 +128,7 @@
                     <th rowspan="2" class="text-center" style="width: 5%;">รวมจำนวนคงเหลือ</th>
                     <th colspan="{{ all_users|length }}" class="text-center">รายชื่อผู้เบิกวัสดุ</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">รวมจำนวนที่เบิก</th>
-                    <th rowspan="2" class="text-center" style="width: 8%;">จำนวนคงเหลือทั้งหมด</th>
+                    <th rowspan="2" class="text-center" style="width: 8%;">จำนวนคงเหลือทั้งหมด (หักจากที่เบิก)</th>
                     <th rowspan="2" class="text-center" style="width: 8%;">มูลค่าสินค้าเบิกทั้งสิ้น (บาท)</th>
                     <th rowspan="2" class="text-center">หมายเหตุ</th>
                 </tr>
@@ -156,6 +156,7 @@
                 </tr>
                 {% endfor %}
                 <tr>
+                    <!-- <td colspan="4"></td> -->
                     <td colspan="5" class="text-center"><strong>รวมรายจ่ายที่เบิก</strong></td>
                     {% for user in all_users %}
                     <td class="text-center"><strong>{{ total_issued_value_by_user|get_item:user }} บาท</strong></td>
@@ -167,7 +168,6 @@
                 </tr>
             </tbody>
         </table>
-        
     </table>
 </div>
 {% endblock %}

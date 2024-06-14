@@ -48,6 +48,8 @@ urlpatterns = [
     path('monthly_report/', views.monthly_report, name='monthly_report'),
     path('monthly_report/<int:year>/<int:month>/', views.monthly_report, name='monthly_report_with_date'),
     path('export/excel/', views.export_to_excel, name='export_to_excel'),
+    path('upload/', views.upload_products, name='upload_products'),
+    path('export-products/', views.export_products_to_excel, name='export_products'),
 
 ]
 

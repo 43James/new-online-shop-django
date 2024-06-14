@@ -16,8 +16,8 @@
         <tbody>
             <tr>
                 <th scope="row">{{ forloop.counter0|add:subcategory.start_index }}</th>
-                <td><a class="text-decoration-none">{{ sub.name_sub}}</a></td>
                 <td><a class="text-decoration-none">{{ sub.category}}</a></td>
+                <td><a class="text-decoration-none">{{ sub.name_sub}}</a></td>
 
                 <td>
                     <a class="text-info text-decoration-none" href="{% url 'dashboard:edit_subcategory' sub.id %}"><i

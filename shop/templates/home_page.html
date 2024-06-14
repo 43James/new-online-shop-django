@@ -16,7 +16,6 @@
   {% endif %}
 </div>
 
-
 {% if products %}
 {% for product in products %}
 
@@ -25,14 +24,21 @@
   {% if product.total_quantity == 0 %}
   <div id="watermark">
     <a href="{{ product.get_absolute_url }}">
-      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150"
-      src="{{ product.image.url }}">
+      {% if product.image %}
+      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
+      {% else %}
+      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+      {% endif %}
     </a>
     <p>สต๊อกหมด</p>
   </div>
   {% else %}
   <a href="{{ product.get_absolute_url }}">
+    {% if product.image %}
     <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
+    {% else %}
+    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+    {% endif %}
   </a>
   {% endif %}
 
@@ -43,26 +49,6 @@
   </div>
 </div>
 {% endfor %}
-
-<!-- <div class="card me-1 mb-2" style="width: 10rem;">
-  {% if re.quantity == 0 %}
-  <div id="watermark">
-    <a href="{{ re.get_absolute_url }}">
-      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150"
-        src="{{ re.product.image.url }}">
-    </a>
-    <p>สต๊อกหมด</p>
-  </div>
-  {% else %}
-  <a href="{{ re.get_absolute_url }}">
-    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ re.product.image.url }}">
-  </a>
-  {% endif %}
-
-  <div class="mt-3 text-center">
-    <h6 class="card-title element">{{ re.product.product_name }}</h6>
-  </div>
-</div> -->
 
 <!-- pagination -->
 <center class="mt-3">

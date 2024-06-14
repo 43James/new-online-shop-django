@@ -12,6 +12,7 @@
             <th scope="col">จำนวนคงเหลือ</th>
             <th scope="col">ราคา(฿)/หน่วย</th>
             <th scope="col">วันที่รับเข้า</th>
+            <th scope="col">วันที่อัพเดต</th>
             <th scope="col">แก้ไข</th>
         </tr>
     </thead>
@@ -33,6 +34,7 @@
 
         <td>{{ re.unitprice }} บาท / {{ re.product.unit }}</td>
         <td>{{ re.date_created | date:"d M Y, H:i" }} น.</td>
+        <td>{{ re.date_updated | date:"d M Y, H:i" }} น.</td>
         <td><a class="text-info text-decoration-none" href="{% url 'dashboard:update_received_product' re.id %}"><i class="bi bi-pencil-square"></i></a></td>
         
         <!-- <td><a class="text-danger text-decoration-none" data-bs-toggle="modal" data-bs-target="#exampleModal{{l.id}}" ><i class="bi bi-trash-fill"></i></a></td> -->

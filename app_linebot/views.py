@@ -150,7 +150,7 @@ def notify_user(order_id):
 def notify_admin(order_id):
     order = Order.objects.get(id=order_id)
     admin_user_id ='Ubb217fccfe04b1dbf5550e46661a8693'  # Replace with the actual Line user ID of the admin
-    message = f"คำร้องใหม่จากผู้ใช้งาน {order.user.username} ID {order_id} ที่ต้องได้รับการอนุมัติ.."
+    message = f"คำร้องใหม่จากผู้ใช้งาน {order.user.first_name} ID {order_id} ที่ต้องได้รับการอนุมัติ.."
     line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
 
 

@@ -20,14 +20,14 @@
     <label for="id_product" class="form-label required">วัสดุ</label>
     <select style="color: rgb(8, 0, 255);" name="product" class="form-select mb-3" required id="id_product">
       {% for o in Product %}
-      <option value="{{o.id}}" {% if form.instance.product==o %} selected {% endif %}>{{o.product_name}}</option>
+      <option value="{{o.id}}" {% if form.instance.product == o %} selected {% endif %}>{{o.product_name}}</option>
       {% endfor %}
     </select>
 
     <label for="id_suppliers" class="form-label required">ซัพพลายเออร์</label>
     <select style="color: rgb(8, 0, 255);" name="suppliers" class="form-select mb-3" required id="id_suppliers">
       {% for o in Suppliers %}
-      <option value="{{o.id}}" {% if form.instance.suppliers==o %} selected {% endif %}>{{o.supname}}</option>
+      <option value="{{o.id}}" {% if form.instance.suppliers == o %} selected {% endif %}>{{o.supname}}</option>
       {% endfor %}
     </select>
 

@@ -75,6 +75,9 @@ class Cart:
                             'date_created': str(receiving.date_created)
                         })
 
+                    product.quantityinstock -= receiving_used
+                    product.save()
+
                     receiving.save()
                 else:
                     break
@@ -113,9 +116,9 @@ class Cart:
                 receiving = Receiving.objects.get(id=receiving_id)
                     
                 # คืนจำนวนสินค้ากลับไปยังสต็อกของ Product
-                # product = receiving.product
-                # product.quantityinstock += item['quantity']
-                # product.save()
+                product = receiving.product
+                product.quantityinstock += item['quantity']
+                product.save()
                     
                 # อัปเดตจำนวนสินค้าที่รับเข้าใน Receiving
                 receiving.quantity += item['quantity']

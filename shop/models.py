@@ -2,6 +2,8 @@ from django.db import models
 from django.urls import reverse
 from django.template.defaultfilters import slugify
 from django.db.models import Sum
+from django.utils.html import format_html
+
 # from orders.models import Issuing
 
 
@@ -27,7 +29,7 @@ class Subcategory(models.Model):
         
 class Product(models.Model):
     category = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='Subcategory', null=True, blank=True, verbose_name='หมวดหมู่')
-    image = models.ImageField(upload_to='products', verbose_name='รูปภาพ')
+    image = models.ImageField(upload_to='products', null=True, blank=True, verbose_name='รูปภาพ')
     product_id = models.CharField(max_length=50, unique=True, verbose_name='รหัสพัสดุ')
     slug = models.SlugField(max_length=50, unique=True)
     product_name = models.CharField(max_length=200, verbose_name='ชื่อรายการ')
@@ -36,12 +38,20 @@ class Product(models.Model):
     unitprice = models.PositiveIntegerField(default=0, null=True, verbose_name='ราคา/หน่วย')
     unit = models.CharField(max_length=20, verbose_name='หน่วย')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
+    date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
+
 
     class Meta:
         ordering = ('-id',)
 
     def __str__(self):
         return self.slug
+    
+    def img(self):
+        if self.image:
+            return format_html('<img src="' + self.image.url + '" height="50px">')
+        return ''
+    image.allow_tags = True
         
     def get_absolute_url(self):
         return reverse('shop:product_detail', kwargs={'slug':self.slug})
@@ -49,6 +59,8 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         self.slug = slugify(self.product_id)
         return super().save(*args, **kwargs)
+    
+    
     
 
 class Suppliers(models.Model):
@@ -72,6 +84,7 @@ class Receiving(models.Model):
     quantity = models.PositiveIntegerField( null=True, verbose_name='จำนวนคงเหลือ')
     unitprice = models.PositiveIntegerField(null=True, verbose_name='ราคา/หน่วย')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
+    date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
 
     class Meta:
         ordering = ('-id',)

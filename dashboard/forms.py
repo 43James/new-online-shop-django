@@ -5,6 +5,10 @@ from shop.models import Product, Category, Receiving, Subcategory, Suppliers
 from orders.models import Issuing, Order
 
 
+class UploadFileForm(forms.Form):
+    file = forms.FileField(label='เลือกไฟล์ Excel')
+
+
 class AddProductForm(ModelForm):
     category = forms.ModelChoiceField(queryset=Subcategory.objects.all(), label='หมวดหมู๋', empty_label='เลือก..')
 

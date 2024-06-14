@@ -5,13 +5,17 @@
 <div class="row mb-3 mt-4">
     <!-- product image -->
     <div class="col-md-5">
+        {% if product.image %}
         <img style="object-fit: cover; " class="rounded" src="{{ product.image.url }}" width="390" height="380">
+        {% else %}
+        <img style="object-fit: cover; " class="rounded" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict" width="390" height="380">
+        {% endif %}
     </div>
     <!-- product content -->
     <div class="col-md-6 p-3 border rounded justify-content-center container" style="margin-left: 11px;">
         <!-- category -->
         <div class="border-bottom mb-2 pb-2">
-            <span class="text-muted ">หมวดหมู่ :</span><a class="text-decoration-none text-dark" href=""> {{product.category}}</a>
+            <span class="text-muted ">หมวดหมู่ :</span><a class="text-decoration-none text-dark" href=""> {{ product.category }}</a>
         </div>
         <!-- title -->
         <h2>{{ product.product_name }}</h2>
@@ -19,22 +23,22 @@
         <!-- price -->
         <!-- <h4 class="mt-3 text-dark">ราคา : {{ product.price }} ฿</h4> -->
         {% if total_quantity == 0 %}
-        <h3 class="mt-3 text-dark"><h style="color: red; font-style: italic; font-weight: bold;">สต๊อกหมด</h></h3>
+        <h3 class="mt-3 mb-4"><h style="color: red; font-style: italic; font-weight: bold;">สต๊อกหมด</h></h3>
         {% else %}
-        <h5 class="mt-3 text-dark">จำนวน : <h style="color: rgb(47, 0, 255); font-weight: bold;">{{ total_quantity }} {{ product.unit }}</h></h5>
+        <h5 class="mt-3 mb-4 text-dark">จำนวน : <h style="color: rgb(47, 0, 255); font-weight: bold;">{{ total_quantity }} {{ product.unit }}</h></h5>
         {% endif %}
         <!-- description -->
-        <p class="mt-4 pe-3">รายละเอียดเพิ่มเติม</p>
-        <p class="mt-3 pe-3 mb-3">{{ product.description }}</p>
+        <strong class="mt-4 pe-3">รายละเอียดเพิ่มเติม :</strong>
+        <h>{{ product.description|linebreaks }}</h>
 
         <!-- cart btn -->
         <form method="post" action="{% url 'cart:add_to_cart' product.id %}">
             {% csrf_token %}
-            {% if total_quantity == 0 %}              
+            {% if total_quantity == 0 %}
             <!-- <input type="submit" class="btn btn-primary mt-4" value="เพิ่มไปยังรถเข็น"> -->
             {% else %}
             <!-- {{ form }} -->
-            <input class="form-control mt-4" style="width: 100px;" type="number" name="quantity" min="1" max="10"  placeholder="ใส่จำนวน">
+            <input class="form-control mt-4" style="width: 100px;" type="number" name="quantity" min="1" max="10" placeholder="ใส่จำนวน">
             <input type="submit" class="btn btn-primary mt-4" value="เพิ่มไปยังรถเข็น">
             {% endif %}
         </form>
@@ -45,24 +49,29 @@
         <a href="{% url 'shop:add_to_favorites' product.id %}" class="btn btn-outline-success mt-3 text-capitalize ">เพิ่มไปที่รายการโปรด</a>
         {% endif %}
     </div>
-    
-</div><!-- dont show the current product in this page -->
+</div>
+
 <!-- related products -->
 <div class="row mt-4 mb-4">
     <h3>Related Items:</h3><hr>
     {% for p in related_products %}
-        
         {% if p != product %}
             <div class="card me-1 mb-2" style="width: 11rem; margin-left: 10px;">
-                <a href="{{ p.get_absolute_url }}"><img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ p.image.url }}"></a>
+                <a href="{{ p.get_absolute_url }}">
+                    {% if p.image %}
+                    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ p.image.url }}">
+                    {% else %}
+                    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+                    {% endif %}
+                </a>
                 <div class="mt-3 text-center">
-                <h6 class="card-title">{{ p.product_name }}</h6>
-                <!-- <p class="text-muted">{{ p.price }} ฿</p> -->
-                <!-- <a href="{{ p.get_absolute_url }}" class="mb-3 btn btn-outline-primary w-100">เลือก</a> -->
+                    <h6 class="card-title">{{ p.product_name }}</h6>
+                    <!-- <p class="text-muted">{{ p.price }} ฿</p> -->
+                    <!-- <a href="{{ p.get_absolute_url }}" class="mb-3 btn btn-outline-primary w-100">เลือก</a> -->
                 </div>
             </div>
-            
         {% endif %}
     {% endfor %}
 </div>
+
 {% endblock %}

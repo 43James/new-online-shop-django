@@ -48,8 +48,8 @@ def remove_from_cart(request, product_id, receiving_id):
 
     if removed_item:
         with transaction.atomic():
-            # product.quantityinstock += removed_item['quantity']
-            # product.save() # กรณีปิดไว้ไม่คืนจำนวนกลับไปยังสต๊อกในโปรดั๊กแล้ว
+            product.quantityinstock += removed_item['quantity']
+            product.save() # กรณีปิดไว้ไม่คืนจำนวนกลับไปยังสต๊อกในโปรดั๊กแล้ว
 
             receiving = Receiving.objects.get(id=removed_item['receiving_id'])
             receiving.quantity += removed_item['quantity']
