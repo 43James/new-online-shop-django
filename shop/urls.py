@@ -18,6 +18,8 @@ urlpatterns = [
     # path('filter_by_category/<int:category_id>/', filter_by_category, name='filter_by_category'),
 	path('filter_by_category/<int:category_id>/', views.filter_by_category, name='filter_by_category'),
     path('filter_by_category/<int:category_id>/<int:subcategory_id>/', views.filter_by_category, name='filter_by_category'),
+    # path('record_monthly_stock/', views.record_monthly_stock_view, name='record_monthly_stock'),
+    # path('monthly-stock-records/', views.monthly_stock_records, name='monthly_stock_records'),
     
 ]
     

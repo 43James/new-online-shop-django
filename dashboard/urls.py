@@ -47,9 +47,14 @@ urlpatterns = [
     path('receive/delete/<int:id>/', views.delete_receive, name='delete_receive'),
     path('monthly_report/', views.monthly_report, name='monthly_report'),
     path('monthly_report/<int:year>/<int:month>/', views.monthly_report, name='monthly_report_with_date'),
-    path('export/excel/', views.export_to_excel, name='export_to_excel'),
+    path('export-excel/', views.export_to_excel, name='export_to_excel'),
     path('upload/', views.upload_products, name='upload_products'),
     path('export-products/', views.export_products_to_excel, name='export_products'),
+    path('record_monthly_stock/', views.record_monthly_stock_view, name='record_monthly_stock'),
+    path('monthly-stock-records/', views.monthly_stock_records, name='monthly_stock_records'),
+    path('monthly_stock_records/export/', views.export_monthly_stock_records_to_excel, name='export_monthly_stock_records'),
+    path('monthly-report-receive/', views.monthly_report_receive, name='monthly_report_receive'),
+
 
 ]
 

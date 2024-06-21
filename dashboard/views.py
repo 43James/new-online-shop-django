@@ -7,10 +7,10 @@ from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.core.paginator import Paginator
 from app_linebot.views import notify_user_approved
 from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
-from shop.models import Category, Product, Stock, Subcategory, Suppliers, Total_Quantity, TotalQuantity, Receiving
+from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, TotalQuantity, Receiving
 from accounts.models import MyUser, Profile
 from orders.models import Order, Issuing
-from .forms import AddProductForm, AddCategoryForm, AddReceivingForm, AddSubcategoryForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, ReceivingForm
+from .forms import AddProductForm, AddCategoryForm, AddReceivingForm, AddSubcategoryForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, ReceivingForm, RecordMonthlyStockForm
 from django.db.models import F
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -28,6 +28,8 @@ from .forms import UploadFileForm
 from django.http import Http404
 import pandas as pd
 from openpyxl import Workbook
+from babel.dates import format_datetime
+
 
 
 
@@ -87,119 +89,6 @@ def is_authorized(user):
         return False
     
 
-
-
-# def export_to_excel(request, month=None, year=None):
-#     # Get current datetime
-#     now = datetime.now()
-    
-#     if request.GET.get('month'):
-#         month = int(request.GET.get('month'))
-#     if request.GET.get('year'):
-#         year = int(request.GET.get('year'))
-    
-#     if not month:
-#         month = now.month
-#     if not year:
-#         year = now.year
-
-#     start_date = datetime(year, month, 1)
-#     end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
-
-#     previous_month_start = (start_date - timedelta(days=1)).replace(day=1)
-#     previous_month_end = start_date - timedelta(seconds=1)
-
-#     products = Product.objects.all()
-
-#     report_data = []
-#     all_users = set()
-
-#     for product in products:
-#         # Calculate previous balance
-#         previous_balance = Receiving.objects.filter(
-#             product=product, date_created__lte=previous_month_end
-#         ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-
-#         received_current_month = Receiving.objects.filter(
-#             product=product, date_created__range=(start_date, end_date)
-#         ).aggregate(total_received=Sum('quantityreceived'))['total_received'] or 0
-
-#         total_balance = previous_balance + received_current_month
-
-#         issued_current_month = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
-
-#         remaining_balance = total_balance - issued_current_month
-
-#         issued_items = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         )
-#         total_issued_value = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or 0
-
-#         user_issuings = defaultdict(int)
-#         for issuing in issued_items:
-#             user_full_name = issuing.order.user.get_first_name()
-#             user_issuings[user_full_name] += issuing.quantity
-#             all_users.add(user_full_name)
-
-#         report_data.append({
-#             'product': product.product_name,
-#             'unit': product.unit,
-#             'previous_balance': previous_balance,
-#             'total_balance': total_balance,
-#             **user_issuings,
-#             'issued_current_month': issued_current_month,
-#             'remaining_balance': remaining_balance,
-#             'total_issued_value': total_issued_value,
-#             'note': '',
-#         })
-
-#     # Create a new Excel workbook and worksheet
-#     workbook = openpyxl.Workbook()
-#     worksheet = workbook.active
-
-#         # สร้าง header rows ใน worksheet
-#     header_rows = [
-#         ['รายการเบิกวัสดุ'],
-#         ['ประจำเดือน'  f' {month} / {year} ประจำปีงบประมาณ พ.ศ. 2567'],
-#         ['หน่วยงาน โครงการอุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี']
-#     ]
-    
-#     for header_row in header_rows:
-#         worksheet.append(header_row)
-    
-#     # สร้าง headers ใน worksheet
-#     headers = ['ลำดับ', 'รายการสินค้า', 'หน่วยนับ', 'จำนวนคงเหลือ (ยกมา)', 'รวมจำนวนคงเหลือ'] + list(all_users) + ['รวมจำนวนที่เบิก', 'จำนวนคงเหลือทั้งหมด (หักจากที่เบิก)', 'มูลค่าสินค้าเบิกทั้งสิ้น (บาท)', 'หมายเหตุ']
-#     worksheet.append(headers)
-    
-#     # ลูปเพื่อเพิ่มข้อมูลลงใน worksheet
-#     for index, item in enumerate(report_data, start=1):
-#         row = [
-#             index,
-#             item['product'],
-#             item['unit'],
-#             item['previous_balance'],
-#             item['total_balance'],
-#             *[item.get(user, 0) for user in sorted(all_users)],
-#             item['issued_current_month'],
-#             item['remaining_balance'],
-#             item['total_issued_value'],
-#             item['note']
-#         ]
-#         worksheet.append(row)
-    
-#     # ตั้งค่ารูปแบบให้กับเซลล์ใน worksheet
-#     for row in worksheet.iter_rows(min_row=4, max_row=len(report_data) + 3, min_col=1, max_col=len(headers)):
-#         for cell in row:
-#             cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    
-#     # สร้าง HttpResponse สำหรับไฟล์ Excel และบันทึก workbook ลงใน response
-#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-#     response['Content-Disposition'] = 'attachment; filename=monthly_report_{}_{}.xlsx'.format(month, year)
-#     workbook.save(response)
-    
-#     return response
 
 # นำออกที่สมบูรณ์1 แต่หัวข้อรายชื่อผู้ใช้งานไมามา
 def export_to_excel(request, month=None, year=None):
@@ -284,9 +173,12 @@ def export_to_excel(request, month=None, year=None):
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
 
     # สร้าง header rows ใน worksheet
+    previous_month_name = thai_month_name(month)
+    previous_year_buddhist = convert_to_buddhist_era(year)
     header_rows = [
         ['รายการเบิกวัสดุ'],
-        [f'ประจำเดือน {month} / {year + 543} ประจำปีงบประมาณ พ.ศ. {year + 543}'],
+        [f'ประจำเดือน {previous_month_name} พ.ศ. {previous_year_buddhist} ประจำปีงบประมาณ พ.ศ. {previous_year_buddhist}'],
+        # [f'ประจำเดือน {month} / {year + 543} ประจำปีงบประมาณ พ.ศ. {year + 543}'],
         ['หน่วยงาน โครงการอุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี']
     ]
     
@@ -358,330 +250,6 @@ def export_to_excel(request, month=None, year=None):
 
 
 
-
-# รายงาน4 ทำคอลัมน์ผู้ใช้งานได้แล้ว
-# def monthly_report(request, month=None, year=None):
-#     # Get current datetime
-#     now = datetime.now()
-    
-#     if request.GET.get('month'):
-#         month = int(request.GET.get('month'))
-#     if request.GET.get('year'):
-#         year = int(request.GET.get('year'))
-    
-#     if not month:
-#         month = now.month
-#     if not year:
-#         year = now.year
-
-#     # Get Thai month name
-#     month_name = thai_month_name(month)
-
-#     # ในฟังก์ชัน monthly_report
-#     buddhist_year = convert_to_buddhist_era(year)
-
-#     start_date = datetime(year, month, 1)
-#     end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
-
-#     previous_month_start = (start_date - timedelta(days=1)).replace(day=1)
-#     previous_month_end = start_date - timedelta(seconds=1)
-
-#     products = Product.objects.all()
-
-#     report_data = []
-#     all_users = set()
-
-#     for product in products:
-#         # คำนวณจำนวนคงเหลือยกมา
-#         previous_balance = Receiving.objects.filter(
-#             product=product, date_created__lte=previous_month_end
-#         ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-
-#         received_current_month = Receiving.objects.filter(
-#             product=product, date_created__range=(start_date, end_date)
-#         ).aggregate(total_received=Sum('quantityreceived'))['total_received'] or 0
-
-#         total_balance = previous_balance + received_current_month
-
-#         issued_current_month = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
-
-#         remaining_balance = total_balance - issued_current_month
-
-#         issued_items = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         )
-#         total_issued_value = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or 0
-
-#         user_issuings = defaultdict(int)
-#         for issuing in issued_items:
-#             user_full_name = issuing.order.user.get_first_name()
-#             user_issuings[user_full_name] += issuing.quantity
-#             all_users.add(user_full_name)
-
-#         report_data.append({
-#             'product': product.product_name,
-#             'unit': product.unit,
-#             'previous_balance': previous_balance,
-#             'total_balance': total_balance,
-#             'user_issuings': user_issuings,
-#             'issued_current_month': issued_current_month,
-#             'remaining_balance': remaining_balance,
-#             'total_issued_value': total_issued_value,
-#             'note': '',
-#         })
-
-#     context = {
-#         'title': 'รายงานประจำเดือน',
-#         'report_data': report_data,
-#         'all_users': sorted(all_users),
-#         'month': month,
-#         'year': year,
-#         'now': now,
-#         'years': range(2020, now.year + 1),
-#         'months': [
-#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
-#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
-#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
-#         ],  # ลิสต์ของเดือน
-        
-#         'pending_orders_count': count_pending_orders(),
-#         'month_name': month_name,  # Pass month_name variable to template
-#         'buddhist_year':buddhist_year,
-#     }
-
-#     return render(request, 'monthly_report.html', context)
-
-
-# เพิ่มรวมจพนวนเงินที่เบิกแต่ละคน 
-# def monthly_report(request, month=None, year=None):
-#     now = datetime.now()
-
-#     if request.GET.get('month'):
-#         month = int(request.GET.get('month'))
-#     if request.GET.get('year'):
-#         year = int(request.GET.get('year'))
-
-#     if not month:
-#         month = now.month
-#     if not year:
-#         year = now.year
-
-#     # Get Thai month name
-#     month_name = thai_month_name(month)
-
-#     # Convert year to Buddhist Era
-#     buddhist_year = convert_to_buddhist_era(year)
-
-#     # Define start_date and end_date for the selected month
-#     start_date = datetime(year, month, 1)
-#     end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
-
-#     # Define previous month start_date and end_date
-#     previous_month_start = (start_date - timedelta(days=1)).replace(day=1)
-#     previous_month_end = start_date - timedelta(seconds=1)
-
-#     # Get all products
-#     products = Product.objects.all()
-
-#     report_data = []
-#     all_users = set()
-#     total_issued_value = 0
-#     total_issued_value_by_user = defaultdict(float)
-
-#     for product in products:
-#         # Calculate previous balance brought forward
-#         previous_balance = Receiving.objects.filter(
-#             product=product, date_created__lte=previous_month_end
-#         ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-
-#         # Calculate total balance
-#         received_current_month = Receiving.objects.filter(
-#             product=product, date_created__range=(start_date, end_date)
-#         ).aggregate(total_received=Sum('quantity'))['total_received'] or 0
-
-#         total_balance = previous_balance + received_current_month
-
-#         # Calculate issued quantity for the current month
-#         issued_current_month = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
-
-#         # Calculate remaining balance
-#         remaining_balance = total_balance - issued_current_month
-
-#         # Calculate total issued value for the current month
-#         issued_items = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         )
-#         total_issued_value_product = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or 0
-
-#         # Aggregate user issuings
-#         user_issuings = defaultdict(int)
-
-#         for issuing in issued_items:
-#             user_full_name = issuing.order.user.get_first_name()
-#             user_issuings[user_full_name] += issuing.quantity
-#             all_users.add(user_full_name)
-
-#             # Calculate total cost issued by each user
-#             total_cost = issuing.price * issuing.quantity
-#             total_issued_value_by_user[user_full_name] += total_cost
-#             total_issued_value += total_cost
-
-#         report_data.append({
-#             'product': product.product_name,
-#             'unit': product.unit,
-#             'previous_balance': previous_balance,
-#             'total_balance': total_balance,
-#             'user_issuings': user_issuings,
-#             'issued_current_month': issued_current_month,
-#             'remaining_balance': remaining_balance,  # Corrected to use remaining_balance
-#             'total_issued_value': total_issued_value_product,
-#             'note': '',
-#         })
-
-#     # Sort all_users for consistent ordering
-#     sorted_all_users = sorted(all_users)
-
-#     context = {
-#         'title': 'รายงานประจำเดือน',
-#         'report_data': report_data,
-#         'all_users': sorted_all_users,
-#         'month': month,
-#         'year': year,
-#         'now': now,
-#         'years': range(2020, now.year + 1),
-#         'months': [
-#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
-#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
-#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
-#         ],
-#         'pending_orders_count': count_pending_orders(),
-#         'month_name': month_name,
-#         'buddhist_year': buddhist_year,
-#         'total_issued_value_by_user': total_issued_value_by_user,
-#         'total_issued_value': total_issued_value,
-#     }
-
-#     return render(request, 'monthly_report.html', context)
-
-
-
-# แก้ไขจำนวนคงเหลือ (ยกมา) , รวมจำนวนคงเหลือปัจจุบัน , จำนวนคงเหลือทั้งหมด
-# def monthly_report(request, month=None, year=None):
-#     now = datetime.now()
-
-#     if request.GET.get('month'):
-#         month = int(request.GET.get('month'))
-#     if request.GET.get('year'):
-#         year = int(request.GET.get('year'))
-
-#     if not month:
-#         month = now.month
-#     if not year:
-#         year = now.year
-
-#     # Get Thai month name
-#     month_name = thai_month_name(month)
-
-#     # Convert year to Buddhist Era
-#     buddhist_year = convert_to_buddhist_era(year)
-
-#     # Define start_date and end_date for the selected month
-#     start_date = datetime(year, month, 1)
-#     end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
-
-#     # Define previous month end_date
-#     previous_month_end = start_date - timedelta(seconds=1)
-
-#     # Get all products
-#     products = Product.objects.all()
-
-#     report_data = []
-#     all_users = set()
-#     total_issued_value = 0
-#     total_issued_value_by_user = defaultdict(float)
-
-#     for product in products:
-#         # Calculate previous balance (quantity on hand at the end of the previous month)
-#         last_receiving = Receiving.objects.filter(product=product, date_created__lte=previous_month_end).order_by('-date_updated').first()
-#         previous_balance = last_receiving.quantity if last_receiving else 0
-
-#         # Calculate received quantity for the current month
-#         received_current_month = Receiving.objects.filter(
-#             product=product, date_created__range=(start_date, end_date)
-#         ).aggregate(total_received=Sum('quantityreceived'))['total_received'] or 0
-
-#         # Calculate total balance (previous balance + received current month)
-#         total_balance = previous_balance + received_current_month
-
-#         # Calculate issued quantity for the current month
-#         issued_current_month = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
-
-#         # Calculate remaining balance
-#         remaining_balance = total_balance - issued_current_month
-
-#         # Calculate total issued value for the current month
-#         issued_items = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         )
-#         total_issued_value_product = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or 0
-
-#         # Aggregate user issuings
-#         user_issuings = defaultdict(int)
-
-#         for issuing in issued_items:
-#             user_full_name = issuing.order.user.get_first_name()
-#             user_issuings[user_full_name] += issuing.quantity
-#             all_users.add(user_full_name)
-
-#             # Calculate total cost issued by each user
-#             total_cost = issuing.price * issuing.quantity
-#             total_issued_value_by_user[user_full_name] += total_cost
-#             total_issued_value += total_cost
-
-#         report_data.append({
-#             'product': product.product_name,
-#             'unit': product.unit,
-#             'previous_balance': previous_balance,
-#             'total_balance': total_balance,
-#             'user_issuings': user_issuings,
-#             'issued_current_month': issued_current_month,
-#             'remaining_balance': remaining_balance,
-#             'total_issued_value': total_issued_value_product,
-#             'note': '',
-#         })
-
-#     # Sort all_users for consistent ordering
-#     sorted_all_users = sorted(all_users)
-
-#     context = {
-#         'title': 'รายงานประจำเดือน',
-#         'report_data': report_data,
-#         'all_users': sorted_all_users,
-#         'month': month,
-#         'year': year,
-#         'now': now,
-#         'years': range(2020, now.year + 1),
-#         'months': [
-#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
-#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
-#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
-#         ],
-#         'pending_orders_count': count_pending_orders(),
-#         'month_name': month_name,
-#         'buddhist_year': buddhist_year,
-#         'total_issued_value_by_user': total_issued_value_by_user,
-#         'total_issued_value': total_issued_value,
-#     }
-
-#     return render(request, 'monthly_report.html', context)
-
-
 # แก้ไขจำนวนคงเหลือ (ยกมา) , รวมจำนวนคงเหลือปัจจุบัน , จำนวนคงเหลือทั้งหมด 2 ลองใช้ quantityinstock
 def monthly_report(request, month=None, year=None):
     now = datetime.now()
@@ -719,8 +287,13 @@ def monthly_report(request, month=None, year=None):
     total_issued_value_by_user = defaultdict(float)
 
     for product in products:
-        # Calculate previous balance (quantityinstock at the end of the previous month)
-        previous_balance = product.quantityinstock
+        previous_balance_record = MonthlyStockRecord.objects.filter(
+            product=product,
+            month=previous_month_end.month,
+            year=previous_month_end.year
+        ).first()
+
+        previous_balance = previous_balance_record.end_of_month_balance if previous_balance_record else 0
 
         # Calculate received quantity for the current month
         received_current_month = Receiving.objects.filter(
@@ -748,7 +321,7 @@ def monthly_report(request, month=None, year=None):
         user_issuings = defaultdict(int)
 
         for issuing in issued_items:
-            user_full_name = issuing.order.user.get_full_name()
+            user_full_name = issuing.order.user.get_first_name()
             user_issuings[user_full_name] += issuing.quantity
             all_users.add(user_full_name)
 
@@ -794,6 +367,332 @@ def monthly_report(request, month=None, year=None):
 
     return render(request, 'monthly_report.html', context)
 
+
+
+
+def monthly_stock_records(request):
+    now = datetime.now()
+    last_month = now.month - 1 if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+
+    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+    month = int(request.GET.get('month', last_month))
+    year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    year_ad = year_buddhist - 543
+
+    # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี
+    records = MonthlyStockRecord.objects.filter(month=month, year=year_ad)
+
+    # กำหนดค่าให้กับตัวแปร context
+    context = {
+        'title': 'ข้อมูลวัสดุประจำเดือน (ยกมา)',
+        'records': records,
+        'selected_month': month,
+        'selected_year': year_buddhist,
+        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'months': [
+            (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+            (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+            (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+        ],
+        'pending_orders_count': count_pending_orders(),
+    }
+
+    previous_month = month if month > 1 else 12
+    previous_year = year_ad if month > 1 else year_ad - 1
+    context['previous_month_name'] = thai_month_name(previous_month)
+    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
+
+    return render(request, 'monthly_stock_records.html', context)
+
+
+
+
+def export_monthly_stock_records_to_excel(request):
+    now = datetime.now()
+    last_month = now.month - 1 if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+
+    # ดึงเดือนและปีจากพารามิเตอร์ GET หรือใช้ค่าเดือนและปีของเดือนที่แล้ว
+    month = int(request.GET.get('month', last_month))
+    year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    year_ad = year_buddhist - 543
+
+    # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี
+    records = MonthlyStockRecord.objects.filter(month=month, year=year_ad)
+
+    # สร้าง response สำหรับการบันทึกไฟล์ Excel
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="monthly_stock_records_{month}_{year_buddhist}.xlsx"'
+
+    # สร้างไฟล์ Excel workbook
+    wb = Workbook()
+    ws = wb.active
+
+    # ตั้งชื่อ sheet
+    ws.title = f"Monthly Stock Records {month}-{year_buddhist}"  # ใช้ (-) เป็นตัวคั่น
+
+    # เพิ่มข้อมูลหัวเรื่อง
+    previous_month_name = thai_month_name(month)
+    previous_year_buddhist = convert_to_buddhist_era(year_ad)
+    ws.merge_cells('A1:F1')
+    ws['A1'] = f"ข้อมูลสินค้าคงเหลือประจำเดือน {previous_month_name} พ.ศ. {previous_year_buddhist}"
+
+    # กำหนด header
+    headers = ['ลำดับ', 'วัสดุ', 'เดือน', 'ปี', 'จำนวนคงเหลือ', 'วันที่บันทึก']
+    ws.append(headers)
+
+    # กำหนดรูปแบบเส้นตาราง
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+
+    # เพิ่มข้อมูลลงใน rows
+    for idx, record in enumerate(records, start=1):
+        date_str = format_datetime(record.date_recorded, "d MMMM y H:mm", locale='th')
+        row = [
+            idx,
+            record.product.product_name,
+            record.month,
+            record.year + 543,  # แปลงปี ค.ศ. เป็น พ.ศ.
+            record.end_of_month_balance,
+            date_str  # แปลงวันที่เป็น string ในรูปแบบที่ต้องการ
+        ]
+        ws.append(row)
+
+    # เพิ่มเส้นตารางให้กับ cells
+    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=6):
+        for cell in row:
+            cell.border = thin_border
+
+    # บันทึก workbook ลงใน response
+    wb.save(response)
+    return response
+
+
+
+# โค้ดล่าสุดมีการเช็คว่าบันทึกซ้ำหรือไม่
+def record_monthly_stock_view(request):
+    if request.method == 'POST':
+        form = RecordMonthlyStockForm(request.POST)
+        if form.is_valid() and form.cleaned_data['confirm']:
+            now = datetime.now()
+            first_day_of_current_month = now.replace(day=1)
+            last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
+
+            # ตรวจสอบว่ามีการบันทึกข้อมูลสำหรับเดือนก่อนหน้าแล้วหรือไม่
+            existing_records = MonthlyStockRecord.objects.filter(
+                month=last_day_of_previous_month.month,
+                year=last_day_of_previous_month.year
+            )
+
+            if existing_records.exists():
+                messages.error(request, 'มีการบันทึกข้อมูลของแล้ว.')
+                return redirect('dashboard:record_monthly_stock')
+
+            # สร้างบันทึกข้อมูลสำหรับเดือนก่อนหน้า
+            products = Product.objects.all()
+            for product in products:
+                MonthlyStockRecord.objects.create(
+                    product=product,
+                    month=last_day_of_previous_month.month,
+                    year=last_day_of_previous_month.year,
+                    end_of_month_balance=product.quantityinstock
+                )
+
+            messages.success(request, 'บันทึกข้อมูลสต็อกสินค้าเรียบร้อยแล้ว.')
+            return redirect('dashboard:record_monthly_stock')
+    else:
+        form = RecordMonthlyStockForm()
+
+    context = {
+        'title':'บันทึกยอดวัสดุคงเหลือประจำเดือน',
+        'form': form,
+               'pending_orders_count': count_pending_orders(),}
+
+    return render(request, 'record_monthly_stock.html', context)
+
+
+
+@login_required
+# def monthly_report_receive(request):
+#     # ดึงข้อมูลทั้งหมดจาก Model Receiving
+#     receive = Receiving.objects.all()
+
+#     # รับค่าเดือนและปีที่เลือกจากผู้ใช้
+#     month = request.GET.get('month')
+#     year = request.GET.get('year')
+
+#     # กรองข้อมูลตามเดือนและปีที่ผู้ใช้เลือก
+#     if month and year:
+#         receive = receive.filter(date_created__month=month, date_created__year=year)
+
+
+#     # ส่งข้อมูลไปยัง Template
+#     context = {
+#         'title': 'รายงานการรับเข้าวัสดุ',
+#         'month': month,
+#         'year': year,
+#         'pending_orders_count': count_pending_orders(),
+#     }
+#     return render(request, 'monthly_report_receive.html', context)
+
+
+# def monthly_report_receive(request):
+#     # รับค่าจาก query string หากมีการส่งมา (เช่น ?month=6&year=2024)
+#     month = request.GET.get('month')
+#     year = request.GET.get('year')
+
+#     # แปลงเดือนและปีเป็นตัวเลข
+#     if month:
+#         month = int(month)
+#     if year:
+#         year = int(year)
+
+#     # แปลงเดือนและปีเป็นรูปแบบไทย
+#     thai_month = thai_month_name(month) if month else ''
+#     thai_year = convert_to_buddhist_era(year) if year else ''
+
+#     # ดึงข้อมูลรับเข้าสินค้าที่มีวันที่อยู่ในเดือนและปีที่ระบุ
+#     receiving_data = Receiving.objects.filter(
+#         date_created__year=year,
+#         date_created__month=month
+#     ).select_related('product', 'suppliers').values(
+#         'product__product_name',  # ใช้ชื่อฟิลด์จริงของ Product
+#         'suppliers__supname',  # ใช้ชื่อฟิลด์จริงของ Suppliers
+#         'quantityreceived',
+#         'unitprice',
+#         'date_created'
+#     )
+
+#     # ส่งข้อมูลไปยัง HTML template ด้วย context
+#     context = {
+#         'receiving_data': receiving_data,
+#         'month': month,
+#         'year': year,
+#         'month_name': thai_month,
+#         'year_buddhist': thai_year,
+#     }
+
+#     return render(request, 'monthly_report_receive.html', context)
+
+
+
+# def monthly_report_receive(request):
+#     now = datetime.now()
+#     current_month = now.month
+#     current_year = now.year
+
+#     # รับค่าจาก GET request
+#     month_param = request.GET.get('month', current_month)
+#     year_param = request.GET.get('year', current_year)
+
+#     # แปลงค่าให้เป็น integer
+#     try:
+#         month = int(month_param)
+#         year = int(year_param)
+#     except ValueError:
+#         # ถ้าไม่สามารถแปลงได้ให้ใช้ค่าปัจจุบัน
+#         month = current_month
+#         year = current_year
+
+#     # แปลงปีเป็น พ.ศ.
+#     year_buddhist = convert_to_buddhist_era(year)
+
+#     # ดึงข้อมูลรับเข้าสินค้าที่มีวันที่อยู่ในเดือนและปีที่ระบุ
+#     receiving_data = Receiving.objects.filter(
+#         date_created__year=year,
+#         date_created__month=month
+#     ).select_related('product', 'suppliers').values(
+#         'product__product_name',  
+#         'suppliers__supname',  
+#         'quantityreceived',
+#         'unitprice',
+#         'date_created'
+#     )
+
+#     # สร้างรายการปีที่เป็น พ.ศ. สำหรับแสดงใน dropdown
+#     current_year_buddhist = convert_to_buddhist_era(current_year)
+#     years = range(current_year_buddhist)
+
+#     # ส่งข้อมูลไปยัง template
+#     context = {
+#         'title': 'รายการรับเข้าวัสดุ',
+#         'receiving_data': receiving_data,
+#         'selected_month': month,
+#         'selected_year': year_buddhist,
+#         'months': [
+#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+#         ],
+#         'pending_orders_count': count_pending_orders(),  # ตัวอย่างฟังก์ชัน count_pending_orders() ที่คุณใช้
+#         'month_name': thai_month_name(month),
+#         'years': years
+#     }
+
+#     return render(request, 'monthly_report_receive.html', context)
+
+
+
+def monthly_report_receive(request):
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
+
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    last_month = now.month if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+
+    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+    month = int(request.GET.get('month', last_month))
+    year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    year_ad = year_buddhist - 543
+
+    # ดึงข้อมูลรับเข้าสินค้าที่มีวันที่อยู่ในเดือนและปีที่ระบุ
+    receiving = Receiving.objects.filter(
+        date_created__year=year_ad,
+        date_created__month=month
+    ).select_related('product', 'suppliers').values(
+        'product__product_name',
+        'suppliers__supname',
+        'quantityreceived',
+        'unitprice',
+        'date_created'
+    )
+
+    # กำหนดค่าให้กับตัวแปร context
+    context = {
+        'title': 'รายการรับเข้าวัสดุ',
+        'receiving_data': receiving,
+        'selected_month': month,
+        'selected_year': year_buddhist,
+        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'months': [
+            (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+            (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+            (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+        ],
+        'pending_orders_count': count_pending_orders(),  # ตัวอย่างฟังก์ชัน count_pending_orders() ที่คุณใช้
+        'month_name': thai_month_name(month)
+    }
+
+    previous_month = month if month > 1 else 12
+    previous_year = year_ad if month > 1 else year_ad - 1
+    context['previous_month_name'] = thai_month_name(previous_month)
+    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
+    
+
+    return render(request, 'monthly_report_receive.html', context)
 
 
 

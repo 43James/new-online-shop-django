@@ -77,7 +77,7 @@
         </script>
         
 
-        <a href="{% url 'dashboard:export_to_excel' %}" class="icon-link justify-content-end">
+        <a href="{% url 'dashboard:export_to_excel' %}?month={{ month }}&year={{ year }}" class="icon-link justify-content-end">
             <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
                 <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
                 <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>

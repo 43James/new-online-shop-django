@@ -132,3 +132,10 @@ class EditSubcategoryForm(ModelForm):
         super(EditSubcategoryForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
+
+
+class RecordMonthlyStockForm(forms.Form):
+    confirm = forms.BooleanField(
+        label="ยืนยันการบันทึกยอดสินค้าคงเหลือประจำเดือน",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'flexCheckDefault'})
+    )

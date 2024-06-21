@@ -307,8 +307,10 @@
                     รายงานอื่นๆ..
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report' %}">รายงานประจำเดือน</a></li>
-                    <li><a class="dropdown-item {% if '/add-product/' in request.path %}active text-white{% endif %}" >รายงานรับเข้าประจำเดือน</a></li>
+                    <li><a class="dropdown-item {% if '/monthly_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report' %}">รายงานประจำเดือน</a></li>
+                    <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %}"  href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุประจำเดือน ยกมา</a></li>
+                    <li><a class="dropdown-item {% if '/monthly-report-receive/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report_receive' %}">รายงานรับเข้าประจำเดือน</a></li>
+
                     </li>
                 </ul>
             </div>

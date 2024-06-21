@@ -1,0 +1,100 @@
+{% extends "dashboard.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<head>
+    <title>{{ title }}</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .user-column1 {
+            background-color: #c7c7c7;
+        }
+
+        .user-column {
+            background-color: #ebebeb;
+        }
+    </style>
+</head>
+
+<div class="container">
+    <div class="text-end">
+        <form method="get" action="{% url 'dashboard:monthly_report_receive' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+            <div class="col-auto">
+                <select name="month" id="month" class="form-select">
+                    {% for m in months %}
+                        <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="year" id="year" class="form-select">
+                    {% for y in years %}
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">ค้นหา</button>
+                <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button>
+            </div>
+        </form>
+
+        <h3 class="text-center">รายการรับเข้าวัสดุ ประจำเดือน {{ month_name }} พ.ศ. {{ selected_year }}</h3>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="text-center" style="width: 5%;">ลำดับ</th>
+                    <th class="text-center" style="width: 10%;">รายการวัสดุ</th>
+                    <th class="text-center" style="width: 20%;">ซัพพลายเออร์</th>
+                    <th class="text-center" style="width: 10%;">จำนวนที่รับเข้า</th>
+                    <th class="text-center" style="width: 15%;">ราคา/หน่วย</th>
+                    <th class="text-center" style="width: 20%;">วันที่รับเข้า</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in receiving %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ data.product__product_name }}</td>
+                    <td>{{ data.suppliers__supname }}</td>
+                    <td>{{ data.quantityreceived }}</td>
+                    <td>{{ data.unitprice }}</td>
+                    <td>{{ data.date_created|date:"d M Y, H:i" }}</td>
+                </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">ไม่มีข้อมูล</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function clearFormAndSubmit() {
+        document.getElementById("month").value = "";
+        document.getElementById("year").value = "";
+        document.querySelector('form').submit();
+    }
+</script>
+{% endblock %}

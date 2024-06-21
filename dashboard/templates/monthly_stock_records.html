@@ -1,0 +1,149 @@
+{% extends "dashboard.html" %}
+{% load custom_filters %}
+{% block content %}
+
+<head>
+    <title>รายงานการเบิกจ่ายสินค้า</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            word-wrap: break-word; /* เพิ่ม word-wrap เพื่อให้ตัดคำ */
+            white-space: normal; /* เพิ่ม white-space เพื่อให้ข้อความยาวสามารถตัดบรรทัดใหม่ */
+        }
+
+        th,
+        td {
+            padding: 8px;
+            /* เปลี่ยน padding เป็น 8px */
+            text-align: left;
+            font-size: 14px;
+            /* เพิ่ม font-size เป็น 14px */
+        }
+
+        /* เพิ่ม CSS สำหรับการระบายสีคอลัมน์ของผู้ใช้งาน */
+        .user-column1 {
+            background-color: #c7c7c7;
+            /* เปลี่ยนสีพื้นหลังตามต้องการ */
+        }
+
+        .user-column {
+            background-color: #ebebeb;
+            /* เปลี่ยนสีพื้นหลังตามต้องการ */
+        }
+    </style>
+</head>
+    <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
+    <div class="text-end">
+        <form method="get" action="{% url 'dashboard:monthly_stock_records' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+            <div class="col-auto">
+                <!-- <label for="month" class="form-label">เดือน:</label> -->
+                <select name="month" id="month" class="form-select">
+                    {% for num, name in months %}
+                <option value="{{ num }}" {% if selected_month == num %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        
+            <div class="col-auto">
+                <!-- <label for="year" class="form-label">ปี:</label> -->
+                <select name="year" id="year" class="form-select">
+                    {% for year in years %}
+                <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">ค้นหา</button>
+                <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button>
+            </div>
+        </form>
+        
+        <h3 class="text-center">ข้อมูลสินค้าคงเหลือประจำเดือน {{ previous_month_name }} พ.ศ. {{ previous_year_buddhist }}</h3>
+        
+        <script>
+            function clearFormAndSubmit() {
+                document.getElementById("month").value = "";  // Clear month value
+                document.getElementById("year").value = "";   // Clear year value
+                document.querySelector('form').submit();       // Submit the form
+            }
+        </script>
+        
+        <div class="row justify-content-end">
+        <div class="col-auto">
+            <a href="{% url 'dashboard:record_monthly_stock' %}" class="btn btn-outline-success ms-2"><i class="bi bi-download"></i> บันทึกยอดคงเหลือ</a>
+            <!-- <button href="{% url 'dashboard:export_products' %}" class="btn btn-outline-danger ms-2"><i class="bi bi-upload"></i> นำออก to Excel</button> -->
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'dashboard:export_monthly_stock_records' %}?month={{ selected_month }}&year={{ selected_year }}" class="icon-link justify-content-end">
+                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
+                    <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
+                    <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>
+                    <rect width="16" height="9" x="28" y="24" fill="#107c42"></rect>
+                    <rect width="16" height="9" x="12" y="15" fill="#3fa071"></rect>
+                    <path fill="#33c481" d="M42,6H28v9h16V8C44,6.895,43.105,6,42,6z"></path>
+                    <path fill="#21a366" d="M14,6h14v9H12V8C12,6.895,12.895,6,14,6z"></path>
+                    <path d="M22.319,13H12v24h10.319C24.352,37,26,35.352,26,33.319V16.681C26,14.648,24.352,13,22.319,13z"
+                        opacity=".05"></path>
+                    <path
+                        d="M22.213,36H12V13.333h10.213c1.724,0,3.121,1.397,3.121,3.121v16.425	C25.333,34.603,23.936,36,22.213,36z"
+                        opacity=".07"></path>
+                    <path
+                        d="M22.106,35H12V13.667h10.106c1.414,0,2.56,1.146,2.56,2.56V32.44C24.667,33.854,23.52,35,22.106,35z"
+                        opacity=".09"></path>
+                    <linearGradient id="flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1" x1="4.725" x2="23.055" y1="14.725"
+                        y2="33.055" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stop-color="#18884f"></stop>
+                        <stop offset="1" stop-color="#0b6731"></stop>
+                    </linearGradient>
+                    <path fill="url(#flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1)"
+                        d="M22,34H6c-1.105,0-2-0.895-2-2V16c0-1.105,0.895-2,2-2h16c1.105,0,2,0.895,2,2v16	C24,33.105,23.105,34,22,34z">
+                    </path>
+                    <path fill="#fff"
+                        d="M9.807,19h2.386l1.936,3.754L16.175,19h2.229l-3.071,5l3.141,5h-2.351l-2.11-3.93L11.912,29H9.526	l3.193-5.018L9.807,19z">
+                    </path>
+                </svg>
+            </a>
+        </div>
+    </div>
+    
+    </div>
+    
+    <div>
+        <table class="col-auto justify-content-center container">
+            <thead>
+                <tr>
+                    <th class="user-column1 text-center">ลำดับ</th>
+                    <th class="user-column1 text-center">วัสดุ</th>
+                    <th class="user-column1 text-center">เดือน</th>
+                    <th class="user-column1 text-center">ปี</th>
+                    <th class="user-column1 text-center">จำนวนคงเหลือ</th>
+                    <th class="user-column1 text-center">วันที่บันทึก</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                    <tr>
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ record.product.product_name }}</td>
+                        <td class="text-center">{{ record.month }}</td>
+                        <td class="text-center">{{ record.year }}</td>
+                        <td class="text-center">{{ record.end_of_month_balance }}</td>
+                        <td>{{ record.date_recorded | date:"d M Y เวลา H:i นาที" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">ไม่มีข้อมูล</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

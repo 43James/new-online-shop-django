@@ -75,6 +75,17 @@ class Suppliers(models.Model):
     
     def __str__(self):
         return str(self.id)
+    
+    
+class MonthlyStockRecord(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='monthly_stock_records', verbose_name='IDสินค้า')
+    month = models.IntegerField(null=True, blank=True, verbose_name='เดือน')
+    year = models.IntegerField(null=True, blank=True, verbose_name='ปี')
+    end_of_month_balance = models.PositiveIntegerField(null=True, blank=True, verbose_name='จำนวนคงเหลือ')
+    date_recorded = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.product.product_name} - {self.month}/{self.year}"
 
 
 class Receiving(models.Model):
@@ -141,3 +152,6 @@ class TotalQuantity(models.Model):
         for item in receiving_items:
             total += item.quantityreceived
         return total
+    
+
+    
