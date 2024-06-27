@@ -40,8 +40,16 @@
       value="{{form.instance.quantity}}" name="quantity" placeholder="จำนวนคงเหลือ" required>
 
     <label class="mb-2" for="unit_price">ราคา</label>
+    <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price"
+      value="{{form.instance.unitprice}}" name="unitprice" placeholder="ใส่ราคาต่อหน่วย" required>
+
+    <label class="mb-2" for="unit_price">เดือนที่รับเข้า (เป็นตัวเลข)</label>
+    <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price"
+      value="{{form.instance.month}}" name="month" placeholder="(เป็นตัวเลข)" required>
+
+    <label class="mb-2" for="unit_price">ปีที่รับเข้า ค.ศ.</label>
     <input style="color: rgb(8, 0, 255);" class="form-control" type="number" id="unit_price"
-      value="{{form.instance.unitprice}}" name="unitprice" placeholder="ใส่ราคาต่อหน่วย" required><br><br>
+      value="{{form.instance.year}}" name="year" placeholder="ปี ค.ศ." required><br><br>
 
     {{ form.non_field_errors }}
     <div class="row mb-5">

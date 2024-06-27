@@ -8,7 +8,8 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ['id','user','date_created','date_receive', 'other']
 
 class IssuingAdmin(admin.ModelAdmin):
-    list_display = ['id','order','product','price','quantity','datecreated']
+    list_display = ('order', 'product', 'receiving', 'price', 'quantity', 'datecreated', 'month', 'year')
+    # list_display = ['id','order','product','price','quantity','datecreated']
 
 admin.site.register(Order,OrderAdmin)
 admin.site.register(Issuing,IssuingAdmin)

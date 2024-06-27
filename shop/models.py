@@ -96,12 +96,20 @@ class Receiving(models.Model):
     unitprice = models.PositiveIntegerField(null=True, verbose_name='ราคา/หน่วย')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
+    month = models.PositiveIntegerField(null=True, blank=True, verbose_name='เดือนที่รับเข้า')
+    year = models.PositiveIntegerField(null=True, blank=True, verbose_name='ปีที่รับเข้า')
 
     class Meta:
         ordering = ('-id',)
     
     def __str__(self):
         return str(self.product)
+    
+    # def save(self, *args, **kwargs):
+    #     if not self.pk:  # ตรวจสอบว่าเป็นการสร้าง instance ใหม่หรือไม่
+    #         self.month = self.date_created.month
+    #         self.year = self.date_created.year
+    #     super().save(*args, **kwargs)
     
     @staticmethod
     def total_quantity_by_product(product_id):

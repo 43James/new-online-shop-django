@@ -1,3 +1,5 @@
+# from datetime import timezone
+from django.utils import timezone
 from django.db import models
 from accounts.models import MyUser
 from shop.models import Product, Receiving
@@ -39,6 +41,9 @@ class Issuing(models.Model):
     price = models.PositiveIntegerField(verbose_name='ราคา')
     quantity = models.SmallIntegerField(verbose_name='จำนวน')
     datecreated = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
+    month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
+    year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
+    
 
     def __str__(self):
         return str(self.id)
@@ -51,3 +56,26 @@ class Issuing(models.Model):
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+            now = timezone.now()
+            self.month = now.month
+            self.year = now.year
+        super().save(*args, **kwargs)
+
+    # def save(self, *args, **kwargs):
+    #     if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+    #         self.month = self.datecreated.month if self.datecreated else timezone.now().month
+    #         self.year = self.datecreated.year if self.datecreated else timezone.now().year
+    #     super().save(*args, **kwargs)
+
+    # @classmethod
+    # def filter_by_month_year(cls, month, year):
+    #     # แปลงเดือนและปีเป็นเดือนและปีที่ใช้ในฐานข้อมูล
+    #     month = int(month)
+    #     year_buddhist = int(year) + 543
+    #     year_ad = year_buddhist - 543
+        
+    #     # คิวรี่ข้อมูลในฐานข้อมูลตามเดือนและปีที่ระบุ
+    #     return cls.objects.filter(datecreated__month=month, datecreated__year=year_ad)

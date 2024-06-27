@@ -10,6 +10,7 @@
                     <th scope="col">รูป</th>
                     <th scope="col">ชื่อผู้ใช้</th>
                     <th scope="col">ชื่อ-สกุล</th>
+                    <th scope="col">กลุ่มงาน</th>
                     <th scope="col">อีเมลล์</th>
                     <th scope="col">สถานะผู้ใช้งาน</th>
                     <th scope="col">ตัวเลือก</th>
@@ -22,6 +23,7 @@
                     <td scope="row">{{ l.profile.image }}</td>
                     <td scope="row">{{ l.username }}</td>
                     <td scope="row">{{ l.get_full_name }}</td>
+                    <td scope="row">{{ l.profile.workgroup }}</td>
                     <td scope="row">{{ l.email }}</td>
                     {% if l.is_general and l.is_manager and l.is_admin %}
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">all</td>

@@ -1,9 +1,22 @@
+import datetime
 from django import forms
 from django.forms import ModelForm
 
+from accounts.models import WorkGroup
 from shop.models import Product, Category, Receiving, Subcategory, Suppliers
 from orders.models import Issuing, Order
 
+
+class MonthYearForm(forms.Form):
+    MONTH_CHOICES = [
+        ('มกราคม', 'มกราคม'), ('กุมภาพันธ์', 'กุมภาพันธ์'), ('มีนาคม', 'มีนาคม'), ('เมษายน', 'เมษายน'),
+        ('พฤษภาคม', 'พฤษภาคม'), ('มิถุนายน', 'มิถุนายน'), ('กรกฎาคม', 'กรกฎาคม'), ('สิงหาคม', 'สิงหาคม'),
+        ('กันยายน', 'กันยายน'), ('ตุลาคม', 'ตุลาคม'), ('พฤศจิกายน', 'พฤศจิกายน'), ('ธันวาคม', 'ธันวาคม'),
+    ]
+    YEAR_CHOICES = [(year, year) for year in range(2563, 2563 + 10)]  # ปี 2563 - 2572
+
+    month = forms.ChoiceField(choices=MONTH_CHOICES, label='เดือน', required=True)
+    year = forms.ChoiceField(choices=YEAR_CHOICES, label='ปี', required=True)
 
 class UploadFileForm(forms.Form):
     file = forms.FileField(label='เลือกไฟล์ Excel')
@@ -50,6 +63,27 @@ class AddReceivingForm(ModelForm):
         # self.fields['product'].queryset = Product.objects.all().values_list('product_name', flat=True)
         # self.fields['suppliers'].queryset = Suppliers.objects.all().values_list('supname', flat=True)
 
+
+class WorkGroupForm(forms.ModelForm):
+    class Meta:
+        model = WorkGroup
+        fields = ['work_group']
+
+    def __init__(self, *args, **kwargs):
+        super(WorkGroupForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+
+class EditWorkGroupForm(ModelForm):
+    class Meta:
+        model = WorkGroup
+        fields = ['work_group']
+
+    def __init__(self, *args, **kwargs):
+        super(EditWorkGroupForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+        
 
 class AddCategoryForm(ModelForm):
     class Meta:
@@ -110,6 +144,7 @@ class ReceivingForm(forms.ModelForm):
     class Meta:
         model = Receiving
         fields = '__all__'
+    
 
 
 class EditCategoryForm(ModelForm):

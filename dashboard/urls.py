@@ -31,6 +31,12 @@ urlpatterns = [
     path('category-edit/<int:id>/', views.edit_category, name='edit_category'),
     path('category/delete/<int:id>/', views.delete_category, name='delete_category'),
 
+    path('workgroup/', views.workgroup, name='workgroup'),
+    path('add_work_group/', views.add_work_group, name='add_work_group'),
+    path('import_work_group/', views.import_work_group, name='import_work_group'),
+    path('edit_workgroup/<int:id>/', views.edit_workgroup, name='edit_workgroup'),
+    path('delete_workgroup/delete/<int:id>/', views.delete_workgroup, name='delete_workgroup'),
+
 
     path('subcategory/', views.subcategory, name='subcategory'),
     path('add-subcategory/', views.add_subcategory, name='add_subcategory'),
@@ -54,6 +60,9 @@ urlpatterns = [
     path('monthly-stock-records/', views.monthly_stock_records, name='monthly_stock_records'),
     path('monthly_stock_records/export/', views.export_monthly_stock_records_to_excel, name='export_monthly_stock_records'),
     path('monthly-report-receive/', views.monthly_report_receive, name='monthly_report_receive'),
+    path('export-to-excel-receive/', views.export_to_excel_receive, name='export_to_excel_receive'),
+
+
 
 
 ]
