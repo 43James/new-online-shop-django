@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.template.defaultfilters import slugify
 from django.db.models import Sum
 from django.utils.html import format_html
+from django.core.validators import MinValueValidator
 
 # from orders.models import Issuing
 
@@ -35,7 +36,7 @@ class Product(models.Model):
     product_name = models.CharField(max_length=200, verbose_name='ชื่อรายการ')
     description = models.TextField(verbose_name='คำอธิบาย')
     quantityinstock = models.PositiveIntegerField(default=0, null=True, verbose_name='จำนวนที่มีในสต๊อก')
-    unitprice = models.PositiveIntegerField(default=0, null=True, verbose_name='ราคา/หน่วย')
+    # unitprice = models.PositiveIntegerField(default=0, null=True, verbose_name='ราคา/หน่วย')
     unit = models.CharField(max_length=20, verbose_name='หน่วย')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
@@ -93,7 +94,7 @@ class Receiving(models.Model):
     suppliers = models.ForeignKey(Suppliers, on_delete=models.CASCADE, related_name='suppliers', verbose_name='IDซัพพลายเออร์')
     quantityreceived = models.PositiveIntegerField(null=True,  verbose_name='จำนวนที่รับเข้า')
     quantity = models.PositiveIntegerField( null=True, verbose_name='จำนวนคงเหลือ')
-    unitprice = models.PositiveIntegerField(null=True, verbose_name='ราคา/หน่วย')
+    unitprice = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], null=True, verbose_name='ราคา/หน่วย')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
     month = models.PositiveIntegerField(null=True, blank=True, verbose_name='เดือนที่รับเข้า')

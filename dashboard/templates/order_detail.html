@@ -39,12 +39,12 @@
         <thead>
             <tr>
                 <th style="width: 5%;">ลำดับ</th>
-                <th style="width: 15%;">รหัสวัสดุ</th>
-                <th style="width: 25%;">ชื่อรายการ</th>
-                <th style="width: 10%;">จำนวน/ชิ้น</th>
-                <th style="width: 15%;">ราคา/หน่วย</th>
-                <th style="width: 15%;">ราคารวม/บาท</th>
-                <th style="width: 30%;">ประเภท/หมายเหตุ</th>
+                <th style="width: 10%;">รหัสวัสดุ</th>
+                <th style="width: 40%;">ชื่อรายการ</th>
+                <th style="width: 10%;">จำนวน/หน่วย</th>
+                <th style="width: 10%;">ราคา/หน่วย</th>
+                <th style="width: 10%;">ราคารวม</th>
+                <th style="width: 40%;">หมายเหตุ</th>
             </tr>
         </thead>
         <tbody>
@@ -55,7 +55,7 @@
                 <td>{{item.product.product_id}} </td>
                 <td><a class="text-decoration-none" href="{{ item.product.get_absolute_url }}">
                         {{item.product.product_name}}</a></td>
-                <td>{{item.quantity}} </td>
+                <td>{{item.quantity}}</td>
                 <td>{{item.price}} </td>
                 <td>{{item.get_cost }} </td>
                 <td> </td>
@@ -78,7 +78,7 @@
         </div>
         <div class="col-6" style="margin-top: 20px;">
             <p class="text-center">ลงชื่อ _____________________ ผู้อนุมัติ</p>
-            <p class="text-center">( ผู้ช่วยศาสตราจารย์ อารีรัตน์ ลุนผา )</p>
+            <p class="text-center">( ผู้ช่วยศาสตราจารย์อารีรัตน์ ลุนผา )</p>
             <p class="text-center">ตำแหน่ง หัวหน้าเจ้าหน้าที่</p><br>
         </div>
     </div>

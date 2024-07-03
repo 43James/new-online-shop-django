@@ -20,6 +20,7 @@ urlpatterns = [
     path('profile/edit/manager/', views.edit_profile_manager, name='edit_profile_manager'),
     path('profile/user/<str:username>/', views.user_profile_detail, name='user_profile_detail'),
     path('profile/manager/<str:username>/', views.manager_profile_detail, name='manager_profile_detail'),
+    path('profile/<str:username>/', views.profile_users, name='profile_users'),
     path('change_password/', views.change_password, name='change_password'),
 
 
@@ -55,8 +56,11 @@ urlpatterns = [
         name='password_reset_complete'
     ),
     path('manage/user/', views.manage_user, name='manage_user'),
+    path('manager_edit_profile/<int:user_id>/', views.manager_edit_profile, name='manager_edit_profile'),
     path('update/user/<int:id>/', views.update_user, name='update_user'),
     path('delete/user/<int:id>/', views.delete_user, name='delete_user'),
+    path('import-users/', views.import_users_from_excel, name='import_users'),
+    path('export-users/', views.export_users_to_excel, name='export_users'),
 
 ]
 

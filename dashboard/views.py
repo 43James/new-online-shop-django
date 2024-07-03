@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages
@@ -10,7 +11,7 @@ from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
 from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, TotalQuantity, Receiving
 from accounts.models import MyUser, Profile, WorkGroup
 from orders.models import Order, Issuing
-from .forms import AddProductForm, AddCategoryForm, AddSubcategoryForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, EditWorkGroupForm, MonthYearForm,  ReceivingForm, RecordMonthlyStockForm, WorkGroupForm
+from .forms import AddProductForm, AddCategoryForm, AddSubcategoryForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, EditWorkGroupForm, MonthYearForm, OrderFilterForm,  ReceivingForm, RecordMonthlyStockForm, WorkGroupForm
 from django.db.models import F
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -88,7 +89,7 @@ def is_authorized(user):
     try:
         return is_manager(user) and is_executive(user) and is_admin(user)
     except Http404:
-        return False
+        return True
     
 
 
@@ -117,6 +118,8 @@ def export_to_excel(request, month=None, year=None):
 
     report_data = []
     all_users = set()
+    total_issued_value = Decimal(0)  # ใช้ Decimal แทน float
+    total_issued_value_by_user = defaultdict(Decimal)  # ใช้ Decimal แทน float
 
     for product in products:
         # Calculate previous balance
@@ -139,13 +142,15 @@ def export_to_excel(request, month=None, year=None):
         issued_items = Issuing.objects.filter(
             product=product, datecreated__range=(start_date, end_date), order__status=True
         )
-        total_issued_value = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or 0
+        product_total_issued_value = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or Decimal(0)
+        total_issued_value += product_total_issued_value
 
         user_issuings = defaultdict(int)
         for issuing in issued_items:
             user_full_name = issuing.order.user.get_first_name()
             user_issuings[user_full_name] += issuing.quantity
             all_users.add(user_full_name)
+            total_issued_value_by_user[user_full_name] += issuing.price * issuing.quantity
 
         report_data.append({
             'product': product.product_name,
@@ -155,7 +160,7 @@ def export_to_excel(request, month=None, year=None):
             **user_issuings,
             'issued_current_month': issued_current_month,
             'remaining_balance': remaining_balance,
-            'total_issued_value': total_issued_value,
+            'total_issued_value': product_total_issued_value,
             'note': '',
         })
 
@@ -180,7 +185,6 @@ def export_to_excel(request, month=None, year=None):
     header_rows = [
         ['รายการเบิกวัสดุ'],
         [f'ประจำเดือน {previous_month_name} พ.ศ. {previous_year_buddhist} ประจำปีงบประมาณ พ.ศ. {previous_year_buddhist}'],
-        # [f'ประจำเดือน {month} / {year + 543} ประจำปีงบประมาณ พ.ศ. {year + 543}'],
         ['หน่วยงาน โครงการอุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี']
     ]
     
@@ -216,9 +220,14 @@ def export_to_excel(request, month=None, year=None):
             item['note']
         ]
         worksheet.append(row)
+
+    # สร้างแถวรวมรายจ่ายที่เบิก
+    total_row = [''] * 4 + ['รวมรายจ่ายที่เบิก'] + [f'{total_issued_value_by_user[user]} บาท' for user in sorted(all_users)] + [''] + [''] + [f'{total_issued_value} บาท'] + ['']
+    worksheet.append(total_row)
+    
     
     # ตั้งค่ารูปแบบให้กับเซลล์ใน worksheet
-    for row in worksheet.iter_rows(min_row=5, max_row=len(report_data) + 4, min_col=1, max_col=len(headers)):
+    for row in worksheet.iter_rows(min_row=5, max_row=len(report_data) + 5, min_col=1, max_col=len(headers)):
         for cell in row:
             cell.font = font_data
             cell.alignment = align_center
@@ -247,6 +256,7 @@ def export_to_excel(request, month=None, year=None):
     workbook.save(response)
     
     return response
+
 
 
 
@@ -283,8 +293,8 @@ def monthly_report(request, month=None, year=None):
 
     report_data = []
     all_users = set()
-    total_issued_value = 0
-    total_issued_value_by_user = defaultdict(float)
+    total_issued_value = Decimal(0)  # ใช้ Decimal แทน float
+    total_issued_value_by_user = defaultdict(Decimal)  # ใช้ Decimal แทน float
 
     for product in products:
         previous_balance_record = MonthlyStockRecord.objects.filter(
@@ -562,7 +572,8 @@ def monthly_report_receive(request):
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
         ],
-        'month_name': thai_month_name(month)
+        'month_name': thai_month_name(month),
+        'pending_orders_count': count_pending_orders(),
     }
 
     previous_month = month - 1 if month > 1 else 12
@@ -660,247 +671,8 @@ def export_to_excel_receive(request):
 
 
 
-# @user_passes_test(is_authorized)
-# @login_required
-# def dashboard_home(request):
-#     # ดึงข้อมูลการเบิกวัสดุ
-#     issuing_data = Issuing.objects.values(
-#         'order__user__profile__workgroup__work_group',
-#         'product__product_name'
-#     ).annotate(total_quantity=Sum('quantity')).order_by('order__user__profile__workgroup__work_group')
-
-#     # แปลงข้อมูลเป็น DataFrame
-#     df = pd.DataFrame(issuing_data)
-
-#     # สร้างกราฟด้วย Plotly
-#     fig = px.bar(df, x='order__user__profile__workgroup__work_group', y='total_quantity',
-#                  color='product__product_name',
-#                  labels={'order__user__profile__workgroup__work_group': 'กลุ่มงาน',
-#                          'total_quantity': 'จำนวนที่เบิก',
-#                          'product__product_name': 'ชื่อวัสดุ'},
-#                  title='จำนวนการเบิกวัสดุในแต่ละกลุ่มงาน')
-
-#     # แปลงกราฟเป็น HTML
-#     graph_html = fig.to_html(full_html=False)
-#     context = {
-#         'title': 'Dashboard',
-#         'graph_html': graph_html,
-#         'pending_orders_count': count_pending_orders(),
-#     }
-#     return render(request, 'dashboard_home.html', context)
-
-
-
-# def dashboard_home(request):
-#     # ดึงข้อมูลการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์แล้ว และจัดกลุ่มตามเดือน
-#     issuing_data = Issuing.objects.filter(order__status=True).values(
-#         'order__user__profile__workgroup__work_group',
-#         'product__product_name',
-#         'datecreated__month'
-#     ).annotate(total_quantity=Sum('quantity')).order_by('order__user__profile__workgroup__work_group', 'datecreated__month')
-
-#     # ตรวจสอบว่ามีข้อมูลหรือไม่
-#     if issuing_data.exists():
-#         # แปลงข้อมูลเป็น DataFrame
-#         df = pd.DataFrame(issuing_data)
-#         df['datecreated__month'] = df['datecreated__month'].apply(lambda x: f'เดือน {x}')
-
-#         # สร้างกราฟด้วย Plotly
-#         fig = px.bar(df, x='order__user__profile__workgroup__work_group', y='total_quantity',
-#                      color='product__product_name',
-#                      facet_col='datecreated__month',
-#                      labels={'order__user__profile__workgroup__work_group': 'กลุ่มงาน',
-#                              'total_quantity': 'จำนวนที่เบิก',
-#                              'product__product_name': 'ชื่อวัสดุ',
-#                              'datecreated__month': 'เดือน'},
-#                      title='จำนวนการเบิกวัสดุในแต่ละกลุ่มงาน (แยกตามเดือน)')
-
-#         # แปลงกราฟเป็น HTML
-#         graph_html = fig.to_html(full_html=False)
-#     else:
-#         graph_html = "<p>ยังไม่มีการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์</p>"
-
-#     context = {
-#         'title': 'Dashboard',
-#         'graph_html': graph_html,
-#         'pending_orders_count': count_pending_orders(),
-#     }
-#     return render(request, 'dashboard_home.html', context)
-
-
-
-
-# def dashboard_home(request):
-#     if request.method == 'POST':
-#         form = MonthYearForm(request.POST)
-#         if form.is_valid():
-#             selected_month = int(form.cleaned_data['month'])
-#             selected_year = int(form.cleaned_data['year'])
-#     else:
-#         form = MonthYearForm()
-#         now = datetime.now()  # กำหนดตัวแปร now ในส่วนของ else block
-#         selected_month = now.month
-#         selected_year = now.year
-
-#     # กรองข้อมูลการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์แล้ว ตามเดือนและปีที่เลือก
-#     issuing_data = Issuing.objects.filter(order__status=True, datecreated__month=selected_month, datecreated__year=selected_year).values(
-#         'order__user__profile__workgroup__work_group',
-#         'product__product_name'
-#     ).annotate(total_quantity=Sum('quantity')).order_by('order__user__profile__workgroup__work_group')
-
-#     # ตรวจสอบว่ามีข้อมูลหรือไม่
-#     if issuing_data.exists():
-#         # แปลงข้อมูลเป็น DataFrame
-#         df = pd.DataFrame(issuing_data)
-
-#         # สร้างกราฟด้วย Plotly
-#         fig = px.bar(df, x='order__user__profile__workgroup__work_group', y='total_quantity',
-#                      color='product__product_name',
-#                      labels={'order__user__profile__workgroup__work_group': 'กลุ่มงาน',
-#                              'total_quantity': 'จำนวนที่เบิก',
-#                              'product__product_name': 'ชื่อวัสดุ'},
-#                      title=f'จำนวนการเบิกวัสดุในแต่ละกลุ่มงาน (เดือน {selected_month}/{selected_year})')
-
-#         # แปลงกราฟเป็น HTML
-#         graph_html = fig.to_html(full_html=False)
-#     else:
-#         graph_html = "<p>ยังไม่มีการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์ในเดือนนี้</p>"
-
-#     context = {
-#         'title': 'แดชบอร์ด',
-#         'form': form,
-#         'graph_html': graph_html,
-#         'pending_orders_count': count_pending_orders(),
-#         'now': now,  # ส่งตัวแปร now เข้าไปใน context
-#     }
-#     return render(request, 'dashboard_home.html', context)
-
-
-# def dashboard_home(request):
-#     now = datetime.now()
-
-#     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-#     last_month = now.month if now.month > 1 else 12
-#     last_year = now.year if now.month > 1 else now.year - 1
-
-#     # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-#     month = int(request.GET.get('month', last_month))
-#     year_buddhist = int(request.GET.get('year', last_year + 543))
-
-#     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
-#     year_ad = year_buddhist - 543
-
-#     # กรองข้อมูลการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์แล้ว ตามเดือนและปีที่เลือก
-#     issuing_data = Issuing.objects.filter(order__status=True, datecreated__month=month, datecreated__year=year_ad).values(
-#         'order__user__profile__workgroup__work_group',
-#         'product__product_name'
-#     ).annotate(total_quantity=Sum('quantity')).order_by('order__user__profile__workgroup__work_group')
-
-#     # ตรวจสอบว่ามีข้อมูลหรือไม่
-#     if issuing_data.exists():
-#         # แปลงข้อมูลเป็น DataFrame
-#         df = pd.DataFrame(issuing_data)
-
-#         # สร้างกราฟด้วย Plotly
-#         fig = px.bar(df, x='order__user__profile__workgroup__work_group', y='total_quantity',
-#                      color='product__product_name',
-#                      labels={'order__user__profile__workgroup__work_group': 'กลุ่มงาน',
-#                              'total_quantity': 'จำนวนที่เบิก',
-#                              'product__product_name': 'ชื่อวัสดุ'},
-#                      title=f'จำนวนการเบิกวัสดุในแต่ละกลุ่มงาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})')
-
-#         # แปลงกราฟเป็น HTML
-#         graph_html = fig.to_html(full_html=False)
-#     else:
-#         graph_html = "<p>ยังไม่มีการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์ในเดือนนี้</p>"
-
-#     context = {
-#         'title': 'Dashboard',
-#         'graph_html': graph_html,
-#         'pending_orders_count': count_pending_orders(),
-#         'now': now,  # ส่งตัวแปร now เข้าไปใน context
-#         'selected_month': month,
-#         'selected_year': year_buddhist,
-#         'years': range(2020 + 543, datetime.now().year + 1 + 543),
-#         'months': [
-#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
-#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
-#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
-#         ],
-#     }
-#     return render(request, 'dashboard_home.html', context)
-
-
-# def dashboard_home(request):
-#     now = datetime.now()
-
-#     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-#     last_month = now.month if now.month > 1 else 12
-#     last_year = now.year if now.month > 1 else now.year - 1
-
-#     # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-#     month = int(request.GET.get('month', last_month))
-#     year_buddhist = int(request.GET.get('year', last_year + 543))
-
-#     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
-#     year_ad = year_buddhist - 543
-
-#     # กรองข้อมูลการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์แล้ว ตามเดือนและปีที่เลือก
-#     # issuing_data = Issuing.objects.filter(order__status=True, datecreated__month=month, datecreated__year=year_ad).values(
-#     issuing_data = Issuing.objects.filter(order__status=True, month=month, year=year_ad).values(
-#         'order__user__profile__workgroup__work_group',
-#         'product__product_name'
-#     ).annotate(
-#         total_quantity=Sum('quantity'),
-#         total_amount=Sum(F('price') * F('quantity'))
-#     ).order_by('order__user__profile__workgroup__work_group')
-
-#     # ตรวจสอบว่ามีข้อมูลหรือไม่
-#     if issuing_data.exists():
-#         # แปลงข้อมูลเป็น DataFrame
-#         df = pd.DataFrame(issuing_data)
-
-#         # สร้างกราฟด้วย Plotly สำหรับจำนวนที่เบิก
-#         fig_quantity = px.bar(df, x='order__user__profile__workgroup__work_group', y='total_quantity',
-#                               color='product__product_name',
-#                               labels={'order__user__profile__workgroup__work_group': 'กลุ่มงาน',
-#                                       'total_quantity': 'จำนวนที่เบิก',
-#                                       'product__product_name': 'ชื่อวัสดุ'},
-#                               title=f'จำนวนการเบิกวัสดุในแต่ละกลุ่มงาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})')
-
-#         # สร้างกราฟด้วย Plotly สำหรับจำนวนเงินที่เบิก
-#         fig_amount = px.bar(df, x='order__user__profile__workgroup__work_group', y='total_amount',
-#                             color='product__product_name',
-#                             labels={'order__user__profile__workgroup__work_group': 'กลุ่มงาน',
-#                                     'total_amount': 'จำนวนเงินที่เบิก',
-#                                     'product__product_name': 'ชื่อวัสดุ'},
-#                             title=f'จำนวนเงินการเบิกวัสดุในแต่ละกลุ่มงาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})')
-
-#         # แปลงกราฟเป็น HTML
-#         graph_html_quantity = fig_quantity.to_html(full_html=False)
-#         graph_html_amount = fig_amount.to_html(full_html=False)
-#     else:
-#         graph_html_quantity = "<p>ยังไม่มีการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์ในเดือนนี้</p>"
-#         graph_html_amount = "<p>ยังไม่มีการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์ในเดือนนี้</p>"
-
-#     context = {
-#         'title': 'Dashboard',
-#         'graph_html_quantity': graph_html_quantity,
-#         'graph_html_amount': graph_html_amount,
-#         'pending_orders_count': count_pending_orders(),
-#         'now': now,  # ส่งตัวแปร now เข้าไปใน context
-#         'selected_month': month,
-#         'selected_year': year_buddhist,
-#         'years': range(2020 + 543, datetime.now().year + 1 + 543),
-#         'months': [
-#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
-#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
-#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
-#         ],
-#     }
-#     return render(request, 'dashboard_home.html', context)
-
-
+@user_passes_test(is_authorized)
+@login_required
 def dashboard_home(request):
     now = datetime.now()
 
@@ -918,7 +690,8 @@ def dashboard_home(request):
     # กรองข้อมูลการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์แล้ว ตามเดือนและปีที่เลือก
     issuing_data = Issuing.objects.filter(order__status=True, month=month, year=year_ad).values(
         'order__user__profile__workgroup__work_group',
-        'product__product_name'
+        'product__product_name',
+        'product__unit'
     ).annotate(
         total_quantity=Sum('quantity'),
         total_amount=Sum(F('price') * F('quantity'))
@@ -936,6 +709,14 @@ def dashboard_home(request):
                                       'total_quantity': 'จำนวนที่เบิก',
                                       'product__product_name': 'ชื่อวัสดุ'},
                               title=f'จำนวนการเบิกวัสดุในแต่ละกลุ่มงาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})')
+        
+        
+        # fig_quantity.update_traces(hovertemplate='<b>%{x}</b><br>' +
+        #                                        'ชื่อวัสดุ: %{customdata[0]}<br>' +
+        #                                        'จำนวนที่เบิก: %{y} %{customdata[1]}<br>' +
+        #                                        '<extra></extra>',
+        #                            customdata=df[['product__product_name', 'product__unit']].values)
+
 
         # สร้างกราฟด้วย Plotly สำหรับจำนวนเงินที่เบิก
         fig_amount = px.bar(df, x='order__user__profile__workgroup__work_group', y='total_amount',
@@ -944,6 +725,15 @@ def dashboard_home(request):
                                     'total_amount': 'จำนวนเงินที่เบิก',
                                     'product__product_name': 'ชื่อวัสดุ'},
                             title=f'จำนวนเงินการเบิกวัสดุในแต่ละกลุ่มงาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})')
+                            
+        
+        # เพิ่มเติม labels และ tooltips สำหรับ total_amount
+        # fig_amount.update_traces(hovertemplate='<b>%{x}</b><br>' +
+        #                                    'ชื่อวัสดุ: %{customdata[0]}<br>' +
+        #                                    'จำนวนเงินที่เบิก: %{y} บาท<br>' +
+        #                                    '<extra></extra>',
+        #                          customdata=df[['product__product_name']].values)  # เพิ่มข้อมูลเพิ่มเติมที่แสดงใน tooltips
+
 
         # สร้างกราฟด้วย Plotly สำหรับจำนวนเงินที่เบิกตามผู้ใช้งาน
         user_issuing_data = Issuing.objects.filter(order__status=True, month=month, year=year_ad).values(
@@ -953,20 +743,8 @@ def dashboard_home(request):
             total_amount=Sum(F('price') * F('quantity')), 
         ).order_by('order__user__first_name')
         
-
         if user_issuing_data.exists():
             df_user = pd.DataFrame(user_issuing_data)
-            # fig_user_amount_pie = px.pie(df_user, x='order__user__first_name', y='total_amount',
-            #                         labels={'order__user__first_name': 'ผู้ใช้งาน',
-            #                                 'total_amount': 'จำนวนเงินที่เบิก'},
-            #                         title=f'จำนวนเงินการเบิกวัสดุตามผู้ใช้งาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})')
-            # fig_user_amount_pie = px.pie(df_user, names='order__user__first_name', values='total_amount',
-            #                             labels={'order__user__first_name':'ชื่อ',
-            #                                      'total_quantity':'จำนวนวัสดุ',
-            #                                      'total_amount':'รวมเงิน(บาท)',
-            #                                      },
-            #                             title=f'สัดส่วนการเบิกวัสดุตามผู้ใช้งาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})')
-
             fig_user_amount_pie = px.pie(df_user, names='order__user__first_name', values='total_amount',
                              labels={'order__user__first_name': 'ชื่อ'},
                              hover_data={'total_amount': True, 'total_quantity': True},
@@ -985,16 +763,16 @@ def dashboard_home(request):
                                                                 'จำนวนวัสดุ: %{customdata} ชิ้น<br>' +
                                                                 '<extra></extra>'
             )
-            fig_user_amount_pie.update_layout(title=f'สัดส่วนการเบิกวัสดุตามผู้ใช้งาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})')
+            fig_user_amount_pie.update_layout(title=f'สัดส่วนการเบิกวัสดุตามผู้ใช้งาน (เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)})', margin=dict(l=20, r=20, t=40, b=20), autosize=True)
 
         # แปลงกราฟเป็น HTML
         graph_html_quantity = fig_quantity.to_html(full_html=False)
         graph_html_amount = fig_amount.to_html(full_html=False)
         graph_html_user_amount_pie = fig_user_amount_pie.to_html(full_html=False)
     else:
-        graph_html_quantity = f"<p>ยังไม่มีการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์ในเดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)}</p>"
-        graph_html_amount = f"<p>ยังไม่มีการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์ในเดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)}</p>"
-        graph_html_user_amount_pie = f"<p>ยังไม่มีการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์ในเดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)}</p>"
+        graph_html_quantity = f"<p>ยังไม่มีจำนวนการเบิกวัสดุในแต่ละกลุ่มงาน เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)}</p>"
+        graph_html_amount = f"<p>ยังไม่มีจำนวนเงินการเบิกวัสดุในแต่ละกลุ่มงาน เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)}</p>"
+        graph_html_user_amount_pie = f"<p>ยังไม่มีสัดส่วนการเบิกวัสดุตามผู้ใช้งาน เดือน {thai_month_name(month)} {convert_to_buddhist_era(year_ad)}</p>"
 
     context = {
         'title': 'Dashboard',
@@ -1777,3 +1555,115 @@ def order_detail(request, id):
         'pending_orders_count': count_pending_orders(),
         }
     return render(request, 'order_detail.html', context)
+
+from django.db.models.functions import ExtractYear, ExtractMonth
+
+
+@login_required
+def report_order_list(request):
+    now = datetime.now()
+
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    last_month = now.month if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+
+    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+    month = int(request.GET.get('month', last_month))
+    year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    year_ad = year_buddhist - 543
+
+    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุ
+    order_data = Order.objects.filter(
+        month=month,
+        year=year_ad
+     ).select_related('user')
+
+    # กำหนดค่าให้กับตัวแปร context
+    context = {
+        'title': 'รายการเบิกประจำเดือน รายบุคคล',
+        'order_data': order_data,
+        'selected_month': month,
+        'selected_year': year_buddhist,
+        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'months': [
+            (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+            (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+            (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+        ],
+        'month_name': thai_month_name(month),
+        'pending_orders_count': count_pending_orders(),
+    }
+
+    previous_month = month - 1 if month > 1 else 12
+    previous_year = year_ad if month > 1 else year_ad - 1
+    context['previous_month_name'] = thai_month_name(previous_month)
+    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
+    
+    return render(request, 'report_order_list.html', context)
+
+
+def export_excel_order(request):
+    month = int(request.GET.get('month'))
+    year_buddhist = int(request.GET.get('year'))
+    year_ad = year_buddhist - 543
+
+    # ดึงข้อมูล Order ที่ตรงกับเดือนและปีที่ระบุ
+    order_data = Order.objects.filter(
+        month=month,
+        year=year_ad
+    ).select_related('user')
+
+    # สร้าง Workbook และ Sheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Orders'
+
+    # กำหนดหัวตาราง
+    columns = ['ลำดับ', 'ชื่อผู้ใช้งาน', 'เลขที่เบิก', 'ยอดรวม', 'วันที่เบิก', 'สถานะ', 'หมายเหตุ']
+    ws.append(columns)
+
+    # กำหนดฟอนต์ภาษาไทย ขนาด 16
+    font = Font(name='TH Sarabun New', size=16)
+    alignment = Alignment(horizontal='center', vertical='center')
+    thin_border = Border(left=Side(style='thin'), 
+                         right=Side(style='thin'), 
+                         top=Side(style='thin'), 
+                         bottom=Side(style='thin'))
+
+    for col in ws.iter_cols(min_row=1, max_row=1, min_col=1, max_col=len(columns)):
+        for cell in col:
+            cell.font = font
+            cell.alignment = alignment
+            cell.border = thin_border
+
+    # เพิ่มข้อมูลในตาราง
+    for idx, order in enumerate(order_data, start=1):
+        user_full_name = order.user.get_full_name()
+        total_price = order.get_total_price
+        # date_created = order.date_created.strftime("%d %b %Y เวลา %H:%M น.")
+        date_created = format_datetime( order.date_created, "d MMMM y เวลา H:mm น.", locale='th') if  order.date_created else "ไม่ระบุ"
+        status = 'อนุมัติ' if order.status else 'ปฏิเสธ' if order.status is False else 'รอดำเนินการ..'
+        other = order.other or ''
+
+        row = [idx, user_full_name, order.id, total_price, date_created, status, other]
+        ws.append(row)
+
+        for col in ws.iter_cols(min_row=idx + 1, max_row=idx + 1, min_col=1, max_col=len(columns)):
+            for cell in col:
+                cell.font = font
+                cell.alignment = alignment
+                cell.border = thin_border
+
+    # ปรับขนาดคอลัมน์ให้พอดี
+    for col in ws.columns:
+        max_length = max(len(str(cell.value)) for cell in col)
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[col[0].column_letter].width = adjusted_width
+
+    # สร้าง HTTP Response และบันทึกไฟล์ Excel
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename=Orders_{month}_{year_buddhist}.xlsx'
+    wb.save(response)
+    return response

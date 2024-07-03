@@ -1,0 +1,211 @@
+{% extends "dashboard.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="container mt-4">
+    
+    <div class="row mb-4">
+        <div class="col mb-5" style="justify-content: center; display: flex;">
+            <div>
+                {% if user.profile.img.url == user.profile.img.url %}
+                <!-- <img src="{{ profile.img.url }}" style="max-height: 295px; border-radius: 50%; " class="mt-3 img-rounded mb-3" alt=""> -->
+                <canvas class="mt-5 mb-3" id="profileCanvas" width="300" height="300"
+                    style="border-radius: 50%;"></canvas>
+                <script>
+                    var canvas = document.getElementById('profileCanvas');
+                    var ctx = canvas.getContext('2d');
+
+                    var img = new Image();
+                    img.src = "{{ user.profile.img.url }}"; // ใส่ URL ของรูปภาพของคุณที่นี่
+
+                    img.onload = function () {
+                        ctx.beginPath();
+                        ctx.arc(150, 150, 150, 0, 2 * Math.PI);
+                        ctx.clip();
+                        ctx.drawImage(img, 0, 0, 300, 300);
+                    };
+                </script>
+                {% else %}
+                <br><br><br><br><br><br>
+                <p class="text-center">ไม่มีรูปโปรไฟล์</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="row mx-5">
+                <h5>ข้อมูลส่วนตัวของผู้ใช้งาน</h5>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>ชื่อ-นามสกุล</b></div>
+                <div class="col">{{ user.get_full_name }}</div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-5"><b>เพศ</b></div>
+                <div class="col-lg">{{ profile.gender }}</div>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>เบอร์โทรศัพท์มือถือ</b></div>
+                <div class="col-lg">{{ profile.phone }}</div>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>ตำแหน่ง</b></div>
+                <div class="col-lg">{{ profile.position }}</div>
+            </div>
+            <div class="row mb-5">
+                <div class="col-lg-5"><b>กลุ่มงาน</b></div>
+                <div class="col-lg">{{ profile.workgroup }}</div>
+            </div>
+
+
+            <div class="row mx-5">
+                <h5>ข้อมูลบัญชี</h5>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>ชื่อผู้ใช้</b></div>
+                <div class="col">{{ user.username }}</div>
+            </div>
+            <div class="row mb-5">
+                <div class="col-lg-5"><b>ที่อยู่อีเมล์</b></div>
+                <div class="col-lg">{{ user.email }}</div>
+            </div>
+
+            <div class="row mx-5">
+                <h5>ข้อมูลการเข้าใช้งานระบบ</h5>
+            </div>
+            <!-- <div class="row">
+                <div class="col-lg-5"><b>กำลังใช้งานระบบ</b></div>
+                {% if is_active %}
+                <div class="col-lg">
+                    <i class="bi bi-x-circle-fill" style="color:red;"></i>
+                </div>
+                {% else %}
+                <div class="col-lg">
+                    <i class="bi bi-check-circle-fill" style="color:green;"></i>
+                </div>
+                {% endif %}
+            </div> -->
+            <div class="row">
+                <div class="col-lg-5"><b>สถานะผู้ใช้งาน</b></div>
+                <div class="col-lg" style="color:rgb(0, 134, 0); font-weight: bold;">{% if user.is_general and user.is_manager and user.is_admin %}
+                    all
+                {% elif user.is_general and user.is_manager %}
+                    ผู้ใช้งาน, ผู้จัดการระบบ
+                {% elif user.is_general and user.is_executive %}
+                    ผู้ใช้งาน, ผู้บริหาร
+                {% elif user.is_manager and user.is_admin %}
+                    ผู้จัดการระบบ, แอดมิน
+                {% elif user.is_general %}
+                    ผู้ใช้งาน
+                {% elif user.is_executive %}
+                    ผู้บริหาร
+                {% elif user.is_manager %}
+                    ผู้จัดการระบบ
+                {% elif user.is_admin %}
+                    แอดมิน
+                {% else %}
+                    <span style="color:rgb(224, 127, 0); font-weight: bold;">ไม่มีสถานะ</span>
+                {% endif %}</div>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>วันที่สร้างข้อมูล</b></div>
+                <div class="col-lg">{{ user.date_joined }}</div>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>เข้าใช้งานล่าสุด</b></div>
+                <div class="col-lg">{{ user.last_login }}</div>
+            </div>
+            
+           
+        </div>
+
+    </div>
+    <script>
+        // สร้างฟังก์ชันเพื่อแสดงวันเดือนปี
+        function showDate() {
+            var today = new Date();
+            var options = { year: 'numeric', month: 'long', day: 'numeric' };
+            var formattedDate = today.toLocaleDateString('th-TH', options); // เปลี่ยนภาษาไทยตามความเหมาะสม
+
+            document.getElementById('date').textContent = formattedDate;
+        }
+
+        // เรียกใช้ฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
+        showDate();
+    </script>
+
+</div>
+{% endblock %}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อผู้ใช้:</label>
+                        <p class="form-control-plaintext">{{ user.username }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อ-สกุล:</label>
+                        <p class="form-control-plaintext">{{ user.get_full_name }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">อีเมลล์:</label>
+                        <p class="form-control-plaintext">{{ user.email }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">กลุ่มงาน:</label>
+                        <p class="form-control-plaintext">{{ profile.workgroup }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ตำแหน่ง:</label>
+                        <p class="form-control-plaintext">{{ profile.position }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">เบอร์โทรศัพท์:</label>
+                        <p class="form-control-plaintext">{{ profile.phone }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">รูป:</label>
+                        <div>
+                            <img src="{{ profile.image.url }}" alt="Profile Image" class="img-fluid" style="max-width: 200px;">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">สถานะผู้ใช้งาน:</label>
+                        <p class="form-control-plaintext" style="color:rgb(0, 134, 0); font-weight: bold;">
+                            {% if user.is_general and user.is_manager and user.is_admin %}
+                                all
+                            {% elif user.is_general and user.is_manager %}
+                                ผู้ใช้งาน, ผู้จัดการระบบ
+                            {% elif user.is_general and user.is_executive %}
+                                ผู้ใช้งาน, ผู้บริหาร
+                            {% elif user.is_manager and user.is_admin %}
+                                ผู้จัดการระบบ, แอดมิน
+                            {% elif user.is_general %}
+                                ผู้ใช้งาน
+                            {% elif user.is_executive %}
+                                ผู้บริหาร
+                            {% elif user.is_manager %}
+                                ผู้จัดการระบบ
+                            {% elif user.is_admin %}
+                                แอดมิน
+                            {% else %}
+                                <span style="color:rgb(224, 127, 0); font-weight: bold;">ไม่มีสถานะ</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-secondary" onclick="window.history.back();">ย้อนกลับ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

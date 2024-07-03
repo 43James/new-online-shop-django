@@ -25,7 +25,9 @@ class MyUserAdmin(admin.ModelAdmin):
         ('Roles', {'fields': ('is_general', 'is_executive', 'is_manager', 'is_admin')}),
     )
     
-admin.site.register(MyUser,MyUserAdmin)
+# admin.site.register(MyUser,MyUserAdmin)
+admin.site.register(MyUser,UserAdmin)
+
 
 
 class ProfileAdmin(admin.ModelAdmin):

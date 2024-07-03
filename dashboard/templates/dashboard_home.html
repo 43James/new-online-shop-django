@@ -25,6 +25,11 @@
         </div>
     </form>
 
+    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
+    <div>
+        {{ graph_html_user_amount_pie|safe }}
+    </div>
+
      <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
      <div>
         {{ graph_html_quantity|safe }}
@@ -35,11 +40,6 @@
         {{ graph_html_amount|safe }}
     </div>
 
-    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <div>
-        {{ graph_html_user_amount_pie|safe }}
-    </div>
-  
     <!-- ส่วนอื่น ๆ ของ Dashboard -->
 </div>
 <script>

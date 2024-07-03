@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
+import pandas as pd
 from cart.utils.cart import Cart
 from dashboard.views import is_manager
 from django.db.models import Q
@@ -12,11 +13,11 @@ from orders.models import Order
 from shop.models import Product, Receiving  # นำเข้าคลาส Cart ที่ใช้จัดการตะกร้า
 from django.db import transaction
 from django.contrib.auth import logout as auth_logout
-from .forms import ProfileImageForm, RegistrationForm, ProfileForm, UserRegistrationForm, UserLoginForm, ManagerLoginForm, UserProfileForm, UserEditForm, ExtendedProfileForm
-from accounts.models import MyUser, Profile
+from .forms import EditProfileForm, ProfileImageForm, RegistrationForm, ProfileForm, UserRegistrationForm, UserLoginForm, ManagerLoginForm, UserProfileForm, UserEditForm, ExtendedProfileForm
+from accounts.models import MyUser, Profile, WorkGroup
 from django.contrib.auth import logout as django_logout
-
-
+from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 
@@ -109,7 +110,7 @@ def manager_login(request):
                 
                 elif user.is_manager:
                     login(request, user)
-                    return redirect('dashboard:orders')
+                    return redirect('dashboard:dashboard_home')
                 
                 elif user.is_admin:
                     login(request, user)
@@ -194,6 +195,28 @@ def user_logout(request):
 #     return redirect('accounts:manager_login')
 
 
+
+@login_required
+def manager_edit_profile(request, user_id):
+    profile = get_object_or_404(Profile, user__id=user_id)
+    
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'บันทึกข้อมูลสำเร็จ')
+            return redirect('accounts:manage_user')
+        
+    else:
+        form = EditProfileForm(instance=profile)
+    
+    context = {
+        'title':'แก้ไขข้อมูลผู้ใช้งาน',
+        'form': form, 
+        'profile': profile,
+            }
+    
+    return render(request, 'manager_edit_profil.html', context)
 
 
 
@@ -414,6 +437,21 @@ def manager_profile_detail(request, username):
     }
     return render(request, 'manager_profile.html', context)
 
+
+@login_required
+def profile_users(request, username):
+    users = MyUser.objects.get(username = username)
+    profiles = Profile.objects.get(user_id=users.id)
+        
+    context = {
+        'title' : 'ข้อมูลโปรไฟล์ผู้ใช้งาน',
+        'user': users, 
+        'profile': profiles,
+        'pending_orders_count': count_pending_orders(),
+    }
+    return render(request, 'profile_users.html', context)
+
+
 @login_required
 def delete_profile_picture_manager(request):
     profile = request.user.profile
@@ -445,6 +483,97 @@ def manage_user(request):
         'title':'จัดการสมาชิก',
         'pending_orders_count': count_pending_orders(),
     })
+
+
+def import_users_from_excel(request):
+     if request.method == 'POST':
+        file = request.FILES['file']
+        try:
+            df = pd.read_excel(file)
+
+            for index, row in df.iterrows():
+                password = row['password'] if 'password' in row and pd.notna(row['password']) else 'default_password'
+                is_active = row['is_active'] if 'is_active' in row and pd.notna(row['is_active']) else True
+
+                user, created = MyUser.objects.update_or_create(
+                    username=row['username'],
+                    defaults={
+                        'perfix': row['perfix'],
+                        'first_name': row['first_name'],
+                        'last_name': row['last_name'],
+                        'email': row['email'],
+                        'is_active': is_active,
+                        'is_general': row['is_general'],
+                        'is_manager': row['is_manager'],
+                        'is_executive': row['is_executive'],
+                        'is_admin': row['is_admin'],
+                        'password': make_password(password),
+                    }
+                )
+
+                workgroup, _ = WorkGroup.objects.get_or_create(work_group=row['workgroup'])
+
+                Profile.objects.update_or_create(
+                    user=user,
+                    defaults={
+                        'gender': row['gender'],
+                        'workgroup': workgroup,
+                        'position': row['position'],
+                        'phone': row['phone'],
+                        'img': row['img'] if 'img' in row and pd.notna(row['img']) else None,
+                    }
+                )
+            
+            messages.success(request, 'นำเข้าข้อมูลผู้ใช้งานสำเร็จ')
+        except Exception as e:
+            messages.error(request, f'เกิดข้อผิดพลาดในการนำเข้าข้อมูล: {e}')
+        
+        return redirect('accounts:manage_user')
+     
+
+def export_users_to_excel(request):
+    users = MyUser.objects.all()
+    profiles = Profile.objects.filter(user__in=users)
+
+    user_data = []
+    for user in users:
+        profile = profiles.filter(user=user).first()
+
+        # Convert to timezone unaware datetime
+        user_date_created = timezone.localtime(user.date_created).replace(tzinfo=None) if user.date_created else None
+        profile_date_created = timezone.localtime(profile.updatedAt).replace(tzinfo=None) if profile and profile.updatedAt else None
+
+        user_data.append({
+            'username': user.username,
+            'perfix': user.perfix,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'is_active': user.is_active,
+            'is_general': user.is_general,
+            'is_manager': user.is_manager,
+            'is_executive': user.is_executive,
+            'is_admin': user.is_admin,
+            'date_created': user_date_created,
+            'gender': profile.gender if profile else '',
+            'workgroup': profile.workgroup.work_group if profile else '',
+            'position': profile.position if profile else '',
+            'phone': profile.phone if profile else '',
+            'img': profile.img.url if profile and profile.img else '',
+            'profile_date_created': profile_date_created,
+        })
+
+    df = pd.DataFrame(user_data)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=users.xlsx'
+
+    # Save to Excel
+    with pd.ExcelWriter(response, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Users')
+
+    return response
+
 
 
 @user_passes_test(is_manager)

@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.db import models
 from accounts.models import MyUser
 from shop.models import Product, Receiving
+from django.core.validators import MinValueValidator
 
 
 class Order(models.Model):
@@ -12,6 +13,8 @@ class Order(models.Model):
     status = models.BooleanField(blank=True, null=True,verbose_name="สถานะออเดอร์")
     date_receive = models.DateTimeField(blank=True, null=True, verbose_name='วันที่จ่ายพัสดุ')
     other = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='หมายเหตุ')
+    month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
+    year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
 
     class Meta:
         ordering = ('-id',)
@@ -32,13 +35,20 @@ class Order(models.Model):
     def get_total_sum(self):
         total = sum(item.get_total() for item in self.items.all())
         return total
+    
+    def save(self, *args, **kwargs):
+        if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+            self.month = self.month
+            self.year = self.year
+        super().save(*args, **kwargs)
 
     
 class Issuing(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name='ออเดอร์ที่')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='Issuing', verbose_name='สินค้า')
     receiving = models.ForeignKey(Receiving, on_delete=models.CASCADE, related_name='issuings', verbose_name='รายการรับเข้า')  # ใช้ ForeignKey
-    price = models.PositiveIntegerField(verbose_name='ราคา')
+    # price = models.PositiveIntegerField(verbose_name='ราคา')
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], verbose_name='ราคา')
     quantity = models.SmallIntegerField(verbose_name='จำนวน')
     datecreated = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)

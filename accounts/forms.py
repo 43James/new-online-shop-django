@@ -41,7 +41,6 @@ class UserEditForm(UserCreationForm):
 
 
 
-
 class UserRegistrationForm(UserCreationForm):
     perfix = forms.ChoiceField(choices=MyUser.PREFIX_CHOICES, label='คำนำหน้า', widget=forms.Select(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
     email = forms.EmailField(required=True)
@@ -107,50 +106,6 @@ class ProfileImageForm(forms.ModelForm):
         }
 
 
-# class UserProfileForm(forms.ModelForm):
-
-#     perfix = forms.ChoiceField(choices=MyUser.PREFIX_CHOICES, label='คำนำหน้า', widget=forms.Select(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
-
-#     class Meta:
-#         model = MyUser
-#         fields = ('username', 'email', 'perfix', 'first_name', 'last_name', )
-#         labels = {
-#             'username' : 'Username',
-#             'email': 'อีเมล',
-#             'perfix':'คำนำหน้า',
-#             'first_name' : 'ชื่อ',
-#             'last_name' : 'นามสกุล',
-#         }
-#         widgets = {
-#             'username' : forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#             'email' : forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#             'perfix' : forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#             'first_name' : forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#             'last_name' : forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#         }
-
-# class ExtendedProfileForm(forms.ModelForm):
-#     prefix = 'extended'
-
-#     class Meta:
-#         model = Profile
-#         fields = ('gender', 'position', 'work_group', 'phone', 'img' )
-#         labels = {
-#             'gender': 'เพศ',
-#             'position' : 'ตำแหน่ง',
-#             'work_group': 'กลุ่มงาน',
-#             'phone' : 'โทรศัพท์',
-#             'img' : 'รูปโปรไฟล์'
-#         }
-#         widgets = {
-#             'gender': forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#             'position': forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#             'work_group': forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#             'phone': forms.TextInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);'}),
-#             # 'img': forms.FileInput(attrs={'class': 'form-control mt-2', 'style':'font-weight: bold; color: rgb(8, 0, 255);',}),
-#             # 'img': forms.FileInput()
-#         }
-
 class UserProfileForm(forms.ModelForm):
     perfix = forms.ChoiceField(choices=MyUser.PREFIX_CHOICES, label='คำนำหน้า', widget=forms.Select(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
 
@@ -191,13 +146,19 @@ class ExtendedProfileForm(forms.ModelForm):
             # 'img' : 'รูปโปรไฟล์'
         }
         
-# class ExtendedProfileForm(forms.ModelForm):
 
-#     class Meta:
-#          model = Profile
-#          fields = ('gender', 'position', 'workgroup', 'phone', 'img' )
 
-#     def __init__(self, *args, **kwargs):
-#         super(ExtendedProfileForm, self).__init__(*args, **kwargs)
-#         for visible in self.visible_fields():
-#             visible.field.widget.attrs['class'] = 'form-control'
+class EditProfileForm(forms.ModelForm):
+    GENDER_CHOICES = [
+        ('ชาย', 'ชาย'),
+        ('หญิง', 'หญิง'),
+    ]
+    
+    gender = forms.ChoiceField(choices=GENDER_CHOICES, label='เพศ', widget=forms.Select(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
+    position = forms.CharField(label='ตำแหน่ง', widget=forms.TextInput(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
+    workgroup = forms.ModelChoiceField(queryset=WorkGroup.objects.all(), label='กลุ่มงาน', widget=forms.Select(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
+    phone = forms.CharField(label='โทรศัพท์', widget=forms.TextInput(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
+
+    class Meta:
+        model = Profile
+        fields = ['gender', 'workgroup', 'position', 'phone']

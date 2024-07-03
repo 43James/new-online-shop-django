@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_cron',
+    
     'crispy_forms',
     'app_linebot.apps.AppLinebotConfig',
     'cart.apps.CartConfig',

@@ -174,3 +174,8 @@ class RecordMonthlyStockForm(forms.Form):
         label="ยืนยันการบันทึกยอดสินค้าคงเหลือประจำเดือน",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'flexCheckDefault'})
     )
+
+
+class OrderFilterForm(forms.Form):
+    year = forms.ChoiceField(choices=[('', 'เลือกปี')], required=False)
+    month = forms.ChoiceField(choices=[('', 'เลือกเดือน')] + [(str(i), str(i)) for i in range(1, 13)], required=False)

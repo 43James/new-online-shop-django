@@ -1,9 +1,10 @@
+from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 # from dashboard.views import products
-
+from django.contrib.auth.decorators import user_passes_test
 from dashboard.views import count_pending_orders
 from shop.models import MonthlyStockRecord, Product, Category, Receiving, Stock, Subcategory
 from django.db.models import Q
@@ -12,7 +13,26 @@ from .filters import FilterProduct, FilterSubcategory
 from datetime import datetime, timedelta
 from django.db.models import F
 
+def is_manager(user):
+    if not user.is_manager:
+        raise Http404
+    return True
 
+def is_executive(user):
+    if not user.is_executive:
+        raise Http404
+    return True
+
+def is_admin(user):
+    if not user.is_admin:
+        raise Http404
+    return True
+
+def is_authorized(user):
+    try:
+        return is_manager(user) and is_executive(user) and is_admin(user)
+    except Http404:
+        return True
 
 def paginat(request, list_objects):
 	p = Paginator(list_objects, 20)
@@ -27,7 +47,7 @@ def paginat(request, list_objects):
 
 
 # ในกรณีใช้กับตาราง Product
-
+@user_passes_test(is_authorized)
 @login_required
 def home_page(request):
     products = Product.objects.all()

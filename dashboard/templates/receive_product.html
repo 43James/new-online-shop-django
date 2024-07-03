@@ -41,18 +41,18 @@
 
     <label class="mb-2" for="quantity">จำนวนคงเหลือ </label>
     <input class="form-control mb-3" type="number" id="id_quantity" name="quantity"
-      placeholder="จำนวนคงเหลือ" required>
+      placeholder="จำนวนคงเหลือ (ช่องนี้จะกรอกอัตโนมัติ)" required>
 
     <label class="mb-2" for="unit_price">ราคา</label>
     <input class="form-control mb-3" type="number" id="unit_price" name="unitprice" placeholder="ใส่ราคาต่อหน่วย"
       required>
 
     <label class="mb-2" for="unit_price">เดือนที่รับเข้า (เป็นตัวเลข)</label>
-    <input class="form-control mb-3" type="number" id="unit_price" name="month" placeholder="(เป็นตัวเลข)"
+    <input class="form-control mb-3" type="number" id="unit_price" name="month" placeholder="(เช่น เดือนมิถุนายน ให้ใส่เลข 6)"
       required>
 
     <label class="mb-2" for="unit_price">ปีที่รับเข้า ค.ศ.</label>
-    <input class="form-control" type="number" id="unit_price" name="year" placeholder="ปี ค.ศ."
+    <input class="form-control" type="number" id="unit_price" name="year" placeholder="เป็น ปี ค.ศ. เท่านั้น!"
       required><br><br>
 
     {{ form.non_field_errors }}

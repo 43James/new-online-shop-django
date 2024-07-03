@@ -4,9 +4,9 @@
   <table class="table table-hover">
     <thead class="table table-secondary">
       <tr>
-        <th scope="col">#</th>
-        <th scope="col">User</th>
-        <th scope="col">ID</th>
+        <th scope="col">n</th>
+        <th scope="col">ผู้ใช้งาน</th>
+        <th scope="col">เลขที่เบิก</th>
         <th scope="col">ยอดรวม</th>
         <th scope="col">สถานะ</th>
         <th scope="col">ทำรายการ</th>
@@ -96,7 +96,7 @@
           </div>
         </form>
 
-        <td><a href="{% url 'dashboard:order_detail' order.id %}" class="text-primary text-decoration-none">Detail</a>
+        <td><a href="{% url 'dashboard:order_detail' order.id %}" class="text-primary text-decoration-none"><i class="bi bi-search fs-5"></i></a>
         </td>
 
       </tr>

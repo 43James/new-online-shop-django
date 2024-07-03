@@ -2,12 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-
+from requests.exceptions import ConnectTimeout
 from app_linebot.views import notify_admin, notify_user
 from shop.models import Receiving
 from .models import Order, Issuing
 from cart.utils.cart import Cart
 from django.http import HttpResponse
+import requests
 
 
 # เดิม
@@ -29,6 +30,51 @@ from django.http import HttpResponse
 #     notify_user(order.id)  # You can also use notify_user_approved if needed
     
 #     return redirect('orders:pay_order', order_id=order.id)
+
+
+def notify_admin(order_id):
+    try:
+        response = requests.post(
+            'https://api.line.me/v2/bot/message/push',
+            headers={'Authorization': 'Bearer <YOUR_ACCESS_TOKEN>'},
+            json={
+                'to': '<ADMIN_USER_ID>',
+                'messages': [
+                    {
+                        'type': 'text',
+                        'text': f'New order created with ID: {order_id}'
+                    }
+                ]
+            },
+            timeout=10  # เพิ่ม timeout ที่นี่
+        )
+        response.raise_for_status()
+    except ConnectTimeout:
+        print("Connection to LINE API timed out.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def notify_user(order_id):
+    try:
+        response = requests.post(
+            'https://api.line.me/v2/bot/message/push',
+            headers={'Authorization': 'Bearer <YOUR_ACCESS_TOKEN>'},
+            json={
+                'to': '<USER_ID>',
+                'messages': [
+                    {
+                        'type': 'text',
+                        'text': f'Your order with ID: {order_id} has been created'
+                    }
+                ]
+            },
+            timeout=10  # เพิ่ม timeout ที่นี่
+        )
+        response.raise_for_status()
+    except ConnectTimeout:
+        print("Connection to LINE API timed out.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 @login_required
 def create_order(request):

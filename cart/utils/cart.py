@@ -23,7 +23,7 @@ class Cart:
         for items in self.cart.values():
             for item in items:
                 item['product'] = product_map[int(item['product_id'])]
-                item['total_price'] = int(item['price']) * int(item['quantity'])
+                item['total_price'] = float(item['price']) * int(item['quantity'])
                 yield item
 
     def add_cart_session(self):
@@ -102,7 +102,7 @@ class Cart:
         self.session.modified = True
 
     def get_total_price(self):
-        return sum(int(item['price']) * item['quantity'] for items in self.cart.values() for item in items)
+        return sum(float(item['price']) * item['quantity'] for items in self.cart.values() for item in items)
 
     def clear(self):
         if CART_SESSION_ID in self.session:
