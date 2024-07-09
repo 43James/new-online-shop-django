@@ -90,7 +90,7 @@
             <div class="row">
                 <div class="col-lg-5"><b>สถานะผู้ใช้งาน</b></div>
                 <div class="col-lg" style="color:rgb(0, 134, 0); font-weight: bold;">{% if user.is_general and user.is_manager and user.is_admin %}
-                    all
+                    ผู้เข้าถึงสิทธิ์ทั้งหมด
                 {% elif user.is_general and user.is_manager %}
                     ผู้ใช้งาน, ผู้จัดการระบบ
                 {% elif user.is_general and user.is_executive %}
@@ -111,11 +111,11 @@
             </div>
             <div class="row">
                 <div class="col-lg-5"><b>วันที่สร้างข้อมูล</b></div>
-                <div class="col-lg">{{ user.date_joined }}</div>
+                <div class="col-lg">{{ user.date_joined|date:"d M Y เวลา H:i น." }}</div>
             </div>
             <div class="row">
                 <div class="col-lg-5"><b>เข้าใช้งานล่าสุด</b></div>
-                <div class="col-lg">{{ user.last_login }}</div>
+                <div class="col-lg">{{ user.last_login|date:"d M Y เวลา H:i น." }}</div>
             </div>
             
            

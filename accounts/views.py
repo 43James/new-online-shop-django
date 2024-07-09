@@ -10,41 +10,43 @@ from cart.utils.cart import Cart
 from dashboard.views import is_manager
 from django.db.models import Q
 from orders.models import Order
-from shop.models import Product, Receiving  # นำเข้าคลาส Cart ที่ใช้จัดการตะกร้า
-from django.db import transaction
 from django.contrib.auth import logout as auth_logout
-from .forms import EditProfileForm, ProfileImageForm, RegistrationForm, ProfileForm, UserRegistrationForm, UserLoginForm, ManagerLoginForm, UserProfileForm, UserEditForm, ExtendedProfileForm
+from .forms import EditProfileForm, ProfileImageForm, RegistrationForm, ProfileForm, UserLoginForm, ManagerLoginForm, UserProfileForm, UserEditForm, ExtendedProfileForm
 from accounts.models import MyUser, Profile, WorkGroup
-from django.contrib.auth import logout as django_logout
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
+from django.core.files.base import ContentFile
+import base64
 
+from django.core.exceptions import PermissionDenied
 
 def is_manager(user):
-    try:
-        if not user.is_manager:
-            raise Http404
-        return True
-    except:
-        raise Http404
-    
+    if not user.is_manager:
+        raise PermissionDenied
+    return True
+
 def is_executive(user):
-    try:
-        if not user.is_executive:
-            raise Http404
-        return True
-    except:
-        raise Http404
+    if not user.is_executive:
+        raise PermissionDenied
+    return True
 
 def is_admin(user):
-    try:
-        if not user.is_admin:
-            raise Http404
+    if not user.is_admin:
+        raise PermissionDenied
+    return True
+
+def is_authorized(user):
+    # ถ้าผู้ใช้เป็น is_manager, is_executive หรือ is_admin อย่างใดอย่างหนึ่ง
+    if user.is_manager or user.is_executive or user.is_admin:
         return True
-    except:
-        raise Http404
+    raise PermissionDenied
+
+def is_authorized_admin(user):
+    if is_admin(user):
+        return True
+    raise PermissionDenied
 
 
 @login_required
@@ -63,8 +65,7 @@ def change_password(request):
     return render(request, 'change_password.html', {'form': form})
 
 
-
-
+@user_passes_test(is_authorized_admin)
 @login_required
 def user_register(request):
     if request.method == 'POST':
@@ -95,6 +96,7 @@ def user_register(request):
         })
 
 
+
 def manager_login(request):
     if request.method == 'POST':
         form = ManagerLoginForm(request.POST)
@@ -118,11 +120,11 @@ def manager_login(request):
                 
                 else:
                     messages.error(
-                        request, 'You do not have the required permissions.', 'danger'
+                        request, 'คุณไม่มีสิทธิ์เข้าถึง', 'danger'
                     )
             else:
                 messages.error(
-                    request, 'username or password is wrong', 'danger'
+                    request, 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'danger'
                 )
                 return redirect('accounts:manager_login')
     else:
@@ -131,45 +133,79 @@ def manager_login(request):
     return render(request, 'manager_login.html', context)
 
 
+
+# def user_login(request):
+#     if request.method == 'POST':
+#         form = UserLoginForm(request.POST)
+#         if form.is_valid():
+#             data = form.cleaned_data
+#             user = authenticate(
+#                 request, username=data['username'], password=data['password']
+#             )
+#             if user is not None:
+#                 if user.is_general:
+#                     login(request, user)
+#                     return redirect('shop:home_page')
+                
+#                 elif user.is_manager:
+#                     login(request, user)
+#                     return redirect('shop:home_page')
+                
+#                 elif user.is_admin:
+#                     login(request, user)
+#                     return redirect('shop:home_page')
+                
+#                 elif user.is_executive:
+#                     login(request, user)
+#                     return redirect('dashboard:dashboard_home')
+                
+#                 else:
+#                     messages.error(
+#                         request, 'คุณไม่มีสิทธิ์เข้าถึง', 'danger'
+#                     )
+#             else:
+#                 messages.error(
+#                     request, 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'danger'
+#                 )
+#                 return redirect('accounts:user_login')
+#     else:
+#         form = UserLoginForm()
+#     context = {
+#         'title':'Login', 'form': form}
+#     return render(request, 'login.html', context)
+
 def user_login(request):
+    if request.user.is_authenticated:
+        if request.user.is_general or request.user.is_manager or request.user.is_admin:
+            return redirect('shop:home_page')
+        elif request.user.is_executive:
+            return redirect('dashboard:dashboard_home')
+        else:
+            messages.error(request, 'คุณไม่มีสิทธิ์เข้าถึง', 'danger')
+            return redirect('shop:home_page')  # หรือไปยังหน้าที่เหมาะสม
+
     if request.method == 'POST':
         form = UserLoginForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            user = authenticate(
-                request, username=data['username'], password=data['password']
-            )
+            user = authenticate(request, username=data['username'], password=data['password'])
             if user is not None:
-                if user.is_general:
-                    login(request, user)
+                login(request, user)
+                if user.is_general or user.is_manager or user.is_admin:
                     return redirect('shop:home_page')
-                
-                elif user.is_manager:
-                    login(request, user)
-                    return redirect('shop:home_page')
-                
-                elif user.is_admin:
-                    login(request, user)
-                    return redirect('shop:home_page')
-                
-                else:
-                    messages.error(
-                        request, 'You do not have the required permissions.', 'danger'
-                    )
+                elif user.is_executive:
+                    return redirect('dashboard:dashboard_home')
             else:
-                messages.error(
-                    request, 'username or password is wrong', 'danger'
-                )
-                return redirect('accounts:user_login')
+                messages.error(request, 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'danger')
     else:
         form = UserLoginForm()
-    context = {
-        'title':'Login', 'form': form}
+
+    context = {'title': 'Login', 'form': form}
     return render(request, 'login.html', context)
 
 
-
 # ใหม่8
+@login_required
 def user_logout(request):
     # เก็บ session ไว้ก่อนที่จะ logout
     cart = Cart(request)
@@ -195,7 +231,7 @@ def user_logout(request):
 #     return redirect('accounts:manager_login')
 
 
-
+@user_passes_test(is_admin)
 @login_required
 def manager_edit_profile(request, user_id):
     profile = get_object_or_404(Profile, user__id=user_id)
@@ -217,7 +253,6 @@ def manager_edit_profile(request, user_id):
             }
     
     return render(request, 'manager_edit_profil.html', context)
-
 
 
 @login_required
@@ -265,6 +300,9 @@ def edit_profile (request):
     }
     return render(request, 'edit_profile.html', context)
 
+
+
+@user_passes_test(is_authorized)
 @login_required
 def edit_profile_manager (request):
     user = request.user
@@ -310,6 +348,8 @@ def edit_profile_manager (request):
     }
     return render(request, 'edit_profile_manager.html', context)
 
+
+
 @login_required
 def user_profile_detail(request, username):
     try:
@@ -331,6 +371,8 @@ def user_profile_detail(request, username):
     return render(request, 'user_profile.html', context)
 
 
+
+
 @login_required
 def delete_profile_picture(request):
     profile = request.user.profile
@@ -342,23 +384,8 @@ def delete_profile_picture(request):
     return redirect('accounts:user_profile_detail', username=request.user.username)
 
 
-# @login_required
-# def upload_profile_picture(request):
-#     if request.method == 'POST':
-#         form = ProfileImageForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             profile = request.user.profile
-#             profile.img = form.cleaned_data['img']
-#             profile.save()
-#             messages.success(request, 'รูปโปรไฟล์ถูกอัพโหลดเรียบร้อยแล้ว')
-#             return redirect('accounts:user_profile_detail', username=request.user.username)
-#     else:
-#         form = ProfileImageForm()
-#     return render(request, 'upload_profile_picture.html', {'form': form})
 
 
-from django.core.files.base import ContentFile
-import base64
 @login_required
 def upload_profile_picture(request):
     if request.method == 'POST':
@@ -417,6 +444,7 @@ def upload_profile_picture_manager(request):
     return render(request, 'upload_profile_picture_manager.html', context)
 
 
+@user_passes_test(is_authorized)
 @login_required
 def manager_profile_detail(request, username):
     try:
@@ -438,6 +466,7 @@ def manager_profile_detail(request, username):
     return render(request, 'manager_profile.html', context)
 
 
+@user_passes_test(is_authorized)
 @login_required
 def profile_users(request, username):
     users = MyUser.objects.get(username = username)
@@ -452,6 +481,7 @@ def profile_users(request, username):
     return render(request, 'profile_users.html', context)
 
 
+@user_passes_test(is_authorized)
 @login_required
 def delete_profile_picture_manager(request):
     profile = request.user.profile
@@ -462,6 +492,8 @@ def delete_profile_picture_manager(request):
         messages.error(request, 'ไม่มีรูปโปรไฟล์ให้ลบ')
     return redirect('accounts:manager_profile_detail', username=request.user.username)
 
+
+@user_passes_test(is_admin)
 @login_required
 def manage_user(request):
     my = MyUser.objects.all()
@@ -485,6 +517,7 @@ def manage_user(request):
     })
 
 
+@user_passes_test(is_admin)
 def import_users_from_excel(request):
      if request.method == 'POST':
         file = request.FILES['file']
@@ -531,6 +564,7 @@ def import_users_from_excel(request):
         return redirect('accounts:manage_user')
      
 
+@user_passes_test(is_admin)
 def export_users_to_excel(request):
     users = MyUser.objects.all()
     profiles = Profile.objects.filter(user__in=users)
@@ -576,7 +610,7 @@ def export_users_to_excel(request):
 
 
 
-@user_passes_test(is_manager)
+@user_passes_test(is_admin)
 @login_required
 def update_user(request, id):
     my = MyUser.objects.get(id=id)
@@ -603,6 +637,7 @@ def update_user(request, id):
     })
 
 
+@user_passes_test(is_admin)
 @login_required 
 def delete_user(request, id):
     data_input = MyUser.objects
@@ -610,6 +645,7 @@ def delete_user(request, id):
     data_all = MyUser.objects.all()
     messages.success(request, 'ลบสมาชิกสำเร็จ')
     return redirect('accounts:manage_user')
+
 
 def count_pending_orders():
     # ดึงข้อมูลออเดอร์ทั้งหมดที่รอการยืนยัน

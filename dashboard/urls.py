@@ -63,6 +63,8 @@ urlpatterns = [
     path('monthly_stock_records/export/', views.export_monthly_stock_records_to_excel, name='export_monthly_stock_records'),
     path('monthly-report-receive/', views.monthly_report_receive, name='monthly_report_receive'),
     path('export-to-excel-receive/', views.export_to_excel_receive, name='export_to_excel_receive'),
+    path('report-monthly-totals/', views.report_monthly_totals, name='report_monthly_totals'),
+
 
 
 

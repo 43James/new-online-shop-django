@@ -1,0 +1,19 @@
+{% extends "dashboard.html" %}
+{% load humanize %}
+{% block content %}
+<div class="mt-4 d-flex text-center" >
+    <div class="container col-md-3 mb-2 p-4 justify-content-center" style="background-color: rgb(201, 201, 201); border-radius: 20px;">
+        <h4 class="mb-3">ยอดที่เบิกวัสดุในแต่ละเดือน</h4>
+        <ul class="list-group">
+            {% for key, total_amount in report_monthly_totals.items %}
+            {% with month=key.0 year=key.1 %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                เดือน {{ month }} ปี {{ year }}
+                <span>{{ total_amount|intcomma }} บาท</span>
+            </li>
+            {% endwith %}
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

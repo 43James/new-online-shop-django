@@ -36,10 +36,45 @@
     .messages {
       margin-top: 20px; /* เพิ่ม margin top เพื่อให้มีพื้นที่ว่างระหว่างขอบบน */
     }
+
+    /* body {
+      background-image: url('https://firebasestorage.googleapis.com/v0/b/ubuspark-production.appspot.com/o/images%2Fbanner%2F54fla_home.spark.ubu.ac.th.jpg?alt=media&token=5da77a57-ef81-44b9-8aba-bf61d70ce3f5');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      backdrop-filter: blur(5px);
+      height: 100vh;
+      width: 100%;
+    } */
+
+    html,body {
+      position: relative;
+      background-color: rgba(255, 255, 255, 0);
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .background-blur {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('https://firebasestorage.googleapis.com/v0/b/ubuspark-production.appspot.com/o/images%2Fbanner%2Fgwvrw_About%20Us.spark.ubu.ac.th%20.jpg?alt=media&token=947cfb10-646e-42b9-b56a-576d09edaae7');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      filter: blur(10px); 
+      z-index: -1; 
+    }
   </style>
 </head>
 
 <body class="bg-light">
+  <div class="background-blur"></div>
   <div class="container">
     <!-- messages -->
     {% if messages %}
@@ -55,7 +90,7 @@
 
   <div class="container full-height center-container">
     <div class="login-container">
-      <h2 class="text-center mb-3">Login Dashboard</h2>
+      <h2 class="text-center mb-3">Login To Dashboard</h2>
       <form method="POST">
         {% csrf_token %}
         <div class="mb-3 mt-5">
@@ -70,8 +105,7 @@
       </form>
 
       <div class="text-center mt-2">
-        <a class="text-decoration-none" href="{% url 'accounts:user_login' %}">Back to
-          shop</a>
+        <a class="text-decoration-none" href="{% url 'accounts:user_login' %}">เข้าสู่ระบบหน้าเบิกวัสดุ</a>
       </div>
     </div>
   </div>

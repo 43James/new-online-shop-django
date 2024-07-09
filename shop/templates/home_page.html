@@ -1,57 +1,60 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <body class="home-page">
-<div class="text-primary mb-3">
-  {% if selected_category %}
-  <div>
-    <h5>หมวดหมู่ที่เลือก : <i>{{ selected_category.name_cate }}</i></h5>
+  <div class="text-white mb-3">
+    {% if selected_category %}
+    <div>
+      <h5>หมวดหมู่ที่เลือก : <i>{{ selected_category.name_cate }}</i></h5>
+    </div>
+    {% endif %}
+
+    {% if selected_subcategory %}
+    <div>
+      <h6>หมวดหมู่ย่อยที่เลือก : <i>{{ selected_subcategory.name_sub }}</i></h6>
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
 
-  {% if selected_subcategory %}
-  <div>
-    <h6>หมวดหมู่ย่อยที่เลือก : <i>{{ selected_subcategory.name_sub }}</i></h6>
-  </div>
-  {% endif %}
-</div>
+  {% if products %}
+  {% for product in products %}
+  <div class="card me-3 mb-3 mt-4" style="width: 11rem; margin-left: 20px;">
 
-{% if products %}
-{% for product in products %}
-
-<div class="card me-1 mb-2" style="width: 11rem; margin-left: 10px;">
-
-  {% if product.total_quantity == 0 %}
-  <div id="watermark">
+    {% if product.total_quantity == 0 %}
+    <div id="watermark">
+      <a href="{{ product.get_absolute_url }}">
+        {% if product.image %}
+        <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150"
+          src="{{ product.image.url }}">
+        {% else %}
+        <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150"
+          src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+        {% endif %}
+      </a>
+      <p>สต๊อกหมด</p>
+    </div>
+    {% else %}
     <a href="{{ product.get_absolute_url }}">
       {% if product.image %}
-      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
+      <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
       {% else %}
-      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+      <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150"
+        src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
       {% endif %}
     </a>
-    <p>สต๊อกหมด</p>
-  </div>
-  {% else %}
-  <a href="{{ product.get_absolute_url }}">
-    {% if product.image %}
-    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
-    {% else %}
-    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
     {% endif %}
-  </a>
-  {% endif %}
 
-  <div class="mt-3 text-center">
-    <h6 class="card-title element">{{ product.product_name }}</h6>
-    <!-- <p class="text-muted">{{ product.price }} ฿</p> -->
-    <!-- <a href="{{ product.get_absolute_url }}" class="mb-3 btn btn-outline-primary w-100">เลือก</a> -->
+    <div class="mt-3 text-center">
+      <h6 class="card-title element">{{ product.product_name }}</h6>
+      <!-- <p class="text-muted">{{ product.price }} ฿</p> -->
+      <!-- <a href="{{ product.get_absolute_url }}" class="mb-3 btn btn-outline-primary w-100">เลือก</a> -->
+    </div>
   </div>
-</div>
-{% endfor %}
+  {% endfor %}
 
-<!-- pagination -->
-<center class="mt-3">
+  <!-- pagination -->
+  <!-- <center class="mt-4 ">
   <div class="col-md-2">
     <ul class="pagination">
       {% if products.has_previous %}
@@ -67,17 +70,48 @@
       {% endif %}
     </ul>
   </div>
-</center>
-{% else %}
-<div class="row">
-  <div class="col-md-2"></div>
-  <div class="col-md-8 mt-5 pt-5 text-center">
-    <br>
-    <h3 class="text-muted text-capitalize">ไม่มีรายการวัสดุ!</h3>
-    <!-- <h3 class="text-muted text-capitalize">No Products..!</h3> -->
+</center> -->
+  <!-- pagination -->
+  <center class="mt-4">
+    <div class="col-md-2">
+      <ul class="pagination">
+        {% if products.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}">Previous</a></li>
+        <li class="page-item"><a class="page-link"
+            href="?page={{ products.previous_page_number }}">{{products.previous_page_number}}</a></li>
+        {% endif %}
+        <li class="page-item"><a class="page-link current-page"
+            href="?page={{ products.number }}">{{products.number}}</a></li>
+        {% if products.has_next %}
+        <li class="page-item"><a class="page-link"
+            href="?page={{ products.next_page_number }}">{{products.next_page_number}}</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </center>
+
+  {% else %}
+  <div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 mt-5 pt-5 text-center">
+      <br>
+      <h3 class="text-muted text-capitalize">ไม่มีรายการวัสดุ!</h3>
+      <!-- <h3 class="text-muted text-capitalize">No Products..!</h3> -->
+    </div>
+    <div class="col-md-2"></div>
   </div>
-  <div class="col-md-2"></div>
-</div>
-{% endif %}
+  {% endif %}
 </body>
+
+<style>
+  .page-link.current-page {
+    color: #fff;
+    /* สีของลิงก์เป็นสีขาว */
+    background-color: #007bff;
+    /* สีพื้นหลังเป็นสีน้ำเงินเข้ม */
+    border-color: #007bff;
+    /* สีเส้นขอบเป็นสีน้ำเงินเข้ม */
+  }
+</style>
 {% endblock %}

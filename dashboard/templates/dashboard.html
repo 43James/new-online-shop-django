@@ -77,7 +77,7 @@
         <!-- <div class="col-md-1"></div> -->
         <!-- content -->
         <div class="col-md-10 justify-content-center">
-            <h2 class="text-capitalize border-bottom text-center" style="font-weight: bold;">{{ title }}</h2>
+            <h2 class="text-capitalize border-bottom text-center p-2" style="font-weight: bold;">{{ title }}</h2>
             <div class="p-2">
                 <!-- messages -->
                 {% if messages %}
@@ -382,9 +382,10 @@
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     <li><a class="dropdown-item {% if '/monthly_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report' %}">รายงานประจำเดือน</a></li>
-                    <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %}"  href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุประจำเดือน ยกมา</a></li>
                     <li><a class="dropdown-item {% if '/monthly-report-receive/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report_receive' %}">รายงานรับเข้าประจำเดือน</a></li>
                     <li><a class="dropdown-item {% if '/report_order_list/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:report_order_list' %}">รายการเบิกประจำเดือน รายบุคคล</a></li>
+                    <li><a class="dropdown-item {% if '/report-monthly-totals/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:report_monthly_totals' %}">ยอดที่เบิกวัสดุแต่ละเดือน</a></li>
+                    <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %} text-danger"  href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุคงเหลือยกมา ( อัพทุกวันที่ 1 ) </a></li>
                     <li><a class="dropdown-item {% if '/total_quantity/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:total_quantity' %}">จำนวนวัสดุที่รับเข้าทั้งหมด</a></li>
 
                     </li>
@@ -471,9 +472,10 @@
             <hr>
             {% endif %}
             <div class="row ">
+                {% if request.user.is_manager or user.is_admin or user.is_executive %}
                 <div class="col-6">
                     <a class="text-decoration-none" href="{% url 'shop:home_page' %}">
-                        <li class="rounded list-group-item bg-primary mt-2 text-center text-white">Back To shop</li>
+                        <li class="rounded list-group-item bg-primary mt-2 text-center text-white">เบิกวัสดุ</li>
                     </a>
                 </div>
                 <div class="col-6">
@@ -481,6 +483,14 @@
                         <li class="rounded list-group-item bg-danger mt-2 text-center text-white">Logout</li>
                     </a>
                 </div>
+                {% else %}
+                <div class="col-6 container justify-content-center">
+                    <a class="text-decoration-none" href="{% url 'accounts:user_logout' %}">
+                        <li class="rounded list-group-item bg-danger mt-2 text-center text-white">Logout</li>
+                    </a>
+                </div>
+                {% endif %}
+                
             </div>
             <div class="row d-flex justify-content-center mt-2 mb-2 mx-2 "
                 style="box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px; 

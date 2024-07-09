@@ -58,7 +58,7 @@ class Profile(models.Model):
     gender = models.CharField(max_length=10, default='', verbose_name='เพศ')
     workgroup = models.ForeignKey(WorkGroup,max_length=150, on_delete=models.CASCADE, verbose_name='กลุ่มงาน')
     position = models.CharField(max_length=150, verbose_name='ตำแหน่ง')
-    phone = models.CharField(max_length=10, verbose_name='เบอร์โทรศัพท์มือถือ')
+    phone = models.CharField(max_length=15, verbose_name='เบอร์โทรศัพท์มือถือ')
     img = models.ImageField(upload_to='Image_users', verbose_name='รูปโปรไฟล์',blank=True, null=True )
     updatedAt = models.DateTimeField(auto_now=True, blank=False)
 

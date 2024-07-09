@@ -1,5 +1,6 @@
 {% extends "dashboard.html" %}
 {% load static %}
+{% load humanize %}
 {% block content %}
 
 <head>
@@ -108,7 +109,7 @@
                 <td>{{ forloop.counter }}</td>
                 <td>{{ order.user.get_full_name  }}</td>
                 <td>{{ order.id }}</td>
-                <td>{{ order.get_total_price }} บาท</td>
+                <td>{{ order.get_total_price|intcomma }} บาท</td>
                 <td>{{ order.date_created | date:"d M Y เวลา H:i น." }}</td>
                 {% if order.status == True %}
                 <td scope="row" class="text-success">อนุมัติ</td>

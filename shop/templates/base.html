@@ -22,7 +22,7 @@
       color: rgb(255, 0, 0);
       font-size: 30px;
       top: 30%;
-      text-align: center;
+      /* text-align: center; */
       font-weight: bold;
       width: 100%;
       pointer-events: none;
@@ -36,11 +36,51 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    html,body {
+      position: relative;
+      background-color: rgba(255, 255, 255, 0);
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .background-blur {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('https://firebasestorage.googleapis.com/v0/b/ubuspark-production.appspot.com/o/images%2Fbanner%2Fgwvrw_About%20Us.spark.ubu.ac.th%20.jpg?alt=media&token=947cfb10-646e-42b9-b56a-576d09edaae7');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      filter: blur(10px); 
+      z-index: -1; 
+    }
+
+
+    .content {
+      position: relative;
+      z-index: 1; /* ทำให้เนื้อหาอยู่ด้านบน */
+      background: rgba(255, 255, 255, 0.8); /* ปรับความโปร่งใสเพื่อให้เห็นพื้นหลังเบลอ */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 
 <body>
-  <header class="p-2 border-bottom">
+{% if user.is_general %}
+<div class="background-blur"></div>
+<header class="p-2 border-bottom"
+    style="background-color: rgb(255, 255, 255); position: sticky; top: 0; z-index: 1000;">
     <div class="container">
       <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
         <!-- cart icon -->
@@ -94,27 +134,26 @@
             </ul>
           </li>
           {% endif %}
-         
-          
 
           <!-- favorite icon -->
           <!-- <li><a href="#" class="nav-link px-2 text-dark">FAQs</a></li> -->
           <!-- <li><a href="#" class="nav-link px-2 text-dark">เกี่ยวกับ</a></li> -->
-          <li><a href="#" class="nav-link px-2 text-dark"><div class="line-it-button" data-lang="th" data-type="friend" data-env="REAL text-end"
-            data-lineId="@339uiekk" style="display: none;">
-        </div>
-        <script src="https://www.line-website.com/social-plugins/js/thirdparty/loader.min.js" async="async"
-            defer="defer"></script></a></li>
-
+          <li><a href="#" class="nav-link px-2 text-dark">
+              <div class="line-it-button" data-lang="th" data-type="friend" data-env="REAL text-end"
+                data-lineId="@339uiekk" style="display: none;">
+              </div>
+              <script src="https://www.line-website.com/social-plugins/js/thirdparty/loader.min.js" async="async"
+                defer="defer"></script>
+            </a></li>
         </ul>
-        
+
         <!-- search form -->
-       
+
         <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3">
           <input id="searchInput" type="search" class="form-control form-control-dark" placeholder="Search..."
             aria-label="Search" onkeyup="searchProduct()">
         </form>
-        
+
         <!-- user profile dropdown -->
         <div class="dropdown text-end">
           <a href="#" class="btn btn-primary text-white me-4 d-block link-dark text-decoration-none dropdown-toggle"
@@ -126,16 +165,19 @@
                 <b class="text-primary">{{ request.user.get_likes_count }}</b></a></li> -->
             <li><a href="{% url 'orders:user_orders' %}" class="dropdown-item"><i class="bi bi-bag-fill"></i>
                 รายการเบิก</a></li>
+            <li><a href="{% url 'orders:monthly_totals_view' %}" class="dropdown-item"><i class="bi bi-cash-coin"></i></i>
+              ยอดที่เบิกวัสดุ</a></li>
             <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}"><i
                   class="bi bi-person-lines-fill"></i> ดูโปรไฟล์</a></li>
             <!-- <li><a class="dropdown-item" href="{% url 'accounts:edit_profile' %}"><i class="bi bi-person-fill-gear"></i>
                 แก้ไขโปรไฟล์</a></li> -->
             <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key-fill"></i>
                 เปลี่ยนรหัสผ่าน</a></li>
-            {% if user.is_manager or user.is_admin %}
-            <li><a class="dropdown-item text-primary" href="{% url 'dashboard:orders' %}"><i
-                  class="bi bi-person-check"> Manager</i></a></li>
+            {% if user.is_manager or user.is_admin or user.is_executive%}
+            <li><a class="dropdown-item text-primary" href="{% url 'dashboard:dashboard_home' %}"><i
+                  class="bi bi-person-check"> Dashboard</i></a></li>
             {% endif %}
+            
             <li><a class="dropdown-item text-danger" href="{% url 'accounts:user_logout' %}"><i
                   class="bi bi-box-arrow-right"></i> Sign out</a></li>
           </ul>
@@ -147,17 +189,17 @@
             {% if user.profile.img.url == user.profile.img.url %}
             <a href="{% url 'accounts:user_profile_detail' user.username %}">
               <img src="{{ user.profile.img.url }}"
-                   style="width: 25px; height: 25px; object-fit: cover; border-radius: 50%;">
+                style="width: 25px; height: 25px; object-fit: cover; border-radius: 50%;">
             </a>
-              
+
             {% else %}
             <a href="{% url 'accounts:user_profile_detail' user.username %}">
-              <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg" 
-                   style="width: 25px; height: 25px; object-fit: cover; border-radius: 50%;">
+              <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg"
+                style="width: 25px; height: 25px; object-fit: cover; border-radius: 50%;">
             </a>
-              
+
             {% endif %}
-          </div>          
+          </div>
           <div class="col " style="display: grid;
             place-items: center;">
             {{user.username}}
@@ -198,81 +240,79 @@
       {% block content %}{% endblock %}
     </div>
   </main>
-  <!-- Bootstrap JavaScript Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
-    crossorigin="anonymous"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-  <script type="text/javascript">
-    $(document).ready(function () {
 
-      window.setTimeout(function () {
-        $(".alert").fadeTo(1000, 0).slideUp(1000, function () {
-          $(this).remove();
-        });
-      }, 1500);
 
-    });
-  </script>
-  <script>
-    const passwordInput = document.querySelector('[name="{{ user_form.password1.name }}"]');
-    const showPasswordButton = document.getElementById('show-password');
-  
-    showPasswordButton.addEventListener('click', function () {
-      if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        showPasswordButton.textContent = 'ซ่อนรหัสผ่าน';
-      } else {
-        passwordInput.type = 'password';
-        showPasswordButton.textContent = 'แสดงรหัสผ่าน';
-      }
-    });
-  </script>  
+<!-- Bootstrap JavaScript Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script type="text/javascript">
+  $(document).ready(function () {
+
+    window.setTimeout(function () {
+      $(".alert").fadeTo(1000, 0).slideUp(1000, function () {
+        $(this).remove();
+      });
+    }, 1500);
+
+  });
+</script>
+<script>
+  const passwordInput = document.querySelector('[name="{{ user_form.password1.name }}"]');
+  const showPasswordButton = document.getElementById('show-password');
+
+  showPasswordButton.addEventListener('click', function () {
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      showPasswordButton.textContent = 'ซ่อนรหัสผ่าน';
+    } else {
+      passwordInput.type = 'password';
+      showPasswordButton.textContent = 'แสดงรหัสผ่าน';
+    }
+  });
+</script>
 
 <!-- search form home_page และ user_orders -->
 <script>
   function searchProduct() {
-      // รับค่าของอินพุทที่กรอกเข้ามา
-      var input = document.getElementById("searchInput");
-      var filter = input.value.toUpperCase();
-      
-      // ตรวจสอบว่าอยู่ในหน้า home_page หรือ user_orders
-      if (document.body.classList.contains('home-page')) {
-          var cards = document.getElementsByClassName("card");
-          
-          // วนลูปทุกการ์ดในหน้า home_page
-          for (var i = 0; i < cards.length; i++) {
-              var title = cards[i].getElementsByClassName("card-title")[0];
-              var txtValue = title.textContent || title.innerText;
-              
-              // ตรวจสอบว่าชื่อสินค้าตรงกับคำค้นหาหรือไม่
-              if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                  cards[i].style.display = "";
-              } else {
-                  cards[i].style.display = "none";
-              }
-          }
-      } else if (document.body.classList.contains('user-orders')) {
-          var orders = document.getElementsByClassName("order-card");
+    // รับค่าของอินพุทที่กรอกเข้ามา
+    var input = document.getElementById("searchInput");
+    var filter = input.value.toUpperCase();
 
-          // วนลูปทุกการ์ดในหน้า user_orders
-          for (var i = 0; i < orders.length; i++) {
-              var orderId = orders[i].getElementsByClassName("order-id")[0];
-              var txtValue = orderId.textContent || orderId.innerText;
-              
-              // ตรวจสอบว่า order.id ตรงกับคำค้นหาหรือไม่
-              if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                  orders[i].style.display = "";
-              } else {
-                  orders[i].style.display = "none";
-              }
-          }
+    // ตรวจสอบว่าอยู่ในหน้า home_page หรือ user_orders
+    if (document.body.classList.contains('home-page')) {
+      var cards = document.getElementsByClassName("card");
+
+      // วนลูปทุกการ์ดในหน้า home_page
+      for (var i = 0; i < cards.length; i++) {
+        var title = cards[i].getElementsByClassName("card-title")[0];
+        var txtValue = title.textContent || title.innerText;
+
+        // ตรวจสอบว่าชื่อสินค้าตรงกับคำค้นหาหรือไม่
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          cards[i].style.display = "";
+        } else {
+          cards[i].style.display = "none";
+        }
       }
+    } else if (document.body.classList.contains('user-orders')) {
+      var orders = document.getElementsByClassName("order-card");
+
+      // วนลูปทุกการ์ดในหน้า user_orders
+      for (var i = 0; i < orders.length; i++) {
+        var orderId = orders[i].getElementsByClassName("order-id")[0];
+        var txtValue = orderId.textContent || orderId.innerText;
+
+        // ตรวจสอบว่า order.id ตรงกับคำค้นหาหรือไม่
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          orders[i].style.display = "";
+        } else {
+          orders[i].style.display = "none";
+        }
+      }
+    }
   }
 </script>
-
-   
+{% endif %}
 </body>
-
-
 </html>

@@ -1,7 +1,7 @@
 {% extends "dashboard.html" %}
-
+{% load humanize %}
 {% block content %}
-<div class="table-responsive col-6 justify-content-center container">
+<div class="table-responsive justify-content-center container">
   <table class="table table-hover">
     <thead class="table table-secondary">
       <tr>
@@ -18,7 +18,7 @@
         <th scope="row">{{ forloop.counter0|add:stock.start_index }}</th>
         <td><a class="text-decoration-none" href="{{ sk.get_absolute_url }}">{{ sk.product.product_id }}</a></td>
         <td>{{ sk.product.product_name }}</td>
-        <td>{{ sk.totalquantity }}&nbsp; {{ sk.product.unit}}</td>
+        <td>{{ sk.totalquantity|intcomma }}&nbsp; {{ sk.product.unit}}</td>
         <!-- <td>{{ sk.date_created}}</td> -->
       </tr>
     </tbody>

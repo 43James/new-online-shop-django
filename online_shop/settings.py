@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'dashboard.apps.DashboardConfig',
     'accounts.apps.AccountsConfig',
     'django_filters',
+    'django.contrib.humanize',
     
 ]
 

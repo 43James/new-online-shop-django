@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<div class="row mb-3 mt-4">
+<div class="container mt-2"></div>
+<div class="row mb-3 mt-5">
+    
     <!-- product image -->
     <div class="col-md-5">
         {% if product.image %}
@@ -11,8 +12,9 @@
         <img style="object-fit: cover; " class="rounded" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict" width="390" height="380">
         {% endif %}
     </div>
+
     <!-- product content -->
-    <div class="col-md-6 p-3 border rounded justify-content-center container" style="margin-left: 11px;">
+    <div class="col-md-6 p-4 justify-content-center container" style="margin-left: 11px; background-color: white; border-radius: 20px;">
         <!-- category -->
         <div class="border-bottom mb-2 pb-2">
             <span class="text-muted ">หมวดหมู่ :</span><a class="text-decoration-none text-dark" href=""> {{ product.category }}</a>
@@ -53,7 +55,7 @@
 
 <!-- related products -->
 <div class="row mt-4 mb-4">
-    <h3>Related Items:</h3><hr>
+    <h3 class="text-white">Related Items:</h3><hr style="color: white;">
     {% for p in related_products %}
         {% if p != product %}
             <div class="card me-1 mb-2" style="width: 11rem; margin-left: 10px;">

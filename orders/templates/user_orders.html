@@ -2,13 +2,13 @@
 
 {% block content %}
 
-<body class="user-orders">
+
 {% if orders %}
 {% for order in orders %}
-<div class="col-md-7 mb-4 border rounded p-3 justify-content-center container order-card">
+
+<div class="col-md-10 mb-2 p-4 justify-content-center container mt-4" style="background-color: white; border-radius: 20px;">
     <!-- order id on right -->
         <b class="text-end element order-id" style="float: right;">เลขที่เบิก : {{ order.id }}</b>
-
 
     <!-- order payment status -->
     <div class="row">
@@ -22,37 +22,32 @@
             {% elif order.status == False %}
             <h3><b class="text-danger">ปฏิเสธคำร้อง <i class="bi bi-heartbreak-fill"></i></b></h3>
             <h6><b style="font-weight: bold;"  class="text-danger">หมายเหตุ : {{ order.other }}</i></b></h6>
-
             {% else %}
             <h4><b class="text-warning">รอดำเนินการ..</b></h4>
-            <!-- <h5><b style="font-weight: bold;">วันที่รับของ : 
-                <i class="bi bi-calendar-check-fill text-warning">รอดำเนินการ</i></b></h5> -->
             {% endif %}
         </div>
     </div>
 
-
     <div class="text-muted border-top pt-2"></div>
     {% for item in order.items.all %}
-    <div class="border-bottom row p-2">
-        <div class="col-md-6">
+    <div class="border-bottom row mb-2">
+        <div class="col-md-6 ">
             <p>รายการ : <a class="text-decoration-none"
                     href="{{ item.product.get_absolute_url }}">{{item.product.product_name}}</a></p>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 ">
             <p>ราคา  {{item.price}} บาท</p>
         </div>
-        <div class="col-md-3 text-end">
+        <div class="col-md-3  text-end">
             <p>จำนวน  {{item.quantity}} {{item.product.unit}}</p>
         </div>
-
-
-
-    </div>{% endfor %}
-    <b style="float: left;">ราคารวม : {{ order.get_total_price }} บาท</b>
-    <b style="float: right;">รวมจำนวน : {{ order.get_total_sum }} ชิ้น</b>
-    
+    </div>
+    {% endfor %}
+    <b class="mt-2" style="float: left;">ราคารวม : {{ order.get_total_price }} บาท</b>
+    <b class="mt-2" style="float: right;">รวมจำนวน : {{ order.get_total_sum }} ชิ้น</b>
 </div>
+
+
 {% endfor %}
 {% else %}
 <div class="row">
@@ -65,5 +60,5 @@
     <div class="col-md-2"></div>
 </div>
 {% endif %}
-</body>
+
 {% endblock %}

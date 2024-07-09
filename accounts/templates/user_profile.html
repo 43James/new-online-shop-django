@@ -3,12 +3,12 @@
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="container mt-3 mb-3" style="padding: 50px; background-color: rgba(255, 255, 255, 0.800); border-radius: 20px;">
     {% if obj == 1 %}
-    <div class="row mb-3">
-        <div class="col mb-5" style="justify-content: center; display: flex;">
+    <div class="row ">
+        <div class="col" style="justify-content: center; display: flex;">
             <div>
-                <div class="row text-center mx-4">
+                <div class="row text-center mt-4">
                     <h4>โปรไฟล์</h4>
                 </div>
                 {% if user.profile.img.url == user.profile.img.url %}
@@ -47,9 +47,9 @@
             </div>
         </div>
 
-        <div class="col">
-            <div class="row mx-5">
-                <h5>ข้อมูลส่วนตัวของผู้ใช้</h5>
+        <div class="col mt-4">
+            <div class="row text-center mb-3">
+                <h4>ข้อมูลส่วนตัวของผู้ใช้</h4>
             </div>
             <div class="row">
                 <div class="col-lg-5"><b>ชื่อ-นามสกุล</b></div>
@@ -74,8 +74,8 @@
             </div>
 
 
-            <div class="row mx-5">
-                <h5>ข้อมูลบัญชี</h5>
+            <div class="row text-center mb-3">
+                <h4>ข้อมูลบัญชี</h4>
             </div>
             <div class="row">
                 <div class="col-lg-5"><b>ชื่อผู้ใช้</b></div>
@@ -86,8 +86,30 @@
                 <div class="col-lg">{{ user.email }}</div>
             </div>
 
-            <div class="row mx-5">
-                <h5>ข้อมูลการเข้าใช้งานระบบ</h5>
+            <div class="row text-center mb-3">
+                <h4>ข้อมูลการเข้าใช้งานระบบ</h4>
+            </div>
+            <div class="row">
+                <div class="col-lg-5"><b>สถานะผู้ใช้งาน</b></div>
+                <div class="col-lg" style="color:rgb(0, 134, 0); font-weight: bold;">{% if user.is_general and user.is_manager and user.is_admin %}
+                    ผู้เข้าถึงสิทธิ์ทั้งหมด
+                {% elif user.is_general and user.is_manager %}
+                    ผู้ใช้งาน, ผู้จัดการระบบ
+                {% elif user.is_general and user.is_executive %}
+                    ผู้ใช้งาน, ผู้บริหาร
+                {% elif user.is_manager and user.is_admin %}
+                    ผู้จัดการระบบ, แอดมิน
+                {% elif user.is_general %}
+                    ผู้ใช้งาน
+                {% elif user.is_executive %}
+                    ผู้บริหาร
+                {% elif user.is_manager %}
+                    ผู้จัดการระบบ
+                {% elif user.is_admin %}
+                    แอดมิน
+                {% else %}
+                    <span style="color:rgb(224, 127, 0); font-weight: bold;">ไม่มีสถานะ</span>
+                {% endif %}</div>
             </div>
             <div class="row">
                 <div class="col-lg-5"><b>กำลังใช้งานระบบ</b></div>
@@ -103,15 +125,15 @@
             </div>
             <div class="row">
                 <div class="col-lg-5"><b>วันที่สร้างข้อมูล</b></div>
-                <div class="col-lg">{{ user.date_created }}</div>
+                <div class="col-lg">{{ user.date_created|date:"d M Y เวลา H:i น." }}</div>
             </div>
             <div class="row">
                 <div class="col-lg-5"><b>เข้าใช้งานล่าสุด</b></div>
-                <div class="col-lg">{{ user.last_login }}</div>
+                <div class="col-lg">{{ user.last_login|date:"d M Y เวลา H:i น." }}</div>
             </div>
-            <div class="row col-9 mt-4 justify-content-center container">
+            <div class="row  mt-4 justify-content-center container">
                 <!-- <div class="col-3"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div> -->
-                <a class=" btn btn-warning mt-3" style="width: 25%;"
+                <a class=" btn btn-warning mt-3" style="width: 100px;"
                     href="{% url 'accounts:edit_profile' %}">แก้ไขข้อมูล</a>
             </div>
         </div>

@@ -1,7 +1,7 @@
 {% extends "dashboard.html" %}
 {% block content %}
 
-<div class="card-body" style="margin-left: 10px; margin-right: 10px;">
+<div style="margin-left: 10px; margin-right: 10px;">
 
     <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
     <form method="get" action="{% url 'dashboard:dashboard_home' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
@@ -24,21 +24,92 @@
             <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button>
         </div>
     </form>
-
+    
     <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <div>
-        {{ graph_html_user_amount_pie|safe }}
+    <div class="container mt-4">
+        <h5 class="text-center mb-4">กราฟแสดงข้อมูลสัดส่วนการเบิกวัสดุ</h5>
+        <div class="row col-12 mt-4">
+            <div class="col-6">
+                {{ graph_html_user_amount_pie|safe }}
+            </div>
+            <div class="col-6">
+                {{ graph_html_group_amount_pie|safe }}
+            </div>
+        </div>
     </div>
 
-     <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
-     <div>
-        {{ graph_html_quantity|safe }}
+    <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
+    <div class="container mt-4">
+        <h5 class="text-center">กราฟแสดงข้อมูลจำนวนพัสดุที่เบิกในแต่ละกลุ่มงาน</h5>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                {{ graph_html_quantity|safe }}
+            </div>
+        </div>
     </div>
     
     <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <div>
-        {{ graph_html_amount|safe }}
+    <div class="container mt-4">
+        <h5 class="text-center">กราฟแสดงข้อมูลจำนวนเงินที่เบิกวัสดุในแต่ละกลุ่มงาน</h5>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                {{ graph_html_amount|safe }}
+            </div>
+        </div>
     </div>
+
+    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
+    <!-- <div class="container">
+        {{ graph_html_user_amount_pie|safe }}
+    </div> -->
+
+     <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
+    <!-- <div class="container">
+        {{ graph_html_quantity|safe }}
+    </div> -->
+    
+    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
+    <!-- <div class="container">
+        {{ graph_html_amount|safe }}
+    </div> -->
+
+    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
+    <!-- <div class="container mt-4 mb-5">
+        <div class="card">
+            <div class="card-header bg-primary text-white text-center">
+                กราฟแสดงข้อมูลจำนวนเงินที่เบิก
+            </div>
+            <div class="card-body">
+                {{ graph_html_user_amount_pie|safe }}
+            </div>
+        </div>
+    </div> -->
+
+    <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
+    <!-- <div class="container mt-4 mb-5">
+        <div class="card">
+            <div class="card-header bg-secondary text-white text-center">
+                กราฟแสดงข้อมูลจำนวนที่เบิก
+            </div>
+            <div class="card-body">
+                {{ graph_html_quantity|safe }}
+            </div>
+        </div>
+    </div> -->
+    
+    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
+    <!-- <div class="container mt-4 mb-5">
+        <div class="card">
+            <div class="card-header bg-success text-white text-center">
+                กราฟแสดงข้อมูลจำนวนเงินที่เบิก
+            </div>
+            <div class="card-body">
+                {{ graph_html_amount|safe }}
+            </div>
+        </div>
+    </div> -->
+
+
 
     <!-- ส่วนอื่น ๆ ของ Dashboard -->
 </div>

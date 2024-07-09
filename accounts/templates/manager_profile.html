@@ -46,49 +46,72 @@
         </div>
 
         <div class="col">
-            <div class="row mx-5">
-                <h5>ข้อมูลส่วนตัวของผู้ใช้</h5>
+            
+            <div class="row text-center mb-3">
+                <h4>ข้อมูลส่วนตัวของผู้ใช้</h4>
             </div>
             <div class="row">
-                <div class="col-lg-5"><b>ชื่อ-นามสกุล</b></div>
+                <div class="col-lg-3"><b>ชื่อ-นามสกุล</b></div>
                 <div class="col">{{ user.get_full_name }}</div>
             </div>
 
             <div class="row">
-                <div class="col-lg-5"><b>เพศ</b></div>
+                <div class="col-lg-3"><b>เพศ</b></div>
                 <div class="col-lg">{{ profile.gender }}</div>
             </div>
             <div class="row">
-                <div class="col-lg-5"><b>เบอร์โทรศัพท์มือถือ</b></div>
-                <div class="col-lg">{{ profile.phone }}</div>
-            </div>
-            <div class="row">
-                <div class="col-lg-5"><b>ตำแหน่ง</b></div>
+                <div class="col-lg-3"><b>ตำแหน่ง</b></div>
                 <div class="col-lg">{{ profile.position }}</div>
             </div>
-            <div class="row mb-5">
-                <div class="col-lg-5"><b>กลุ่มงาน</b></div>
+            <div class="row ">
+                <div class="col-lg-3"><b>กลุ่มงาน</b></div>
                 <div class="col-lg">{{ profile.workgroup }}</div>
+            </div>
+            <div class="row mb-5">
+                <div class="col-lg-3"><b>เบอร์โทรศัพท์มือถือ</b></div>
+                <div class="col-lg">{{ profile.phone }}</div>
             </div>
 
 
-            <div class="row mx-5">
+            <div class="row text-center mb-3">
                 <h5>ข้อมูลบัญชี</h5>
             </div>
             <div class="row">
-                <div class="col-lg-5"><b>ชื่อผู้ใช้</b></div>
+                <div class="col-lg-3"><b>ชื่อผู้ใช้</b></div>
                 <div class="col">{{ user.username }}</div>
             </div>
             <div class="row mb-5">
-                <div class="col-lg-5"><b>ที่อยู่อีเมล์</b></div>
+                <div class="col-lg-3"><b>ที่อยู่อีเมล์</b></div>
                 <div class="col-lg">{{ user.email }}</div>
             </div>
 
-            <div class="row mx-5">
+            <div class="row text-center mb-3">
                 <h5>ข้อมูลการเข้าใช้งานระบบ</h5>
             </div>
             <div class="row">
-                <div class="col-lg-5"><b>กำลังใช้งานระบบ</b></div>
+                <div class="col-lg-3"><b>สถานะผู้ใช้งาน</b></div>
+                <div class="col-lg" style="color:rgb(0, 134, 0); font-weight: bold;">{% if user.is_general and user.is_manager and user.is_admin %}
+                    ผู้เข้าถึงสิทธิ์ทั้งหมด
+                {% elif user.is_general and user.is_manager %}
+                    ผู้ใช้งาน, ผู้จัดการระบบ
+                {% elif user.is_general and user.is_executive %}
+                    ผู้ใช้งาน, ผู้บริหาร
+                {% elif user.is_manager and user.is_admin %}
+                    ผู้จัดการระบบ, แอดมิน
+                {% elif user.is_general %}
+                    ผู้ใช้งาน
+                {% elif user.is_executive %}
+                    ผู้บริหาร
+                {% elif user.is_manager %}
+                    ผู้จัดการระบบ
+                {% elif user.is_admin %}
+                    แอดมิน
+                {% else %}
+                    <span style="color:rgb(224, 127, 0); font-weight: bold;">ไม่มีสถานะ</span>
+                {% endif %}</div>
+            </div>
+            <div class="row">
+                <div class="col-lg-3"><b>กำลังใช้งานระบบ</b></div>
                 {% if is_active %}
                 <div class="col-lg">
                     <i class="bi bi-x-circle-fill" style="color:red;"></i>
@@ -100,16 +123,16 @@
                 {% endif %}
             </div>
             <div class="row">
-                <div class="col-lg-5"><b>วันที่สร้างข้อมูล</b></div>
-                <div class="col-lg">{{ user.date_joined }}</div>
+                <div class="col-lg-3"><b>วันที่สร้างข้อมูล</b></div>
+                <div class="col-lg">{{ user.date_joined|date:"d M Y เวลา H:i น." }}</div>
             </div>
             <div class="row">
-                <div class="col-lg-5"><b>เข้าใช้งานล่าสุด</b></div>
-                <div class="col-lg">{{ user.last_login }}</div>
+                <div class="col-lg-3"><b>เข้าใช้งานล่าสุด</b></div>
+                <div class="col-lg">{{ user.last_login|date:"d M Y เวลา H:i น." }}</div>
             </div>
-            <div class="row col-9 mt-4 justify-content-center container">
+            <div class="row mt-3 justify-content-center container">
                 <!-- <div class="col-3"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div> -->
-                <a class=" btn btn-warning mt-3" style="width: 25%;"
+                <a class=" btn btn-warning mt-3" style="width: 120px;"
                     href="{% url 'accounts:edit_profile_manager' %}">แก้ไขข้อมูล</a>
             </div>
         </div>

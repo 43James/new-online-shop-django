@@ -45,7 +45,7 @@
         </div>
     </div>
 </div>
-<div class="col-md-6 container justify-content-center">
+<div class="col-md-6 container justify-content-center p-3" style="background-color: rgba(255, 255, 255, 0.815); border-radius: 20px;">
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.non_field_errors }}
@@ -64,8 +64,17 @@
         
         
         <!-- Submit Button -->
-        <div class="form-group">
-            <button class="btn btn-primary mt-2 mb-3 w-100" type="submit">Update</button>
+        <!-- <div class="form-group ">
+            <button class="btn btn-primary mt-2 mb-3" type="submit">บันทึกข้อมูล</button>
+        </div> -->
+        <div class="row justify-content-center">
+            <div class="col-6 d-flex justify-content-end">
+                <a type="button" href="{% url 'accounts:user_profile_detail' user.username %}"
+                    class="btn btn-danger">ย้อนกลับ</a>
+            </div>
+            <div class="col-6 d-flex justify-content-start">
+                <button class="btn btn-primary" type="submit">บันทึกข้อมูล</button>
+            </div>
         </div>
     </form>
 </div>

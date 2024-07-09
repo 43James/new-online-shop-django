@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -5,9 +6,32 @@ from cart.utils.cart import Cart
 from .forms import QuantityForm
 from shop.models import Product, Receiving
 from django.db import transaction  # import transaction
+from django.contrib.auth.decorators import user_passes_test
 
+
+def is_manager(user):
+    if not user.is_manager:
+        raise Http404
+    return True
+
+def is_executive(user):
+    if not user.is_executive:
+        raise Http404
+    return True
+
+def is_admin(user):
+    if not user.is_admin:
+        raise Http404
+    return True
+
+def is_authorized(user):
+    try:
+        return is_manager(user) and is_executive(user) and is_admin(user)
+    except Http404:
+        return True
 
 # ใหม่2
+@user_passes_test(is_authorized)
 @login_required
 def add_to_cart(request, product_id):
     cart = Cart(request)
@@ -29,7 +53,7 @@ def add_to_cart(request, product_id):
     return redirect('shop:product_detail', slug=product.slug)
 
 
-
+@user_passes_test(is_authorized)
 @login_required
 def show_cart(request):
     cart = Cart(request)
@@ -39,6 +63,7 @@ def show_cart(request):
 
 
 # ใหม่7
+@user_passes_test(is_authorized)
 @login_required
 def remove_from_cart(request, product_id, receiving_id):
     cart = Cart(request)  # สร้าง instance ของ Cart
