@@ -108,7 +108,8 @@
             </svg>
         </a>
     </div>
-<div class="table-responsive">
+    
+<div class="table-responsive col-12">
     <table class="table table-hover" style="border: none;">
         <table>
             <thead>
@@ -123,10 +124,11 @@
                 </tr>
                 <tr>
                     <th rowspan="2" class="text-center" style="width: 3%;">ลำดับ</th>
-                    <th rowspan="2" class="text-center">รายการสินค้า</th>
+                    <th rowspan="2" class="text-center" style="width: 30%;">รายการสินค้า</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">หน่วยนับ</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">จำนวนคงเหลือ (ยกมา)</th>
-                    <th rowspan="2" class="text-center" style="width: 5%;">รวมจำนวนคงเหลือ</th>
+                    <th rowspan="2" class="text-center" style="width: 5%;">จำนวนรับเข้า (ปัจจุบัน)</th>
+                    <th rowspan="2" class="text-center" style="width: 7%;">รวมจำนวน คงเหลือ+รับเข้า</th>
                     <th colspan="{{ all_users|length }}" class="text-center">รายชื่อผู้เบิกวัสดุ</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">รวมจำนวนที่เบิก</th>
                     <th rowspan="2" class="text-center" style="width: 8%;">จำนวนคงเหลือทั้งหมด</th>
@@ -146,6 +148,7 @@
                     <td>{{ item.product }}</td>
                     <td class="text-center">{{ item.unit }}</td>
                     <td class="text-center">{{ item.previous_balance }}</td>
+                    <td class="text-center">{{ item.received_current_month }}</td>
                     <td class="text-center">{{ item.total_balance }}</td>
                     {% for user in all_users %}
                     <td class="user-column text-center">{{ item.user_issuings|get_item:user }}</td>
@@ -157,7 +160,7 @@
                 </tr>
                 {% endfor %}
                 <tr>
-                    <td colspan="5" class="text-center"><strong>รวมรายจ่ายที่เบิก</strong></td>
+                    <td colspan="6" class="text-center"><strong>รวมรายจ่ายที่เบิก</strong></td>
                     {% for user in all_users %}
                     <td class="text-center"><strong>{{ total_issued_value_by_user|get_item:user|intcomma }} บาท</strong></td>
                     {% endfor %}
@@ -168,6 +171,6 @@
                 </tr>
             </tbody>
         </table>
-    </table>
+    </table><br><br>
 </div>
 {% endblock %}

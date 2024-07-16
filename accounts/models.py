@@ -37,7 +37,7 @@ class MyUser(AbstractUser):
     likes = models.ManyToManyField(Product, blank=True, related_name='likes')
 
     class Meta:
-        ordering = ['-username']
+        ordering = ['-id']
         verbose_name='สมาชิกผู้ใช้งาน User'
 
     def __str__(self):
@@ -61,6 +61,10 @@ class Profile(models.Model):
     phone = models.CharField(max_length=15, verbose_name='เบอร์โทรศัพท์มือถือ')
     img = models.ImageField(upload_to='Image_users', verbose_name='รูปโปรไฟล์',blank=True, null=True )
     updatedAt = models.DateTimeField(auto_now=True, blank=False)
+
+    class Meta:
+        ordering = ['-workgroup']
+        verbose_name='ข้อมูลสมาชิก Profile'
 
     def __str__(self):
         return str(self.user) + str(self.gender) + str(self.position) + self.phone

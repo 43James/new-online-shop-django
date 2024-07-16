@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load humanize %}
 {% block content %}
 
 
@@ -39,11 +39,11 @@
             <p>ราคา  {{item.price}} บาท</p>
         </div>
         <div class="col-md-3  text-end">
-            <p>จำนวน  {{item.quantity}} {{item.product.unit}}</p>
+            <p>จำนวน  {{ item.quantity|intcomma }} {{ item.product.unit }}</p>
         </div>
     </div>
     {% endfor %}
-    <b class="mt-2" style="float: left;">ราคารวม : {{ order.get_total_price }} บาท</b>
+    <b class="mt-2" style="float: left;">ราคารวม : {{ order.get_total_price|intcomma }} บาท</b>
     <b class="mt-2" style="float: right;">รวมจำนวน : {{ order.get_total_sum }} ชิ้น</b>
 </div>
 

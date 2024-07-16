@@ -46,19 +46,12 @@
     <label class="mb-2" for="unit_price">ราคา</label>
     <input class="form-control mb-3" type="number" id="unit_price" name="unitprice" placeholder="ใส่ราคาต่อหน่วย"
       required>
-
-    <label class="mb-2" for="unit_price">เดือนที่รับเข้า (เป็นตัวเลข)</label>
-    <input class="form-control mb-3" type="number" id="unit_price" name="month" placeholder="(เช่น เดือนมิถุนายน ให้ใส่เลข 6)"
-      required>
-
-    <label class="mb-2" for="unit_price">ปีที่รับเข้า ค.ศ.</label>
-    <input class="form-control" type="number" id="unit_price" name="year" placeholder="เป็น ปี ค.ศ. เท่านั้น!"
-      required><br><br>
+    <br>
 
     {{ form.non_field_errors }}
     <div class="row mb-5">
       <div class="col-6"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div>
-      <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">Submit</button></div>
+      <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">บันทึก</button></div>
     </div>
   </form>
 </div>

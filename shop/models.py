@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from django.urls import reverse
 from django.template.defaultfilters import slugify
@@ -32,7 +33,7 @@ class Product(models.Model):
     category = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='Subcategory', null=True, blank=True, verbose_name='หมวดหมู่')
     image = models.ImageField(upload_to='products', null=True, blank=True, verbose_name='รูปภาพ')
     product_id = models.CharField(max_length=50, unique=True, verbose_name='รหัสพัสดุ')
-    slug = models.SlugField(max_length=50, unique=True)
+    # slug = models.SlugField(max_length=50, unique=True)
     product_name = models.CharField(max_length=200, verbose_name='ชื่อรายการ')
     description = models.TextField(verbose_name='คำอธิบาย')
     quantityinstock = models.PositiveIntegerField(default=0, null=True, verbose_name='จำนวนที่มีในสต๊อก')
@@ -43,10 +44,10 @@ class Product(models.Model):
 
 
     class Meta:
-        ordering = ('-id',)
+        ordering = ('id',)
 
     def __str__(self):
-        return self.slug
+        return self.product_id
     
     def img(self):
         if self.image:
@@ -55,11 +56,12 @@ class Product(models.Model):
     image.allow_tags = True
         
     def get_absolute_url(self):
-        return reverse('shop:product_detail', kwargs={'slug':self.slug})
+        return reverse('shop:product_detail', kwargs={'product_id': self.product_id})
 
-    def save(self, *args, **kwargs):
-        self.slug = slugify(self.product_id)
-        return super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     self.slug = slugify(self.product_id)
+    #     return super().save(*args, **kwargs)
+    
     
     
     
@@ -97,14 +99,22 @@ class Receiving(models.Model):
     unitprice = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], null=True, verbose_name='ราคา/หน่วย')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
-    month = models.PositiveIntegerField(null=True, blank=True, verbose_name='เดือนที่รับเข้า')
-    year = models.PositiveIntegerField(null=True, blank=True, verbose_name='ปีที่รับเข้า')
+    # month = models.PositiveIntegerField(null=True, blank=True, verbose_name='เดือนที่รับเข้า')
+    # year = models.PositiveIntegerField(null=True, blank=True, verbose_name='ปีที่รับเข้า')
+    month = models.PositiveIntegerField(verbose_name='เดือนที่รับเข้า', editable=False, default=timezone.now().month)
+    year = models.PositiveIntegerField(verbose_name='ปีที่รับเข้า', editable=False, default=timezone.now().year)
 
     class Meta:
         ordering = ('-id',)
     
     def __str__(self):
         return str(self.product)
+    
+    def save(self, *args, **kwargs):
+        if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+            self.month = self.month
+            self.year = self.year
+        super().save(*args, **kwargs)
     
     # def save(self, *args, **kwargs):
     #     if not self.pk:  # ตรวจสอบว่าเป็นการสร้าง instance ใหม่หรือไม่

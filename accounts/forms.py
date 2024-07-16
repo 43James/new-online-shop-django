@@ -149,6 +149,7 @@ class ExtendedProfileForm(forms.ModelForm):
 
 
 class EditProfileForm(forms.ModelForm):
+    workgroup = forms.ModelChoiceField(queryset=WorkGroup.objects.all(), required=True, label='Workgroup')
     GENDER_CHOICES = [
         ('ชาย', 'ชาย'),
         ('หญิง', 'หญิง'),

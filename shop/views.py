@@ -10,26 +10,38 @@ from cart.forms import QuantityForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 
+from django.core.exceptions import PermissionDenied
+
+def is_general(user):
+    if not user.is_general:
+        raise PermissionDenied
+    return True
+
 def is_manager(user):
     if not user.is_manager:
-        raise Http404
+        raise PermissionDenied
     return True
 
 def is_executive(user):
     if not user.is_executive:
-        raise Http404
+        raise PermissionDenied
     return True
 
 def is_admin(user):
     if not user.is_admin:
-        raise Http404
+        raise PermissionDenied
     return True
 
 def is_authorized(user):
-    try:
-        return is_manager(user) and is_executive(user) and is_admin(user)
-    except Http404:
+    # ถ้าผู้ใช้เป็น is_manager, is_executive หรือ is_admin อย่างใดอย่างหนึ่ง
+    if user.is_manager or user.is_executive or user.is_admin:
         return True
+    raise PermissionDenied
+
+def is_authorized_admin(user):
+    if is_admin(user):
+        return True
+    raise PermissionDenied
     
 
 def custom_404_view(request, exception=None):
@@ -49,7 +61,7 @@ def paginat(request, list_objects):
 
 
 # ในกรณีใช้กับตาราง Product
-@user_passes_test(is_authorized)
+@user_passes_test(is_general)
 @login_required
 def home_page(request):
     products = Product.objects.all()
@@ -62,11 +74,30 @@ def home_page(request):
     return render(request, 'home_page.html', context)
 
 
-@user_passes_test(is_authorized)
+@user_passes_test(is_general)
 @login_required
-def product_detail(request, slug):
+# def product_detail(request, slug):
+# 	form = QuantityForm()
+# 	product = get_object_or_404(Product, slug=slug)
+# 	related_products = Product.objects.filter(category=product.category).all()[:5]
+# 	total_quantity = Receiving.total_quantity_by_product(product.id)
+# 	context = {
+# 		'product_name':product.product_name,
+# 		'product':product,
+# 		'form':form,
+# 		'favorites':'favorites',
+# 		'related_products':related_products,
+# 		'stock': Stock.objects.all(),
+# 		'total_quantity':total_quantity
+# 	}
+# 	if request.user.likes.filter(id=product.id).first():
+# 		context['favorites'] = 'remove'
+# 	return render(request, 'product_detail.html', context)
+
+
+def product_detail(request, product_id):
 	form = QuantityForm()
-	product = get_object_or_404(Product, slug=slug)
+	product = get_object_or_404(Product, product_id=product_id)
 	related_products = Product.objects.filter(category=product.category).all()[:5]
 	total_quantity = Receiving.total_quantity_by_product(product.id)
 	context = {
@@ -83,15 +114,16 @@ def product_detail(request, slug):
 	return render(request, 'product_detail.html', context)
 
 
-@user_passes_test(is_authorized)
+
+@user_passes_test(is_general)
 @login_required
 def add_to_favorites(request, product_id):
 	product = get_object_or_404(Product, id=product_id)
 	request.user.likes.add(product)
-	return redirect('shop:product_detail', slug=product.slug)
+	return redirect('shop:product_detail', product_id=product.product_id)
 
 
-@user_passes_test(is_authorized)
+@user_passes_test(is_general)
 @login_required
 def remove_from_favorites(request, product_id):
 	product = get_object_or_404(Product, id=product_id)
@@ -99,7 +131,7 @@ def remove_from_favorites(request, product_id):
 	return redirect('shop:favorites')
 
 
-@user_passes_test(is_authorized)
+@user_passes_test(is_general)
 @login_required
 def favorites(request):
 	products = request.user.likes.all()
@@ -112,7 +144,7 @@ def favorites(request):
 	return render(request, 'favorites.html', context)
 
 
-@user_passes_test(is_authorized)
+@user_passes_test(is_general)
 @login_required
 def search(request):
 	query = request.GET.get('q')
@@ -122,7 +154,7 @@ def search(request):
 
 
 
-@user_passes_test(is_authorized)
+@user_passes_test(is_general)
 @login_required
 def filter_by_category(request, category_id=None, subcategory_id=None):
     categories = Category.objects.all()

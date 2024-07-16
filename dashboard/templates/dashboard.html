@@ -373,7 +373,16 @@
             <a class="text-decoration-none " href="{% url 'dashboard:dashboard_home' %}">
                 <li
                     class="rounded list-group-item mt-2  text-primary {% if '/dashboard_home/' in request.path %}active text-white{% endif %}">
-                    Dashboard Home</li>
+                    Dashboard Home
+                </li>
+            </a>
+            <a class="text-decoration-none " href="{% url 'dashboard:monthly_report' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/monthly_report/' in request.path %}active text-white{% endif %}" >รายงานประจำเดือน</li>
+
+            </a>
+            <a class="text-decoration-none " href="{% url 'dashboard:monthly_stock_records' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %} text-danger">ข้อมูลวัสดุยกมา (กรุณาอัพทุกวันที่1) </li>
+
             </a>
             <div class="dropdown">
                 <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
@@ -381,14 +390,12 @@
                     รายงานอื่นๆ..
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    <li><a class="dropdown-item {% if '/monthly_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report' %}">รายงานประจำเดือน</a></li>
+                    <!-- <li><a class="dropdown-item {% if '/monthly_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report' %}">รายงานประจำเดือน</a></li> -->
                     <li><a class="dropdown-item {% if '/monthly-report-receive/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report_receive' %}">รายงานรับเข้าประจำเดือน</a></li>
                     <li><a class="dropdown-item {% if '/report_order_list/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:report_order_list' %}">รายการเบิกประจำเดือน รายบุคคล</a></li>
                     <li><a class="dropdown-item {% if '/report-monthly-totals/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:report_monthly_totals' %}">ยอดที่เบิกวัสดุแต่ละเดือน</a></li>
-                    <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %} text-danger"  href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุคงเหลือยกมา ( อัพทุกวันที่ 1 ) </a></li>
+                    <!-- <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %} text-danger"  href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุคงเหลือยกมา (อัพทุกวันที่1) </a></li> -->
                     <li><a class="dropdown-item {% if '/total_quantity/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:total_quantity' %}">จำนวนวัสดุที่รับเข้าทั้งหมด</a></li>
-
-                    </li>
                 </ul>
             </div>
             <hr>

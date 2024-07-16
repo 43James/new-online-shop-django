@@ -50,7 +50,7 @@ def add_to_cart(request, product_id):
             messages.success(request, 'เพิ่มลงในรถเข็น!')
     else:
         messages.error(request, 'กรุณาเพิ่มสินค้าลงในรถเข็น!')
-    return redirect('shop:product_detail', slug=product.slug)
+    return redirect('shop:product_detail', product_id=product.product_id)
 
 
 @user_passes_test(is_authorized)

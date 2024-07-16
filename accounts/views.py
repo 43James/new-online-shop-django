@@ -469,13 +469,21 @@ def manager_profile_detail(request, username):
 @user_passes_test(is_authorized)
 @login_required
 def profile_users(request, username):
-    users = MyUser.objects.get(username = username)
-    profiles = Profile.objects.get(user_id=users.id)
+        
+    try:
+        obj = 1
+        users = MyUser.objects.get(username = username)
+        profiles = Profile.objects.get(user_id=users.id)
+
+    except:
+        obj = 2
+        profiles = 'ผู้ใช้งานยังไม่ได้เพิ่มข้อมูลโปรไฟล์'
         
     context = {
         'title' : 'ข้อมูลโปรไฟล์ผู้ใช้งาน',
         'user': users, 
         'profile': profiles,
+        'obj': obj,
         'pending_orders_count': count_pending_orders(),
     }
     return render(request, 'profile_users.html', context)
@@ -504,7 +512,7 @@ def manage_user(request):
         my = MyUser.objects.filter(lookups)
 
     page = request.GET.get('page')
-    p = Paginator(my, 6)
+    p = Paginator(my, 15)
     try:
         my = p.page(page)
     except:

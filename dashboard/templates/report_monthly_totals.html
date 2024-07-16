@@ -8,8 +8,7 @@
             {% for key, total_amount in report_monthly_totals.items %}
             {% with month=key.0 year=key.1 %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                เดือน {{ month }} ปี {{ year }}
-                <span>{{ total_amount|intcomma }} บาท</span>
+                เดือน {{ month }}/{{ year }}<span>รวมจำนวน</span><span>{{ total_amount|intcomma }} บาท</span>
             </li>
             {% endwith %}
             {% endfor %}

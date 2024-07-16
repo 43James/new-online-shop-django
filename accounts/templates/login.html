@@ -90,11 +90,12 @@
 
   <div class="container full-height center-container">
     <div class="login-container">
-        <h2 class="text-center mb-3">Login </h2>
+        <h2 class="text-center">User Login</h2>
+        <h5 class="text-center mt-4">สำหรับผู้ใช้งานทั่วไป</h5>
 
         <form method="POST">
             {% csrf_token %}
-            <div class="mb-3 mt-5">
+            <div class="mb-3 mt-4">
                 <!-- <label for="username" class="form-label">Username</label> -->
                 <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
             </div>

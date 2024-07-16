@@ -3,7 +3,7 @@ from .models import Category, Product, Stock, Subcategory,Suppliers,Receiving, T
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['product_id', 'product_name']
-    prepopulated_fields = {'slug':['product_id']}
+    # prepopulated_fields = {'slug':['product_id']}
 
 class ReceivingAdmin(admin.ModelAdmin):
     list_display = ['product']

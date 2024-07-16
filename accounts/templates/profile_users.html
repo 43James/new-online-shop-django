@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="container mt-4">
-    
+    {% if obj == 1 %}
     <div class="row mb-4">
         <div class="col mb-5" style="justify-content: center; display: flex;">
             <div>
@@ -47,16 +47,16 @@
                 <div class="col-lg">{{ profile.gender }}</div>
             </div>
             <div class="row">
-                <div class="col-lg-5"><b>เบอร์โทรศัพท์มือถือ</b></div>
-                <div class="col-lg">{{ profile.phone }}</div>
-            </div>
-            <div class="row">
                 <div class="col-lg-5"><b>ตำแหน่ง</b></div>
                 <div class="col-lg">{{ profile.position }}</div>
             </div>
-            <div class="row mb-5">
+            <div class="row ">
                 <div class="col-lg-5"><b>กลุ่มงาน</b></div>
                 <div class="col-lg">{{ profile.workgroup }}</div>
+            </div>
+            <div class="row mb-5">
+                <div class="col-lg-5"><b>เบอร์โทรศัพท์มือถือ</b></div>
+                <div class="col-lg">{{ profile.phone }}</div>
             </div>
 
 
@@ -135,7 +135,18 @@
         // เรียกใช้ฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
         showDate();
     </script>
-
+{% else %}
+<div class="d-flex align-items-center justify-content-center mt-5">
+    <div class="row justify-content-center " style="text-align: center; justify-content: center;">
+        <div>
+            <h5>{{ profile }}</h5>
+        </div>
+        <div class="mt-3">
+            <p>ไม่มีข้อมูลผู้ใช้งาน</p>
+        </div>
+    </div>
+</div>
+{% endif %}
 </div>
 {% endblock %}
 

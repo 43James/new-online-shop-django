@@ -115,7 +115,7 @@ class AddSubcategoryForm(ModelForm):
 class EditProductForm(ModelForm):
     class Meta:
         model = Product
-        fields = ['category', 'image', 'product_id', 'product_name', 'unit', 'description']
+        fields = ['category', 'image', 'product_id', 'product_name', 'quantityinstock', 'unit', 'description']
 
     def __init__(self, *args, **kwargs):
         super(EditProductForm, self).__init__(*args, **kwargs)
@@ -145,7 +145,6 @@ class ReceivingForm(forms.ModelForm):
         model = Receiving
         fields = '__all__'
     
-
 
 class EditCategoryForm(ModelForm):
     class Meta:
