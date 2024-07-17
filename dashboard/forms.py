@@ -137,7 +137,13 @@ class ApproveForm(ModelForm):
     class Meta:
         model = Order
         fields = ('status', 'date_receive', 'other')
-        exclude = ('user', 'datecreated')
+        # exclude = ('user', 'datecreated')
+
+class ApprovePayForm(ModelForm):
+    class Meta:
+        model = Order
+        fields = ('pay_item',)
+        # exclude = ('user', 'datecreated')
 
 
 class ReceivingForm(forms.ModelForm):

@@ -10,5 +10,7 @@ urlpatterns = [
     path('monthly-totals/', views.monthly_totals_view, name='monthly_totals_view'),
     path('checkout/<int:order_id>', views.checkout, name='checkout'),
     path('fake-payment/<int:order_id>', views.fake_payment, name='pay_order'),
+    path('user-approve/orders/<int:order_id>/', views.user_approve, name='user_approve'),
+
 
 ]

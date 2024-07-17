@@ -85,10 +85,12 @@ class MonthlyStockRecord(models.Model):
     month = models.IntegerField(null=True, blank=True, verbose_name='เดือน')
     year = models.IntegerField(null=True, blank=True, verbose_name='ปี')
     end_of_month_balance = models.PositiveIntegerField(null=True, blank=True, verbose_name='จำนวนคงเหลือ')
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='ราคารวม')
     date_recorded = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.product.product_name} - {self.month}/{self.year}"
+    
 
 
 class Receiving(models.Model):
@@ -116,12 +118,6 @@ class Receiving(models.Model):
             self.year = self.year
         super().save(*args, **kwargs)
     
-    # def save(self, *args, **kwargs):
-    #     if not self.pk:  # ตรวจสอบว่าเป็นการสร้าง instance ใหม่หรือไม่
-    #         self.month = self.date_created.month
-    #         self.year = self.date_created.year
-    #     super().save(*args, **kwargs)
-    
     @staticmethod
     def total_quantity_by_product(product_id):
         result = Receiving.objects.filter(product_id=product_id).aggregate(total_quantity=Sum('quantity'))
@@ -130,7 +126,7 @@ class Receiving(models.Model):
     def get_absolute_url(self):
         return reverse('shop:product_detail', kwargs={'id':self.id})
         # return reverse('shop:product_detail', kwargs={'slug': self.product.slug})
-    
+
 
 class Total_Quantity(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='IDสินค้า')

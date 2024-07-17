@@ -25,14 +25,14 @@
     <div id="watermark">
       <a href="{{ product.get_absolute_url }}">
         {% if product.image %}
-        <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150"
+        <img class="card-img mt-2" width="134" height="150"
           src="{{ product.image.url }}">
         {% else %}
-        <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150"
+        <img style="object-fit: cover; opacity: 0.5;" class="card-img mt-2" width="134" height="150"
           src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
         {% endif %}
       </a>
-      <p>สต๊อกหมด</p>
+      <p> &nbsp;Sold Out</p>
     </div>
     {% else %}
     <a href="{{ product.get_absolute_url }}">

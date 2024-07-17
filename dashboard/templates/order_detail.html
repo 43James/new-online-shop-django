@@ -73,18 +73,31 @@
     <div class="row">
         <div class="col-6 " style="margin-top: 20px;">
             <!-- <p>วันที่รับพัสดุ _______ /_______ /________ </p><br> -->
+            {% if order.confirm == True %}
+            <p class="text-center">ลงชื่อ {{ order.name_sign }} ผู้เบิก</p>
+            {% else %}
             <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
+            {% endif %}
             <p class="text-center">( {{ order.user.get_full_name }} )</p>
             <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p><br>
         </div>
         <div class="col-6" style="margin-top: 20px;">
+            {% if order.confirm == True %}
+            <p class="text-center">ลงชื่อ อารีรัตน์ ผู้อนุมัติ</p>
+            {% else %}
             <p class="text-center">ลงชื่อ _____________________ ผู้อนุมัติ</p>
+            {% endif %}
             <p class="text-center">( ผู้ช่วยศาสตราจารย์อารีรัตน์ ลุนผา )</p>
             <p class="text-center">ตำแหน่ง หัวหน้าเจ้าหน้าที่</p><br>
         </div>
     </div>
     <div class="text-center" style="margin-top: 20px;">
-        <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p>
+        {% if order.confirm == True %}
+            <p>ลงชื่อ {{ user.first_name }} ผู้จ่ายวัสดุ</p>
+            {% else %}
+            <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p>
+            {% endif %}
+        <!-- <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p> -->
         <p>( {{ user.get_full_name }} )</p>
         <p>ตำแหน่ง เจ้าหน้าที่</p><br>
         <p>วันที่รับวัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_receive|date:"d / m / Y" }} </p><br>

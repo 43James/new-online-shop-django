@@ -2,28 +2,33 @@ from collections import defaultdict
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from requests.exceptions import ConnectTimeout
 from app_linebot.views import notify_admin, notify_user
+from dashboard.views import convert_to_buddhist_era, thai_month_name
+from orders.forms import UserApproveForm
 from shop.models import Receiving
 from .models import Order, Issuing
 from cart.utils.cart import Cart
 from django.http import Http404, HttpResponse
 import requests
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib import messages
+from datetime import datetime, timedelta
 
 
-def thai_month_name(month):
-    thai_months = [
-        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
-        'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
-        'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-    ]
-    return thai_months[month - 1] if 1 <= month <= 12 else ''
+# def thai_month_name(month):
+#     thai_months = [
+#         'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
+#         'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
+#         'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+#     ]
+#     return thai_months[month - 1] if 1 <= month <= 12 else ''
 
-def convert_to_buddhist_era(year):
-    return year + 543
+# def convert_to_buddhist_era(year):
+#     return year + 543
 
 def is_manager(user):
     if not user.is_manager:
@@ -139,8 +144,42 @@ def fake_payment(request, order_id):
 @user_passes_test(is_authorized)
 @login_required
 def user_orders(request):
-    orders = request.user.orders.all()
-    context = {'title':'Orders', 'orders': orders}
+    # orders = request.user.orders.all()
+    now = datetime.now()
+
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    last_month = now.month if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+
+    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+    month = int(request.GET.get('month', last_month))
+    year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    year_ad = year_buddhist - 543
+
+    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
+    orders = request.user.orders.filter(
+        month=month,
+        year=year_ad
+     ).select_related('user')
+    
+    context = { 'title':'Orders', 
+                'orders': orders,
+                'selected_month': month,
+                'selected_year': year_buddhist,
+                'years': range(2020 + 543, datetime.now().year + 1 + 543),
+                'months': [
+                (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+                (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+                (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')],
+                'month_name': thai_month_name(month),
+               }
+    
+    previous_month = month - 1 if month > 1 else 12
+    previous_year = year_ad if month > 1 else year_ad - 1
+    context['previous_month_name'] = thai_month_name(previous_month)
+    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
     return render(request, 'user_orders.html', context)
 
 
@@ -165,7 +204,26 @@ def monthly_totals_view(request):
     return render(request, 'monthly_totals.html', context)
 
 
-
+@login_required
+def user_approve(request, order_id):
+    ap = get_object_or_404(Order, id=order_id)
+    form = UserApproveForm(request.POST, instance=ap)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            print("ยืนยันการรับวัสดุสำเร็จ")
+            form.save()
+            messages.success(request, 'ยืนยันการรับวัสดุสำเร็จ')
+            return redirect(reverse('orders:user_orders'))
+        else:
+            messages.error(request, 'ดำเนินการไม่สำเร็จ')
+    else:
+        form = UserApproveForm(instance=ap)
+        
+    return render(request, 'orders.html', {
+        'ap': ap,
+        'form': form,
+    })
 
 
 

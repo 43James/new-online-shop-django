@@ -1,4 +1,5 @@
 {% extends "dashboard.html" %}
+{% load humanize %}
 
 {% block content %}
 <!-- <div class="d-flex justify-content-between align-items-center mb-3">
@@ -54,11 +55,11 @@
                 {% if product.total_quantity_received|default:0 == 0 %}
         <th class="bg-danger">หมด</td>
         {% elif product.total_quantity_received|default:0 <= 5 %}
-        <th class="bg-warning">{{ product.total_quantity_received|default:0 }} &nbsp;{{ product.unit}} (เหลือน้อย)</td>
+        <th class="bg-warning">{{ product.total_quantity_received|default:0|intcomma }} &nbsp;{{ product.unit}} (เหลือน้อย)</td>
         {% else %}
-        <th style="background-color: aquamarine;">{{ product.total_quantity_received|default:0 }} &nbsp;{{ product.unit}}</td>
+        <th style="background-color: aquamarine;">{{ product.total_quantity_received|default:0|intcomma }} &nbsp;{{ product.unit}}</td>
         {% endif %}
-                <td>{{ product.quantityinstock }}</td>
+                <td>{{ product.quantityinstock|intcomma }}</td>
 
                 <td>{{ product.date_created|date:"d M Y" }}</td>
                 <td>{{ product.date_updated|date:"d M Y" }}</td>

@@ -1,5 +1,6 @@
 {% extends "dashboard.html" %}
 {% load custom_filters %}
+{% load humanize %}
 
 {% block content %}
 <head>
@@ -97,8 +98,9 @@
                     <th class="text-center user-column1" style="width: 5%;">ลำดับ</th>
                     <th class="text-center user-column1" style="width: 15%;">รายการวัสดุ</th>
                     <th class="text-center user-column1" style="width: 15%;">ซัพพลายเออร์</th>
-                    <th class="text-center user-column1" style="width: 8%;">จำนวนที่รับเข้า</th>
-                    <th class="text-center user-column1" style="width: 5%;">ราคา/หน่วย</th>
+                    <th class="text-center user-column1" style="width: 5%;">จำนวนที่รับเข้า</th>
+                    <th class="text-center user-column1" style="width: 2%;">หน่วย</th>
+                    <th class="text-center user-column1" style="width: 8%;">ราคา/หน่วย</th>
                     <th class="text-center user-column1" style="width: 10%;">วันที่รับเข้า</th>
                 </tr>
             </thead>
@@ -108,8 +110,9 @@
                     <td>{{ forloop.counter }}</td>
                     <td>{{ data.product__product_name }}</td>
                     <td>{{ data.suppliers__supname }}</td>
-                    <td>{{ data.quantityreceived }}</td>
-                    <td>{{ data.unitprice }}</td>
+                    <td>{{ data.quantityreceived|intcomma }} </td>
+                    <td> {{ data.product__unit }} </td>
+                    <td>{{ data.unitprice|intcomma }} บาท</td>
                     <td>{{ data.date_created|date:"d M Y เวลา H:i นาที" }}</td>
                 </tr>
                 {% empty %}

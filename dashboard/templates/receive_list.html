@@ -1,4 +1,5 @@
 {% extends "dashboard.html" %}
+{% load humanize %}
 
 {% block content %}
 <div class="table-responsive">
@@ -25,14 +26,14 @@
         <td>{{ re.quantityreceived }} {{ re.product.unit }} </td>
 
         {% if re.quantity == 0 %}
-        <td style="background-color: #ff0000;">{{ re.quantity }} {{ re.product.unit }} </td>
+        <td style="background-color: #ff0000;">{{ re.quantity|intcomma }} {{ re.product.unit }} </td>
         {% elif re.quantity <= 5 %}
-        <td style="background-color: #ffd900;">{{ re.quantity }} {{ re.product.unit }} </td>
+        <td style="background-color: #ffd900;">{{ re.quantity|intcomma }} {{ re.product.unit }} </td>
         {% else %}
-        <td style="background-color: #1eff00;">{{ re.quantity }} {{ re.product.unit }} </td>
+        <td style="background-color: #1eff00;">{{ re.quantity|intcomma }} {{ re.product.unit }} </td>
         {% endif %}
 
-        <td>{{ re.unitprice }} บาท / {{ re.product.unit }}</td>
+        <td>{{ re.unitprice|intcomma }} บาท / {{ re.product.unit }}</td>
         <td>{{ re.date_created | date:"d M Y, H:i" }} น.</td>
         <td>{{ re.date_updated | date:"d M Y, H:i" }} น.</td>
         <td><a class="text-info text-decoration-none" href="{% url 'dashboard:update_received_product' re.id %}"><i class="bi bi-pencil-square"></i></a></td>

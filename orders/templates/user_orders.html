@@ -3,11 +3,43 @@
 {% block content %}
 
 
+<!-- ฟอร์มสำหรับเลือกเดือนและปี -->
+<div class="col-10 container text-end justify-content-center mt-4">
+    <form method="get" action="{% url 'orders:user_orders' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+        <div class="col-auto">
+            <select name="month" id="month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="year" id="year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">ค้นหา</button>
+            <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button>
+        </div>
+    </form>
+    
+    <script>
+        function clearFormAndSubmit() {
+            document.getElementById("month").value = "";  // Clear month value
+            document.getElementById("year").value = "";   // Clear year value
+            document.querySelector('form').submit();       // Submit the form
+        }
+    </script>
+</div>
+
 {% if orders %}
 {% for order in orders %}
-
-<div class="col-md-10 mb-2 p-4 justify-content-center container mt-4" style="background-color: white; border-radius: 20px;">
+<div class="col-md-10 mb-2 p-4 justify-content-center container mt-3" style="background-color: white; border-radius: 20px;">
     <!-- order id on right -->
+    
         <b class="text-end element order-id" style="float: right;">เลขที่เบิก : {{ order.id }}</b>
 
     <!-- order payment status -->
@@ -15,17 +47,41 @@
         <div class="col">
         <h class="text-end element order-id" style="float: right;">วันที่ทำรายการ {{ order.date_created | date:"d/m/Y เวลา H:i น." }}</h>
 
-            {% if order.status == True %}
-            <h3><b class="text-success">ดำเนินการสำเร็จ <i class="bi bi-check-circle-fill"></i></b></h3>
-            <h6><b style="font-weight: bold;">วันที่รับวัสดุ : </b><i class="bi bi-calendar-check-fill text-warning"> 
-                </i>{{ order.date_receive | date:"d  M  Y เวลา H:i น." }}</h6>
+            {% if order.status and order.confirm == True %}
+            <h3><b class="text-success">การเบิกวัสดุสำเร็จ <i class="bi bi-check-circle-fill"></i><b style="font-size: 15px; color: #0400fd;"></b></b></h3>
+
+                {% if order.pay_item == True %}
+                <h6><b style="font-weight: bold;">วันที่นัดรับวัสดุ : </b><i class="bi bi-calendar-check-fill text-warning"> </i>{{ order.date_receive | date:"d  M  Y เวลา H:i น." }}
+                    <b style="font-size: 15px; color: #fd0000;"> &nbsp;&nbsp;เจ้าหน้าที่จ่ายพัสดุแล้ว</b></h6>
+
+                <h6><b style="font-weight: bold;">วันที่ได้รับวัสดุ : </b><i class="bi bi-calendar-check-fill text-success"> </i>{{ order.date_received | date:"d  M  Y เวลา H:i น." }} 
+                    <b style="font-size: 15px; color: #0400fd;"> &nbsp;&nbsp;{{ order.name_sign }} ผู้รับ</b></h6>
+                {% endif %}
+
+            {% elif order.status == True %}
+            <h3><b class="text-success">อนุมัติแล้ว <b style="font-size: 20px; color: #fd0000;"> &nbsp;&nbsp;หากได้รับวัสดุแล้ว โปรดยืนยันการรับวัสดุ</b></b></h3>
+
+                {% if order.pay_item == True %}
+                <h6><b style="font-weight: bold;">วันที่นัดรับวัสดุ : </b><i class="bi bi-calendar-check-fill text-warning"> </i>{{ order.date_receive | date:"d  M  Y เวลา H:i น." }}
+                <b style="font-size: 15px; color: #fd0000;"> &nbsp;&nbsp;เจ้าหน้าที่จ่ายพัสดุแล้ว</b></h6>
+                {% else %}
+                <h6><b style="font-weight: bold;">วันที่นัดรับวัสดุ : </b><i class="bi bi-calendar-check-fill text-warning"> </i>{{ order.date_receive | date:"d  M  Y เวลา H:i น." }}</h6>
+                <!-- <h6><b style="font-weight: bold;">วันที่ได้รับวัสดุ : </b><i class="bi bi-calendar-check-fill text-warning"> </i>{{ order.date_received | date:"d  M  Y เวลา H:i น." }}</h6> -->
+                {% endif %}
+            
             {% elif order.status == False %}
-            <h3><b class="text-danger">ปฏิเสธคำร้อง <i class="bi bi-heartbreak-fill"></i></b></h3>
-            <h6><b style="font-weight: bold;"  class="text-danger">หมายเหตุ : {{ order.other }}</i></b></h6>
+            <h3><b class="text-danger">คำร้องถูกปฏิเสธ <i class="bi bi-heartbreak-fill"></i></b></h3>
+            <h6><b style="font-weight: bold;">วันที่ถูกปฏิเสธ : </b><i class="bi bi-calendar-check-fill text-danger"> </i>{{ order.date_updated | date:"d  M  Y เวลา H:i น." }}</h6>
+                {% if order.other == None %}
+                <h6><b style="font-weight: bold;"  class="text-danger">หมายเหตุ : -</i></b></h6>
+                {% else %}
+                <h6><b style="font-weight: bold;"  class="text-danger">หมายเหตุ : {{ order.other }}</i></b></h6>
+                {% endif %}
             {% else %}
             <h4><b class="text-warning">รอดำเนินการ..</b></h4>
             {% endif %}
         </div>
+        
     </div>
 
     <div class="text-muted border-top pt-2"></div>
@@ -43,10 +99,67 @@
         </div>
     </div>
     {% endfor %}
-    <b class="mt-2" style="float: left;">ราคารวม : {{ order.get_total_price|intcomma }} บาท</b>
-    <b class="mt-2" style="float: right;">รวมจำนวน : {{ order.get_total_sum }} ชิ้น</b>
+    
+    <div class="row">
+        <b class="col-md-8 text-end" >ราคารวม  {{ order.get_total_price|intcomma }} บาท</b>
+        <b class="col-md-4 text-end" >รวมจำนวน  {{ order.get_total_sum }} ชิ้น</b>
+    </div>
+
+    {% if order.status and order.confirm == True %}
+    {% elif order.status == False %}
+    {% elif order.status == None %}
+    {% else %}
+    <div class="text-muted border-top pt-2"></div>
+    <div class="col text-center mt-2">
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal"
+            data-bs-target="#exampleModal{{ order.id }}">
+            ยืนยันการรับวัสดุ
+          </button>
+    </div>
+    {% endif %}
 </div>
 
+<!-- Modal -->
+<form action="{% url 'orders:user_approve' order.id %}" method="POST">
+    {% csrf_token %}
+    <div class="modal fade" id="exampleModal{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content mt-5" style="width: 20rem;">
+          <div class="modal-header">
+            <h5 class="modal-title text-center container" id="exampleModalLabel">ยืนยันการรับวัสดุ ID {{ order.id }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="form-check container justify-content-center d-flex">
+                <input class="form-check-input bg-success" type="radio" name="confirm" id="flexRadioDefault1" 
+                       value="True" required>&nbsp;&nbsp;
+                <label class="form-check-label text-success" for="flexRadioDefault1">
+                    ได้รับวัสดุแล้ว
+                </label>
+            </div>
+
+            <div class="col mt-3">
+              <label for="exampleFormControlInput1" class="form-label">วันที่รับ</label>
+              <input type="datetime-local"  name="date_received" class="form-control"
+                id="exampleFormControlInput1" required>
+            </div>
+
+            <div class="col mb-3 mt-3">
+              <!-- <label class="form-label">ลงชื่อ</label> -->
+              <input type="text" name="name_sign" class="form-control text-center" placeholder="ลงชื่อ" required>
+            </div>
+
+          </div>
+          <div class="modal-footer justify-content-between">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary">ยืนยัน</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
 
 {% endfor %}
 {% else %}

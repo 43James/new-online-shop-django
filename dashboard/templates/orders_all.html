@@ -10,6 +10,8 @@
         <th scope="col">เลขที่เบิก</th>
         <th scope="col">ยอดรวม</th>
         <th scope="col">สถานะ</th>
+        <th scope="col">เจ้าหน้าที่</th>
+        <th scope="col">ผู้เบิกรับวัสดุ?</th>
         <th scope="col">ทำรายการ</th>
         <th scope="col">รายละเอียด</th>
       </tr>
@@ -31,6 +33,32 @@
         <th scope="row" class="text-warning">รอดำเนินการ..</td>
         {% endif %}
 
+        {% if order.status == None %}
+        <th scope="row" class="text-warning">รออนุมัติ..</td>
+        {% elif order.status and order.pay_item == False %}
+          <td scope="col"><!-- Button trigger modal -->
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+              data-bs-target="#exampleModal2{{ order.id }}">
+              ยืนยันการจ่าย
+            </button>
+          </td>
+        {% elif order.status == False and order.pay_item == False %}
+        <th><i class="bi bi-x-circle-fill text-danger"></i></th>
+        {% else %}
+          <th class="text-success">จ่ายพัสดุแล้ว</th>
+        {% endif %}
+        
+        {% if order.status == None %}
+        <th scope="row" class="text-warning">รออนุมัติ..</td>
+        {% elif order.confirm == True %}
+        <th scope="row" class="text-success">รับพัสดุแล้ว</th>
+        {% elif order.status == False and order.pay_item == False %}
+        <th><i class="bi bi-x-circle-fill text-danger"></i></th>
+        {% else %}
+        <th scope="row" class="text-danger">ยังไม่ตอบรับพัสดุ</th>
+        {% endif %}
+
+
         <td scope="col"><!-- Button trigger modal -->
           {% if order.status == True %}
           <button class="btn btn-secondary btn-sm" data-bs-toggle="modal"
@@ -46,6 +74,8 @@
           </button>
          {% endif %}
         </td>
+
+        
         
         <!-- Modal -->
         <form action="{% url 'dashboard:approve_orders' order.id %}" method="POST">
@@ -91,6 +121,48 @@
                 <div class="modal-footer">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
                   <button type="submit" class="btn btn-primary">บันทึก</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <!-- Modal2 -->
+        <form action="{% url 'dashboard:approve_pay' order.id %}" method="POST">
+          {% csrf_token %}
+          <div class="modal fade" id="exampleModal2{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content mt-5" style="width: 20rem;">
+                <div class="modal-header">
+                  <h5 class="modal-title text-center container" id="exampleModalLabel">ยืนยันการจ่ายวัสดุ ID {{ order.id }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                  <div class="form-check container justify-content-center d-flex">
+                      <input class="form-check-input bg-success" type="radio" name="pay_item" id="flexRadioDefault1" 
+                            value="True" required>&nbsp;&nbsp;
+                      <label class="form-check-label text-success" for="flexRadioDefault1">
+                          จ่ายวัสดุแล้ว
+                      </label>
+                  </div>
+
+                  <!-- <div class="col mt-3">
+                    <label for="exampleFormControlInput1" class="form-label">วันที่รับ</label>
+                    <input type="datetime-local"  name="date_received" class="form-control"
+                      id="exampleFormControlInput1" required>
+                  </div> -->
+
+                  <!-- <div class="col mb-3 mt-3">
+                    <label class="form-label">ลงชื่อ</label>
+                    <input type="text" name="name_sign" class="form-control text-center" placeholder="ลงชื่อ" required>
+                  </div> -->
+
+                </div>
+                <div class="modal-footer justify-content-between">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                  <button type="submit" class="btn btn-primary">ยืนยัน</button>
                 </div>
               </div>
             </div>

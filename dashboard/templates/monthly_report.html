@@ -147,14 +147,14 @@
                     <td class="text-center">{{ forloop.counter }}</td>
                     <td>{{ item.product }}</td>
                     <td class="text-center">{{ item.unit }}</td>
-                    <td class="text-center">{{ item.previous_balance }}</td>
-                    <td class="text-center">{{ item.received_current_month }}</td>
-                    <td class="text-center">{{ item.total_balance }}</td>
+                    <td class="text-center">{{ item.previous_balance|intcomma }}</td>
+                    <td class="text-center">{{ item.received_current_month|intcomma }}</td>
+                    <td class="text-center">{{ item.total_balance|intcomma }}</td>
                     {% for user in all_users %}
                     <td class="user-column text-center">{{ item.user_issuings|get_item:user }}</td>
                     {% endfor %}
-                    <td class="text-center">{{ item.issued_current_month }}</td>
-                    <td class="text-center">{{ item.remaining_balance }}</td>
+                    <td class="text-center">{{ item.issued_current_month|intcomma }}</td>
+                    <td class="text-center">{{ item.remaining_balance|intcomma }}</td>
                     <td class="text-end">{{ item.total_issued_value|intcomma }} บาท</td>
                     <td>{{ item.note }}</td>
                 </tr>

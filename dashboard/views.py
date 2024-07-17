@@ -11,7 +11,7 @@ from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
 from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, TotalQuantity, Receiving
 from accounts.models import MyUser, Profile, WorkGroup
 from orders.models import Order, Issuing
-from .forms import AddProductForm, AddCategoryForm, AddSubcategoryForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, EditWorkGroupForm, MonthYearForm, OrderFilterForm,  ReceivingForm, RecordMonthlyStockForm, WorkGroupForm
+from .forms import AddProductForm, AddCategoryForm, AddSubcategoryForm, ApprovePayForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, EditWorkGroupForm, MonthYearForm, OrderFilterForm,  ReceivingForm, RecordMonthlyStockForm, WorkGroupForm
 from django.db.models import F
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -584,6 +584,99 @@ def monthly_report(request, month=None, year=None):
 
 @user_passes_test(is_authorized)
 @login_required
+# ฟังก์ชันบันทึกคงเหลือ ยกมา
+# def record_monthly_stock_view(request):
+#     if request.method == 'POST':
+#         form = RecordMonthlyStockForm(request.POST)
+#         if form.is_valid() and form.cleaned_data['confirm']:
+#             now = datetime.now()
+#             first_day_of_current_month = now.replace(day=1)
+#             last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
+
+#             # ตรวจสอบว่ามีการบันทึกข้อมูลสำหรับเดือนก่อนหน้าแล้วหรือไม่
+#             existing_records = MonthlyStockRecord.objects.filter(
+#                 month=last_day_of_previous_month.month,
+#                 year=last_day_of_previous_month.year
+#             )
+
+#             if existing_records.exists():
+#                 messages.error(request, 'มีการบันทึกข้อมูลของแล้ว.')
+#                 return redirect('dashboard:record_monthly_stock')
+
+#             # สร้างบันทึกข้อมูลสำหรับเดือนก่อนหน้า
+#             products = Product.objects.all()
+#             for product in products:
+#                 MonthlyStockRecord.objects.create(
+#                     product=product,
+#                     month=last_day_of_previous_month.month,
+#                     year=last_day_of_previous_month.year,
+#                     end_of_month_balance=product.quantityinstock
+#                 )
+
+#             messages.success(request, 'บันทึกข้อมูลสต็อกสินค้าเรียบร้อยแล้ว.')
+#             return redirect('dashboard:record_monthly_stock')
+#     else:
+#         form = RecordMonthlyStockForm()
+
+#     context = {
+#         'title':'บันทึกยอดวัสดุคงเหลือประจำเดือน',
+#         'form': form,
+#                'pending_orders_count': count_pending_orders(),}
+
+#     return render(request, 'record_monthly_stock.html', context)
+
+def record_monthly_stock_view(request):
+    if request.method == 'POST':
+        form = RecordMonthlyStockForm(request.POST)
+        if form.is_valid() and form.cleaned_data['confirm']:
+            now = datetime.now()
+            first_day_of_current_month = now.replace(day=1)
+            last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
+
+            # ตรวจสอบว่ามีการบันทึกข้อมูลสำหรับเดือนก่อนหน้าแล้วหรือไม่
+            existing_records = MonthlyStockRecord.objects.filter(
+                month=last_day_of_previous_month.month,
+                year=last_day_of_previous_month.year
+            )
+
+            if existing_records.exists():
+                messages.error(request, 'มีการบันทึกข้อมูลของแล้ว.')
+                return redirect('dashboard:record_monthly_stock')
+
+            # สร้างบันทึกข้อมูลสำหรับเดือนก่อนหน้า
+            products = Product.objects.all()
+            for product in products:
+                # คำนวณ total_price จาก Receiving ที่เกี่ยวข้อง
+                total_price = Receiving.objects.filter(
+                    product=product,
+                    month=last_day_of_previous_month.month,
+                    year=last_day_of_previous_month.year
+                ).aggregate(total_price=Sum(F('quantity') * F('unitprice')))['total_price'] or 0.00
+
+                MonthlyStockRecord.objects.create(
+                    product=product,
+                    month=last_day_of_previous_month.month,
+                    year=last_day_of_previous_month.year,
+                    end_of_month_balance=product.quantityinstock,
+                    total_price=total_price
+                )
+
+            messages.success(request, 'บันทึกข้อมูลสต็อกสินค้าเรียบร้อยแล้ว.')
+            return redirect('dashboard:monthly_stock_records')
+    else:
+        form = RecordMonthlyStockForm()
+
+    context = {
+        'title': 'บันทึกยอดวัสดุคงเหลือประจำเดือน',
+        'form': form,
+        'pending_orders_count': count_pending_orders(),
+    }
+
+    return render(request, 'record_monthly_stock.html', context)
+
+
+@user_passes_test(is_authorized)
+@login_required
 # รายงงานจำนวนคงเหลือ ยกมา
 def monthly_stock_records(request):
     now = datetime.now()
@@ -693,48 +786,7 @@ def export_monthly_stock_records_to_excel(request):
     return response
 
 
-@user_passes_test(is_authorized)
-@login_required
-# ฟังก์ชันบันทึกคงเหลือ ยกมา
-def record_monthly_stock_view(request):
-    if request.method == 'POST':
-        form = RecordMonthlyStockForm(request.POST)
-        if form.is_valid() and form.cleaned_data['confirm']:
-            now = datetime.now()
-            first_day_of_current_month = now.replace(day=1)
-            last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
 
-            # ตรวจสอบว่ามีการบันทึกข้อมูลสำหรับเดือนก่อนหน้าแล้วหรือไม่
-            existing_records = MonthlyStockRecord.objects.filter(
-                month=last_day_of_previous_month.month,
-                year=last_day_of_previous_month.year
-            )
-
-            if existing_records.exists():
-                messages.error(request, 'มีการบันทึกข้อมูลของแล้ว.')
-                return redirect('dashboard:record_monthly_stock')
-
-            # สร้างบันทึกข้อมูลสำหรับเดือนก่อนหน้า
-            products = Product.objects.all()
-            for product in products:
-                MonthlyStockRecord.objects.create(
-                    product=product,
-                    month=last_day_of_previous_month.month,
-                    year=last_day_of_previous_month.year,
-                    end_of_month_balance=product.quantityinstock
-                )
-
-            messages.success(request, 'บันทึกข้อมูลสต็อกสินค้าเรียบร้อยแล้ว.')
-            return redirect('dashboard:record_monthly_stock')
-    else:
-        form = RecordMonthlyStockForm()
-
-    context = {
-        'title':'บันทึกยอดวัสดุคงเหลือประจำเดือน',
-        'form': form,
-               'pending_orders_count': count_pending_orders(),}
-
-    return render(request, 'record_monthly_stock.html', context)
 
 
 @user_passes_test(is_authorized)
@@ -762,6 +814,7 @@ def monthly_report_receive(request):
         year=year_ad
     ).select_related('product', 'suppliers').values(
         'product__product_name',
+        'product__unit',
         'suppliers__supname',
         'quantityreceived',
         'unitprice',
@@ -1525,8 +1578,26 @@ def detail_suppliers(request, id):
 @user_passes_test(is_authorized_manager)
 @login_required
 def receive_list(request):
-    receive = Receiving.objects.all()
+    # receive = Receiving.objects.all()
+    now = datetime.now()
 
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    last_month = now.month if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+
+    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+    month = int(request.GET.get('month', last_month))
+    year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    year_ad = year_buddhist - 543
+
+    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
+    receive = Receiving.objects.filter(
+        month=month,
+        year=year_ad
+     )
+      
     query = request.GET.get('q')
     if query is not None:
         lookups = Q(product__product_name__icontains=query) | Q(product__product_id__icontains=query)
@@ -1544,7 +1615,19 @@ def receive_list(request):
         'title':'รับเข้าวัสดุ', 
         'receive':receive,
         'pending_orders_count': count_pending_orders(),
-        }
+        'selected_month': month,
+        'selected_year': year_buddhist,
+        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'months': [
+            (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+            (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+            (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')],
+        'month_name': thai_month_name(month),
+            }
+    previous_month = month - 1 if month > 1 else 12
+    previous_year = year_ad if month > 1 else year_ad - 1
+    context['previous_month_name'] = thai_month_name(previous_month)
+    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
     return render(request, 'receive_list.html', context)
 
 
@@ -1924,7 +2007,26 @@ def edit_subcategory(request, id):
 @user_passes_test(is_authorized_manager)
 @login_required
 def orders_all(request):
-    orders_all = Order.objects.all()
+    # orders_all = Order.objects.all()
+
+    now = datetime.now()
+
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    last_month = now.month if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+
+    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+    month = int(request.GET.get('month', last_month))
+    year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    year_ad = year_buddhist - 543
+
+    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
+    orders_all = Order.objects.filter(
+        month=month,
+        year=year_ad
+     ).select_related('user')
 
     query = request.GET.get('q')
     if query is not None:
@@ -1942,7 +2044,19 @@ def orders_all(request):
         'title':'คำร้องเบิกวัสดุทั้งหมด', 
         'orders_all':orders_all,
         'pending_orders_count': count_pending_orders(),
+        'selected_month': month,
+        'selected_year': year_buddhist,
+        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'months': [
+            (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+            (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+            (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')],
+        'month_name': thai_month_name(month),
         }
+    previous_month = month - 1 if month > 1 else 12
+    previous_year = year_ad if month > 1 else year_ad - 1
+    context['previous_month_name'] = thai_month_name(previous_month)
+    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
     return render(request, 'orders_all.html', context)
 
 
@@ -2020,6 +2134,27 @@ def approve_orders(request, order_id):
         'form': form,
         'title': 'แก้ไขข้อมูลสมาชิก',
         'pending_orders_count': count_pending_orders(),
+    })
+
+@login_required
+def approve_pay(request, order_id):
+    ap = get_object_or_404(Order, id=order_id)
+    form = ApprovePayForm(request.POST, instance=ap)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            print("จ่ายวัสดุแล้ว")
+            form.save()
+            messages.success(request, 'ยืนยันการจ่ายวัสดุสำเร็จ')
+            return redirect(reverse('dashboard:orders_all'))
+        else:
+            messages.error(request, 'ดำเนินการไม่สำเร็จ')
+    else:
+        form = ApprovePayForm(instance=ap)
+        
+    return render(request, 'orders_all.html', {
+        'ap': ap,
+        'form': form,
     })
 
 
