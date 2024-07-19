@@ -3,30 +3,48 @@
 
 <div style="margin-left: 10px; margin-right: 10px;">
 
-    <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
+    <!-- ฟอร์มสำหรับเลือกช่วงเดือนและปี -->
     <form method="get" action="{% url 'dashboard:dashboard_home' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
         <div class="col-auto">
-            <select name="month" id="month" class="form-select">
+            <select name="start_month" id="start_month" class="form-select">
                 {% for m in months %}
-                    <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                    <option value="{{ m.0 }}" {% if m.0 == selected_start_month %}selected{% endif %}>{{ m.1 }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-auto">
-            <select name="year" id="year" class="form-select">
+            <select name="start_year" id="start_year" class="form-select">
                 {% for y in years %}
-                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    <option value="{{ y }}" {% if y == selected_start_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><h5>ถึง</h5></div>
+
+        <div class="col-auto">
+            <select name="end_month" id="end_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_end_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="end_year" id="end_year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_end_year %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">ค้นหา</button>
-            <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button>
+            <a href="{% url 'dashboard:dashboard_home' %}" class="btn btn-secondary">ยกเลิก</a>
+            <!-- <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button> -->
         </div>
     </form>
-    
+
     <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <div class="container mt-4">
+    <div class="container mt-5">
         <h5 class="text-center mb-4">กราฟแสดงข้อมูลสัดส่วนการเบิกวัสดุ</h5>
         <div class="row col-12 mt-4">
             <div class="col-6">
@@ -58,66 +76,16 @@
         </div>
     </div>
 
-    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <!-- <div class="container">
-        {{ graph_html_user_amount_pie|safe }}
-    </div> -->
-
-     <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
-    <!-- <div class="container">
-        {{ graph_html_quantity|safe }}
-    </div> -->
-    
-    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <!-- <div class="container">
-        {{ graph_html_amount|safe }}
-    </div> -->
-
-    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <!-- <div class="container mt-4 mb-5">
-        <div class="card">
-            <div class="card-header bg-primary text-white text-center">
-                กราฟแสดงข้อมูลจำนวนเงินที่เบิก
-            </div>
-            <div class="card-body">
-                {{ graph_html_user_amount_pie|safe }}
-            </div>
-        </div>
-    </div> -->
-
-    <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
-    <!-- <div class="container mt-4 mb-5">
-        <div class="card">
-            <div class="card-header bg-secondary text-white text-center">
-                กราฟแสดงข้อมูลจำนวนที่เบิก
-            </div>
-            <div class="card-body">
-                {{ graph_html_quantity|safe }}
-            </div>
-        </div>
-    </div> -->
-    
-    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <!-- <div class="container mt-4 mb-5">
-        <div class="card">
-            <div class="card-header bg-success text-white text-center">
-                กราฟแสดงข้อมูลจำนวนเงินที่เบิก
-            </div>
-            <div class="card-body">
-                {{ graph_html_amount|safe }}
-            </div>
-        </div>
-    </div> -->
-
-
-
-    <!-- ส่วนอื่น ๆ ของ Dashboard -->
 </div>
+
 <script>
     function clearFormAndSubmit() {
-        document.getElementById("month").value = "";
-        document.getElementById("year").value = "";
+        document.getElementById("start_month").value = "";
+        document.getElementById("start_year").value = "";
+        document.getElementById("end_month").value = "";
+        document.getElementById("end_year").value = "";
         document.querySelector('form').submit();
     }
 </script>
+
 {% endblock %}

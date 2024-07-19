@@ -58,14 +58,7 @@ class Product(models.Model):
     def get_absolute_url(self):
         return reverse('shop:product_detail', kwargs={'product_id': self.product_id})
 
-    # def save(self, *args, **kwargs):
-    #     self.slug = slugify(self.product_id)
-    #     return super().save(*args, **kwargs)
     
-    
-    
-    
-
 class Suppliers(models.Model):
     supname = models.CharField(max_length=50, verbose_name='ชื่อบริษัท')
     contactname = models.CharField(max_length=60, verbose_name='ชื่อผู้ติดต่อ')
@@ -92,7 +85,6 @@ class MonthlyStockRecord(models.Model):
         return f"{self.product.product_name} - {self.month}/{self.year}"
     
 
-
 class Receiving(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='Receiving', verbose_name='IDสินค้า')
     suppliers = models.ForeignKey(Suppliers, on_delete=models.CASCADE, related_name='suppliers', verbose_name='IDซัพพลายเออร์')
@@ -100,9 +92,8 @@ class Receiving(models.Model):
     quantity = models.PositiveIntegerField( null=True, verbose_name='จำนวนคงเหลือ')
     unitprice = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], null=True, verbose_name='ราคา/หน่วย')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
+    date_received = models.DateTimeField(blank=True, null=True, verbose_name='วันที่รับเข้า')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
-    # month = models.PositiveIntegerField(null=True, blank=True, verbose_name='เดือนที่รับเข้า')
-    # year = models.PositiveIntegerField(null=True, blank=True, verbose_name='ปีที่รับเข้า')
     month = models.PositiveIntegerField(verbose_name='เดือนที่รับเข้า', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปีที่รับเข้า', editable=False, default=timezone.now().year)
 
@@ -126,6 +117,17 @@ class Receiving(models.Model):
     def get_absolute_url(self):
         return reverse('shop:product_detail', kwargs={'id':self.id})
         # return reverse('shop:product_detail', kwargs={'slug': self.product.slug})
+
+    # @property
+    # def total_quantity(self):
+    #     return Receiving.objects.filter(product=self.product).aggregate(total_quantity=Sum('quantityreceived'))['total_quantity'] or 0
+    
+    # @property
+    # def total_price(self):
+    #     total_price = Receiving.objects.filter(product=self.product).aggregate(
+    #         total_price=Sum(F('quantityreceived') * F('unitprice'))
+    #     )['total_price']
+    #     return total_price or 0
 
 
 class Total_Quantity(models.Model):

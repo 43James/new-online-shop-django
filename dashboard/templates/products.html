@@ -33,6 +33,7 @@
                 <th scope="col">ชื่อรายการ</th>
                 <th scope="col">สต๊อกคงเหลือ</th>
                 <th scope="col">สต๊อกคงเหลือ ทบยอด</th>
+                <th scope="col">จำนวนเงิน</th>
                 <th scope="col">วันที่เพิ่มวัสดุ</th>
                 <th scope="col">วันที่อัพเดต</th>
                 <th scope="col">ตัวเลือก</th>
@@ -60,6 +61,7 @@
         <th style="background-color: aquamarine;">{{ product.total_quantity_received|default:0|intcomma }} &nbsp;{{ product.unit}}</td>
         {% endif %}
                 <td>{{ product.quantityinstock|intcomma }}</td>
+                <td>{{ product.total_remaining_value|intcomma }}</td>
 
                 <td>{{ product.date_created|date:"d M Y" }}</td>
                 <td>{{ product.date_updated|date:"d M Y" }}</td>

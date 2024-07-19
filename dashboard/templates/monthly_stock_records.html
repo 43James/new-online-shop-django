@@ -1,5 +1,7 @@
 {% extends "dashboard.html" %}
 {% load custom_filters %}
+{% load humanize %}
+
 {% block content %}
 
 <head>
@@ -123,7 +125,8 @@
                     <th class="user-column1 text-center">วัสดุ</th>
                     <th class="user-column1 text-center">เดือน</th>
                     <th class="user-column1 text-center">ปี</th>
-                    <th class="user-column1 text-center">จำนวนคงเหลือ(ชิ้น)</th>
+                    <th class="user-column1 text-center">จำนวนคงเหลือ</th>
+                    <th class="user-column1 text-center">หน่วย</th>
                     <th class="user-column1 text-center">จำนวนเงิน(บาท)</th>
                     <th class="user-column1 text-center">วันที่บันทึก</th>
                 </tr>
@@ -135,8 +138,9 @@
                         <td>{{ record.product.product_name }}</td>
                         <td class="text-center">{{ record.month }}</td>
                         <td class="text-center">{{ record.year }}</td>
-                        <td class="text-center">{{ record.end_of_month_balance }}</td>
-                        <td class="text-center">{{ record.total_price}}</td>
+                        <td class="text-center">{{ record.end_of_month_balance|intcomma }}</td>
+                        <td class="text-center">{{ record.product.unit}}</td>
+                        <td class="text-center">{{ record.total_price|intcomma }}</td>
                         <td>{{ record.date_recorded | date:"d M Y เวลา H:i นาที" }}</td>
                     </tr>
                 {% empty %}

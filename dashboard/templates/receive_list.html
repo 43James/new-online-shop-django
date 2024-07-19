@@ -34,9 +34,14 @@
         {% endif %}
 
         <td>{{ re.unitprice|intcomma }} บาท / {{ re.product.unit }}</td>
-        <td>{{ re.date_created | date:"d M Y, H:i" }} น.</td>
+        <td>{{ re.date_received | date:"d M Y, H:i" }} น.</td>
         <td>{{ re.date_updated | date:"d M Y, H:i" }} น.</td>
+
+        {% if request.user.is_admin %}
         <td><a class="text-info text-decoration-none" href="{% url 'dashboard:update_received_product' re.id %}"><i class="bi bi-pencil-square"></i></a></td>
+        {% else %}
+        <td class="text-danger">แอดมินแก้ไขเท่านั้น</td>
+        {% endif %}
         
         <!-- <td><a class="text-danger text-decoration-none" data-bs-toggle="modal" data-bs-target="#exampleModal{{l.id}}" ><i class="bi bi-trash-fill"></i></a></td> -->
       </tr>

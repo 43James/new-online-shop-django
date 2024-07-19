@@ -92,7 +92,7 @@
 
 
     <div>
-        <table class="col-auto justify-content-center container">
+        <table class="col-auto justify-content-center container mt-4">
             <thead>
                 <tr>
                     <th class="text-center user-column1" style="width: 5%;">ลำดับ</th>
@@ -123,6 +123,36 @@
             </tbody>
         </table>
     </div>
+
+    <!-- <div>
+        <table class="table table-bordered mt-4">
+            <thead>
+                <tr>
+                    <th>ชื่อสินค้า</th>
+                    <th>หน่วยนับ</th>
+                    <th>ซัพพลายเออร์</th>
+                    <th>จำนวนที่รับเข้า</th>
+                    <th>ราคาที่รับเข้า</th>
+                    <th>รวมราคาที่รับเข้า</th>
+                    <th>วันที่รับเข้า</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in receiving_data %}
+                <tr>
+                    <td>{{ item.product__product_name }}</td>
+                    <td>{{ item.product__unit }}</td>
+                    <td>{{ item.suppliers__supname }}</td>
+                    <td>{{ item.quantityreceived }}</td>
+                    <td>{{ item.unitprice }}</td>
+                    <td>{{ item.total_remaining_value }}</td>
+                    <td>{{ item.date_created|date:"d/m/Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div> -->
+    
 
 
 <script>

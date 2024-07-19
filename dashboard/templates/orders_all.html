@@ -11,7 +11,7 @@
         <th scope="col">ยอดรวม</th>
         <th scope="col">สถานะ</th>
         <th scope="col">เจ้าหน้าที่</th>
-        <th scope="col">ผู้เบิกรับวัสดุ?</th>
+        <th scope="col">ผู้เบิกกดยันยัน</th>
         <th scope="col">ทำรายการ</th>
         <th scope="col">รายละเอียด</th>
       </tr>
@@ -37,7 +37,7 @@
         <th scope="row" class="text-warning">รออนุมัติ..</td>
         {% elif order.status and order.pay_item == False %}
           <td scope="col"><!-- Button trigger modal -->
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+            <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
               data-bs-target="#exampleModal2{{ order.id }}">
               ยืนยันการจ่าย
             </button>

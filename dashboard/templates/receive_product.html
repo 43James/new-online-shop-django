@@ -35,6 +35,11 @@
       {% endfor %}
     </select>
 
+    <div class="mt-3 mb-3">
+      <label for="exampleFormControlInput1" class="form-label">วันที่รับเข้า</label>
+      <input type="datetime-local" name="date_received" class="form-control" required>
+    </div>
+
     <label class="mb-2" for="quantity_received">จำนวนที่รับเข้า </label>
     <input class="form-control mb-3" type="number" id="quantity_received" name="quantityreceived"
       placeholder="จำนวนที่รับเข้า" required>
@@ -47,6 +52,7 @@
     <input class="form-control mb-3" type="number" id="unit_price" name="unitprice" placeholder="ใส่ราคาต่อหน่วย"
       required>
     <br>
+    
 
     {{ form.non_field_errors }}
     <div class="row mb-5">
