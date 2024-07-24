@@ -39,53 +39,146 @@
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">ค้นหา</button>
             <a href="{% url 'dashboard:dashboard_home' %}" class="btn btn-secondary">ยกเลิก</a>
-            <!-- <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button> -->
         </div>
     </form>
 
     <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
     <div class="container mt-5">
-        <h5 class="text-center mb-4">กราฟแสดงข้อมูลสัดส่วนการเบิกวัสดุ</h5>
-        <div class="row col-12 mt-4">
-            <div class="col-6">
-                {{ graph_html_user_amount_pie|safe }}
-            </div>
-            <div class="col-6">
-                {{ graph_html_group_amount_pie|safe }}
-            </div>
-        </div>
+        <!-- <h5 class="text-center mb-4">กราฟแสดงข้อมูลจำนวนเงินที่เบิกวัสดุในแต่ละกลุ่มงาน</h5> -->
+        <canvas id="amountChart"></canvas>
     </div>
 
     <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
-    <div class="container mt-4">
-        <h5 class="text-center">กราฟแสดงข้อมูลจำนวนพัสดุที่เบิกในแต่ละกลุ่มงาน</h5>
-        <div class="card shadow-sm">
-            <div class="card-body">
-                {{ graph_html_quantity|safe }}
-            </div>
+    <div class="container mt-5">
+        <!-- <h5 class="text-center">กราฟแสดงข้อมูลจำนวนพัสดุที่เบิกในแต่ละกลุ่มงาน</h5> -->
+        <canvas id="quantityChart"></canvas>
+    </div>
+
+    <!-- กราฟการใช้วัสดุกลุ่มงานในแต่ละเดือน -->
+    <div class="container mt-5">
+        <div class="card-body">
+            <canvas id="workgroupMonthlyChart"></canvas>
         </div>
     </div>
     
-    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
-    <div class="container mt-4">
-        <h5 class="text-center">กราฟแสดงข้อมูลจำนวนเงินที่เบิกวัสดุในแต่ละกลุ่มงาน</h5>
-        <div class="card shadow-sm">
-            <div class="card-body">
-                {{ graph_html_amount|safe }}
-            </div>
-        </div>
-    </div>
-
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function clearFormAndSubmit() {
-        document.getElementById("start_month").value = "";
-        document.getElementById("start_year").value = "";
-        document.getElementById("end_month").value = "";
-        document.getElementById("end_year").value = "";
-        document.querySelector('form').submit();
-    }
+    document.addEventListener('DOMContentLoaded', function () {
+        function intcomma(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        var quantityData = JSON.parse('{{ chart_data_quantity|escapejs }}');
+        var amountData = JSON.parse('{{ chart_data_amount|escapejs }}');
+
+        var quantityCtx = document.getElementById('quantityChart').getContext('2d');
+        var quantityChart = new Chart(quantityCtx, {
+            type: 'bar', // เปลี่ยนเป็นกราฟแท่ง
+            data: quantityData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'กราฟแสดงจำนวนวัสดุที่เบิกในแต่ละกลุ่มงาน',
+                        font: {
+                            size: 18
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ' : ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += intcomma(context.parsed.y) + ' ';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'กลุ่มงาน'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'จำนวนวัสดุ (หน่วย)'
+                        },
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        });
+
+        var amountCtx = document.getElementById('amountChart').getContext('2d');
+        var amountChart = new Chart(amountCtx, {
+            type: 'bar', // เปลี่ยนเป็นกราฟแท่ง
+            data: amountData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'กราฟแสดงจำนวนเงินที่เบิกวัสดุในแต่ละกลุ่มงาน',
+                        font: {
+                            size: 18
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ' : ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += intcomma(context.parsed.y) + ' บาท';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'กลุ่มงาน'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'จำนวนเงิน (บาท)'
+                        },
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        });
+    });
 </script>
+
+
 
 {% endblock %}

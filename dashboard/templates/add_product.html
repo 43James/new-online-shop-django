@@ -1,7 +1,7 @@
 {% extends "dashboard.html" %}
 {% block content %}
 
-<div class="col-md-6 mt-4 justify-content-center container">
+<!-- <div class="col-md-6 mt-4 justify-content-center container">
   <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
@@ -11,5 +11,48 @@
       <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">Submit</button></div>
     </div>
   </form>
+</div> -->
+
+<div class="col-md-6 mt-4 justify-content-center container">
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class=" mb-3">
+      <label for="id_subcategory" class="form-label required">หมวดหมู่</label>
+      <select name="category" class="form-select selectpicker col-12" data-live-search="true" required id="id_subcategory">
+          <option disabled selected hidden>เลือก..</option>
+          {% for o in Subcategory %}
+          <option value="{{ o.id }}">{{ o.name_sub }}</option>
+          {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="formFile" class="form-label">เพิ่มรูปภาพ</label>
+      <input class="form-control" type="file" id="formFile" name="image" required>
+    </div>
+
+    <label class="mb-2" for="product_id">รหัสพัสดุ </label>
+    <input class="form-control mb-3" type="text" id="product_id" name="product_id"
+      placeholder="รหัสพัสดุ" required>
+
+    <label class="mb-2" for="product_name">ชื่อรายการ </label>
+    <input class="form-control mb-3" type="text" id="product_name" name="product_name"
+      placeholder="ชื่อรายการ" required>
+
+    <label class="mb-2" for="unit">หน่วย</label>
+    <input class="form-control mb-3" type="text" id="unit" name="unit" placeholder="หน่วย"
+      required>
+
+    <label class="mb-2" for="description">คำอธิบาย</label>
+    <textarea class="form-control mb-3" id="description" name="description" placeholder="คำอธิบาย" required></textarea>
+
+    {{ form.non_field_errors }}
+    <div class="row mb-5">
+      <div class="col-6"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div>
+      <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">บันทึก</button></div>
+    </div>
+  </form>
 </div>
+
 {% endblock %}

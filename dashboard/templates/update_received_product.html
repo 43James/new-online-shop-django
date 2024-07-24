@@ -17,7 +17,7 @@
   <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
 
-    <label for="id_product" class="form-label required">วัสดุ</label>
+    <label for="id_product" class="form-label required">เลือกวัสดุ</label>
     <select style="color: rgb(8, 0, 255);" name="product" class="form-select mb-3" required id="id_product">
       {% for o in Product %}
       <option value="{{o.id}}" {% if form.instance.product == o %} selected {% endif %}>{{o.product_name}}</option>
@@ -31,30 +31,46 @@
       {% endfor %}
     </select>
 
-    <label class="mb-2" for="quantity_received">จำนวนที่รับเข้า </label>
-    <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="quantity_received"
-      value="{{form.instance.quantityreceived}}" name="quantityreceived" placeholder="จำนวนที่รับเข้า" required>
+    <div class="mt-3 mb-3">
+      <label for="exampleFormControlInput1" class="form-label">วันที่รับเข้า</label>
+      <input style="color: rgb(8, 0, 255);" type="datetime-local" value="{{ form.instance.date_received|date:"Y-m-d\TH:i" }}" 
+      name="date_received" class="form-control" required>
+    </div>
 
+    <div class="row">
+      <div class="col-6">
+        <label class="mb-2" for="quantity_received">จำนวนที่รับเข้า </label>
+        <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="quantity_received" min="0"
+          value="{{form.instance.quantityreceived}}" name="quantityreceived" placeholder="จำนวนที่รับเข้า" required>
+      </div>
+      <div class="col-6">
+        <label class="mb-2" for="unit_price">ราคา</label>
+        <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price" min="0"
+          value="{{form.instance.unitprice}}" name="unitprice" placeholder="ใส่ราคาต่อหน่วย" required>
+      </div>
+    </div>
+    
     <label class="mb-2" for="quantity_received">จำนวนคงเหลือ </label>
-    <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="id_quantity"
-      value="{{form.instance.quantity}}" name="quantity" placeholder="จำนวนคงเหลือ" required>
-
-    <label class="mb-2" for="unit_price">ราคา</label>
+     <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="id_quantity"
+       value="{{form.instance.quantity}}" name="quantity" placeholder="จำนวนคงเหลือ" readonly>
+    
+    <div class="row">
+    <div class="col-6">
+    <label class="mb-2" for="unit_price">เดือนที่รับเข้า</label>
     <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price"
-      value="{{form.instance.unitprice}}" name="unitprice" placeholder="ใส่ราคาต่อหน่วย" required>
+        value="{{form.instance.month}}" name="month" placeholder="(เป็นตัวเลข)" readonly>
+    </div>
 
-    <label class="mb-2" for="unit_price">เดือนที่รับเข้า (เป็นตัวเลข)</label>
-    <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price"
-      value="{{form.instance.month}}" name="month" placeholder="(เป็นตัวเลข)" required>
-
+    <div class="col-6">
     <label class="mb-2" for="unit_price">ปีที่รับเข้า ค.ศ.</label>
     <input style="color: rgb(8, 0, 255);" class="form-control" type="number" id="unit_price"
-      value="{{form.instance.year}}" name="year" placeholder="ปี ค.ศ." required><br><br>
-
+      value="{{form.instance.year}}" name="year" placeholder="ปี ค.ศ." readonly><br><br>
+    </div>
+    </div>
     {{ form.non_field_errors }}
     <div class="row mb-5">
-      <div class="col-6"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div>
-      <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">Submit</button></div>
+      <div class="col-6"><a class="btn btn-primary w-100 " onclick="history.back()">ย้อนกลับ</a></div>
+      <div class="col-6"><button class=" btn btn-success w-100" type="submit">Submit</button></div>
     </div>
   </form>
 </div>

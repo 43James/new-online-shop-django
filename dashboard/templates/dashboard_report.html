@@ -1,0 +1,185 @@
+{% extends "dashboard.html" %}
+{% load humanize %}
+{% block content %}
+<!-- Bootstrap 5 -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div style="margin-left: 10px; margin-right: 10px;">
+
+    <!-- ฟอร์มสำหรับเลือกช่วงเดือนและปี -->
+    <form method="get" action="{% url 'dashboard:dashboard_report' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+        <div class="col-auto">
+            <select name="start_month" id="start_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_start_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="start_year" id="start_year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_start_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><h5>ถึง</h5></div>
+
+        <div class="col-auto">
+            <select name="end_month" id="end_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_end_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="end_year" id="end_year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_end_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">ค้นหา</button>
+            <a href="{% url 'dashboard:dashboard_report' %}" class="btn btn-secondary">ยกเลิก</a>
+        </div>
+    </form>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <div class="chart-container">
+                    <canvas id="valueChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-12 mb-4">
+                <div class="chart-container">
+                    <canvas id="quantityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ข้อมูลกราฟที่ส่งจาก Django -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                function intcomma(x) {
+                    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                }
+        
+                // ข้อมูลกราฟแนวโน้มมูลค่าการเบิกวัสดุ
+                var valueChartData = JSON.parse('{{ value_chart_data|escapejs }}');
+                var ctxValue = document.getElementById('valueChart').getContext('2d');
+                new Chart(ctxValue, {
+                    type: 'line',
+                    data: valueChartData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ' : ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += intcomma(context.parsed.y) + ' บาท';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'กราฟแนวโน้มมูลค่าการเบิกวัสดุ',
+                                font: {
+                                    size: 18
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'เดือน'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'มูลค่าการเบิกวัสดุ (บาท)'
+                                },
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    }
+                });
+        
+                // ข้อมูลกราฟแนวโน้มการใช้วัสดุ
+                var quantityChartData = JSON.parse('{{ quantity_chart_data|escapejs }}');
+                var ctxQuantity = document.getElementById('quantityChart').getContext('2d');
+                new Chart(ctxQuantity, {
+                    type: 'line',
+                    data: quantityChartData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ' : ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += intcomma(context.parsed.y) + ' ชิ้น';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'กราฟแนวโน้มการใช้วัสดุ',
+                                font: {
+                                    size: 18
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'เดือน'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'ปริมาณการใช้วัสดุ (หน่วย)'
+                                },
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        </script>        
+    </div>
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+</div>
+
+{% endblock %}

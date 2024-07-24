@@ -83,25 +83,25 @@
           <div class="modal fade" id="exampleModal{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-              <div class="modal-content" style="width: 15rem;">
+              <div class="modal-content" style="width: 20rem;">
                 <div class="modal-header">
                   <h5 class="modal-title" id="exampleModalLabel">ดำเนินการ ID {{ order.id }}</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 
                 <div class="modal-body">
-                  <div class="form-check">
+                  <div class="form-check container justify-content-center d-flex">
                     <input class="form-check-input bg-success" type="radio" name="status" id="flexRadioDefault1" 
                            value="True" {% if order.status == True %} checked {% endif %}>
-                    <label class="form-check-label text-success" for="flexRadioDefault1">
+                    <label class="form-check-label text-success" for="flexRadioDefault1">&nbsp;&nbsp;
                         อนุมัติ
                     </label>
                 </div>
 
-                <div class="form-check">
+                <div class="form-check container justify-content-center d-flex">
                     <input class="form-check-input bg-danger" type="radio" name="status" id="flexRadioDefault2" 
                            value="False" {% if order.status == False %} checked {% endif %}>
-                    <label class="form-check-label text-danger" for="flexRadioDefault2">
+                    <label class="form-check-label text-danger" for="flexRadioDefault2">&nbsp;&nbsp;
                         ปฏิเสธ
                     </label>
                 </div>
@@ -118,9 +118,9 @@
                   </div>
 
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer justify-content-between">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                  <button type="submit" class="btn btn-primary">บันทึก</button>
+                  <button type="submit" class="btn btn-primary">ยืนยัน</button>
                 </div>
               </div>
             </div>
@@ -130,35 +130,23 @@
         <!-- Modal2 -->
         <form action="{% url 'dashboard:approve_pay' order.id %}" method="POST">
           {% csrf_token %}
-          <div class="modal fade" id="exampleModal2{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel"
+          <div class="modal fade" id="exampleModal2{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel2"
             aria-hidden="true">
             <div class="modal-dialog">
               <div class="modal-content mt-5" style="width: 20rem;">
                 <div class="modal-header">
-                  <h5 class="modal-title text-center container" id="exampleModalLabel">ยืนยันการจ่ายวัสดุ ID {{ order.id }}</h5>
+                  <h5 class="modal-title text-center container" id="exampleModalLabel2">ยืนยันการจ่ายวัสดุ ID {{ order.id }}</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 
                 <div class="modal-body">
                   <div class="form-check container justify-content-center d-flex">
-                      <input class="form-check-input bg-success" type="radio" name="pay_item" id="flexRadioDefault1" 
+                      <input class="form-check-input bg-success" type="radio" name="pay_item" id="flexRadioDefault5" 
                             value="True" required>&nbsp;&nbsp;
-                      <label class="form-check-label text-success" for="flexRadioDefault1">
+                      <label class="form-check-label text-success" for="flexRadioDefault5">
                           จ่ายวัสดุแล้ว
                       </label>
                   </div>
-
-                  <!-- <div class="col mt-3">
-                    <label for="exampleFormControlInput1" class="form-label">วันที่รับ</label>
-                    <input type="datetime-local"  name="date_received" class="form-control"
-                      id="exampleFormControlInput1" required>
-                  </div> -->
-
-                  <!-- <div class="col mb-3 mt-3">
-                    <label class="form-label">ลงชื่อ</label>
-                    <input type="text" name="name_sign" class="form-control text-center" placeholder="ลงชื่อ" required>
-                  </div> -->
-
                 </div>
                 <div class="modal-footer justify-content-between">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>

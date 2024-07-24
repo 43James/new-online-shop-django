@@ -23,7 +23,13 @@ class UploadFileForm(forms.Form):
 
 
 class AddProductForm(ModelForm):
-    category = forms.ModelChoiceField(queryset=Subcategory.objects.all(), label='หมวดหมู๋', empty_label='เลือก..')
+    # category = forms.ModelChoiceField(queryset=Subcategory.objects.all(), label='หมวดหมู๋', empty_label='เลือก..')
+    category = forms.ModelChoiceField(
+        queryset=Subcategory.objects.all(),
+        label='หมวดหมู๋',
+        empty_label='เลือก..',
+        widget=forms.Select(attrs={'class': 'selectpicker', 'data-live-search': 'true'})
+    )
 
     class Meta:
         model = Product
@@ -52,7 +58,7 @@ class AddReceivingForm(ModelForm):
 
     class Meta:
         model = Receiving
-        fields = ['product', 'suppliers', 'quantityreceived', 'quantity', 'unitprice']
+        fields = ['product', 'suppliers', 'date_received', 'quantityreceived', 'quantity', 'unitprice']
 
     def __init__(self, *args, **kwargs):
         super(AddReceivingForm, self).__init__(*args, **kwargs)
@@ -63,6 +69,10 @@ class AddReceivingForm(ModelForm):
         # self.fields['product'].queryset = Product.objects.all().values_list('product_name', flat=True)
         # self.fields['suppliers'].queryset = Suppliers.objects.all().values_list('supname', flat=True)
 
+class ReceivingForm(forms.ModelForm):
+    class Meta:
+        model = Receiving
+        fields = '__all__'
 
 class WorkGroupForm(forms.ModelForm):
     class Meta:
@@ -144,12 +154,6 @@ class ApprovePayForm(ModelForm):
         model = Order
         fields = ('pay_item',)
         # exclude = ('user', 'datecreated')
-
-
-class ReceivingForm(forms.ModelForm):
-    class Meta:
-        model = Receiving
-        fields = '__all__'
     
 
 class EditCategoryForm(ModelForm):

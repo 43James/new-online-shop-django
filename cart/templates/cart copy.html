@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block content %}
+
+{% if cart_count != 0 %}
+<div class="col-md-8 p-3 mt-3 justify-content-center container " style="background-color: white; border-radius: 20px;">
+  <table class="table table-striped ">
+    <thead class="text-muted">
+      <tr>
+        <th scope="col"></th>
+        <th scope="col">รายการ</th>
+        <th scope="col">ราคา/หน่วย</th>
+        <th scope="col">จำนวน</th>
+        <th scope="col">ราคารวม</th>
+        <th scope="col"></th>
+        <!-- <th scope="col"></th> -->
+      </tr>
+    </thead>
+    {% for item in cart %}
+    <tbody>
+      <tr>
+        <th scope="row">{{ forloop.counter }}</th>
+        <td><a class="text-decoration-none" href="{{ item.product.get_absolute_url }}">{{ item.product.product_name }}</a></td>
+        <td>{{ item.price }} ฿</td>
+        <td>{{ item.quantity }} ชิ้น</td>
+        <td>{{ item.total_price|intcomma }} ฿</td>
+        <!-- <td>{{ item.receivings }}</td> -->
+        <td><a href="{% url 'cart:remove_from_cart' item.product.id item.receiving_id %}" class="text-danger text-decoration-none"><i
+              class="bi bi-trash-fill"></i></a></td>
+
+      </tr>
+    </tbody>
+    {% endfor %}
+
+  </table>
+  <hr>
+  <a href="{% url 'orders:create_order' %}" style="float: right;" class="btn btn-success mt-1">Checkout</a>
+  <h4 class="mt-4"><span class="text-muted">รวมทั้งหมด :</span> {{ cart.get_total_price|intcomma }} ฿</h4>
+</div>
+{% else %}
+<div class="col-md-8 mt-5 pt-5 text-center justify-content-center container ">
+  <br>
+  <h3 class="text-muted text-capitalize">รถเข็นว่างเปล่า..!</h3>
+  <!-- <h3 class="text-muted text-capitalize">cart is empty..!</h3> -->
+  <a href="{% url 'shop:home_page' %}" class="text-primary text-decoration-none"><i style="font-size: 30px;" class="bi bi-arrow-left-circle"></i></a>
+</div>
+{% endif %}
+
+{% endblock %}

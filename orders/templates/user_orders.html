@@ -6,6 +6,7 @@
 <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
 <div class="col-10 container text-end justify-content-center mt-4">
     <form method="get" action="{% url 'orders:user_orders' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+        <!-- <div class="col-auto text-white"><strong style="font-size: 20px;">เลือก</strong></div> -->
         <div class="col-auto">
             <select name="month" id="month" class="form-select">
                 {% for m in months %}

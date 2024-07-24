@@ -1,0 +1,229 @@
+{% extends "dashboard.html" %}
+{% block content %}
+<!-- Bootstrap 5 -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div style="margin-left: 10px; margin-right: 10px;">
+
+    <!-- ฟอร์มสำหรับเลือกช่วงเดือนและปี -->
+    <form method="get" action="{% url 'dashboard:dashboard_report' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+        <div class="col-auto">
+            <select name="start_month" id="start_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_start_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="start_year" id="start_year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_start_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><h5>ถึง</h5></div>
+
+        <div class="col-auto">
+            <select name="end_month" id="end_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_end_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="end_year" id="end_year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_end_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">ค้นหา</button>
+            <a href="{% url 'dashboard:dashboard_report' %}" class="btn btn-secondary">ยกเลิก</a>
+        </div>
+    </form>
+
+    <div class="container mt-5">
+        <!-- กราฟแนวโน้มมูลค่าการเบิกวัสดุ -->
+        <div class="row">
+            <div class="col-md-12">
+                <canvas id="valueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <!-- กราฟการใช้วัสดุกลุ่มงานในแต่ละเดือน -->
+        <div class="row">
+            <div class="col-md-12">
+                <canvas id="quantityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const colors = [
+            'rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'
+        ];
+        
+        function getColor(index) {
+            return colors[index % colors.length];
+        }
+        
+        function getColorWithOpacity(index) {
+            return colors[index % colors.length].replace('1)', '0.2)');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // กราฟแนวโน้มมูลค่าการเบิกวัสดุ
+            const valueChartData = JSON.parse('{{ chart_data|escapejs }}');
+            const ctxValue = document.getElementById('valueChart').getContext('2d');
+            new Chart(ctxValue, {
+                type: 'line',
+                data: {
+                    labels: valueChartData.labels,
+                    datasets: valueChartData.datasets.map((dataset, i) => ({
+                        ...dataset,
+                        borderColor: getColor(i),
+                        backgroundColor: getColorWithOpacity(i)
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'กราฟแนวโน้มมูลค่าการเบิกวัสดุของแต่ละกลุ่มงาน',
+                            font: {
+                                size: 23
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'เดือน'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return valueChartData.labels[value]; // แสดงชื่อเดือนที่แทนค่าเดือน
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'มูลค่า (บาท)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString(); // แสดงค่ามูลค่าในรูปแบบที่อ่านง่าย
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // กราฟการใช้วัสดุกลุ่มงานในแต่ละเดือน
+            const workgroupMonthlyData = JSON.parse('{{ workgroup_monthly_data|escapejs }}');
+            const labels = [];
+            const datasets = {};
+
+            workgroupMonthlyData.forEach(item => {
+                const month = item.month;
+                const workgroup = item.order__user__profile__workgroup__work_group;
+                const quantity = item.total_quantity;
+
+                if (!labels.includes(month)) {
+                    labels.push(month);
+                }
+
+                if (!datasets[workgroup]) {
+                    datasets[workgroup] = {
+                        label: workgroup,
+                        data: Array.from({length: labels.length}, () => 0),
+                        borderColor: getColor(Object.keys(datasets).length),
+                        backgroundColor: getColorWithOpacity(Object.keys(datasets).length)
+                    };
+                }
+
+                const monthIndex = labels.indexOf(month);
+                datasets[workgroup].data[monthIndex] = quantity;
+            });
+
+            const ctxQuantity = document.getElementById('quantityChart').getContext('2d');
+            new Chart(ctxQuantity, {
+                type: 'line',
+                data: {
+                    labels: labels.map(month => getMonthName(month)),
+                    datasets: Object.values(datasets)
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' ชิ้น';
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'กราฟการใช้วัสดุกลุ่มงานในแต่ละเดือน',
+                            font: {
+                                size: 23
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'เดือน'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'จำนวนที่ใช้ (ชิ้น)'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        function getMonthName(month) {
+            const monthNames = [
+                'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+            ];
+            return monthNames[month - 1];
+        }
+    </script>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+</div>
+
+{% endblock %}
