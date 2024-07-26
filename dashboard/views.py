@@ -980,7 +980,9 @@ def export_to_excel_receive(request):
 @login_required
 # รายงานยอดรวมที่มีการเบิกแต่ละเดือน
 def report_monthly_totals(request):
-    orders = Order.objects.all()
+    # orders = Order.objects.all()
+    # กรองเฉพาะ order ของผู้ใช้งานปัจจุบันที่เข้าสู่ระบบ และมีสถานะออเดอร์เป็น True
+    orders = Order.objects.filter(status=True)
     report_monthly_totals = defaultdict(Decimal)
     
     for order in orders:
@@ -1203,15 +1205,22 @@ def dashboard_home(request):
             'rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)',
             'rgba(255, 206, 86, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'
         ]
+        # สร้างแม็พสีสำหรับแต่ละผลิตภัณฑ์
+        color_map = {product: get_random_color() for product in products}
 
         for i, product in enumerate(products):
             data = df[df['product__product_name'] == product]
             monthly_totals = [data[data['order__user__profile__workgroup__work_group'] == label]['total_quantity'].sum() for label in labels]
+            color = color_map[product]
             datasets_quantity.append({
                 'label': product,
                 'data': monthly_totals,
-                'borderColor': colors[i % len(colors)],
-                'backgroundColor': colors[i % len(colors)].replace('1)', '1)'),
+                # 'borderColor': colors[i % len(colors)],
+                # 'backgroundColor': colors[i % len(colors)].replace('1)', '1)'),
+                # 'borderColor': get_random_color(),
+                # 'backgroundColor': get_random_color().replace('1)', '1)'),
+                'borderColor': color,
+                'backgroundColor': color.replace('1)', '0.8)'),
                 'fill': False
             })
 
@@ -1220,11 +1229,16 @@ def dashboard_home(request):
         for i, product in enumerate(products):
             data = df[df['product__product_name'] == product]
             monthly_totals = [data[data['order__user__profile__workgroup__work_group'] == label]['total_amount'].sum() for label in labels]
+            color = color_map[product]
             datasets_amount.append({
                 'label': product,
                 'data': monthly_totals,
-                'borderColor': colors[i % len(colors)],
-                'backgroundColor': colors[i % len(colors)].replace('1)', '1)'),
+                # 'borderColor': colors[i % len(colors)],
+                # 'backgroundColor': colors[i % len(colors)].replace('1)', '1)'),
+                # 'borderColor': get_random_color(),
+                # 'backgroundColor': get_random_color().replace('1)', '1)'),
+                'borderColor': color,
+                'backgroundColor': color.replace('1)', '0.8)'),
                 'fill': False
             })
 
@@ -1276,6 +1290,12 @@ def dashboard_home(request):
 
     return render(request, 'dashboard_home.html', context)
 
+import random
+def get_random_color():
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    return f'rgba({r}, {g}, {b}, 1)'
 
 @user_passes_test(is_authorized)
 @login_required

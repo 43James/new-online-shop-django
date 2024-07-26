@@ -52,51 +52,51 @@ def is_authorized(user):
         return True
 
 
-def notify_admin(order_id):
-    try:
-        response = requests.post(
-            'https://api.line.me/v2/bot/message/push',
-            headers={'Authorization': 'Bearer <YOUR_ACCESS_TOKEN>'},
-            json={
-                'to': '<ADMIN_USER_ID>',
-                'messages': [
-                    {
-                        'type': 'text',
-                        'text': f'New order created with ID: {order_id}'
-                    }
-                ]
-            },
-            timeout=10  # เพิ่ม timeout ที่นี่
-        )
-        response.raise_for_status()
-    except ConnectTimeout:
-        print("Connection to LINE API timed out.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+# def notify_admin(order_id):
+#     try:
+#         response = requests.post(
+#             'https://api.line.me/v2/bot/message/push',
+#             headers={'Authorization': 'Bearer <YOUR_ACCESS_TOKEN>'},
+#             json={
+#                 'to': '<ADMIN_USER_ID>',
+#                 'messages': [
+#                     {
+#                         'type': 'text',
+#                         'text': f'New order created with ID: {order_id}'
+#                     }
+#                 ]
+#             },
+#             timeout=10  # เพิ่ม timeout ที่นี่
+#         )
+#         response.raise_for_status()
+#     except ConnectTimeout:
+#         print("Connection to LINE API timed out.")
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
 
 
 
-def notify_user(order_id):
-    try:
-        response = requests.post(
-            'https://api.line.me/v2/bot/message/push',
-            headers={'Authorization': 'Bearer <YOUR_ACCESS_TOKEN>'},
-            json={
-                'to': '<USER_ID>',
-                'messages': [
-                    {
-                        'type': 'text',
-                        'text': f'Your order with ID: {order_id} has been created'
-                    }
-                ]
-            },
-            timeout=10  # เพิ่ม timeout ที่นี่
-        )
-        response.raise_for_status()
-    except ConnectTimeout:
-        print("Connection to LINE API timed out.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+# def notify_user(order_id):
+#     try:
+#         response = requests.post(
+#             'https://api.line.me/v2/bot/message/push',
+#             headers={'Authorization': 'Bearer <YOUR_ACCESS_TOKEN>'},
+#             json={
+#                 'to': '<USER_ID>',
+#                 'messages': [
+#                     {
+#                         'type': 'text',
+#                         'text': f'Your order with ID: {order_id} has been created'
+#                     }
+#                 ]
+#             },
+#             timeout=10  # เพิ่ม timeout ที่นี่
+#         )
+#         response.raise_for_status()
+#     except ConnectTimeout:
+#         print("Connection to LINE API timed out.")
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
 
 
 @user_passes_test(is_authorized)
@@ -186,7 +186,9 @@ def user_orders(request):
 @user_passes_test(is_authorized)
 @login_required
 def monthly_totals_view(request):
-    orders = request.user.orders.all()  # กรองเฉพาะ order ของผู้ใช้งานปัจจุบันที่เข้าสู่ระบบ
+    # orders = request.user.orders.all()  # กรองเฉพาะ order ของผู้ใช้งานปัจจุบันที่เข้าสู่ระบบ
+    # กรองเฉพาะ order ของผู้ใช้งานปัจจุบันที่เข้าสู่ระบบ และมีสถานะออเดอร์เป็น True
+    orders = request.user.orders.filter(status=True)
     monthly_totals = defaultdict(Decimal)
     
     for order in orders:

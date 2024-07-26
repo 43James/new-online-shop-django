@@ -9,25 +9,28 @@
 <div class="card me-1 mb-2" style="width: 11rem; margin-left: 10px;">
 
   {% if product.total_quantity == 0 %}
-  <div id="watermark">
+    <div id="watermark">
+      <a href="{{ product.get_absolute_url }}">
+        {% if product.image %}
+        <img class="card-img mt-2" width="134" height="150"
+          src="{{ product.image.url }}">
+        {% else %}
+        <img style="object-fit: cover; opacity: 0.5;" class="card-img mt-2" width="134" height="150"
+          src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+        {% endif %}
+      </a>
+      <p> &nbsp;Sold Out</p>
+    </div>
+    {% else %}
     <a href="{{ product.get_absolute_url }}">
       {% if product.image %}
-      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
+      <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
       {% else %}
-      <img style="object-fit: cover; opacity: 0.2;" class="card-img mt-2" width="134" height="150" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+      <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150"
+        src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
       {% endif %}
     </a>
-    <p>สต๊อกหมด</p>
-  </div>
-  {% else %}
-  <a href="{{ product.get_absolute_url }}">
-    {% if product.image %}
-    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="{{ product.image.url }}">
-    {% else %}
-    <img style="object-fit: cover;" class="card-img mt-2" width="134" height="150" src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
     {% endif %}
-  </a>
-  {% endif %}
 
   <div class="mt-3 text-center">
     <h6 class="card-title element">{{ product.product_name }}</h6>
