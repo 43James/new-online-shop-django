@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.core.paginator import Paginator
-from app_linebot.views import notify_user_approved
+from app_linebot.views import notify_user_approved, notify_user_pay_confirmed
 from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
 from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, TotalQuantity, Receiving
 from accounts.models import MyUser, Profile, WorkGroup
@@ -54,46 +54,20 @@ def count_pending_orders():
     return pending_orders.count()
 
 
-def notify_user_rejected(order_id):
-    # ดึงข้อมูลของคำสั่งซื้อ
-    order = Order.objects.get(id=order_id)
+# def notify_user_rejected(order_id):
+#     # ดึงข้อมูลของคำสั่งซื้อ
+#     order = Order.objects.get(id=order_id)
     
-    # สร้างเนื้อหาข้อความอีเมล
-    subject = 'การสั่งซื้อของคุณถูกปฏิเสธ'
-    html_message = render_to_string('email/order_rejected.html', {'order': order})
-    plain_message = strip_tags(html_message)
-    from_email = 'your@example.com'  # อีเมลผู้ส่ง
-    to_email = order.user.email  # อีเมลผู้รับ
+#     # สร้างเนื้อหาข้อความอีเมล
+#     subject = 'การสั่งซื้อของคุณถูกปฏิเสธ'
+#     html_message = render_to_string('email/order_rejected.html', {'order': order})
+#     plain_message = strip_tags(html_message)
+#     from_email = 'your@example.com'  # อีเมลผู้ส่ง
+#     to_email = order.user.email  # อีเมลผู้รับ
     
-    # ส่งอีเมล
-    send_mail(subject, plain_message, from_email, [to_email], html_message=html_message)
+#     # ส่งอีเมล
+#     send_mail(subject, plain_message, from_email, [to_email], html_message=html_message)
 
-
-# def is_general(user):
-#     if user.is_general:
-#         raise Http404
-#     return True
-
-# def is_manager(user):
-#     if not user.is_manager:
-#         raise Http404
-#     return False
-
-# def is_executive(user):
-#     if not user.is_executive:
-#         raise Http404
-#     return False
-
-# def is_admin(user):
-#     if not user.is_admin:
-#         raise Http404
-#     return False
-
-# def is_authorized(user):
-#     try:
-#         return is_manager(user) and is_executive(user) and is_admin(user)
-#     except Http404:
-#         return True
     
 from django.core.exceptions import PermissionDenied
 
@@ -2235,6 +2209,7 @@ def approve_pay(request, order_id):
         if form.is_valid():
             print("จ่ายวัสดุแล้ว")
             form.save()
+            notify_user_pay_confirmed(order_id)  # เรียกฟังก์ชันการแจ้งเตือน
             messages.success(request, 'ยืนยันการจ่ายวัสดุสำเร็จ')
             return redirect(reverse('dashboard:orders_all'))
         else:

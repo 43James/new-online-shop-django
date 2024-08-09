@@ -42,11 +42,18 @@ def is_authorized_admin(user):
     if is_admin(user):
         return True
     raise PermissionDenied
+
+# def is_authorized_manager(user, request):
+#     if user.is_manager or user.is_admin:
+#         return True
+#     return render(request, '403.html', status=403)
     
 
-def custom_404_view(request, exception=None):
-    return render(request, '404.html', status=404)
+# def some_view(request):
+#     return render(request, '403.html', context={})
 
+# def custom_404_view(request, exception=None):
+#     return render(request, '404.html', status=404)
 
 def paginat(request, list_objects):
 	p = Paginator(list_objects, 18)
@@ -58,6 +65,9 @@ def paginat(request, list_objects):
 	except EmptyPage:
 		page_obj = p.page(p.num_pages)
 	return page_obj
+
+
+
 
 
 # ในกรณีใช้กับตาราง Product

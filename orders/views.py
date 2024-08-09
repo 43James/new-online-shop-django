@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from requests.exceptions import ConnectTimeout
-from app_linebot.views import notify_admin, notify_user
+from app_linebot.views import notify_admin, notify_admin_receive_confirmation, notify_user
 from dashboard.views import convert_to_buddhist_era, thai_month_name
 from orders.forms import UserApproveForm
 from shop.models import Receiving
@@ -206,6 +206,7 @@ def monthly_totals_view(request):
     return render(request, 'monthly_totals.html', context)
 
 
+# เพิ่มการเรียกใช้ฟังก์ชัน notify_admin_receive_confirmation ใน view function user_approve
 @login_required
 def user_approve(request, order_id):
     ap = get_object_or_404(Order, id=order_id)
@@ -215,6 +216,7 @@ def user_approve(request, order_id):
         if form.is_valid():
             print("ยืนยันการรับวัสดุสำเร็จ")
             form.save()
+            notify_admin_receive_confirmation(order_id)  # เรียกฟังก์ชันการแจ้งเตือนแอดมิน
             messages.success(request, 'ยืนยันการรับวัสดุสำเร็จ')
             return redirect(reverse('orders:user_orders'))
         else:

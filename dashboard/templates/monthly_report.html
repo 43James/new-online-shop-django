@@ -38,6 +38,11 @@
             background-color: #ebebeb;
             /* เปลี่ยนสีพื้นหลังตามต้องการ */
         }
+
+        .user-column_tr {
+            background-color: #e9e9e9;
+            /* เปลี่ยนสีพื้นหลังตามต้องการ */
+        }
     </style>
 </head>
     <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
@@ -113,16 +118,16 @@
     <table class="table table-hover" style="border: none;">
         <table>
             <thead>
-                <tr>
+                <tr class="user-column_tr">
                     <th colspan="100" style="text-align: center; border: none;">รายการเบิกวัสดุ</th>
                 </tr>
-                <tr>
+                <tr class="user-column_tr">
                     <th colspan="100" style="text-align: center; border: none;">ประจำเดือน {{ month_name }} พ.ศ. {{ buddhist_year }} ประจำปีงบประมาณ พ.ศ. {{ buddhist_year }}</th>
                 </tr>
-                <tr>
+                <tr class="user-column_tr">
                     <th colspan="100" style="text-align: center; border: none;">หน่วยงาน โครงการอุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี</th>
                 </tr>
-                <tr>
+                <tr class="user-column_tr">
                     <th rowspan="2" class="text-center" style="width: 3%;">ลำดับ</th>
                     <th rowspan="2" class="text-center" style="width: 30%;">รายการสินค้า</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">หน่วยนับ</th>
@@ -136,7 +141,7 @@
                     <!-- <th rowspan="2" class="text-center" style="width: 10%;">จำนวนเงิน</th> -->
                     <th rowspan="2" class="text-center">หมายเหตุ</th>
                 </tr>
-                <tr>
+                <tr class="user-column_tr">
                     {% for user in all_users %}
                     <th class="user-column1 text-center" style="width: 8%;">{{ user }}</th>
                     {% endfor %}
@@ -148,7 +153,7 @@
                     <td class="text-center">{{ forloop.counter }}</td>
                     <td>{{ item.product }}</td>
                     <td class="text-center">{{ item.unit }}</td>
-                    <td class="text-center">{{ item.previous_balance|intcomma }}</td>
+                    <td class="text-center" style="background-color: #fad5b7;">{{ item.previous_balance|intcomma }}</td>
                     <td class="text-center">{{ item.received_current_month|intcomma }}</td>
                     <td class="text-center">{{ item.total_balance|intcomma }}</td>
                     {% for user in all_users %}

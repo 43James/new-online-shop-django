@@ -137,7 +137,113 @@ def notify_user(order_id):
         order = Order.objects.get(id=order_id)
         user_line = UserLine.objects.get(user=order.user)
 
-        message = f"{order.user.username} รายการเบิกวัสดุ เลขที่เบิก {order_id} ของคุณ ที่ต้องได้รับการอนุมัติ.."
+        # ดึงรายการสินค้าที่ถูกเบิก
+        items = order.items.all()  # Assuming `order.items` is the related name for OrderItems
+
+        # สร้างข้อความรายการสินค้า
+        items_list = "\n".join([f"- {item.product.product_name}: {item.quantity} {item.product.unit}" for item in items])
+
+        # คำนวณจำนวนเงินรวม
+        total_cost = sum(item.get_cost() for item in items)
+
+        # message = f"{order.user.username} รายการเบิกวัสดุ เลขที่เบิก {order_id} ของคุณ ที่ต้องได้รับการอนุมัติ.."
+        message = (
+            f"{order.user.first_name} รายการเบิกวัสดุเลขที่เบิก {order_id} ของคุณที่ต้องได้รับการอนุมัติ..\n"
+            f"รายการวัดสุที่เบิก:\n{items_list}"
+            f"\nยอดเงินรวม: {total_cost} บาท"
+        )
+        print(message)
+        line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))
+    except Order.DoesNotExist:
+        print(f"ไม่มีคำร้อง ID {order_id}")
+    except UserLine.DoesNotExist:
+        print(f"ไม่มี UserLine สำหรับผู้ใช้งาน {order.user.first_name}")
+
+
+
+#ส่งการแจ้งเตือนไปยังแอดมินเมื่อเช็คเอ้าท์สินค้า
+def notify_admin(order_id):
+    order = Order.objects.get(id=order_id)
+    admin_user_id ='Ubb217fccfe04b1dbf5550e46661a8693'  # Replace with the actual Line user ID of the admin
+
+    # ดึงรายการสินค้าที่ถูกเบิก
+    items = order.items.all()  # Assuming `order.items` is the related name for OrderItems
+
+    # สร้างข้อความรายการสินค้า
+    items_list = "\n".join([f"- {item.product.product_name}: {item.quantity} {item.product.unit} ๆ ละ {item.receiving.unitprice} บาท"for item in items])
+
+    # คำนวณจำนวนเงินรวม
+    total_cost = sum(item.get_cost() for item in items)
+
+    # message = f"คำร้องใหม่จากผู้ใช้งาน {order.user.first_name} เลขที่เบิก {order_id} ที่ต้องได้รับการอนุมัติ.."
+    message = (
+        f"คำร้องใหม่จากผู้ใช้งาน {order.user.first_name} เลขที่เบิก {order_id} ที่ต้องได้รับการอนุมัติ..\n"
+        f"รายการวัสดุที่เบิก:\n{items_list}"
+        f"\nยอดเงินรวม: {total_cost} บาท"
+    )
+    print(message)
+    line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
+
+
+
+#ส่งการแจ้งเตือนไปยังผู้ใช้งานเมื่อมีการอนุมัติคำร้อง
+# def notify_user_approved(order_id):
+#     try:
+#         order = Order.objects.get(id=order_id)
+#         user_line = UserLine.objects.get(user=order.user)
+
+#         # Check if order.date_receive is not None
+#         if order.date_receive:
+#             # Set timezone to the desired timezone (e.g., Asia/Bangkok)
+#             timezone = pytz.timezone('Asia/Bangkok')
+#             order_date_receive_with_timezone = order.date_receive.astimezone(timezone)
+
+#         if order.status and not order.refuse:
+#             if order.date_receive:
+#                 formatted_date = order_date_receive_with_timezone.strftime("%d/%m/%Y")
+#                 formatted_time = order_date_receive_with_timezone.strftime("%H:%M")
+#                 message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการอนุมัติแล้ว✅ รับวัสดุในวันที่ {formatted_date} เวลา {formatted_time} น."
+#             else:
+#                 message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการอนุมัติแล้ว✅"
+#         elif not order.status and not order.refuse:
+#             message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ยังไม่ได้รับการดำเนินการ😓"
+#         elif order.refuse:
+            
+#             message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ถูกปฏิเสธ!💔 หมายเหตุ {order.other}"
+#         else:
+#             message = "สถานะไม่ระบุ"
+
+#         line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))
+#     except Order.DoesNotExist:
+#         print(f"ไม่มีคำร้อง ID {order_id}")
+#     except UserLine.DoesNotExist:
+#         print(f"ไม่มี UserLine สำหรับผู้ใช้งาน {order.user.username}")
+
+def notify_user_approved(order_id):
+    try:
+        order = Order.objects.get(id=order_id)
+        user_line = UserLine.objects.get(user=order.user)
+
+        # ตรวจสอบว่า date_receive ไม่เป็น None
+        if order.date_receive:
+            # ตั้งค่า timezone ที่ต้องการ (เช่น Asia/Bangkok)
+            timezone = pytz.timezone('Asia/Bangkok')
+            order_date_receive_with_timezone = order.date_receive.astimezone(timezone)
+            formatted_date = order_date_receive_with_timezone.strftime("%d/%m/%Y")
+            formatted_time = order_date_receive_with_timezone.strftime("%H:%M")
+        else:
+            formatted_date = None
+            formatted_time = None
+
+        # ตรวจสอบค่า status
+        if order.status:
+            if order.date_receive:
+                message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการอนุมัติแล้ว✅ รับวัสดุในวันที่ {formatted_date} 🕒 {formatted_time} น."
+            else:
+                message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการอนุมัติแล้ว✅"
+        else:
+            message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ถูกปฏิเสธ!💔 หมายเหตุ {order.other}"
+
         line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))
     except Order.DoesNotExist:
         print(f"ไม่มีคำร้อง ID {order_id}")
@@ -146,17 +252,8 @@ def notify_user(order_id):
 
 
 
-#ส่งการแจ้งเตือนไปยังแอดมินเมื่อเช็คเอ้าท์สินค้า
-def notify_admin(order_id):
-    order = Order.objects.get(id=order_id)
-    admin_user_id ='Ubb217fccfe04b1dbf5550e46661a8693'  # Replace with the actual Line user ID of the admin
-    message = f"คำร้องใหม่จากผู้ใช้งาน {order.user.first_name} เลขที่เบิก {order_id} ที่ต้องได้รับการอนุมัติ.."
-    line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
-
-
-
-#ส่งการแจ้งเตือนไปยังผู้ใช้งานเมื่อมีการอนุมัติคำร้อง
-def notify_user_approved(order_id):
+# ส่งการแจ้งเตือนไปยังผู้ใช้งานเมื่อมีการยืนยันจ่ายวัสดุ 
+def notify_user_pay_confirmed(order_id):
     try:
         order = Order.objects.get(id=order_id)
         user_line = UserLine.objects.get(user=order.user)
@@ -167,23 +264,34 @@ def notify_user_approved(order_id):
             timezone = pytz.timezone('Asia/Bangkok')
             order_date_receive_with_timezone = order.date_receive.astimezone(timezone)
 
-        if order.status and not order.refuse:
+        if order.pay_item:
             if order.date_receive:
                 formatted_date = order_date_receive_with_timezone.strftime("%d/%m/%Y")
                 formatted_time = order_date_receive_with_timezone.strftime("%H:%M")
-                message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการอนุมัติแล้ว✅ รับวัสดุในวันที่ {formatted_date} เวลา {formatted_time} น."
+                message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการยืนยันจ่ายวัสดุแล้ว✅ กรุณากด ยืนยันการรับพัสดุ"
             else:
-                message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการอนุมัติแล้ว✅"
-        elif not order.status and not order.refuse:
-            message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ยังไม่ได้รับการดำเนินการ😓"
-        elif order.refuse:
-            
-            message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ถูกปฏิเสธ!💔 หมายเหตุ {order.other}"
+                message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการยืนยันจ่ายวัสดุแล้ว✅"
         else:
-            message = "สถานะไม่ระบุ"
+            message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ยังไม่ได้รับการยืนยันจ่ายวัสดุ😓"
 
         line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))
     except Order.DoesNotExist:
         print(f"ไม่มีคำร้อง ID {order_id}")
     except UserLine.DoesNotExist:
         print(f"ไม่มี UserLine สำหรับผู้ใช้งาน {order.user.username}")
+
+
+# ส่งการแจ้งเตือนไปยังแอดมินเมื่อผู้ใช้ยืนยันรับพัสดุ
+def notify_admin_receive_confirmation(order_id):
+    try:
+        order = Order.objects.get(id=order_id)
+        admin_user_id = 'Ubb217fccfe04b1dbf5550e46661a8693'  # Replace with the actual Line user ID of the admin
+        
+        if order.confirm:
+            message = f"{order.user.first_name} ได้ยืนยันรับพัสดุคำร้องเลขที่ {order_id} เรียบร้อยแล้ว. "
+        else:
+            message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} ยังไม่ได้รับการยืนยันรับพัสดุ."
+        
+        line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
+    except Order.DoesNotExist:
+        print(f"ไม่มีคำร้อง ID {order_id}")
