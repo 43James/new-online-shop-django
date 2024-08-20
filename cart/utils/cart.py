@@ -32,7 +32,7 @@ class Cart:
             cart = self.session[CART_SESSION_ID] = {}
         return cart
 
-    def add(self, product, quantity):
+    def add(self, product, quantity, note=''):
         product_id = str(product.id)
         receivings = Receiving.objects.filter(product=product, quantity__gt=0).order_by('date_created')
 
@@ -72,7 +72,8 @@ class Cart:
                             'quantity': receiving_used,
                             'price': str(receiving.unitprice),
                             'receiving_id': receiving.id,
-                            'date_created': str(receiving.date_created)
+                            'date_created': str(receiving.date_created),
+                            'note': note  # เพิ่มหมายเหตุ
                         })
 
                     product.quantityinstock -= receiving_used

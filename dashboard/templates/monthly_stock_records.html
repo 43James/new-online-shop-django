@@ -69,7 +69,7 @@
         </form>
 
             <!-- ฟอร์มสำหรับเลือกช่วงเดือนและปี -->
-    <form method="get" action="{% url 'dashboard:monthly_stock_records' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+    <!-- <form method="get" action="{% url 'dashboard:monthly_stock_records' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
         <div class="col-auto">
             <select name="start_month" id="start_month" class="form-select">
                 {% for m in months %}
@@ -105,7 +105,7 @@
             <button type="submit" class="btn btn-primary">ค้นหา</button>
             <a href="{% url 'dashboard:monthly_stock_records' %}" class="btn btn-secondary">ยกเลิก</a>
         </div>
-    </form>
+    </form> -->
         
         <h3 class="text-center">ข้อมูลสินค้าคงเหลือประจำเดือน {{ previous_month_name }} พ.ศ. {{ previous_year_buddhist }}</h3>
         

@@ -44,7 +44,7 @@ class AddProductForm(ModelForm):
 class AddSuppliersForm(ModelForm):
     class Meta:
         model = Suppliers
-        fields = ['supname', 'contactname', 'phone', 'address']
+        fields = ['supname','taxnumber', 'contactname', 'phone', 'address']
 
     def __init__(self, *args, **kwargs):
         super(AddSuppliersForm, self).__init__(*args, **kwargs)
@@ -58,7 +58,7 @@ class AddReceivingForm(ModelForm):
 
     class Meta:
         model = Receiving
-        fields = ['product', 'suppliers', 'date_received', 'quantityreceived', 'quantity', 'unitprice']
+        fields = ['product', 'suppliers', 'file', 'date_received', 'quantityreceived', 'quantity', 'unitprice']
 
     def __init__(self, *args, **kwargs):
         super(AddReceivingForm, self).__init__(*args, **kwargs)
@@ -73,6 +73,11 @@ class ReceivingForm(forms.ModelForm):
     class Meta:
         model = Receiving
         fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(ReceivingForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
 
 class WorkGroupForm(forms.ModelForm):
     class Meta:
@@ -136,7 +141,7 @@ class EditProductForm(ModelForm):
 class EditSuppliersForm(ModelForm):
     class Meta:
         model = Suppliers
-        fields = ['supname', 'contactname', 'phone', 'address']
+        fields = ['supname','taxnumber', 'contactname', 'phone', 'address']
 
     def __init__(self, *args, **kwargs):
         super(EditSuppliersForm, self).__init__(*args, **kwargs)

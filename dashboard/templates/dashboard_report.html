@@ -10,6 +10,20 @@
     <!-- ฟอร์มสำหรับเลือกช่วงเดือนและปี -->
     <form method="get" action="{% url 'dashboard:dashboard_report' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
         <div class="col-auto">
+            <label for="category">เลือกหมวดหมู่หลัก</label>
+        </div>
+        <div class="col-auto">
+            <select name="category" id="category" class="form-control">
+                <option value="">ทั้งหมด</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category.id|stringformat:"d" == selected_category %}selected{% endif %}>
+                    {{ category.name_cate }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
             <select name="start_month" id="start_month" class="form-select">
                 {% for m in months %}
                     <option value="{{ m.0 }}" {% if m.0 == selected_start_month %}selected{% endif %}>{{ m.1 }}</option>
@@ -43,44 +57,6 @@
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">ค้นหา</button>
             <a href="{% url 'dashboard:dashboard_report' %}" class="btn btn-secondary">ยกเลิก</a>
-        </div>
-    </form>
-        <!-- ฟอร์มสำหรับเลือกช่วงเดือนและปี -->
-    <form method="get" action="{% url 'dashboard:dashboard_home' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
-        <div class="col-auto">
-            <select name="start_month" id="start_month" class="form-select">
-                {% for m in months %}
-                    <option value="{{ m.0 }}" {% if m.0 == selected_start_month %}selected{% endif %}>{{ m.1 }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-auto">
-            <select name="start_year" id="start_year" class="form-select">
-                {% for y in years %}
-                    <option value="{{ y }}" {% if y == selected_start_year %}selected{% endif %}>{{ y }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-auto"><h5>ถึง</h5></div>
-
-        <div class="col-auto">
-            <select name="end_month" id="end_month" class="form-select">
-                {% for m in months %}
-                    <option value="{{ m.0 }}" {% if m.0 == selected_end_month %}selected{% endif %}>{{ m.1 }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <div class="col-auto">
-            <select name="end_year" id="end_year" class="form-select">
-                {% for y in years %}
-                    <option value="{{ y }}" {% if y == selected_end_year %}selected{% endif %}>{{ y }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary">ค้นหา</button>
-            <a href="{% url 'dashboard:dashboard_home' %}" class="btn btn-secondary">ยกเลิก</a>
         </div>
     </form>
 

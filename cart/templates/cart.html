@@ -12,6 +12,7 @@
         <th scope="col">ราคา/หน่วย</th>
         <th scope="col">จำนวน</th>
         <th scope="col">ราคารวม</th>
+        <th scope="col">หมายเหตุ</th>
         <th scope="col"></th>
       </tr>
     </thead>
@@ -23,6 +24,7 @@
         <td>{{ item.price }} ฿</td>
         <td>{{ item.quantity }} {{ item.product.unit }}</td>
         <td>{{ item.total_price|floatformat:2|intcomma }} ฿</td>
+        <td>{{ item.note }}</td>
         <td><a href="{% url 'cart:remove_from_cart' item.product.id item.receiving_id %}" class="text-danger text-decoration-none"><i class="bi bi-trash-fill"></i></a></td>
       </tr>
     </tbody>
@@ -53,6 +55,7 @@
               <th scope="col">ราคา/หน่วย</th>
               <th scope="col">จำนวน</th>
               <th scope="col">ราคารวม</th>
+              <th scope="col">หมายเหตุ</th>
             </tr>
           </thead>
           <tbody>
@@ -63,6 +66,7 @@
               <td>{{ item.price }} ฿</td>
               <td>{{ item.quantity }} {{ item.product.unit }}</td>
               <td>{{ item.total_price|floatformat:2|intcomma }} ฿</td>
+              <td>{{ item.note }}</td>
             </tr>
             {% endfor %}
           </tbody>

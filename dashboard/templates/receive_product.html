@@ -26,7 +26,7 @@
       </select>
     </div>
 
-    <div class="mt-3 mb-3 col-6 ">
+    <div class="mt-3 mb-3">
       <label for="exampleFormControlInput1" class="form-label">วันที่รับเข้า</label>
       <input type="datetime-local" name="date_received" class="form-control" required>
     </div>
@@ -49,11 +49,15 @@
     <input class="form-control mb-3" type="number" id="id_quantity" name="quantity"
       placeholder="จำนวนคงเหลือ (ช่องนี้จะกรอกอัตโนมัติ)" readonly>
 
+    <div class="mb-3">
+      <label for="formFile" class="form-label">ไฟล์เอกสารแนบ (ถ้ามี)</label>
+      <input class="form-control" type="file" id="formFile" name="file">
+    </div>
     <br>
 
     {{ form.non_field_errors }}
     <div class="row mb-5">
-      <div class="col-6"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div>
+      <div class="col-6"><a class="btn btn-primary mt-3 w-100 " href="{% url 'dashboard:receive_list' %}">ย้อนกลับ</a></div>
       <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">บันทึก</button></div>
     </div>
   </form>

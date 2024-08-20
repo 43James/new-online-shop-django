@@ -33,8 +33,7 @@
 
     <div class="mt-3 mb-3">
       <label for="exampleFormControlInput1" class="form-label">วันที่รับเข้า</label>
-      <input style="color: rgb(8, 0, 255);" type="datetime-local" value="{{ form.instance.date_received|date:"Y-m-d\TH:i" }}" 
-      name="date_received" class="form-control" required>
+      <input style="color: rgb(8, 0, 255);" type="datetime-local" value="{{ form.instance.date_received|date:"Y-m-d\TH:i" }}" name="date_received" class="form-control" required>
     </div>
 
     <div class="row">
@@ -45,28 +44,34 @@
       </div>
       <div class="col-6">
         <label class="mb-2" for="unit_price">ราคา</label>
-        <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price" min="0" step="0.01"
-          value="{{form.instance.unitprice}}" name="unitprice" placeholder="ใส่ราคาต่อหน่วย" required>
+        <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price" min="0"
+          step="0.01" value="{{form.instance.unitprice}}" name="unitprice" placeholder="ใส่ราคาต่อหน่วย" required>
       </div>
     </div>
-    
+
     <label class="mb-2" for="quantity_received">จำนวนคงเหลือ </label>
-     <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="id_quantity"
-       value="{{form.instance.quantity}}" name="quantity" placeholder="จำนวนคงเหลือ" readonly>
-    
+    <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="id_quantity"
+      value="{{form.instance.quantity}}" name="quantity" placeholder="จำนวนคงเหลือ" readonly>
+
     <div class="row">
-    <div class="col-6">
-    <label class="mb-2" for="unit_price">เดือนที่รับเข้า</label>
-    <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price"
-        value="{{form.instance.month}}" name="month" placeholder="(เป็นตัวเลข)" readonly>
+      <div class="col-6">
+        <label class="mb-2" for="unit_price">เดือนที่รับเข้า</label>
+        <input style="color: rgb(8, 0, 255);" class="form-control mb-3" type="number" id="unit_price"
+          value="{{form.instance.month}}" name="month" placeholder="(เป็นตัวเลข)" readonly>
+      </div>
+
+      <div class="col-6">
+        <label class="mb-2" for="unit_price">ปีที่รับเข้า ค.ศ.</label>
+        <input style="color: rgb(8, 0, 255);" class="form-control" type="number" id="unit_price"
+          value="{{form.instance.year}}" name="year" placeholder="ปี ค.ศ." readonly>
+      </div>
     </div>
 
-    <div class="col-6">
-    <label class="mb-2" for="unit_price">ปีที่รับเข้า ค.ศ.</label>
-    <input style="color: rgb(8, 0, 255);" class="form-control" type="number" id="unit_price"
-      value="{{form.instance.year}}" name="year" placeholder="ปี ค.ศ." readonly><br><br>
-    </div>
-    </div>
+
+    {{ form.file }}
+
+<br><br>
+    
     {{ form.non_field_errors }}
     <div class="row mb-5">
       <div class="col-6"><a class="btn btn-primary w-100 " onclick="history.back()">ย้อนกลับ</a></div>

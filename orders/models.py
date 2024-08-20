@@ -51,9 +51,9 @@ class Issuing(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name='ออเดอร์ที่')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='Issuing', verbose_name='สินค้า')
     receiving = models.ForeignKey(Receiving, on_delete=models.CASCADE, related_name='issuings', verbose_name='รายการรับเข้า')  # ใช้ ForeignKey
-    # price = models.PositiveIntegerField(verbose_name='ราคา')
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], verbose_name='ราคา')
     quantity = models.SmallIntegerField(verbose_name='จำนวน')
+    note = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='หมายเหตุ')
     datecreated = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)

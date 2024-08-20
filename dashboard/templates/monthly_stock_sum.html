@@ -1,0 +1,174 @@
+{% extends "dashboard.html" %}
+{% load custom_filters %}
+{% load humanize %}
+
+{% block content %}
+
+<head>
+    <title>รายงานการเบิกจ่ายสินค้า</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            word-wrap: break-word; /* เพิ่ม word-wrap เพื่อให้ตัดคำ */
+            white-space: normal; /* เพิ่ม white-space เพื่อให้ข้อความยาวสามารถตัดบรรทัดใหม่ */
+        }
+
+        th,
+        td {
+            padding: 8px;
+            /* เปลี่ยน padding เป็น 8px */
+            text-align: left;
+            font-size: 14px;
+            /* เพิ่ม font-size เป็น 14px */
+        }
+
+        /* เพิ่ม CSS สำหรับการระบายสีคอลัมน์ของผู้ใช้งาน */
+        .user-column1 {
+            background-color: #c7c7c7;
+            /* เปลี่ยนสีพื้นหลังตามต้องการ */
+        }
+
+        .user-column {
+            background-color: #ebebeb;
+            /* เปลี่ยนสีพื้นหลังตามต้องการ */
+        }
+    </style>
+</head>
+    <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
+    <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
+<div class="text-end mb-3">
+    <form method="get" action="{% url 'dashboard:monthly_stock_sum' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+        <div class="col-auto"><h6>เลือกช่วงเวลา</h6></div>
+        <div class="col-auto">
+            <select name="start_month" id="start_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_start_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="start_year" id="start_year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_start_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><h5>ถึง</h5></div>
+        <div class="col-auto">
+            <select name="end_month" id="end_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_end_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="end_year" id="end_year" class="form-select">
+                <option value="0">เลือกไตรมาส</option>
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_end_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><h6>หรือ</h6></div>
+        <div class="col-auto">
+            <select name="quarter" id="quarter" class="form-select">
+                <option value="0">เลือกไตรมาส</option>
+                <option value="1" {% if quarter == 1 %}selected{% endif %}>ไตรมาส 1 (ต.ค.- ธ.ค.)</option>
+                <option value="2" {% if quarter == 2 %}selected{% endif %}>ไตรมาส 2 (ม.ค.- มี.ค.)</option>
+                <option value="3" {% if quarter == 3 %}selected{% endif %}>ไตรมาส 3 (เม.ย.- มิ.ย.)</option>
+                <option value="4" {% if quarter == 4 %}selected{% endif %}>ไตรมาส 4 (ก.ค.- ก.ย.)</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">ค้นหา</button>
+            <a href="{% url 'dashboard:monthly_stock_sum' %}" class="btn btn-secondary">ยกเลิก</a>
+        </div>
+    </form>
+    
+    <script>
+        function clearFormAndSubmit() {
+            document.getElementById("month").value = "";  // Clear month value
+            document.getElementById("year").value = "";   // Clear year value
+            document.querySelector('form').submit();       // Submit the form
+        }
+    </script>
+    <h3 class="text-center">ข้อมูลวัสดุคงเหลือ {{ quarter_text }} {{ month_text }} พ.ศ. {{ year_range_text }}</h3>
+    <div class="row justify-content-end">
+        <div class="col-auto">
+            <a href="{% url 'dashboard:export_monthly_stock_sum_to_excel' %}?start_month={{ selected_start_month }}&start_year={{ selected_start_year }}&end_month={{ selected_end_month }}&end_year={{ selected_end_year }}&quarter={{ quarter }}" class="icon-link justify-content-end">
+                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
+                    <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
+                    <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>
+                    <rect width="16" height="9" x="28" y="24" fill="#107c42"></rect>
+                    <rect width="16" height="9" x="12" y="15" fill="#3fa071"></rect>
+                    <path fill="#33c481" d="M42,6H28v9h16V8C44,6.895,43.105,6,42,6z"></path>
+                    <path fill="#21a366" d="M14,6h14v9H12V8C12,6.895,12.895,6,14,6z"></path>
+                    <path d="M22.319,13H12v24h10.319C24.352,37,26,35.352,26,33.319V16.681C26,14.648,24.352,13,22.319,13z"
+                        opacity=".05"></path>
+                    <path
+                        d="M22.213,36H12V13.333h10.213c1.724,0,3.121,1.397,3.121,3.121v16.425	C25.333,34.603,23.936,36,22.213,36z"
+                        opacity=".07"></path>
+                    <path
+                        d="M22.106,35H12V13.667h10.106c1.414,0,2.56,1.146,2.56,2.56V32.44C24.667,33.854,23.52,35,22.106,35z"
+                        opacity=".09"></path>
+                    <linearGradient id="flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1" x1="4.725" x2="23.055" y1="14.725"
+                        y2="33.055" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stop-color="#18884f"></stop>
+                        <stop offset="1" stop-color="#0b6731"></stop>
+                    </linearGradient>
+                    <path fill="url(#flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1)"
+                        d="M22,34H6c-1.105,0-2-0.895-2-2V16c0-1.105,0.895-2,2-2h16c1.105,0,2,0.895,2,2v16	C24,33.105,23.105,34,22,34z">
+                    </path>
+                    <path fill="#fff"
+                        d="M9.807,19h2.386l1.936,3.754L16.175,19h2.229l-3.071,5l3.141,5h-2.351l-2.11-3.93L11.912,29H9.526	l3.193-5.018L9.807,19z">
+                    </path>
+                </svg>
+            </a>
+        </div>
+    </div>
+</div>
+
+            
+    <div>
+        <table class="col-auto justify-content-center container">
+            <thead>
+                <tr>
+                    <th class="user-column1 text-center">ลำดับ</th>
+                    <th class="user-column1 text-center">วัสดุ</th>
+                    <th class="user-column1 text-center">รวมจำนวนคงเหลือ</th>
+                    <th class="user-column1 text-center">หน่วย</th>
+                    <th class="user-column1 text-center">รวมจำนวนเงิน(บาท)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product, data in product_sums.items %}
+                    <tr>
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ data.product_name }}</td>
+                        <td class="text-center">{{ data.total_balance_quarter|intcomma }}</td>
+                        <td class="text-center">{{ data.unit }}</td>
+                        <td class="text-center">{{ data.total_price_quarter|intcomma }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">ไม่มีข้อมูล</td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="2" class="text-center"><strong>รวมทั้งหมด</strong></td>
+                    <td class="text-center"><strong>{{ total_balance|intcomma }}</strong></td>
+                    <td class="text-center"><strong>ชิ้น</strong></td>
+                    <td class="text-center"><strong>{{ total_price|intcomma }} บาท</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+{% endblock %}

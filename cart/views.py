@@ -40,13 +40,14 @@ def add_to_cart(request, product_id):
     if form.is_valid():
         data = form.cleaned_data
         quantity_to_add = data['quantity']
+        note = request.POST.get('note', '')  # รับค่า note จาก POST data
         
         receivings = Receiving.objects.filter(product=product, quantity__gt=0).order_by('date_created')
         total_receiving_quantity = sum(receiving.quantity for receiving in receivings)
         if quantity_to_add > total_receiving_quantity:
             messages.error(request, 'จำนวนสินค้าในสต็อกไม่เพียงพอ!')
         else:
-            cart.add(product=product, quantity=quantity_to_add)
+            cart.add(product=product, quantity=quantity_to_add, note=note)
             messages.success(request, 'เพิ่มลงในรถเข็น!')
     else:
         messages.error(request, 'กรุณาเพิ่มสินค้าลงในรถเข็น!')

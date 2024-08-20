@@ -24,7 +24,7 @@
             padding: 8px;
             /* เปลี่ยน padding เป็น 8px */
             text-align: left;
-            font-size: 14px;
+            font-size: 12px;
             /* เพิ่ม font-size เป็น 14px */
         }
 
@@ -48,6 +48,21 @@
     <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
     <div class="text-end">
         <form method="get" action="{% url 'dashboard:monthly_report' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+            
+            <div class="col-auto">
+                <label for="category">เลือกหมวดหมู่หลัก</label>
+            </div>
+            <div class="col-auto">
+                <select name="category" id="category" class="form-control">
+                    <option value="">ทั้งหมด</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category.id|stringformat:"d" == selected_category %}selected{% endif %}>
+                        {{ category.name_cate }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
             <div class="col-auto">
                 <!-- <label for="month" class="form-label">เดือน:</label> -->
                 <select name="month" id="month" class="form-select">
@@ -68,11 +83,12 @@
         
             <div class="col-auto">
                 <button type="submit" class="btn btn-primary">ค้นหา</button>
-                <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button>
+                <a type="button" class="btn btn-secondary" href="{% url 'dashboard:monthly_report' %}">ยกเลิก</a>
             </div>
         </form>
         
-        <h3 class="text-center">รายงานการเบิกวัสดุ ประจำเดือน {{ month_name }} พ.ศ. {{ buddhist_year }}</h3>
+        
+        <h3 class="text-center">รายงานการเบิกวัสดุ ประจำเดือน {{ month_name }} พ.ศ. {{ buddhist_year }} ({{ selected_category_name }})</h3>
         
         <script>
             function clearFormAndSubmit() {
@@ -82,8 +98,8 @@
             }
         </script>
         
-
-        <a href="{% url 'dashboard:export_to_excel' %}?month={{ month }}&year={{ year }}" class="icon-link justify-content-end">
+        
+        <a href="{% url 'dashboard:export_to_excel' %}?category={{ selected_category }}&month={{ month }}&year={{ year }}" class="icon-link justify-content-end">
             <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
                 <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
                 <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>
@@ -119,7 +135,7 @@
         <table>
             <thead>
                 <tr class="user-column_tr">
-                    <th colspan="100" style="text-align: center; border: none;">รายการเบิกวัสดุ</th>
+                    <th colspan="100" style="text-align: center; border: none;">รายการเบิกวัสดุ ({{ selected_category_name }})</th>
                 </tr>
                 <tr class="user-column_tr">
                     <th colspan="100" style="text-align: center; border: none;">ประจำเดือน {{ month_name }} พ.ศ. {{ buddhist_year }} ประจำปีงบประมาณ พ.ศ. {{ buddhist_year }}</th>
@@ -129,21 +145,21 @@
                 </tr>
                 <tr class="user-column_tr">
                     <th rowspan="2" class="text-center" style="width: 3%;">ลำดับ</th>
-                    <th rowspan="2" class="text-center" style="width: 30%;">รายการสินค้า</th>
+                    <th rowspan="2" class="text-center" style="width: 20%;">รายการสินค้า</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">หน่วยนับ</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">จำนวนคงเหลือ (ยกมา)</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">จำนวนรับเข้า (ปัจจุบัน)</th>
                     <th rowspan="2" class="text-center" style="width: 7%;">รวมจำนวน คงเหลือ+รับเข้า</th>
                     <th colspan="{{ all_users|length }}" class="text-center">รายชื่อผู้เบิกวัสดุ</th>
-                    <th rowspan="2" class="text-center" style="width: 5%;">รวมเบิก</th>
+                    <th rowspan="2" class="text-center" style="width: 10%;">รวมจำนวนที่เบิก</th>
                     <th rowspan="2" class="text-center" style="width: 10%;">วัสดุคงเหลือทั้งสิ้น</th>
-                    <th rowspan="2" class="text-center" style="width: 8%;">มูลค่าวัสดุเบิกทั้งสิ้น (บาท)</th>
+                    <th rowspan="2" class="text-center" style="width: 10%;">มูลค่าวัสดุเบิกทั้งสิ้น (บาท)</th>
                     <!-- <th rowspan="2" class="text-center" style="width: 10%;">จำนวนเงิน</th> -->
-                    <th rowspan="2" class="text-center">หมายเหตุ</th>
+                    <!-- <th rowspan="2" class="text-center">หมายเหตุ</th> -->
                 </tr>
                 <tr class="user-column_tr">
                     {% for user in all_users %}
-                    <th class="user-column1 text-center" style="width: 8%;">{{ user }}</th>
+                    <th class="user-column1 text-center" style="width: 5%;">{{ user }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -159,11 +175,11 @@
                     {% for user in all_users %}
                     <td class="user-column text-center">{{ item.user_issuings|get_item:user }}</td>
                     {% endfor %}
-                    <td class="text-center">{{ item.issued_current_month|intcomma }}</td>
-                    <td class="text-center">{{ item.remaining_balance|intcomma }} ชิ้น</td>
+                    <td class="text-center">{{ item.issued_current_month|intcomma }} {{ item.unit }}</td>
+                    <td class="text-center">{{ item.remaining_balance|intcomma }} {{ item.unit }}</td>
                     <td class="text-end">{{ item.total_issued_value|intcomma }} บาท</td>
                     <!-- <td class="text-center">{{ item.total_price|intcomma }} บาท</td> -->
-                    <td>{{ item.note }}</td>
+                    <!-- <td>{{ item.note }}</td> -->
                 </tr>
                 {% endfor %}
                 <tr>
@@ -174,7 +190,7 @@
                     <td></td>
                     <td></td>
                     <td class="text-end"><strong>{{ total_issued_value|intcomma }} บาท</strong></td>
-                    <td></td>
+                    <!-- <td></td> -->
                 </tr>
             </tbody>
         </table>

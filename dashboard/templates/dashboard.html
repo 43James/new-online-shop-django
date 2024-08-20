@@ -421,9 +421,8 @@
                 <li class="rounded list-group-item mt-2  text-primary {% if '/monthly_report/' in request.path %}active text-white{% endif %}" >รายงานประจำเดือน</li>
 
             </a>
-            <a class="text-decoration-none " href="{% url 'dashboard:monthly_stock_records' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %} text-danger">ข้อมูลวัสดุยกมา (กรุณาอัพทุกวันที่1) </li>
-
+            <a class="text-decoration-none " href="{% url 'dashboard:monthly_stock_sum' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/monthly-stock-sum/' in request.path %}active text-white{% endif %}">รายงานวัสดุคงเหลือ</li>
             </a>
             <div class="dropdown">
                 <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
@@ -466,6 +465,9 @@
             <a class="text-decoration-none" href="{% url 'dashboard:products' %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/products/' in request.path %}active text-white{% endif %}">
                     รายการวัสดุและสต๊อก</li>
+            </a>
+            <a class="text-decoration-none " href="{% url 'dashboard:monthly_stock_records' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %} text-danger">ข้อมูลวัสดุยกมา (กรุณาอัพทุกวันที่1) </li>
             </a>
             <!-- <a class="text-decoration-none" href="{% url 'dashboard:total_quantity' %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/total_quantity/' in request.path %}active text-white{% endif %}">

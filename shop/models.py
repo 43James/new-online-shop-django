@@ -61,8 +61,9 @@ class Product(models.Model):
     
 class Suppliers(models.Model):
     supname = models.CharField(max_length=50, verbose_name='ชื่อบริษัท')
+    taxnumber = models.CharField(max_length=30, null=True, blank=True, verbose_name='เลขที่ประจำตัวผู้เสียภาษี')
     contactname = models.CharField(max_length=60, verbose_name='ชื่อผู้ติดต่อ')
-    phone = models.CharField(max_length=10, verbose_name='เบอร์โทรศัพท์')
+    phone = models.CharField(max_length=15, verbose_name='เบอร์โทรศัพท์')
     address = models.CharField(max_length=255, verbose_name='ที่อยู่')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
 
@@ -88,6 +89,7 @@ class MonthlyStockRecord(models.Model):
 class Receiving(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='Receiving', verbose_name='IDสินค้า')
     suppliers = models.ForeignKey(Suppliers, on_delete=models.CASCADE, related_name='suppliers', verbose_name='IDซัพพลายเออร์')
+    file = models.FileField(upload_to='receives', null=True, blank=True, verbose_name='ไฟล์เอกสารแนบ')
     quantityreceived = models.PositiveIntegerField(null=True,  verbose_name='จำนวนที่รับเข้า')
     quantity = models.PositiveIntegerField( null=True, verbose_name='จำนวนคงเหลือ')
     unitprice = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], null=True, verbose_name='ราคา/หน่วย')

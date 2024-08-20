@@ -111,7 +111,8 @@ def create_order(request):
             product=item['product'],
             price=item['price'],
             quantity=item['quantity'],
-            receiving=receiving  # ใช้ Receiving object
+            receiving=receiving,  # ใช้ Receiving object
+            note=item['note']  # เพิ่มหมายเหตุในรายการ Issuing
         )
     # Notify admin about the new order
     notify_admin(order.id)
