@@ -63,17 +63,17 @@
     </div>
 
     <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
-    <div class="container mt-5">
+    <div class="container mt-5 mb-5">
         <!-- <h5 class="text-center">กราฟแสดงข้อมูลจำนวนพัสดุที่เบิกในแต่ละกลุ่มงาน</h5> -->
         <canvas id="quantityChart"></canvas>
     </div>
 
     <!-- กราฟการใช้วัสดุกลุ่มงานในแต่ละเดือน -->
-    <div class="container mt-5">
+    <!-- <div class="container mt-5">
         <div class="card-body">
             <canvas id="workgroupMonthlyChart"></canvas>
         </div>
-    </div>
+    </div> -->
     
 </div>
 
@@ -99,7 +99,7 @@
                     },
                     title: {
                         display: true,
-                        text: 'กราฟแสดงจำนวนวัสดุที่เบิกในแต่ละกลุ่มงาน',
+                        text: 'กราฟแสดงจำนวนวัสดุที่เบิกในแต่ละกลุ่มงาน  {{ selected_categorys }} ',
                         font: {
                             size: 18
                         }
@@ -151,7 +151,7 @@
                     },
                     title: {
                         display: true,
-                        text: 'กราฟแสดงจำนวนเงินที่เบิกวัสดุในแต่ละกลุ่มงาน',
+                        text: 'กราฟแสดงจำนวนเงินที่เบิกวัสดุในแต่ละกลุ่มงาน  {{ selected_categorys }} ',
                         font: {
                             size: 18
                         }
@@ -192,7 +192,4 @@
         });
     });
 </script>
-
-
-
 {% endblock %}

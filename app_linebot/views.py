@@ -73,6 +73,63 @@ line_bot_api = LineBotApi('p/7wo/1oBrhYYteqvWuGQQJz5AADd3pnSiyTJByIju6L6rT5fWsif
 
 
 @csrf_exempt
+# def linebot(request):
+#     print(request.method)
+
+#     if request.method == 'POST':
+#         try:
+#             body = request.body.decode('utf-8')
+#             body = json.loads(body)
+#             events = body.get('events', [])
+
+#             if events:
+#                 event = events[0]
+#                 text = event.get('message', {}).get('text', '')
+
+#                 if text.startswith('ผูกบัญชี'):
+#                     a = text.split()
+#                     if len(a) == 2:
+#                         username = a[1]
+#                         user = MyUser.objects.filter(username=username).first()
+
+#                         if user:
+#                             line = UserLine.objects.filter(user=user).first()
+#                             userId = event.get('source', {}).get('userId', '')
+#                             print(user)
+#                             print(userId)
+
+#                             if not line:
+#                                 line = UserLine(user=user, userId=userId)
+#                                 line.save()
+
+#                                 # ส่งข้อความแจ้งเตือนผู้ใช้
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='ผูกบัญชีสำเร็จ✅'))
+
+#                             else:
+#                                 line.userId = userId
+#                                 line.save()
+
+#                                 # ส่งข้อความแจ้งเตือนผู้ใช้ (กรณีอัพเดตการผูกบัญชี)
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='อัพเดตการผูกบัญชีสำเร็จ✅'))
+#                         else:
+#                             # ส่งข้อความแจ้งเตือนถ้า username ไม่ถูกต้อง
+#                             userId = event.get('source', {}).get('userId', '')
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ Username ไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
+#                     else:
+#                         # ส่งข้อความแจ้งเตือนถ้ามีการป้อนข้อมูลไม่ครบ
+#                         userId = event.get('source', {}).get('userId', '')
+#                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
+#                 else:
+#                     # ส่งข้อความแจ้งเตือนว่าข้อความไม่ถูกต้อง
+#                     userId = event.get('source', {}).get('userId', '')
+#                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ ข้อความไม่ถูกต้อง❗\nกรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
+
+#         except json.JSONDecodeError as e:
+#             print(f"JSON Decode Error: {e}")
+
+#     return render(request, "home_page.html")
+
+
 def linebot(request):
     print(request.method)
 
@@ -85,6 +142,7 @@ def linebot(request):
             if events:
                 event = events[0]
                 text = event.get('message', {}).get('text', '')
+                userId = event.get('source', {}).get('userId', '')
 
                 if text.startswith('ผูกบัญชี'):
                     a = text.split()
@@ -113,21 +171,85 @@ def linebot(request):
                                 line_bot_api.push_message(userId, TextSendMessage(text='อัพเดตการผูกบัญชีสำเร็จ✅'))
                         else:
                             # ส่งข้อความแจ้งเตือนถ้า username ไม่ถูกต้อง
-                            userId = event.get('source', {}).get('userId', '')
                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ Username ไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
                     else:
                         # ส่งข้อความแจ้งเตือนถ้ามีการป้อนข้อมูลไม่ครบ
-                        userId = event.get('source', {}).get('userId', '')
                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
-                else:
-                    # ส่งข้อความแจ้งเตือนว่าข้อความไม่ถูกต้อง
-                    userId = event.get('source', {}).get('userId', '')
-                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ ข้อความไม่ถูกต้อง❗\nกรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
+
+                elif text == 'ยกเลิกคำร้อง':
+                    # ส่งข้อความเพื่อยืนยันการยกเลิก
+                    line_bot_api.push_message(userId, TextSendMessage(text='คุณต้องการยกเลิกคำร้องใช่หรือไม่ ถ้าใช่พิมพ์คำว่า ยกเลิกคำร้อง ID ...'))
+
+                elif text.startswith('ยกเลิกคำร้อง'):
+                    parts = text.split()
+                    if len(parts) == 3:
+                        order_id = parts[2]
+                        order = Order.objects.filter(id=order_id).first()
+                        if order:
+                            request.session['cancel_order_id'] = order_id
+                            line_bot_api.push_message(userId, TextSendMessage(text='กรุณาพิมพ์เหตุผล'))
+                        else:
+                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ หมายเลขคำร้องไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
+                    else:
+                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำสั่งให้ถูกต้อง'))
+
+                elif 'cancel_order_id' in request.session:
+                    # ตรวจสอบข้อความที่ผู้ใช้พิมพ์ว่ามีการพิมพ์เหตุผลหรือไม่
+                    if text:
+                        order_id = request.session.get('cancel_order_id')
+                        reason = text
+
+                        if order_id:
+                            # ส่งข้อความแจ้งเตือนผู้ใช้
+                            line_bot_api.push_message(userId, TextSendMessage(text=f'กรุณารออนุมัติยกเลิกคำร้อง ID {order_id} หากไม่มีการยกเลิกคำร้องกรุณาติดต่อเจ้าหน้าที่'))
+
+                            # แจ้งเตือนแอดมิน
+                            notify_admin_cancel(order_id, reason)
+
+                            # ลบ order_id จาก session หลังจากใช้แล้ว
+                            request.session.pop('cancel_order_id', None)
+                        else:
+                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ การยกเลิกคำร้องไม่สมบูรณ์❗\nกรุณาติดต่อเจ้าหน้าที่'))
+                    else:
+                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์เหตุผลการยกเลิกคำร้อง'))
+            else:
+                # ส่งข้อความแจ้งเตือนว่าข้อความไม่ถูกต้อง
+                line_bot_api.push_message(userId, TextSendMessage(text='⚠ ข้อความไม่ถูกต้อง❗\nกรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
 
         except json.JSONDecodeError as e:
             print(f"JSON Decode Error: {e}")
 
     return render(request, "home_page.html")
+
+
+
+def notify_admin_cancel(order_id, reason):
+    order = Order.objects.filter(id=order_id).first()
+    if order:
+        # ค้นหาผู้ใช้งานที่เป็น manager และ admin
+        users_to_notify = MyUser.objects.filter(is_manager=True) | MyUser.objects.filter(is_admin=True)
+
+        # ดึง Line User IDs ของผู้ใช้งานเหล่านี้
+        admin_user_ids = []
+        for user in users_to_notify:
+            try:
+                user_line = UserLine.objects.get(user=user)
+                admin_user_ids.append(user_line.userId)
+            except UserLine.DoesNotExist:
+                print(f"ไม่มี Line ID สำหรับผู้ใช้ {user.username}")
+
+        # สร้างข้อความแจ้งเตือน
+        message = (
+            f"ผู้ใช้งาน {order.user.first_name} ต้องการยกเลิกคำร้อง ID {order_id}\n"
+            f"เหตุผล: {reason}"
+        )
+
+        # ส่งข้อความไปยังแอดมิน
+        for user_id in admin_user_ids:
+            try:
+                line_bot_api.push_message(user_id, TextSendMessage(text=message))
+            except Exception as e:
+                print(f"เกิดข้อผิดพลาดในการส่งข้อความถึงผู้ใช้ {user_id}: {e}")
 
 
 
@@ -158,7 +280,6 @@ def notify_user(order_id):
         print(f"ไม่มีคำร้อง ID {order_id}")
     except UserLine.DoesNotExist:
         print(f"ไม่มี UserLine สำหรับผู้ใช้งาน {order.user.first_name}")
-
 
 
 #ส่งการแจ้งเตือนไปยังแอดมินเมื่อเช็คเอ้าท์สินค้า

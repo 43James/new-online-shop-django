@@ -1,0 +1,139 @@
+{% extends "dashboard.html" %}
+{% block content %}
+
+<div style="margin-left: 10px; margin-right: 10px;">
+
+    <!-- ฟอร์มสำหรับเลือกช่วงเดือน ปี และกลุ่มงาน -->
+    <form method="get" action="{% url 'dashboard:issuing_report' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+        <div class="col-auto">
+            <label for="workgroup">เลือกกลุ่มงาน</label>
+        </div>
+        <div class="col-auto">
+            <select name="workgroup" id="workgroup" class="form-control">
+                <option value="">ทั้งหมด</option>
+                {% for workgroup in workgroups %}
+                <option value="{{ workgroup.id }}" {% if workgroup.id|stringformat:"d" == selected_workgroup %}selected{% endif %}>
+                    {{ workgroup.work_group }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="start_month" id="start_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_start_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="start_year" id="start_year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_start_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><h5>ถึง</h5></div>
+
+        <div class="col-auto">
+            <select name="end_month" id="end_month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_end_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="end_year" id="end_year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_end_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">ค้นหา</button>
+            <a href="{% url 'dashboard:issuing_report' %}" class="btn btn-secondary">ยกเลิก</a>
+        </div>
+    </form>
+
+    <h2 class="mt-5 mb-4 text-center">ข้อมูลการเบิกวัสดุ</h2>
+
+    <!-- แสดงกราฟจำนวนวัสดุ -->
+    <canvas id="quantityChart"></canvas>
+
+    <div class="col-auto">
+    <h3 class="mt-5 mb-4 text-center">รายการวัสดุที่เบิก</h3>
+    <table class="table table-bordered mb-5">
+        <thead>
+            <tr>
+                <th>กลุ่มงาน</th>
+                <th>ชื่อผู้ใช้งาน</th>
+                <th>หมวดหมู่หลัก</th>
+                <th>ชื่อวัสดุ</th>
+                <th>จำนวนที่เบิก</th>
+                <th>หน่วย</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in issuing_data %}
+            <tr>
+                <td>{{ record.order__user__profile__workgroup__work_group }}</td>
+                <td>{{ record.order__user__first_name }}</td>
+                <td>{{ record.product__category__category__name_cate }}</td>
+                <td>{{ record.product__product_name }}</td>
+                <td>{{ record.total_quantity }}</td>
+                <td>{{ record.product__unit }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>    
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // ข้อมูลจาก Django
+    var quantityData = JSON.parse('{{ chart_data_quantity|escapejs }}');
+
+    // กราฟจำนวนวัสดุ
+    var quantityCtx = document.getElementById('quantityChart').getContext('2d');
+    var quantityChart = new Chart(quantityCtx, {
+        type: 'bar',
+        data: quantityData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'กราฟแสดงจำนวนวัสดุที่เบิกโดยผู้ใช้งานแต่ละคน {{ selected_workgroup_name }}',
+                    font: {
+                        size: 18
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'กลุ่มงาน'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'จำนวนวัสดุ (หน่วย)'
+                    },
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+{% endblock %}

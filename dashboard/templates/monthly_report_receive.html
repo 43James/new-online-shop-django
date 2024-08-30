@@ -36,6 +36,20 @@
     <div class="text-end">
         <form method="get" action="{% url 'dashboard:monthly_report_receive' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
             <div class="col-auto">
+                <label for="category">เลือกหมวดหมู่หลัก</label>
+            </div>
+            <div class="col-auto">
+                <select name="category" id="category" class="form-control">
+                    <option value="">ทั้งหมด</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category.id|stringformat:"d" == selected_category %}selected{% endif %}>
+                        {{ category.name_cate }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-auto">
                 <select name="month" id="month" class="form-select">
                     {% for m in months %}
                         <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
@@ -51,14 +65,14 @@
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-primary">ค้นหา</button>
-                <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button>
+                <a type="button" class="btn btn-secondary" href="{% url 'dashboard:monthly_report_receive' %}">ยกเลิก</a>
             </div>
         </form>
 
-        <h3 class="text-center">รายการรับเข้าวัสดุ ประจำเดือน {{ month_name }} พ.ศ. {{ selected_year }}</h3>
+        <h3 class="text-center">รายการรับเข้าวัสดุ ประจำเดือน {{ month_name }} พ.ศ. {{ selected_year }} ({{ selected_category_name }})</h3>
 
         <div class="col-auto">
-            <a href="{% url 'dashboard:export_to_excel_receive' %}?month={{ selected_month }}&year={{ selected_year }}" class="icon-link justify-content-end">
+            <a href="{% url 'dashboard:export_to_excel_receive' %}?category={{ selected_category }}&month={{ selected_month }}&year={{ selected_year }}" class="icon-link justify-content-end">
                 <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
                     <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
                     <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>
@@ -97,12 +111,13 @@
                 <tr>
                     <th class="text-center user-column1" style="width: 5%;">ลำดับ</th>
                     <th class="text-center user-column1" style="width: 15%;">รายการวัสดุ</th>
+                    <th class="text-center user-column1" style="width: 15%;">หมวดหมู่</th>
                     <th class="text-center user-column1" style="width: 15%;">ซัพพลายเออร์</th>
                     <th class="text-center user-column1" style="width: 5%;">จำนวนที่รับเข้า</th>
                     <th class="text-center user-column1" style="width: 2%;">หน่วย</th>
                     <th class="text-center user-column1" style="width: 8%;">ราคา/หน่วย</th>
                     <th class="text-center user-column1" style="width: 8%;">รวมจำนวนเงิน</th>
-                    <th class="text-center user-column1" style="width: 10%;">วันที่รับเข้า</th>
+                    <th class="text-center user-column1" style="width: 15%;">วันที่รับเข้า</th>
                 </tr>
             </thead>
             <tbody>
@@ -110,6 +125,7 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td>{{ data.product__product_name }}</td>
+                    <td>{{ data.product__category__category__name_cate }}</td>
                     <td>{{ data.suppliers__supname }}</td>
                     <td>{{ data.quantityreceived|intcomma }} </td>
                     <td> {{ data.product__unit }} </td>

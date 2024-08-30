@@ -45,6 +45,20 @@
     <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
 <div class="text-end mb-3">
     <form method="get" action="{% url 'dashboard:monthly_stock_sum' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+        <div class="col-auto">
+            <label for="category">เลือกหมวดหมู่หลัก</label>
+        </div>
+        <div class="col-auto">
+            <select name="category" id="category" class="form-control">
+                <option value="">ทั้งหมด</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category.id|stringformat:"d" == selected_category %}selected{% endif %}>
+                    {{ category.name_cate }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
         <div class="col-auto"><h6>เลือกช่วงเวลา</h6></div>
         <div class="col-auto">
             <select name="start_month" id="start_month" class="form-select">
@@ -99,10 +113,10 @@
             document.querySelector('form').submit();       // Submit the form
         }
     </script>
-    <h3 class="text-center">ข้อมูลวัสดุคงเหลือ {{ quarter_text }} {{ month_text }} พ.ศ. {{ year_range_text }}</h3>
+    <h3 class="text-center">ข้อมูลวัสดุคงเหลือ {{ quarter_text }} {{ month_text }} พ.ศ. {{ year_range_text }} ( {{ selected_categorys }} )</h3>
     <div class="row justify-content-end">
         <div class="col-auto">
-            <a href="{% url 'dashboard:export_monthly_stock_sum_to_excel' %}?start_month={{ selected_start_month }}&start_year={{ selected_start_year }}&end_month={{ selected_end_month }}&end_year={{ selected_end_year }}&quarter={{ quarter }}" class="icon-link justify-content-end">
+            <a href="{% url 'dashboard:export_monthly_stock_sum_to_excel' %}?category={{ selected_category }}&start_month={{ selected_start_month }}&start_year={{ selected_start_year }}&end_month={{ selected_end_month }}&end_year={{ selected_end_year }}&quarter={{ quarter }}" class="icon-link justify-content-end">
                 <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
                     <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
                     <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>
@@ -137,7 +151,7 @@
 
             
     <div>
-        <table class="col-auto justify-content-center container">
+        <table class="col-auto justify-content-center container mb-5">
             <thead>
                 <tr>
                     <th class="user-column1 text-center">ลำดับ</th>

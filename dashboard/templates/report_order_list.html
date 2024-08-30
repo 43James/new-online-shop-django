@@ -90,7 +90,7 @@
 </div>
 
 <div>
-    <table class="col-9 justify-content-center container">
+    <table class="col-auto justify-content-center container">
         <thead>
             <tr class="user-column1">
                 <th>ลำดับ</th>
@@ -120,11 +120,13 @@
                 {% else %}
                 <td scope="row" class="text-warning">รอดำเนินการ..</td>
                 {% endif %}
-                {% if order.other == True %}
-                <td>{{ order.other }}</td>
+
+                {% if order.other == None %}
+                <td>-</td>
                 {% else %}
-                <td></td>
+                <td>{{ order.other }}</td>
                 {% endif %}
+                
                 <td><a href="{% url 'dashboard:order_detail' order.id %}" class="text-primary "><i class="bi bi-printer-fill fs-4"></i></a>
             </tr>
             {% empty %}

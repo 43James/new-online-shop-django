@@ -100,343 +100,6 @@ def is_authorized_manager(user):
 
 # นำออกที่สมบูรณ์1
 @user_passes_test(is_authorized)
-# @login_required
-# def export_to_excel(request, month=None, year=None):
-#     # Get current datetime
-#     now = datetime.now()
-    
-#     if request.GET.get('month'):
-#         month = int(request.GET.get('month'))
-#     if request.GET.get('year'):
-#         year = int(request.GET.get('year'))
-    
-#     if not month:
-#         month = now.month
-#     if not year:
-#         year = now.year
-
-#     start_date = datetime(year, month, 1)
-#     end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
-
-#     previous_month_start = (start_date - timedelta(days=1)).replace(day=1)
-#     previous_month_end = start_date - timedelta(seconds=1)
-
-#     products = Product.objects.all()
-
-#     report_data = []
-#     all_users = set()
-#     total_issued_value = Decimal(0)  # ใช้ Decimal แทน float
-#     total_issued_value_by_user = defaultdict(Decimal)  # ใช้ Decimal แทน float
-
-#     for product in products:
-#         # Calculate previous balance
-#         previous_balance = Receiving.objects.filter(
-#             product=product, date_created__lte=previous_month_end
-#         ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-
-#         received_current_month = Receiving.objects.filter(
-#             product=product, date_created__range=(start_date, end_date)
-#         ).aggregate(total_received=Sum('quantityreceived'))['total_received'] or 0
-
-#         total_balance = previous_balance + received_current_month
-
-#         issued_current_month = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
-
-#         remaining_balance = total_balance - issued_current_month
-
-#         issued_items = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         )
-#         product_total_issued_value = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or Decimal(0)
-#         total_issued_value += product_total_issued_value
-
-#         user_issuings = defaultdict(int)
-#         for issuing in issued_items:
-#             user_full_name = issuing.order.user.get_first_name()
-#             user_issuings[user_full_name] += issuing.quantity
-#             all_users.add(user_full_name)
-#             total_issued_value_by_user[user_full_name] += issuing.price * issuing.quantity
-
-#         report_data.append({
-#             'product': product.product_name,
-#             'unit': product.unit,
-#             'previous_balance': previous_balance,
-#             'total_balance': total_balance,
-#             **user_issuings,
-#             'issued_current_month': issued_current_month,
-#             'remaining_balance': remaining_balance,
-#             'total_issued_value': product_total_issued_value,
-#             'note': '',
-#         })
-
-#     # Create a new Excel workbook and worksheet
-#     workbook = openpyxl.Workbook()
-#     worksheet = workbook.active
-
-#     # Font styles
-#     font_title = Font(name='TH SarabunPSK', size=16, bold=True)
-#     font_header = Font(name='TH SarabunPSK', size=14, bold=True)
-#     font_data = Font(name='TH SarabunPSK', size=12)
-    
-#     # Alignment styles
-#     align_center = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    
-#     # Border styles
-#     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-
-#     # สร้าง header rows ใน worksheet
-#     previous_month_name = thai_month_name(month)
-#     previous_year_buddhist = convert_to_buddhist_era(year)
-#     header_rows = [
-#         ['รายการเบิกวัสดุ'],
-#         [f'ประจำเดือน {previous_month_name} พ.ศ. {previous_year_buddhist} ประจำปีงบประมาณ พ.ศ. {previous_year_buddhist}'],
-#         ['หน่วยงาน โครงการอุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี']
-#     ]
-    
-#     for idx, header_row in enumerate(header_rows, start=1):
-#         worksheet.append(header_row)
-#         worksheet.merge_cells(start_row=idx, start_column=1, end_row=idx, end_column=12)
-#         cell = worksheet.cell(row=idx, column=1)
-#         cell.font = font_title
-#         cell.alignment = align_center
-
-#     # สร้าง headers ใน worksheet
-#     headers = ['ลำดับ', 'รายการสินค้า', 'หน่วยนับ', 'จำนวนคงเหลือ (ยกมา)', 'รวมจำนวนคงเหลือ'] + list(all_users) + ['รวมจำนวนที่เบิก', 'จำนวนคงเหลือทั้งหมด (หักจากที่เบิก)', 'มูลค่าสินค้าเบิกทั้งสิ้น (บาท)', 'หมายเหตุ']
-#     worksheet.append(headers)
-    
-#     # ตั้งค่ารูปแบบให้กับเซลล์ในหัวข้อ
-#     for cell in worksheet[4]:
-#         cell.font = font_header
-#         cell.alignment = align_center
-#         cell.border = border
-
-#     # ลูปเพื่อเพิ่มข้อมูลลงใน worksheet
-#     for index, item in enumerate(report_data, start=1):
-#         row = [
-#             index,
-#             item['product'],
-#             item['unit'],
-#             item['previous_balance'],
-#             item['received_current_month'],
-#             item['total_balance'],
-#             *[item.get(user, 0) for user in sorted(all_users)],
-#             item['issued_current_month'],
-#             item['remaining_balance'],
-#             item['total_issued_value'],
-#             item['note']
-#         ]
-#         worksheet.append(row)
-
-#     # สร้างแถวรวมรายจ่ายที่เบิก
-#     total_row = [''] * 4 + ['รวมรายจ่ายที่เบิก'] + [f'{total_issued_value_by_user[user]} บาท' for user in sorted(all_users)] + [''] + [''] + [f'{total_issued_value} บาท'] + ['']
-#     worksheet.append(total_row)
-    
-    
-#     # ตั้งค่ารูปแบบให้กับเซลล์ใน worksheet
-#     for row in worksheet.iter_rows(min_row=5, max_row=len(report_data) + 5, min_col=1, max_col=len(headers)):
-#         for cell in row:
-#             cell.font = font_data
-#             cell.alignment = align_center
-#             cell.border = border
-
-#     # ตั้งค่าความกว้างของคอลัมน์
-#     column_dimensions = {
-#         'A': 5,
-#         'B': 30,
-#         'C': 10,
-#         'D': 15,
-#         'E': 15,
-#         'F': 15,
-#         'G': 15,
-#         'H': 20,
-#         'I': 20,
-#         'J': 20,
-#         'K': 20,
-#     }
-#     for col, width in column_dimensions.items():
-#         worksheet.column_dimensions[col].width = width
-    
-#     # สร้าง HttpResponse สำหรับไฟล์ Excel และบันทึก workbook ลงใน response
-#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-#     response['Content-Disposition'] = 'attachment; filename=monthly_report_{}_{}.xlsx'.format(month, year)
-#     workbook.save(response)
-    
-#     return response
-
-
-
-# @login_required
-# def export_to_excel(request, month=None, year=None):
-#     # Get current datetime
-#     now = datetime.now()
-    
-#     if request.GET.get('month'):
-#         month = int(request.GET.get('month'))
-#     if request.GET.get('year'):
-#         year = int(request.GET.get('year'))
-    
-#     if not month:
-#         month = now.month
-#     if not year:
-#         year = now.year
-
-#     start_date = datetime(year, month, 1)
-#     end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
-
-#     previous_month_start = (start_date - timedelta(days=1)).replace(day=1)
-#     previous_month_end = start_date - timedelta(seconds=1)
-
-#     products = Product.objects.all()
-
-#     report_data = []
-#     all_users = set()
-#     total_issued_value = Decimal(0)  # ใช้ Decimal แทน float
-#     total_issued_value_by_user = defaultdict(Decimal)  # ใช้ Decimal แทน float
-
-#     for product in products:
-#         # Calculate previous balance
-#         previous_balance = Receiving.objects.filter(
-#             product=product, date_created__lte=previous_month_end
-#         ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-
-#         received_current_month = Receiving.objects.filter(
-#             product=product, date_created__range=(start_date, end_date)
-#         ).aggregate(total_received=Sum('quantityreceived'))['total_received'] or 0
-
-#         total_balance = previous_balance + received_current_month
-
-#         issued_current_month = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
-
-#         remaining_balance = total_balance - issued_current_month
-
-#         issued_items = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         )
-#         product_total_issued_value = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or Decimal(0)
-#         total_issued_value += product_total_issued_value
-
-#         user_issuings = defaultdict(int)
-#         for issuing in issued_items:
-#             user_full_name = issuing.order.user.get_first_name()
-#             user_issuings[user_full_name] += issuing.quantity
-#             all_users.add(user_full_name)
-#             total_issued_value_by_user[user_full_name] += issuing.price * issuing.quantity
-
-#         report_data.append({
-#             'product': product.product_name,
-#             'unit': product.unit,
-#             'previous_balance': previous_balance,
-#             'received_current_month': received_current_month,  # เพิ่มฟิลด์นี้
-#             'total_balance': total_balance,
-#             **user_issuings,
-#             'issued_current_month': issued_current_month,
-#             'remaining_balance': remaining_balance,
-#             'total_issued_value': product_total_issued_value,
-#             'note': '',
-#         })
-
-#     # Create a new Excel workbook and worksheet
-#     workbook = openpyxl.Workbook()
-#     worksheet = workbook.active
-
-#     # Font styles
-#     font_title = Font(name='TH SarabunPSK', size=16, bold=True)
-#     font_header = Font(name='TH SarabunPSK', size=14, bold=True)
-#     font_data = Font(name='TH SarabunPSK', size=12)
-    
-#     # Alignment styles
-#     align_center = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    
-#     # Border styles
-#     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-
-#     # สร้าง header rows ใน worksheet
-#     previous_month_name = thai_month_name(month)
-#     previous_year_buddhist = convert_to_buddhist_era(year)
-#     header_rows = [
-#         ['รายการเบิกวัสดุ'],
-#         [f'ประจำเดือน {previous_month_name} พ.ศ. {previous_year_buddhist} ประจำปีงบประมาณ พ.ศ. {previous_year_buddhist}'],
-#         ['หน่วยงาน โครงการอุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี']
-#     ]
-    
-#     for idx, header_row in enumerate(header_rows, start=1):
-#         worksheet.append(header_row)
-#         worksheet.merge_cells(start_row=idx, start_column=1, end_row=idx, end_column=12)
-#         cell = worksheet.cell(row=idx, column=1)
-#         cell.font = font_title
-#         cell.alignment = align_center
-
-#     # สร้าง headers ใน worksheet
-#     headers = ['ลำดับ', 'รายการสินค้า', 'หน่วยนับ', 'จำนวนคงเหลือ (ยกมา)', 'จำนวนรับเข้า (ปัจจุบัน)', 'รวมจำนวนคงเหลือบวกรับเข้า'] + list(all_users) + ['รวมจำนวนที่เบิก', 'จำนวนคงเหลือทั้งหมด (หักจากที่เบิก)', 'มูลค่าสินค้าเบิกทั้งสิ้น (บาท)', 'หมายเหตุ']
-#     worksheet.append(headers)
-    
-#     # ตั้งค่ารูปแบบให้กับเซลล์ในหัวข้อ
-#     for cell in worksheet[4]:
-#         cell.font = font_header
-#         cell.alignment = align_center
-#         cell.border = border
-
-#     # ลูปเพื่อเพิ่มข้อมูลลงใน worksheet
-#     for index, item in enumerate(report_data, start=1):
-#         row = [
-#             index,
-#             item['product'],
-#             item['unit'],
-#             item['previous_balance'],
-#             item['received_current_month'],  # เพิ่มฟิลด์นี้
-#             item['total_balance'],
-#             *[item.get(user, 0) for user in sorted(all_users)],
-#             item['issued_current_month'],
-#             item['remaining_balance'],
-#             item['total_issued_value'],
-#             item['note']
-#         ]
-#         worksheet.append(row)
-
-#     # สร้างแถวรวมรายจ่ายที่เบิก
-#     total_row = [''] * 5 + ['รวมรายจ่ายที่เบิก'] + [f'{total_issued_value_by_user[user]} บาท' for user in sorted(all_users)] + [''] + [''] + [f'{total_issued_value} บาท'] + ['']
-#     worksheet.append(total_row)
-    
-    
-#     # ตั้งค่ารูปแบบให้กับเซลล์ใน worksheet
-#     for row in worksheet.iter_rows(min_row=5, max_row=len(report_data) + 5, min_col=1, max_col=len(headers)):
-#         for cell in row:
-#             cell.font = font_data
-#             cell.alignment = align_center
-#             cell.border = border
-
-#     # ตั้งค่าความกว้างของคอลัมน์
-#     column_dimensions = {
-#         'A': 5,
-#         'B': 30,
-#         'C': 10,
-#         'D': 15,
-#         'E': 15,
-#         'F': 15,
-#         'G': 10,
-#         # 'H': 10,
-#         # 'I': 20,
-#         # 'J': 20,
-#         # 'K': 20,
-#         # 'L': 15,
-#         # 'M': 15,
-#         # 'N': 15,
-#         # 'O': 40,
-#     }
-#     for col, width in column_dimensions.items():
-#         worksheet.column_dimensions[col].width = width
-    
-#     # สร้าง HttpResponse สำหรับไฟล์ Excel และบันทึก workbook ลงใน response
-#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-#     response['Content-Disposition'] = 'attachment; filename=monthly_report_{}_{}.xlsx'.format(month, year)
-#     workbook.save(response)
-    
-#     return response
-
 @login_required
 def export_to_excel(request, month=None, year=None):
     # Get current datetime
@@ -459,12 +122,14 @@ def export_to_excel(request, month=None, year=None):
     previous_month_end = start_date - timedelta(seconds=1)
 
     category_id = request.GET.get('category')
-    if category_id:
+    if category_id and category_id.isdigit():
+        category_id = int(category_id)
         products = Product.objects.filter(category__category_id=category_id)
         selected_category_name = Category.objects.get(id=category_id).name_cate
     else:
         products = Product.objects.all()
         selected_category_name = "ทั้งหมด"
+
 
     report_data = []
     all_users = set()
@@ -562,22 +227,32 @@ def export_to_excel(request, month=None, year=None):
             index,
             item['product'],
             item['unit'],
-            item['previous_balance'],
-            item['received_current_month'],
-            item['total_balance'],
-            *[item.get(user, 0) for user in sorted(all_users)],
-            item['issued_current_month'],
-            item['remaining_balance'],
-            item['total_issued_value'],
+            f"{item['previous_balance']:,}",  # ใส่คอมมาในจำนวนเงิน
+            f"{item['received_current_month']:,}",  # ใส่คอมมาในจำนวนเงิน
+            f"{item['total_balance']:,}",  # ใส่คอมมาในจำนวนเงิน
+            *[f"{item.get(user, 0):,}" for user in sorted(all_users)],  # ใส่คอมมาในจำนวนเงิน
+            f"{item['issued_current_month']:,}",  # ใส่คอมมาในจำนวนเงิน
+            f"{item['remaining_balance']:,}",  # ใส่คอมมาในจำนวนเงิน
+            f"{item['total_issued_value']:,}",  # ใส่คอมมาในจำนวนเงิน
             item['note']
         ]
         worksheet.append(row)
 
     # สร้างแถวรวมรายจ่ายที่เบิก
-    total_row = [''] * 5 + ['รวมรายจ่ายที่เบิก'] + [f'{total_issued_value_by_user[user]} บาท' for user in sorted(all_users)] + [''] + [''] + [f'{total_issued_value} บาท'] + ['']
+    total_row_num = worksheet.max_row + 1  # ระบุหมายเลขแถวที่ต้องการเพิ่ม
+
+    # เพิ่มข้อมูลในแถว
+    total_row = [''] * 5 + ['รวมรายจ่ายที่เบิก'] + [f'{total_issued_value_by_user[user]:,} บาท' for user in sorted(all_users)] + [''] + [''] + [f'{total_issued_value:,} บาท'] + ['']
     worksheet.append(total_row)
-    
-    
+
+    # รวมคอลัมน์ 1-7 เข้าด้วยกัน
+    worksheet.merge_cells(start_row=total_row_num, start_column=1, end_row=total_row_num, end_column=7)
+
+    # ตั้งค่าเซลล์ที่รวมให้มีข้อความ "รวมรายจ่ายที่เบิก" และจัดให้อยู่ตรงกลาง
+    cell = worksheet.cell(row=total_row_num, column=1, value="รวมรายจ่ายที่เบิก")
+    cell.font = Font(name="TH SarabunPSK", size=14, bold=True)  # ทำให้เป็นตัวหนา
+    cell.alignment = Alignment(horizontal='center', vertical='center')
+
     # ตั้งค่ารูปแบบให้กับเซลล์ใน worksheet
     for row in worksheet.iter_rows(min_row=5, max_row=len(report_data) + 5, min_col=1, max_col=len(headers)):
         for cell in row:
@@ -602,7 +277,6 @@ def export_to_excel(request, month=None, year=None):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename=monthly_report_{month}_{year}.xlsx'
     workbook.save(response)
-    
     return response
 
 
@@ -612,130 +286,6 @@ def export_to_excel(request, month=None, year=None):
 @user_passes_test(is_authorized)
 @login_required
 # รายงานประจำเดือน
-# def monthly_report(request, month=None, year=None):
-#     now = datetime.now()
-
-#     if request.GET.get('month'):
-#         month = int(request.GET.get('month'))
-#     if request.GET.get('year'):
-#         year = int(request.GET.get('year'))
-
-#     if not month:
-#         month = now.month
-#     if not year:
-#         year = now.year
-
-#     # Get Thai month name
-#     month_name = thai_month_name(month)
-
-#     # Convert year to Buddhist Era
-#     buddhist_year = convert_to_buddhist_era(year)
-
-#     # Define start_date and end_date for the selected month
-#     start_date = datetime(year, month, 1)
-#     end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
-
-#     # Define previous month start_date and end_date
-#     previous_month_start = (start_date - timedelta(days=1)).replace(day=1)
-#     previous_month_end = start_date - timedelta(seconds=1)
-
-#     # Get all products
-#     products = Product.objects.all()
-
-#     report_data = []
-#     all_users = set()
-#     total_issued_value = Decimal(0)  # ใช้ Decimal แทน float
-#     total_issued_value_by_user = defaultdict(Decimal)  # ใช้ Decimal แทน float
-
-#     total_issued_quantity = Issuing.objects.filter(
-#         datecreated__range=(start_date, end_date),
-#         order__status=True
-#     ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0  # คำนวณผลรวมของ issued_current_month ทั้งหมด
-
-#     for product in products:
-#         previous_balance_record = MonthlyStockRecord.objects.filter(
-#             product=product,
-#             month=previous_month_end.month,
-#             year=previous_month_end.year
-#         ).first()
-
-#         previous_balance = previous_balance_record.end_of_month_balance if previous_balance_record else 0
-
-#         # Calculate received quantity for the current month
-#         received_current_month = Receiving.objects.filter(
-#             product=product, date_created__range=(start_date, end_date)
-#         ).aggregate(total_received=Sum('quantityreceived'))['total_received'] or 0
-
-#         # Calculate total balance (previous balance + received current month)
-#         total_balance = previous_balance + received_current_month
-
-#         # Calculate issued quantity for the current month
-#         issued_current_month = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         ).aggregate(total_issued=Sum('quantity'))['total_issued'] or 0
-
-#         # Calculate remaining balance
-#         remaining_balance = total_balance - issued_current_month
-
-#         # Calculate total issued value for the current month
-#         issued_items = Issuing.objects.filter(
-#             product=product, datecreated__range=(start_date, end_date), order__status=True
-#         )
-#         total_issued_value_product = issued_items.aggregate(total_cost=Sum(F('price') * F('quantity')))['total_cost'] or 0
-
-#         # Aggregate user issuings
-#         user_issuings = defaultdict(int)
-
-#         for issuing in issued_items:
-#             user_full_name = issuing.order.user.get_first_name()
-#             user_issuings[user_full_name] += issuing.quantity
-#             all_users.add(user_full_name)
-
-#             # Calculate total cost issued by each user
-#             total_cost = issuing.price * issuing.quantity
-#             total_issued_value_by_user[user_full_name] += total_cost
-#             total_issued_value += total_cost
-
-#         report_data.append({
-#             'product': product.product_name,
-#             'unit': product.unit,
-#             'previous_balance': previous_balance,
-#             'received_current_month': received_current_month,
-#             'total_balance': total_balance,
-#             'user_issuings': user_issuings,
-#             'issued_current_month': issued_current_month,
-#             'remaining_balance': remaining_balance,
-#             'total_issued_value': total_issued_value_product,
-#             'note': '',
-#         })
-
-#     # Sort all_users for consistent ordering
-#     sorted_all_users = sorted(all_users)
-
-#     context = {
-#         'title': 'รายงานประจำเดือน',
-#         'report_data': report_data,
-#         'all_users': sorted_all_users,
-#         'month': month,
-#         'year': year,
-#         'now': now,
-#         'years': range(2020, now.year + 1),
-#         'months': [
-#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
-#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
-#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
-#         ],
-#         'pending_orders_count': count_pending_orders(),
-#         'month_name': month_name,
-#         'buddhist_year': buddhist_year,
-#         'total_issued_value_by_user': total_issued_value_by_user,
-#         'total_issued_value': total_issued_value,
-#         'total_issued_quantity': total_issued_quantity,  # เพิ่มผลรวมของ issued_current_month ลงใน context
-#     }
-
-#     return render(request, 'monthly_report.html', context)
-
-@login_required
 def monthly_report(request, month=None, year=None):
     now = datetime.now()
 
@@ -855,52 +405,8 @@ def monthly_report(request, month=None, year=None):
 
 
 
-
-
 @user_passes_test(is_authorized)
 @login_required
-# ฟังก์ชันบันทึกคงเหลือ ยกมา โค้ดเดิมๆ
-# def record_monthly_stock_view(request):
-#     if request.method == 'POST':
-#         form = RecordMonthlyStockForm(request.POST)
-#         if form.is_valid() and form.cleaned_data['confirm']:
-#             now = datetime.now()
-#             first_day_of_current_month = now.replace(day=1)
-#             last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
-
-#             # ตรวจสอบว่ามีการบันทึกข้อมูลสำหรับเดือนก่อนหน้าแล้วหรือไม่
-#             existing_records = MonthlyStockRecord.objects.filter(
-#                 month=last_day_of_previous_month.month,
-#                 year=last_day_of_previous_month.year
-#             )
-
-#             if existing_records.exists():
-#                 messages.error(request, 'มีการบันทึกข้อมูลของแล้ว.')
-#                 return redirect('dashboard:record_monthly_stock')
-
-#             # สร้างบันทึกข้อมูลสำหรับเดือนก่อนหน้า
-#             products = Product.objects.all()
-#             for product in products:
-#                 MonthlyStockRecord.objects.create(
-#                     product=product,
-#                     month=last_day_of_previous_month.month,
-#                     year=last_day_of_previous_month.year,
-#                     end_of_month_balance=product.quantityinstock
-#                 )
-
-#             messages.success(request, 'บันทึกข้อมูลสต็อกสินค้าเรียบร้อยแล้ว.')
-#             return redirect('dashboard:record_monthly_stock')
-#     else:
-#         form = RecordMonthlyStockForm()
-
-#     context = {
-#         'title':'บันทึกยอดวัสดุคงเหลือประจำเดือน',
-#         'form': form,
-#                'pending_orders_count': count_pending_orders(),}
-
-#     return render(request, 'record_monthly_stock.html', context)
-
-# โค้ดใหม่ล่าสุด 10.12 น.
 def record_monthly_stock_view(request):
     if request.method == 'POST':
         form = RecordMonthlyStockForm(request.POST)
@@ -982,7 +488,7 @@ def monthly_stock_records(request):
 
     # กำหนดค่าให้กับตัวแปร context
     context = {
-        'title': 'ข้อมูลวัสดุประจำเดือน (ยกมา)',
+        'title': 'ข้อมูลวัสดุคงเหลือ (ยกมา)',
         'records': records,
         'selected_month': month,
         'selected_year': year_buddhist,
@@ -1008,6 +514,11 @@ def monthly_stock_records(request):
 # รายงงานจำนวนวัสดุคงเหลือ ตามไตรมาส
 def monthly_stock_sum(request):
     now = datetime.now()
+
+    # การกรองตามหมวดหมู่หลัก
+    selected_category_id = request.GET.get('category')
+    selected_category = Category.objects.filter(id=selected_category_id).first() if selected_category_id else None
+
     last_month = now.month - 1 if now.month > 1 else 12
     last_year = now.year if now.month > 1 else now.year - 1
 
@@ -1052,6 +563,12 @@ def monthly_stock_sum(request):
         Q(month__lte=end_month) & Q(year__lte=end_year_ad)
     ).order_by('year', 'month')
 
+    if selected_category:
+        records = records.filter(product__category__category_id=selected_category.id)
+
+    # เพิ่มการหา name_cate ของหมวดหมู่หลัก
+    selected_category_name = Category.objects.get(id=selected_category_id).name_cate if selected_category_id else "ทั้งหมด"
+
     product_sums = {}
     for record in records:
         product_id = record.product.id
@@ -1071,7 +588,7 @@ def monthly_stock_sum(request):
     total_price = sum([item['total_price_quarter'] for item in sorted_product_sums.values()])
 
     context = {
-        'title': 'วัสดุคงเหลือประจำเดือนและแต่ละไตรมาส',
+        'title': 'วัสดุคงเหลือประจำเดือนและไตรมาส',
         'product_sums': sorted_product_sums,
         'selected_start_month': month,
         'selected_start_year': year_buddhist,
@@ -1080,7 +597,9 @@ def monthly_stock_sum(request):
         'quarter': quarter,
         'quarter_text': quarter_text,
         'month_text': month_text,
-        'year_range_text': year_range_text,
+        'year_range_text': year_range_text,            
+        'selected_category': selected_category_id,
+        'selected_categorys': selected_category_name,
         'years': range(2020 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
@@ -1138,10 +657,24 @@ def export_monthly_stock_sum_to_excel(request):
     else:
         year_range_text = f"{year_buddhist} - {end_year_buddhist}"
 
+    # การกรองตามหมวดหมู่หลัก
+    selected_category_id = request.GET.get('category')
+    selected_category = "ทั้งหมด"
+
+    if selected_category_id and selected_category_id.isdigit():
+        category = Category.objects.filter(id=int(selected_category_id)).first()
+        if category:
+            selected_category = category.name_cate  # ใช้ชื่อหมวดหมู่แทน
+
     records = MonthlyStockRecord.objects.filter(
         Q(month__gte=month) & Q(year__gte=year_ad) &
         Q(month__lte=end_month) & Q(year__lte=end_year_ad)
-    ).order_by('year', 'month')
+    )
+
+    if selected_category_id and selected_category_id.isdigit() and category:
+        records = records.filter(product__category__category_id=category.id)
+
+    records = records.order_by('year', 'month')
 
     product_sums = {}
     for record in records:
@@ -1170,7 +703,7 @@ def export_monthly_stock_sum_to_excel(request):
     font_th_sarabun = Font(name="TH SarabunPSK", size=14)
 
     # เพิ่มหัวเรื่อง
-    title_text = f"ข้อมูลวัสดุคงเหลือ {quarter_text} {month_text} พ.ศ. {year_range_text}"
+    title_text = f"ข้อมูลวัสดุคงเหลือ {quarter_text} {month_text} พ.ศ. {year_range_text} ( { selected_category } )"
     ws.merge_cells('A1:E1')
     title_cell = ws['A1']
     title_cell.value = title_text
@@ -1184,7 +717,6 @@ def export_monthly_stock_sum_to_excel(request):
         cell.value = header
         cell.font = font_th_sarabun
 
-    
     # กำหนดรูปแบบเส้นตาราง
     thin_border = Border(
         left=Side(style='thin'),
@@ -1197,16 +729,25 @@ def export_monthly_stock_sum_to_excel(request):
     for row_num, (product_id, data) in enumerate(sorted_product_sums.items(), 3):
         ws.cell(row=row_num, column=1, value=row_num-2).font = font_th_sarabun  # ลำดับ
         ws.cell(row=row_num, column=2, value=data['product_name']).font = font_th_sarabun  # วัสดุ
-        ws.cell(row=row_num, column=3, value=data['total_balance_quarter']).font = font_th_sarabun  # รวมจำนวนคงเหลือ
+        ws.cell(row=row_num, column=3, value=f"{data['total_balance_quarter']:,}").font = font_th_sarabun  # รวมจำนวนคงเหลือ
         ws.cell(row=row_num, column=4, value=data['unit']).font = font_th_sarabun  # หน่วย
-        ws.cell(row=row_num, column=5, value=data['total_price_quarter']).font = font_th_sarabun  # รวมจำนวนเงิน
+        ws.cell(row=row_num, column=5, value=f"{data['total_price_quarter']:,}").font = font_th_sarabun  # รวมจำนวนเงิน
 
     # เพิ่มผลรวมทั้งหมด
     total_row_num = len(sorted_product_sums) + 3
-    ws.cell(row=total_row_num, column=2, value="รวมทั้งหมด").font = font_th_sarabun
-    ws.cell(row=total_row_num, column=3, value=total_balance).font = font_th_sarabun
-    ws.cell(row=total_row_num, column=4, value="ชิ้น").font = font_th_sarabun
-    ws.cell(row=total_row_num, column=5, value=f"{total_price:,} บาท").font = font_th_sarabun
+
+    # รวมคอลัมน์ 1 และ 2 เข้าด้วยกัน
+    ws.merge_cells(start_row=total_row_num, start_column=1, end_row=total_row_num, end_column=2)
+
+    # ตั้งค่าเซลล์ที่รวมให้มีข้อความ "รวมทั้งหมด" และจัดให้อยู่ตรงกลาง
+    cell = ws.cell(row=total_row_num, column=1, value="รวมทั้งหมด")
+    cell.font = Font(name="TH SarabunPSK", size=14, bold=True)
+    cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # เพิ่มข้อมูลในคอลัมน์อื่นๆ และตั้งค่าให้เป็นตัวหนา
+    ws.cell(row=total_row_num, column=3, value=f"{total_balance:,}").font = Font(name="TH SarabunPSK", size=14, bold=True)
+    ws.cell(row=total_row_num, column=4, value="ชิ้น").font = Font(name="TH SarabunPSK", size=14, bold=True)
+    ws.cell(row=total_row_num, column=5, value=f"{total_price:,} บาท").font = Font(name="TH SarabunPSK", size=14, bold=True)
 
     # เพิ่มเส้นตารางให้กับ cells
     for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=5):
@@ -1229,6 +770,7 @@ def export_monthly_stock_sum_to_excel(request):
     response['Content-Disposition'] = f'attachment; filename=monthly_stock_sum_{now.strftime("%Y%m%d")}.xlsx'
     wb.save(response)
     return response
+
 
 
 
@@ -1339,13 +881,15 @@ def monthly_report_receive(request):
     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
     year_ad = year_buddhist - 543
 
-    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุ
+    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุ พร้อมกับข้อมูลหมวดหมู่หลักและหมวดหมู่ย่อย
     receiving_data = Receiving.objects.filter(
         month=month,
         year=year_ad
-    ).select_related('product', 'suppliers').values(
+    ).select_related('product__category__category').values(
         'product__product_name',
         'product__unit',
+        'product__category__name_sub',  # หมวดหมู่ย่อย
+        'product__category__category__name_cate',  # หมวดหมู่หลัก
         'suppliers__supname',
         'quantityreceived',
         'unitprice',
@@ -1355,12 +899,25 @@ def monthly_report_receive(request):
         total_price=Sum(F('quantityreceived') * F('unitprice'))
     )
 
+    # การกรองตามหมวดหมู่หลัก
+    category_id = request.GET.get('category')
+    selected_category_name = "ทั้งหมด"
+    if category_id:
+        receiving_data = receiving_data.filter(product__category__category__id=category_id)
+        selected_category_name = Category.objects.get(id=category_id).name_cate
+
+    # ดึงหมวดหมู่หลักทั้งหมดสำหรับการแสดงใน dropdown
+    categories = Category.objects.all()
+
     # กำหนดค่าให้กับตัวแปร context
     context = {
         'title': 'รายการรับเข้าวัสดุ',
         'receiving_data': receiving_data,
         'selected_month': month,
         'selected_year': year_buddhist,
+        'selected_category': category_id,
+        'selected_category_name': selected_category_name,
+        'categories': categories,
         'years': range(2020 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
@@ -1404,6 +961,8 @@ def export_to_excel_receive(request):
     ).select_related('product', 'suppliers').values(
         'product__product_name',
         'product__unit',
+        'product__category__category__name_cate',  # หมวดหมู่หลัก
+        'product__category__name_sub',  # หมวดหมู่ย่อย
         'suppliers__supname',
         'quantityreceived',
         'unitprice',
@@ -1412,6 +971,13 @@ def export_to_excel_receive(request):
         total_quantity=Sum('quantityreceived'),
         total_price=Sum(F('quantityreceived') * F('unitprice'))
     )
+
+    # ตรวจสอบ category_id ว่ามีค่าและเป็นตัวเลขหรือไม่
+    category_id = request.GET.get('category')
+    selected_category_name = "ทั้งหมด"
+    if category_id and category_id.isdigit():
+        receiving_data = receiving_data.filter(product__category__category__id=int(category_id))
+        selected_category_name = Category.objects.get(id=int(category_id)).name_cate
 
     # สร้าง response สำหรับการบันทึกไฟล์ Excel
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -1422,7 +988,7 @@ def export_to_excel_receive(request):
     ws = wb.active
 
     # ตั้งชื่อ sheet
-    ws.title = f"Receiving Report {month}-{year_buddhist}"  # ใช้ (-) เป็นตัวคั่น
+    ws.title = f"Receiving Report {month}-{year_buddhist}"
 
     thai_font = Font(name='TH Sarabun New', bold=True, size=16)
     regular_font = Font(name='TH Sarabun New', size=14)
@@ -1430,14 +996,14 @@ def export_to_excel_receive(request):
     # เพิ่มข้อมูลหัวเรื่อง
     previous_month_name = thai_month_name(month)
     previous_year_buddhist = convert_to_buddhist_era(year_ad)
-    ws.merge_cells('A1:H1')
+    ws.merge_cells('A1:J1')
     cell = ws.cell(row=1, column=1)
-    cell.value = f"รายการรับเข้าวัสดุ ประจำเดือน {previous_month_name} พ.ศ. {previous_year_buddhist}"
+    cell.value = f"รายการรับเข้าวัสดุ ประจำเดือน {previous_month_name} พ.ศ. {previous_year_buddhist} หมวดหมู่ที่เลือก : {selected_category_name}"
     cell.font = thai_font
     cell.alignment = Alignment(horizontal='center', vertical='center')
 
     # กำหนด header
-    headers = ['ลำดับ', 'รายการวัสดุ', 'ซัพพลายเออร์', 'จำนวนที่รับเข้า', 'หน่วย', 'ราคา/หน่วย', 'รวมจำนวนเงิน', 'วันที่รับเข้า']
+    headers = ['ลำดับ', 'รายการวัสดุ', 'หมวดหมู่หลัก', 'หมวดหมู่ย่อย', 'ซัพพลายเออร์', 'จำนวนที่รับเข้า', 'หน่วย', 'ราคา/หน่วย', 'รวมจำนวนเงิน', 'วันที่รับเข้า']
     ws.append(headers)
     for cell in ws[2]:
         cell.font = thai_font
@@ -1458,11 +1024,13 @@ def export_to_excel_receive(request):
         row = [
             idx,
             data['product__product_name'],
+            data['product__category__category__name_cate'],  # หมวดหมู่หลัก
+            data['product__category__name_sub'],  # หมวดหมู่ย่อย
             data['suppliers__supname'],
-            data['quantityreceived'],
+            "{:,}".format(data['quantityreceived']),
             data['product__unit'],
-            data['unitprice'],
-            data['total_price'],
+            "{:,.2f}".format(data['unitprice']),
+            "{:,.2f}".format(data['total_price']),
             date_str
         ]
         ws.append(row)
@@ -1470,13 +1038,16 @@ def export_to_excel_receive(request):
             cell.font = regular_font
 
     # เพิ่มเส้นตารางให้กับ cells
-    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=8):
+    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=10):
         for cell in row:
             cell.border = thin_border
 
     # บันทึก workbook ลงใน response
     wb.save(response)
     return response
+
+
+
 
 
 @user_passes_test(is_authorized)
@@ -1695,6 +1266,9 @@ def dashboard_home(request):
     if selected_category:
         issuing_data = issuing_data.filter(product__category__category_id=selected_category.id)
 
+    # เพิ่มการหา name_cate ของหมวดหมู่หลัก
+    selected_category_name = Category.objects.get(id=selected_category_id).name_cate if selected_category_id else "ทั้งหมด"
+
     issuing_data = issuing_data.values(
         'order__user__profile__workgroup__work_group',
         'product__product_name',
@@ -1768,6 +1342,7 @@ def dashboard_home(request):
             'selected_end_month': end_month,
             'selected_end_year': end_year_buddhist,
             'selected_category': selected_category_id,
+            'selected_categorys': selected_category_name,
             'categories': Category.objects.all(),
             'years': range(2020 + 543, datetime.now().year + 1 + 543),
             'months': [
@@ -1788,6 +1363,7 @@ def dashboard_home(request):
             'selected_end_month': end_month,
             'selected_end_year': end_year_buddhist,
             'selected_category': selected_category_id,
+            'selected_categorys': selected_category_name,
             'categories': Category.objects.all(),
             'years': range(2020 + 543, datetime.now().year + 1 + 543),
             'months': [
@@ -1805,7 +1381,7 @@ def get_random_color():
     r = random.randint(0, 255)
     g = random.randint(0, 255)
     b = random.randint(0, 255)
-    return f'rgba({r}, {g}, {b}, 1)'
+    return f'rgba({r}, {g}, {b}, 0.5)'  # ปรับ alpha เป็น 0.2 เพื่อให้สีอ่อนลง
 
 @user_passes_test(is_authorized)
 @login_required
@@ -1958,6 +1534,9 @@ def dashboard_report(request):
 
     if selected_category_id:
         combined_data = combined_data.filter(product__category__id=selected_category_id)
+    
+    # เพิ่มการหา name_cate ของหมวดหมู่หลัก
+    selected_category_name = Category.objects.get(id=selected_category_id).name_cate if selected_category_id else "ทั้งหมด"
 
     combined_data = combined_data.values(
         'order__user__profile__workgroup__work_group',
@@ -2050,6 +1629,7 @@ def dashboard_report(request):
         'selected_end_month': end_month,
         'selected_end_year': end_year_buddhist,
         'selected_category': selected_category_id,  # เพิ่มการส่งข้อมูลหมวดหมู่หลัก
+        'selected_categorys': selected_category_name,
         'years': range(2020 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
@@ -2061,6 +1641,135 @@ def dashboard_report(request):
         'categories': Category.objects.all()  # เพิ่มข้อมูลหมวดหมู่หลัก
     }
     return render(request, 'dashboard_report.html', context)
+
+
+def issuing_report(request):
+    now = datetime.now()
+
+    # การกรองตามกลุ่มงาน
+    selected_workgroup_id = request.GET.get('workgroup')
+    selected_workgroup = WorkGroup.objects.filter(id=selected_workgroup_id).first() if selected_workgroup_id else None
+
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    last_month = now.month if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+
+    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+    start_month = int(request.GET.get('start_month', last_month))
+    start_year_buddhist = int(request.GET.get('start_year', last_year + 543))
+    end_month = int(request.GET.get('end_month', last_month))
+    end_year_buddhist = int(request.GET.get('end_year', last_year + 543))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    start_year_ad = start_year_buddhist - 543
+    end_year_ad = end_year_buddhist - 543
+
+    # ตรวจสอบค่าที่ได้รับ
+    print(f"Start Month: {start_month}, Start Year AD: {start_year_ad}")
+    print(f"End Month: {end_month}, End Year AD: {end_year_ad}")
+
+    # กรองข้อมูลการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์แล้ว ตามช่วงเวลาที่เลือก
+    issuing_data = Issuing.objects.filter(
+        order__status=True,
+        order__year__gte=start_year_ad,
+        order__year__lte=end_year_ad,
+        order__month__gte=start_month,
+        order__month__lte=end_month
+    )
+
+    if selected_workgroup:
+        issuing_data = issuing_data.filter(order__user__profile__workgroup__id=selected_workgroup.id)
+
+    # เพิ่มการหา work_group ของกลุ่มงาน
+    selected_workgroup_name = WorkGroup.objects.get(id=selected_workgroup_id).work_group if selected_workgroup_id else "ทั้งหมด"
+
+    issuing_data = issuing_data.values(
+        'order__user__profile__workgroup__work_group',
+        'order__user__first_name',
+        'product__product_name',
+        'product__category__category__name_cate',
+        'product__unit'
+    ).annotate(
+        total_quantity=Sum('quantity')
+    ).order_by('order__user__profile__workgroup__work_group', 'order__user__first_name')
+
+    # ข้อมูลสำหรับ Context
+    if issuing_data.exists():
+        df = pd.DataFrame(issuing_data)
+
+        # เตรียมข้อมูลสำหรับ Chart.js
+        labels = df['order__user__profile__workgroup__work_group'].unique().tolist()
+        users = df['order__user__first_name'].unique().tolist()
+
+        # Data สำหรับกราฟแท่ง
+        datasets_quantity = []
+        colors = [
+            'rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)',
+            'rgba(255, 206, 86, 0.2)', 'rgba(153, 102, 255, 0.2)', 'rgba(255, 159, 64, 0.2)'
+        ]
+        # color_map = {user: colors[i % len(colors)] for i, user in enumerate(users)}
+        
+        # สร้างแม็พสีสำหรับแต่ละผลิตภัณฑ์
+        color_map = {user: get_random_color() for user in users}
+
+        for user in users:
+            data = df[df['order__user__first_name'] == user]
+            quantities = [data[data['order__user__profile__workgroup__work_group'] == label]['total_quantity'].sum() for label in labels]
+            color = color_map[user]
+            datasets_quantity.append({
+                'label': user,
+                'data': quantities,
+                'backgroundColor': color,
+                'borderColor': color.replace('0.2', '1'),  # เปลี่ยน alpha เป็น 1 เพื่อให้ขอบสีชัดเจน
+                'borderWidth': 1
+            })
+
+        chart_data_quantity = {
+            'labels': labels,
+            'datasets': datasets_quantity
+        }
+
+        context = {
+            'title': 'รายงานการเบิกวัสดุ',
+            'chart_data_quantity': json.dumps(chart_data_quantity, ensure_ascii=False, default=str),
+            'now': now,
+            'issuing_data': issuing_data,  # เพิ่มบรรทัดนี้
+            'selected_start_month': start_month,
+            'selected_start_year': start_year_buddhist,
+            'selected_end_month': end_month,
+            'selected_end_year': end_year_buddhist,
+            'selected_workgroup': selected_workgroup_id,
+            'selected_workgroup_name': selected_workgroup_name,
+            'workgroups': WorkGroup.objects.all(),
+            'years': range(2020 + 543, datetime.now().year + 1 + 543),
+            'months': [
+                (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+                (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+                (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+            ],
+        }
+    else:
+        context = {
+            'title': 'รายงานการเบิกวัสดุ',
+            'chart_data_quantity': json.dumps({'labels': [], 'datasets': []}, ensure_ascii=False, default=str),
+            'now': now,
+            'issuing_data': issuing_data,  # เพิ่มบรรทัดนี้
+            'selected_start_month': start_month,
+            'selected_start_year': start_year_buddhist,
+            'selected_end_month': end_month,
+            'selected_end_year': end_year_buddhist,
+            'selected_workgroup': selected_workgroup_id,
+            'selected_workgroup_name': selected_workgroup_name,
+            'workgroups': WorkGroup.objects.all(),
+            'years': range(2020 + 543, datetime.now().year + 1 + 543),
+            'months': [
+                (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+                (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+                (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+            ],
+        }
+
+    return render(request, 'issuing_report.html', context)
 
 
 
@@ -2309,7 +2018,6 @@ def detail_suppliers(request, id):
 @user_passes_test(is_authorized_manager)
 @login_required
 def receive_list(request):
-    # receive = Receiving.objects.all()
     now = datetime.now()
 
     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
@@ -2324,27 +2032,19 @@ def receive_list(request):
     year_ad = year_buddhist - 543
 
     # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
-    receive = Receiving.objects.filter(
-        month=month,
-        year=year_ad
-     )
-      
+    receive = Receiving.objects.all()
+
+    # การค้นหา
     query = request.GET.get('q')
     if query is not None:
         lookups = Q(product__product_name__icontains=query) | Q(product__product_id__icontains=query)
-        receive = Receiving.objects.filter(lookups)
-
-    page = request.GET.get('page')
-
-    p = Paginator(receive, 20)
-    try:
-        receive = p.page(page)
-    except:
-        receive = p.page(1)
+        receive = receive.filter(lookups)
+    else:
+        receive = receive.filter(month=month, year=year_ad)
 
     context = {
-        'title':'รับเข้าวัสดุ', 
-        'receive':receive,
+        'title': 'รับเข้าวัสดุ',
+        'receive': receive,
         'pending_orders_count': count_pending_orders(),
         'selected_month': month,
         'selected_year': year_buddhist,
@@ -2354,12 +2054,14 @@ def receive_list(request):
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')],
         'month_name': thai_month_name(month),
-            }
+    }
     previous_month = month - 1 if month > 1 else 12
     previous_year = year_ad if month > 1 else year_ad - 1
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
+
     return render(request, 'receive_list.html', context)
+
 
 
 
@@ -2738,8 +2440,6 @@ def edit_subcategory(request, id):
 @user_passes_test(is_authorized_manager)
 @login_required
 def orders_all(request):
-    # orders_all = Order.objects.all()
-
     now = datetime.now()
 
     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
@@ -2754,23 +2454,20 @@ def orders_all(request):
     year_ad = year_buddhist - 543
 
     # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
-    orders_all = Order.objects.filter(
-        month=month,
-        year=year_ad
-     ).select_related('user')
+    orders_all = Order.objects.all().select_related('user')
 
+    # การค้นหา
     query = request.GET.get('q')
     if query is not None:
-        lookups = Q(id__icontains=query)
-        orders_all = Order.objects.filter(lookups)
+        lookups = Q(id__icontains=query) | Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query)
+        orders_all = orders_all.filter(lookups)
 
-    page = request.GET.get('page')
-    p = Paginator(orders_all, 20)
-    try:
-        orders_all = p.page(page)
-    except:
-        orders_all = p.page(1)
-
+    # กรองตามเดือนและปีที่ระบุ
+    else:
+        orders_all = orders_all.filter(
+            month=month,
+            year=year_ad
+        )
     context = {
         'title':'คำร้องเบิกวัสดุทั้งหมด', 
         'orders_all':orders_all,
@@ -2783,12 +2480,15 @@ def orders_all(request):
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')],
         'month_name': thai_month_name(month),
-        }
+    }
+
     previous_month = month - 1 if month > 1 else 12
     previous_year = year_ad if month > 1 else year_ad - 1
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
+
     return render(request, 'orders_all.html', context)
+
 
 
 @user_passes_test(is_authorized_manager)

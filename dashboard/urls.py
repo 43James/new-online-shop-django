@@ -10,6 +10,7 @@ urlpatterns = [
     # path('dashboard_home/', order_by_work_group_year_chart_json, name='order_by_work_group_year_chart_json'),
     path('dashboard_home/', views.dashboard_home, name='dashboard_home'),
     path('dashboard_report/', views.dashboard_report, name='dashboard_report'),
+    path('issuing_report/', views.issuing_report, name='issuing_report'),
 
     path('products/', views.products, name='products'),
     path('add-product/', views.add_product, name='add_product'),

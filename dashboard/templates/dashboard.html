@@ -417,6 +417,12 @@
                     Line Chart Report
                 </li>
             </a>
+            <a class="text-decoration-none " href="{% url 'dashboard:issuing_report' %}">
+                <li
+                    class="rounded list-group-item mt-2  text-primary {% if '/issuing_report/' in request.path %}active text-white{% endif %}">
+                    Issuing Report 
+                </li>
+            </a>
             <a class="text-decoration-none " href="{% url 'dashboard:monthly_report' %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/monthly_report/' in request.path %}active text-white{% endif %}" >รายงานประจำเดือน</li>
 
@@ -466,8 +472,8 @@
                 <li class="rounded list-group-item mt-2  text-primary {% if '/products/' in request.path %}active text-white{% endif %}">
                     รายการวัสดุและสต๊อก</li>
             </a>
-            <a class="text-decoration-none " href="{% url 'dashboard:monthly_stock_records' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %} text-danger">ข้อมูลวัสดุยกมา (กรุณาอัพทุกวันที่1) </li>
+            <a class="text-decoration-none " href="{% url 'dashboard:record_monthly_stock' %}">
+                <li class="rounded list-group-item mt-2  text-primary {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %} text-danger">นับสต๊อก (กรุณาอัพทุกวันที่1) </li>
             </a>
             <!-- <a class="text-decoration-none" href="{% url 'dashboard:total_quantity' %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/total_quantity/' in request.path %}active text-white{% endif %}">
@@ -479,6 +485,7 @@
                     อื่นๆ..
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุคงเหลือ (ยกมา)</a></li>
                     <li><a class="dropdown-item {% if '/suppliers/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:suppliers' %}">ซัพพลายเออร์</a></li>
                     <!-- <li><a class="dropdown-item {% if '/add-suppliers/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:add_suppliers' %}">เพิ่มซัพพลายเออร์ <b class="text-danger">ใหม่!</b></a></li> -->
                     <li><a class="dropdown-item {% if '/workgroup/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:workgroup' %}">เพิ่มกลุ่มงาน</a></li>

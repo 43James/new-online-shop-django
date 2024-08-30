@@ -14,8 +14,11 @@
             </i>วันที่ {{ order.date_receive|date:"d  M  Y เวลา H:i น." }}</h5>
         {% elif order.status == False %}
         <h3><b class="text-danger">ปฏิเสธคำร้อง <i class="bi bi-heartbreak-fill"></i></b></h3>
-        <h5><b style="font-weight: bold;" class="text-danger">หมายเหตุ : {{ order.other }}</i></b></h5>
-
+            {% if order.other == None %}
+                <h5><b style="font-weight: bold;" class="text-danger">หมายเหตุ : -</i></b></h5>
+            {% else%}
+                <h5><b style="font-weight: bold;" class="text-danger">หมายเหตุ : {{ order.other }}</i></b></h5>
+            {% endif %}
         {% else %}
         <h4><b class="text-warning">รอดำเนินการ..</b></h4>
         <h5><b style="font-weight: bold;">วันที่รับวัสดุ : <i class="bi bi-calendar-check-fill text-warning">
@@ -26,7 +29,6 @@
 <br>
 
 <div id="content">
-
     <div class="justify-content-center d-flex">
         <img src="{% static 'app_general/logo.png' %}" width="80">
     </div>
@@ -59,7 +61,12 @@
                 <td>{{item.quantity}}</td>
                 <td>{{item.price|intcomma}} </td>
                 <td>{{item.get_cost|intcomma }} </td>
-                <td>{{item.note}}</td>
+
+                {% if item.note %}
+                    <td>{{item.note}}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
             </tr>
             <!-- สามารถทำลูปเพื่อแสดงรายการออเดอร์ทั้งหมด -->
             {% endfor %}
@@ -69,38 +76,88 @@
     <h4 class="mt-2 pt-2 text-muted text-end border-bottom">รวมทั้งหมด : {{ order.get_total_price|intcomma }} บาท</h4>
 
     <br><br>
-    {% if order.status %}
+    {% if order.status == True %}
     <div class="row">
         <div class="col-6 " style="margin-top: 20px;">
             <!-- <p>วันที่รับพัสดุ _______ /_______ /________ </p><br> -->
-            {% if order.confirm == True %}
-            <p class="text-center">ลงชื่อ {{ order.name_sign }} ผู้เบิก</p>
+            {% if order.status == True %}
+                <p class="text-center">ลงชื่อ {{ order.user.first_name }} ผู้เบิก</p>
             {% else %}
-            <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
+                <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
             {% endif %}
-            <p class="text-center">( {{ order.user.get_full_name }} )</p>
-            <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p><br>
+                <p class="text-center">( {{ order.user.get_full_name }} )</p>
+                <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p>
+                {% if order.confirm == True %}
+                <p class="text-center text-success">ยืนยันรับวัสดุแล้ว</p><br>
+                {% else %}
+                <p class="text-center text-danger">ยังไม่ยืนยันรับวัสดุ</p><br>
+                {% endif %}
         </div>
         <div class="col-6" style="margin-top: 20px;">
-            {% if order.confirm == True %}
-            <p class="text-center">ลงชื่อ อารีรัตน์ ผู้อนุมัติ</p>
+            {% if order.status == True %}
+                <p class="text-center">ลงชื่อ อารีรัตน์ ผู้อนุมัติ</p>
             {% else %}
-            <p class="text-center">ลงชื่อ _____________________ ผู้อนุมัติ</p>
+                <p class="text-center">ลงชื่อ _____________________ ผู้อนุมัติ</p>
             {% endif %}
-            <p class="text-center">( ผู้ช่วยศาสตราจารย์อารีรัตน์ ลุนผา )</p>
-            <p class="text-center">ตำแหน่ง หัวหน้าเจ้าหน้าที่</p><br>
+                <p class="text-center">( ผู้ช่วยศาสตราจารย์อารีรัตน์ ลุนผา )</p>
+                <p class="text-center">ตำแหน่ง หัวหน้าเจ้าหน้าที่</p>
+            {% if order.status == True %}
+                <p class="text-center text-success">อนุมัติคำร้อง</p>
+                {% else %}
+                <p class="text-center text-danger"></p>
+            {% endif %}<br>
         </div>
     </div>
     <div class="text-center" style="margin-top: 20px;">
-        {% if order.confirm == True %}
+        {% if order.pay_item == True %}
             <p>ลงชื่อ {{ user.first_name }} ผู้จ่ายวัสดุ</p>
-            {% else %}
+        {% else %}
             <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p>
+        {% endif %}
+            <!-- <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p> -->
+            <p>( {{ user.get_full_name }} )</p>
+            <p>ตำแหน่ง เจ้าหน้าที่พัสดุ</p>
+            {% if order.pay_item == True %}
+                <p class="text-center text-success">จ่ายวัสดุแล้ว</p>
+                {% else %}
+                <p class="text-center text-danger">ยังไม่จ่ายพัสดุ</p>
+            {% endif %}<br>
+            <p>วันที่รับวัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_receive|date:"d / m / Y" }} </p><br>
+    </div>
+    {% endif %}
+
+    {% if order.status == None %}
+    <div class="row">
+        <div class="text-center" style="margin-top: 20px;">
+            {% if order.status == none %}
+                <p class="text-center">ลงชื่อ {{ order.user.first_name }} ผู้เบิก</p>
+            {% else %}
+                <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
             {% endif %}
-        <!-- <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p> -->
-        <p>( {{ user.get_full_name }} )</p>
-        <p>ตำแหน่ง เจ้าหน้าที่</p><br>
-        <p>วันที่รับวัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_receive|date:"d / m / Y" }} </p><br>
+                <p class="text-center">( {{ order.user.get_full_name }} )</p>
+                <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p><br>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if order.status == False %}
+    <div class="row">
+        <div class="text-center" style="margin-top: 20px;">
+            <h3 class="mb-4"><b class="text-danger">ปฏิเสธคำร้อง <i class="bi bi-heartbreak-fill"></i></b></h3>
+            {% if order.status == False %}
+                <p class="text-center">ลงชื่อ {{ order.user.first_name }} ผู้เบิก</p>
+            {% else %}
+
+                <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
+            {% endif %}
+                <p class="text-center">( {{ order.user.get_full_name }} )</p>
+                <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p><br>
+                {% if order.other == None %}
+                <p>หมายเหตุ : -</p><br>
+                {% else %}
+                <p>หมายเหตุ : {{ order.other }}</p><br>
+                {% endif %}
+        </div>
     </div>
     {% endif %}
 </div>
