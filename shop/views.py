@@ -68,8 +68,6 @@ def paginat(request, list_objects):
 
 
 
-
-
 # ในกรณีใช้กับตาราง Product
 @user_passes_test(is_general)
 @login_required

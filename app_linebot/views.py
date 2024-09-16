@@ -12,124 +12,7 @@ import json
 
 line_bot_api = LineBotApi('p/7wo/1oBrhYYteqvWuGQQJz5AADd3pnSiyTJByIju6L6rT5fWsifmzRiD8YOoPHYZkSQHNMIcnAyjMq9ad3zjL4LHn4+C5PubjxDeGXrcXO5XIYd65jHw2slPVxQ7akCkzj0ZC+8MRIJ3oIBRpHLAdB04t89/1O/w1cDnyilFU=')
 
-# @csrf_exempt
-# def linebot(request):
-#     print(request.method)
-#     body = request.body.decode('utf-8')
-#     body = json.loads(body)
-#     event = body['events'][0]
-#     text = event['message']['text']
-
-#     if text.startswith('ผูกบัญชี'):
-#         a = text.split()
-#         username = a[1]
-#         user = MyUser.objects.filter(username=username).first()
-
-#         if user:
-#             line = UserLine.objects.filter(user=user).first()
-#             userId = event['source']['userId']
-
-#             if not line:
-#                 line = UserLine(user=user, userId=userId)
-#                 line.save()
-#             else:
-#                 line.userId = userId
-#                 line.save()
-#     return render(request, "home_page.html")
-
-# @csrf_exempt
-# def linebot(request):
-#     print(request.method)
-
-#     if request.method == 'POST':
-#         try:
-#             body = request.body.decode('utf-8')
-#             body = json.loads(body)
-#             events = body.get('events', [])
-
-#             if events:
-#                 event = events[0]
-#                 text = event.get('message', {}).get('text', '')
-
-#                 if text.startswith('ผูกบัญชี'):
-#                     a = text.split()
-#                     username = a[1]
-#                     user = MyUser.objects.filter(username=username).first()
-
-#                     if user:
-#                         line = UserLine.objects.filter(user=user).first()
-#                         userId = event.get('source', {}).get('userId', '')
-
-#                         if not line:
-#                             line = UserLine(user=user, userId=userId)
-#                             line.save()
-#                         else:
-#                             line.userId = userId
-#                             line.save()
-#         except json.JSONDecodeError as e:
-#             print(f"JSON Decode Error: {e}")
-
-#     return render(request, "home_page.html")
-
-
 @csrf_exempt
-# def linebot(request):
-#     print(request.method)
-
-#     if request.method == 'POST':
-#         try:
-#             body = request.body.decode('utf-8')
-#             body = json.loads(body)
-#             events = body.get('events', [])
-
-#             if events:
-#                 event = events[0]
-#                 text = event.get('message', {}).get('text', '')
-
-#                 if text.startswith('ผูกบัญชี'):
-#                     a = text.split()
-#                     if len(a) == 2:
-#                         username = a[1]
-#                         user = MyUser.objects.filter(username=username).first()
-
-#                         if user:
-#                             line = UserLine.objects.filter(user=user).first()
-#                             userId = event.get('source', {}).get('userId', '')
-#                             print(user)
-#                             print(userId)
-
-#                             if not line:
-#                                 line = UserLine(user=user, userId=userId)
-#                                 line.save()
-
-#                                 # ส่งข้อความแจ้งเตือนผู้ใช้
-#                                 line_bot_api.push_message(userId, TextSendMessage(text='ผูกบัญชีสำเร็จ✅'))
-
-#                             else:
-#                                 line.userId = userId
-#                                 line.save()
-
-#                                 # ส่งข้อความแจ้งเตือนผู้ใช้ (กรณีอัพเดตการผูกบัญชี)
-#                                 line_bot_api.push_message(userId, TextSendMessage(text='อัพเดตการผูกบัญชีสำเร็จ✅'))
-#                         else:
-#                             # ส่งข้อความแจ้งเตือนถ้า username ไม่ถูกต้อง
-#                             userId = event.get('source', {}).get('userId', '')
-#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ Username ไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
-#                     else:
-#                         # ส่งข้อความแจ้งเตือนถ้ามีการป้อนข้อมูลไม่ครบ
-#                         userId = event.get('source', {}).get('userId', '')
-#                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
-#                 else:
-#                     # ส่งข้อความแจ้งเตือนว่าข้อความไม่ถูกต้อง
-#                     userId = event.get('source', {}).get('userId', '')
-#                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ ข้อความไม่ถูกต้อง❗\nกรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
-
-#         except json.JSONDecodeError as e:
-#             print(f"JSON Decode Error: {e}")
-
-#     return render(request, "home_page.html")
-
-
 def linebot(request):
     print(request.method)
 
@@ -142,7 +25,6 @@ def linebot(request):
             if events:
                 event = events[0]
                 text = event.get('message', {}).get('text', '')
-                userId = event.get('source', {}).get('userId', '')
 
                 if text.startswith('ผูกบัญชี'):
                     a = text.split()
@@ -171,50 +53,16 @@ def linebot(request):
                                 line_bot_api.push_message(userId, TextSendMessage(text='อัพเดตการผูกบัญชีสำเร็จ✅'))
                         else:
                             # ส่งข้อความแจ้งเตือนถ้า username ไม่ถูกต้อง
+                            userId = event.get('source', {}).get('userId', '')
                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ Username ไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
                     else:
                         # ส่งข้อความแจ้งเตือนถ้ามีการป้อนข้อมูลไม่ครบ
+                        userId = event.get('source', {}).get('userId', '')
                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
-
-                elif text == 'ยกเลิกคำร้อง':
-                    # ส่งข้อความเพื่อยืนยันการยกเลิก
-                    line_bot_api.push_message(userId, TextSendMessage(text='คุณต้องการยกเลิกคำร้องใช่หรือไม่ ถ้าใช่พิมพ์คำว่า ยกเลิกคำร้อง ID ...'))
-
-                elif text.startswith('ยกเลิกคำร้อง'):
-                    parts = text.split()
-                    if len(parts) == 3:
-                        order_id = parts[2]
-                        order = Order.objects.filter(id=order_id).first()
-                        if order:
-                            request.session['cancel_order_id'] = order_id
-                            line_bot_api.push_message(userId, TextSendMessage(text='กรุณาพิมพ์เหตุผล'))
-                        else:
-                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ หมายเลขคำร้องไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
-                    else:
-                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำสั่งให้ถูกต้อง'))
-
-                elif 'cancel_order_id' in request.session:
-                    # ตรวจสอบข้อความที่ผู้ใช้พิมพ์ว่ามีการพิมพ์เหตุผลหรือไม่
-                    if text:
-                        order_id = request.session.get('cancel_order_id')
-                        reason = text
-
-                        if order_id:
-                            # ส่งข้อความแจ้งเตือนผู้ใช้
-                            line_bot_api.push_message(userId, TextSendMessage(text=f'กรุณารออนุมัติยกเลิกคำร้อง ID {order_id} หากไม่มีการยกเลิกคำร้องกรุณาติดต่อเจ้าหน้าที่'))
-
-                            # แจ้งเตือนแอดมิน
-                            notify_admin_cancel(order_id, reason)
-
-                            # ลบ order_id จาก session หลังจากใช้แล้ว
-                            request.session.pop('cancel_order_id', None)
-                        else:
-                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ การยกเลิกคำร้องไม่สมบูรณ์❗\nกรุณาติดต่อเจ้าหน้าที่'))
-                    else:
-                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์เหตุผลการยกเลิกคำร้อง'))
-            else:
-                # ส่งข้อความแจ้งเตือนว่าข้อความไม่ถูกต้อง
-                line_bot_api.push_message(userId, TextSendMessage(text='⚠ ข้อความไม่ถูกต้อง❗\nกรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
+                else:
+                    # ส่งข้อความแจ้งเตือนว่าข้อความไม่ถูกต้อง
+                    userId = event.get('source', {}).get('userId', '')
+                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ ข้อความไม่ถูกต้อง❗\nกรุณาพิมพ์คำว่า "ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
 
         except json.JSONDecodeError as e:
             print(f"JSON Decode Error: {e}")

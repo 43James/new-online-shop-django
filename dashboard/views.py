@@ -9,7 +9,7 @@ from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.core.paginator import Paginator
 from app_linebot.views import notify_user_approved, notify_user_pay_confirmed
 from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
-from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, TotalQuantity, Receiving
+from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, Receiving
 from accounts.models import MyUser, Profile, WorkGroup
 from orders.models import Order, Issuing
 from .forms import AddProductForm, AddCategoryForm, AddSubcategoryForm, ApprovePayForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, EditWorkGroupForm, MonthYearForm, OrderFilterForm,  ReceivingForm, RecordMonthlyStockForm, WorkGroupForm
@@ -53,20 +53,6 @@ def count_pending_orders():
     pending_orders = Order.objects.filter(status=None)
     return pending_orders.count()
 
-
-# def notify_user_rejected(order_id):
-#     # ดึงข้อมูลของคำสั่งซื้อ
-#     order = Order.objects.get(id=order_id)
-    
-#     # สร้างเนื้อหาข้อความอีเมล
-#     subject = 'การสั่งซื้อของคุณถูกปฏิเสธ'
-#     html_message = render_to_string('email/order_rejected.html', {'order': order})
-#     plain_message = strip_tags(html_message)
-#     from_email = 'your@example.com'  # อีเมลผู้ส่ง
-#     to_email = order.user.email  # อีเมลผู้รับ
-    
-#     # ส่งอีเมล
-#     send_mail(subject, plain_message, from_email, [to_email], html_message=html_message)
 
     
 from django.core.exceptions import PermissionDenied
@@ -278,8 +264,6 @@ def export_to_excel(request, month=None, year=None):
     response['Content-Disposition'] = f'attachment; filename=monthly_report_{month}_{year}.xlsx'
     workbook.save(response)
     return response
-
-
 
 
 

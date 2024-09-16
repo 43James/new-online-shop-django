@@ -25,6 +25,7 @@
         {% if order.status == True %}
         <th scope="row" class="text-success">อนุมัติ</td>
         {% elif order.status == False %}
+
         <th scope="row" class="text-danger">ปฏิเสธ</td>
         {% else %}
         <th scope="row" class="text-warning">รอดำเนินการ..</td>
@@ -89,6 +90,10 @@
         <td><a href="{% url 'dashboard:order_detail' order.id %}" class="text-primary text-decoration-none"><i class="bi bi-search fs-5"></i></a>
         </td>
 
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="text-center">ไม่มีคำร้องใหม่</td>
       </tr>
     </tbody>
     {% endfor %}

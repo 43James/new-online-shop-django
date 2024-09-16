@@ -154,23 +154,23 @@ class Stock(models.Model):
         return str(self.product)
 
 
-class TotalQuantity(models.Model):
-    receiving = models.ForeignKey(Receiving, on_delete=models.CASCADE, related_name='receiving', verbose_name='IDสินค้า')
-    total_quantity = models.PositiveIntegerField(null=True , verbose_name='รวมจำนวนที่รับเข้าทั้งหมด')  # จำนวนสินค้าทั้งหมด
+# class TotalQuantity(models.Model):
+#     receiving = models.ForeignKey(Receiving, on_delete=models.CASCADE, related_name='receiving', verbose_name='IDสินค้า')
+#     total_quantity = models.PositiveIntegerField(null=True , verbose_name='รวมจำนวนที่รับเข้าทั้งหมด')  # จำนวนสินค้าทั้งหมด
 
-    class Meta:
-        ordering = ('-id',)
+#     class Meta:
+#         ordering = ('-id',)
     
-    def __str__(self):
-        return str(self.id)
+#     def __str__(self):
+#         return str(self.id)
     
-    def calculate_total_quantity(self):
-        total = 0
-        # คำนวณจำนวนสินค้าทั้งหมดจากการรับเข้าทั้งหมดในรายการ receiving นี้
-        receiving_items = Receiving.objects.filter(receiving=self.receiving)
-        for item in receiving_items:
-            total += item.quantityreceived
-        return total
+#     def calculate_total_quantity(self):
+#         total = 0
+#         # คำนวณจำนวนสินค้าทั้งหมดจากการรับเข้าทั้งหมดในรายการ receiving นี้
+#         receiving_items = Receiving.objects.filter(receiving=self.receiving)
+#         for item in receiving_items:
+#             total += item.quantityreceived
+#         return total
     
 
     

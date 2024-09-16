@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Stock, Subcategory,Suppliers,Receiving, Total_Quantity, TotalQuantity, MonthlyStockRecord
+from .models import Category, Product, Stock, Subcategory,Suppliers,Receiving, Total_Quantity, MonthlyStockRecord
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['product_id', 'product_name']
@@ -19,7 +19,7 @@ admin.site.register(Subcategory)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Stock)
 admin.site.register(Total_Quantity)
-admin.site.register(TotalQuantity)
+
 
 
 

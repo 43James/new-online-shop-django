@@ -166,7 +166,10 @@
 
         <td><a href="{% url 'dashboard:order_detail' order.id %}" class="text-primary text-decoration-none"><i class="bi bi-card-list" style="font-size: 1.5rem;"></i></i></a>
         </td>
-
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9" class="text-center">ไม่มีข้อมูลในเดือนนี้</td>
       </tr>
     </tbody>
     {% endfor %}
