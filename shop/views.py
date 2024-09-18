@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import user_passes_test
+from django.db.models import Q
 from dashboard.views import count_pending_orders
 from shop.models import MonthlyStockRecord, Product, Category, Receiving, Stock, Subcategory
 from cart.forms import QuantityForm
@@ -71,15 +72,62 @@ def paginat(request, list_objects):
 # ในกรณีใช้กับตาราง Product
 @user_passes_test(is_general)
 @login_required
-def home_page(request):
-    products = Product.objects.all()
+# def home_page(request):
+#     products = Product.objects.all()
     
+#     # คำนวณ total_quantity สำหรับแต่ละสินค้า
+#     for product in products:
+#         product.total_quantity = Receiving.total_quantity_by_product(product.id)
+    
+#     context = {'products': paginat(request, products),}
+#     return render(request, 'home_page.html', context)
+
+# @login_required
+# def home_page(request):
+#     # ดึงเฉพาะสินค้าที่มีในสต็อก (total_quantity > 0)
+#     products = Product.objects.all()
+
+#     # คำนวณ total_quantity สำหรับแต่ละสินค้า
+#     available_products = []
+#     for product in products:
+#         product.total_quantity = Receiving.total_quantity_by_product(product.id)
+#         if product.total_quantity > 0:
+#             available_products.append(product)
+
+#     context = {'products': paginat(request, available_products)}
+#     return render(request, 'home_page.html', context)
+
+@login_required
+def home_page(request):
+    # ดึงข้อมูลสินค้าทั้งหมด
+    products = Product.objects.all().order_by('product_name')
+
+    query = request.GET.get('q')
+    if query is not None:
+        lookups = Q(product_name__icontains=query) | Q(product_id__icontains=query)
+        products = Product.objects.filter(lookups).order_by('product_name')
+
+    # แยกวัสดุที่มีในสต็อกและวัสดุที่ไม่มีในสต็อก
+    in_stock_products = []
+    out_of_stock_products = []
+
     # คำนวณ total_quantity สำหรับแต่ละสินค้า
     for product in products:
         product.total_quantity = Receiving.total_quantity_by_product(product.id)
-    
-    context = {'products': paginat(request, products),}
+        if product.total_quantity > 0:
+            in_stock_products.append(product)  # วัสดุที่มีในสต็อก
+        else:
+            out_of_stock_products.append(product)  # วัสดุที่ไม่มีในสต็อก
+
+    # รวมวัสดุที่มีในสต็อกไว้ข้างบนและที่ไม่มีในสต็อกไว้ท้าย ๆ
+    sorted_products = in_stock_products + out_of_stock_products
+
+    # ส่งผลลัพธ์ไปยัง template
+    context = {'products': paginat(request, sorted_products)}
     return render(request, 'home_page.html', context)
+
+
+
 
 
 @user_passes_test(is_general)

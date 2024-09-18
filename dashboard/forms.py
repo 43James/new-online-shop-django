@@ -58,7 +58,7 @@ class AddReceivingForm(ModelForm):
 
     class Meta:
         model = Receiving
-        fields = ['product', 'suppliers', 'file', 'date_received', 'quantityreceived', 'quantity', 'unitprice']
+        fields = ['product', 'suppliers', 'file', 'date_received', 'quantityreceived', 'quantity', 'unitprice', 'note']
 
     def __init__(self, *args, **kwargs):
         super(AddReceivingForm, self).__init__(*args, **kwargs)
@@ -136,6 +136,7 @@ class EditProductForm(ModelForm):
         super(EditProductForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.widget.attrs['style'] = 'color: rgb(8, 0, 255);'
             
 
 class EditSuppliersForm(ModelForm):

@@ -88,23 +88,28 @@
     <div class="text-muted border-top pt-2"></div>
     {% for item in order.items.all %}
     <div class="border-bottom row mb-2">
-        <div class="col-md-6 ">
-            <p>รายการ : <a class="text-decoration-none"
-                    href="{{ item.product.get_absolute_url }}">{{item.product.product_name}}</a></p>
-        </div>
         <div class="col-md-3 ">
-            <p>ราคา  {{item.price}} บาท</p>
+            <p>รหัสพัสดุ : <a class="text-decoration-none"
+                    href="{{ item.product.get_absolute_url }}">{{item.product.product_id}}</a></p>
         </div>
+        <div class="col-md-6 ">
+            <p>รายการ : {{item.product.product_name}}</p>
+        </div>
+        <!-- <div class="col-md-3 ">
+            <p>ราคา  {{item.price}} บาท</p>
+        </div> -->
         <div class="col-md-3  text-end">
             <p>จำนวน  {{ item.quantity|intcomma }} {{ item.product.unit }}</p>
         </div>
     </div>
     {% endfor %}
     
-    <div class="row">
+    <p class="text-end"><strong  >รวมจำนวน  {{ order.get_total_sum }} ชิ้น</strong></p>
+
+    <!-- <div class="row">
         <b class="col-md-8 text-end" >ราคารวม  {{ order.get_total_price|intcomma }} บาท</b>
         <b class="col-md-4 text-end" >รวมจำนวน  {{ order.get_total_sum }} ชิ้น</b>
-    </div>
+    </div> -->
 
     {% if order.status and order.confirm == True %}
     {% elif order.status == False %}

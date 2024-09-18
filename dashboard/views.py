@@ -154,6 +154,7 @@ def export_to_excel(request, month=None, year=None):
             total_issued_value_by_user[user_full_name] += issuing.price * issuing.quantity
 
         report_data.append({
+            'product_id': product.product_id,
             'product': product.product_name,
             'unit': product.unit,
             'previous_balance': previous_balance,
@@ -198,7 +199,7 @@ def export_to_excel(request, month=None, year=None):
         cell.alignment = align_center
 
     # สร้าง headers ใน worksheet
-    headers = ['ลำดับ', 'รายการสินค้า', 'หน่วยนับ', 'จำนวนคงเหลือ (ยกมา)', 'จำนวนรับเข้า (ปัจจุบัน)', 'รวมจำนวนคงเหลือบวกรับเข้า'] + list(all_users) + ['รวมจำนวนที่เบิก', 'จำนวนคงเหลือทั้งหมด (หักจากที่เบิก)', 'มูลค่าสินค้าเบิกทั้งสิ้น (บาท)', 'หมายเหตุ']
+    headers = ['รหัสวัสดุ', 'รายการสินค้า', 'หน่วยนับ', 'จำนวนคงเหลือ (ยกมา)', 'จำนวนรับเข้า (ปัจจุบัน)', 'รวมจำนวนคงเหลือบวกรับเข้า'] + list(all_users) + ['รวมจำนวนที่เบิก', 'จำนวนคงเหลือทั้งหมด (หักจากที่เบิก)', 'มูลค่าสินค้าเบิกทั้งสิ้น (บาท)', 'หมายเหตุ']
     worksheet.append(headers)
     
     # ตั้งค่ารูปแบบให้กับเซลล์ในหัวข้อ
@@ -210,7 +211,7 @@ def export_to_excel(request, month=None, year=None):
     # ลูปเพื่อเพิ่มข้อมูลลงใน worksheet
     for index, item in enumerate(report_data, start=1):
         row = [
-            index,
+            item['product_id'],  # ใช้ product_id แทนลำดับ
             item['product'],
             item['unit'],
             f"{item['previous_balance']:,}",  # ใส่คอมมาในจำนวนเงิน
@@ -348,6 +349,7 @@ def monthly_report(request, month=None, year=None):
             total_issued_value += total_cost
 
         report_data.append({
+            'product_id': product.product_id,
             'product': product.product_name,
             'unit': product.unit,
             'previous_balance': previous_balance,
@@ -871,6 +873,7 @@ def monthly_report_receive(request):
         year=year_ad
     ).select_related('product__category__category').values(
         'product__product_name',
+        'product__product_id',
         'product__unit',
         'product__category__name_sub',  # หมวดหมู่ย่อย
         'product__category__category__name_cate',  # หมวดหมู่หลัก
@@ -893,6 +896,9 @@ def monthly_report_receive(request):
     # ดึงหมวดหมู่หลักทั้งหมดสำหรับการแสดงใน dropdown
     categories = Category.objects.all()
 
+    # คำนวณรวมจำนวนเงินทั้งหมด
+    total_price_sum = receiving_data.aggregate(total_sum=Sum('total_price'))['total_sum'] or 0
+
     # กำหนดค่าให้กับตัวแปร context
     context = {
         'title': 'รายการรับเข้าวัสดุ',
@@ -909,6 +915,7 @@ def monthly_report_receive(request):
             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
         ],
         'month_name': thai_month_name(month),
+        'total_price_sum': total_price_sum,  # เพิ่มผลรวมจำนวนเงินทั้งหมด
         'pending_orders_count': count_pending_orders(),
     }
 
@@ -1809,7 +1816,7 @@ def products(request):
         total_quantity_received=Sum('Receiving__quantity'),
         latest_receiving_date=Max('Receiving__id'),
         total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField())
-    ).order_by('-id')
+    ).order_by('-product_id')
 
     page = request.GET.get('page')
 
@@ -2016,7 +2023,10 @@ def receive_list(request):
     year_ad = year_buddhist - 543
 
     # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
-    receive = Receiving.objects.all()
+    # receive = Receiving.objects.all()
+    
+    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน และเรียงจากวันที่รับเข้าใหม่สุดไปเก่าสุด
+    receive = Receiving.objects.all().order_by('-date_received')
 
     # การค้นหา
     query = request.GET.get('q')

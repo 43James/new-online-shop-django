@@ -135,10 +135,21 @@ WSGI_APPLICATION = 'online_shop.wsgi.application'
 #     }
 # }
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": "shop_test4",
+#         "HOST" : "127.0.0.1",
+#         "USER" : "root",
+#         "PASSWORD" : "root",
+#         "PORT" : "3306",
+#     }
+# }
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "shop_test4",
+        "NAME": "database_patsadu",
         "HOST" : "127.0.0.1",
         "USER" : "root",
         "PASSWORD" : "root",

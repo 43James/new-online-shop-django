@@ -105,18 +105,19 @@
     </div>
 
 
-    <div>
-        <table class="col-auto justify-content-center container mt-4">
+    <div class="table-responsive col-12">
+        <table class="col-auto justify-content-center container mt-4 mb-4">
             <thead>
                 <tr>
                     <th class="text-center user-column1" style="width: 5%;">ลำดับ</th>
-                    <th class="text-center user-column1" style="width: 15%;">รายการวัสดุ</th>
-                    <th class="text-center user-column1" style="width: 15%;">หมวดหมู่</th>
+                    <th class="text-center user-column1" style="width: 5%;">รหัสวัสดุ</th>
+                    <th class="text-center user-column1" style="width: 20%;">รายการวัสดุ</th>
+                    <th class="text-center user-column1" style="width: 8%;">หมวดหมู่</th>
                     <th class="text-center user-column1" style="width: 15%;">ซัพพลายเออร์</th>
-                    <th class="text-center user-column1" style="width: 5%;">จำนวนที่รับเข้า</th>
+                    <th class="text-center user-column1" style="width: 8%;">จำนวนที่รับเข้า</th>
                     <th class="text-center user-column1" style="width: 2%;">หน่วย</th>
                     <th class="text-center user-column1" style="width: 8%;">ราคา/หน่วย</th>
-                    <th class="text-center user-column1" style="width: 8%;">รวมจำนวนเงิน</th>
+                    <th class="text-center user-column1" style="width: 10%;">รวมจำนวนเงิน</th>
                     <th class="text-center user-column1" style="width: 15%;">วันที่รับเข้า</th>
                 </tr>
             </thead>
@@ -124,6 +125,7 @@
                 {% for data in receiving_data %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
+                    <td>{{ data.product__product_id }}</td>
                     <td>{{ data.product__product_name }}</td>
                     <td>{{ data.product__category__category__name_cate }}</td>
                     <td>{{ data.suppliers__supname }}</td>
@@ -139,6 +141,12 @@
                     </tr>
                 {% endfor %}
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="8" class="text-right"><strong>รวมจำนวนเงินทั้งหมด:</strong></td>
+                    <td colspan="1">{{ total_price_sum|floatformat:2|intcomma }} บาท</td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 

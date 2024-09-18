@@ -149,9 +149,14 @@
 
         <!-- search form -->
 
-        <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3">
+        <!-- <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3">
           <input id="searchInput" type="search" class="form-control form-control-dark" placeholder="Search..."
             aria-label="Search" onkeyup="searchProduct()">
+        </form> -->
+
+        <form method="GET" action="{% url 'shop:home_page' %}" class="d-flex">
+          <input class="form-control me-2" type="search" placeholder="ค้นหาวัสดุ" aria-label="Search" name="q" value="{{ query }}" onkeyup="searchProduct()">
+          <!-- <button class="btn btn-outline-primary" type="submit">ค้นหา</button> -->
         </form>
 
         <!-- user profile dropdown -->

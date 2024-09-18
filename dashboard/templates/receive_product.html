@@ -7,11 +7,10 @@
 
     <div>
       <label for="id_product" class="form-label required">เลือก รายการวัสดุ</label>
-      <select name="product" class="form-select col-12 mb-3 selectpicker" data-live-search="true" required
-        id="id_product">
+      <select name="product" class="form-select col-12 mb-3 selectpicker" data-live-search="true" required id="id_product">
         <option disabled selected hidden>เลือก..</option>
         {% for o in Product %}
-        <option value="{{ o.id }}">{{ o.product_name }}</option>
+        <option value="{{ o.id }}">{{ o.product_id }}&nbsp; {{ o.product_name }}</option>
         {% endfor %}
       </select>
     </div>
@@ -26,7 +25,7 @@
       </select>
     </div>
 
-    <div class="mt-3 mb-3">
+    <div class="mt-3 col-6 mb-3">
       <label for="exampleFormControlInput1" class="form-label">วันที่รับเข้า</label>
       <input type="datetime-local" name="date_received" class="form-control" required>
     </div>
@@ -35,19 +34,24 @@
       <div class="col-6">
         <label class="mb-2" for="quantity_received">จำนวนที่รับเข้า </label>
         <input class="form-control mb-3" type="number" id="quantity_received" name="quantityreceived"
-          placeholder="จำนวนที่รับเข้า" min="0" value="0" required>
+          placeholder="1 ขึ้นไป" min="1"  required>
       </div>
 
       <div class="col-6">
-        <label class="mb-2" for="unit_price">ราคา</label>
-        <input class="form-control mb-3" type="number" id="unit_price" name="unitprice" placeholder="ใส่ราคาต่อหน่วย"
-        min="0" step="0.01" value="0.00" required>
+        <label class="mb-2" for="unit_price">ราคาต่อหน่วย</label>
+        <input class="form-control mb-3" type="number" id="unit_price" name="unitprice" placeholder="0.00"
+        min="1" step="0.01" required>
     </div>    
     </div>
     
     <!-- <label class="mb-2" for="quantity">จำนวนคงเหลือ </label> -->
     <input class="form-control mb-3" type="number" id="id_quantity" name="quantity"
       placeholder="จำนวนคงเหลือ (ช่องนี้จะกรอกอัตโนมัติ)" readonly>
+
+    <div class="mb-3 mt-3">
+       <label class="form-label">หมายเหตุ*</label>
+       <input type="text" name="note" class="form-control" placeholder="ถ้ามี">
+    </div>
 
     <div class="mb-3">
       <label for="formFile" class="form-label">ไฟล์เอกสารแนบ (ถ้ามี)</label>

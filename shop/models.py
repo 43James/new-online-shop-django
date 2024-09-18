@@ -44,7 +44,7 @@ class Product(models.Model):
 
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('product_id',)
 
     def __str__(self):
         return self.product_id
@@ -96,6 +96,7 @@ class Receiving(models.Model):
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
     date_received = models.DateTimeField(blank=True, null=True, verbose_name='วันที่รับเข้า')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
+    note = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='หมายเหตุ')
     month = models.PositiveIntegerField(verbose_name='เดือนที่รับเข้า', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปีที่รับเข้า', editable=False, default=timezone.now().year)
 

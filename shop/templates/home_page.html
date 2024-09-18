@@ -53,26 +53,9 @@
   </div>
   {% endfor %}
 
+
   <!-- pagination -->
-  <!-- <center class="mt-4 ">
-  <div class="col-md-2">
-    <ul class="pagination">
-      {% if products.has_previous %}
-      <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}">Previous</a></li>
-      <li class="page-item"><a class="page-link"
-          href="?page={{ products.previous_page_number }}">{{products.previous_page_number}}</a></li>
-      {% endif %}
-      <li class="page-item"><a class="page-link" href="?page={{ products.number }}">{{products.number}}</a></li>
-      {% if products.has_next %}
-      <li class="page-item"><a class="page-link"
-          href="?page={{ products.next_page_number }}">{{products.next_page_number}}</a></li>
-      <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}">Next</a></li>
-      {% endif %}
-    </ul>
-  </div>
-</center> -->
-  <!-- pagination -->
-  <center class="mt-4">
+  <!-- <center class="mt-4">
     <div class="col-md-2">
       <ul class="pagination">
         {% if products.has_previous %}
@@ -89,7 +72,49 @@
         {% endif %}
       </ul>
     </div>
-  </center>
+  </center> -->
+
+  <nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center mt-4 mb-2">
+        {% if products.has_previous %}
+        <a href="?page=1" class="page-link bg-primary text-white"
+            style="border-top-left-radius: 30px; border-bottom-left-radius: 30px;">หน้าแรก</a>
+        <!-- <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}"><span
+            aria-hidden="true">&laquo;</span></a></li> -->
+        {% else %}
+        <li class="page-item disabled"></li>
+        {% endif %}
+
+        {% if products.number|add:'-2' > 1 %}
+        <li><a class="page-link" href="?page={{ products.number|add:'-2' }}">&hellip;</a></li>
+        {% endif %}
+
+        {% for i in products.paginator.page_range %}
+        {% if products.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}<span class="sr-only"></span></span>
+        </li>
+        {% elif i > products.number|add:'-2' and i < products.number|add:'2' %} <li class="page-item"><a
+                class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if products.paginator.num_pages > products.number|add:'2' %}
+            <li><a class="page-link" href="?page={{ products.number|add:'-2' }}">&hellip;</a></li>
+            <li><a href="?page={{ i }}">{{ i }}</a></li>
+            <li><a class="page-link" href="?page={{ products.paginator.num_pages }}">{{ products.paginator.num_pages }}</a>
+            </li>
+            {% endif %}
+
+            {% if products.has_next %}
+            <!-- <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}"><span
+                aria-hidden="true">&raquo;</span></a></li> -->
+            <a href="?page={{ products.paginator.num_pages }}" class="page-link bg-primary text-white"
+                style="border-top-right-radius: 30px; border-bottom-right-radius: 30px;">หน้าสุดท้าย</a>
+            {% else %}
+            <li class="page-item disabled"></li>
+            {% endif %}
+    </ul>
+</nav>
 
   {% else %}
   <div class="row">
