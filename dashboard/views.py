@@ -2507,7 +2507,7 @@ def orders(request):
 
     # ส่งข้อมูล approval_count ไปยัง template
     context = {
-        'title':'คำร้องใหม่',
+        'title':'คำร้องใหม่ รออนุมัติ..',
         'orders':'orders',
         'orders':orders_waiting_status,
         'status_count': orders_waiting_status.count(),
@@ -2560,6 +2560,7 @@ def approve_orders(request, order_id):
         'title': 'แก้ไขข้อมูลสมาชิก',
         'pending_orders_count': count_pending_orders(),
     })
+
 
 @login_required
 def approve_pay(request, order_id):

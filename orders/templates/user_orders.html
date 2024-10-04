@@ -1,7 +1,37 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block content %}
+<script type="text/javascript">
+    setInterval(function(){
+      window.location.reload();
+    }, 30000);  // รีเฟรชทุก 30 วินาที
+  </script>
 
+<style>
+    .form-check-input {
+        display: none; /* ซ่อน radio button ดั้งเดิม */
+    }
+  
+    .custom-radio {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 2px solid #ccc; /* สีพื้นฐาน */
+        border-radius: 50%; /* ให้เป็นวงกลม */
+        background-color: white; /* สีพื้นหลังเป็นขาว */
+        cursor: pointer;
+        position: relative;
+    }
+  
+    .form-check-input:checked + .custom-radio {
+        background-color: green; /* สีพื้นหลังเมื่อเลือก */
+        border: 2px solid green; /* เปลี่ยนสีขอบเมื่อเลือก */
+    }
+
+     .form-check-label {
+        font-size: 24px; /* ขนาดตัวอักษร */
+    }
+</style>
 
 <!-- ฟอร์มสำหรับเลือกเดือนและปี -->
 <div class="col-10 container text-end justify-content-center mt-4">
@@ -88,18 +118,21 @@
     <div class="text-muted border-top pt-2"></div>
     {% for item in order.items.all %}
     <div class="border-bottom row mb-2">
-        <div class="col-md-3 ">
+        <div class="col-auto ">
             <p>รหัสพัสดุ : <a class="text-decoration-none"
                     href="{{ item.product.get_absolute_url }}">{{item.product.product_id}}</a></p>
         </div>
-        <div class="col-md-6 ">
+        <div class="col-3 ">
             <p>รายการ : {{item.product.product_name}}</p>
         </div>
         <!-- <div class="col-md-3 ">
             <p>ราคา  {{item.price}} บาท</p>
         </div> -->
-        <div class="col-md-3  text-end">
+        <div class="col-2">
             <p>จำนวน  {{ item.quantity|intcomma }} {{ item.product.unit }}</p>
+        </div>
+        <div class="col-5">
+            <p>หมายเหตุ : {{ item.note }}</p>
         </div>
     </div>
     {% endfor %}
@@ -138,11 +171,21 @@
           </div>
           
           <div class="modal-body">
-            <div class="form-check container justify-content-center d-flex">
+            <!-- <div class="form-check container justify-content-center d-flex">
                 <input class="form-check-input bg-success" type="radio" name="confirm" id="flexRadioDefault1" 
-                       value="True" required>&nbsp;&nbsp;
-                <label class="form-check-label text-success" for="flexRadioDefault1">
+                       value="True" required
+                       style="transform: scale(1.5); width: 25px; height: 25px;">&nbsp;&nbsp;&nbsp;&nbsp;
+                <label class="form-check-label text-success" for="flexRadioDefault1" style="font-size: 20px;">
                     ได้รับวัสดุแล้ว
+                </label>
+            </div> -->
+
+            <div class="form-check container justify-content-center d-flex">
+                <input class="form-check-input" type="radio" name="confirm" id="flexRadioDefault1" 
+                       value="True"required>
+                <label class="custom-radio" for="flexRadioDefault1"></label>
+                <label class="form-check-label text-success" for="flexRadioDefault1">
+                    &nbsp;&nbsp;ได้รับวัสดุแล้ว
                 </label>
             </div>
 

@@ -1,6 +1,44 @@
 {% extends "dashboard.html" %}
 {% load humanize %}
 {% block content %}
+
+<script type="text/javascript">
+  setInterval(function(){
+    window.location.reload();
+  }, 60000);  //3000มิลลิวินาที=30วินาที รีเฟรชทุก 30 วินาที
+</script>   
+<style>
+  .form-check-input {
+      display: none; /* ซ่อน radio button ดั้งเดิม */
+  }
+
+  .custom-radio {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 2px solid #ccc; /* สีพื้นฐาน */
+      border-radius: 50%; /* ให้เป็นวงกลม */
+      background-color: white; /* สีพื้นหลังเป็นขาว */
+      cursor: pointer;
+      position: relative;
+  }
+
+  .form-check-input:checked + .custom-radio {
+      background-color: green; /* สีพื้นหลังเมื่อเลือก */
+      border: 2px solid green; /* เปลี่ยนสีขอบเมื่อเลือก */
+  }
+
+  /* สำหรับ radio button ปฏิเสธ */
+  .form-check-input:checked + .custom-radio.reject {
+      background-color: red; /* สีพื้นหลังเมื่อเลือก */
+      border: 2px solid red; /* เปลี่ยนสีขอบเมื่อเลือก */
+  }
+
+  .form-check-label {
+          font-size: 24px; /* ขนาดตัวอักษร */
+      }
+</style>
+
 <div class="table-responsive">
   <table class="table table-hover">
     <thead class="table table-secondary">
@@ -45,17 +83,17 @@
         {% elif order.status == False and order.pay_item == False %}
         <th><i class="bi bi-x-circle-fill text-danger"></i></th>
         {% else %}
-          <th class="text-success">จ่ายพัสดุแล้ว</th>
+          <th class="text-success">จ่ายวัสดุแล้ว</th>
         {% endif %}
         
         {% if order.status == None %}
         <th scope="row" class="text-warning">รออนุมัติ..</td>
         {% elif order.confirm == True %}
-        <th scope="row" class="text-success">รับพัสดุแล้ว</th>
+        <th scope="row" class="text-success">รับวัสดุแล้ว</th>
         {% elif order.status == False and order.pay_item == False %}
         <th><i class="bi bi-x-circle-fill text-danger"></i></th>
         {% else %}
-        <th scope="row" class="text-danger">ยังไม่ตอบรับพัสดุ</th>
+        <th scope="row" class="text-danger">ยังไม่ตอบรับวัสดุ</th>
         {% endif %}
 
         <td scope="col"><!-- Button trigger modal -->
@@ -93,27 +131,30 @@
                 </div>
                 
                 <div class="modal-body">
-                  <div class="form-check container justify-content-center d-flex">
-                    <input class="form-check-input bg-success" type="radio" name="status" id="flexRadioDefault1" 
+                  <div class="form-check container justify-content-center d-flex mb-3">
+                    <input class="form-check-input" type="radio" name="status" id="flexRadioDefault1" 
                            value="True" {% if order.status == True %} checked {% endif %}>
-                    <label class="form-check-label text-success" for="flexRadioDefault1">&nbsp;&nbsp;
-                        อนุมัติ
+                    <label class="custom-radio" for="flexRadioDefault1"></label>
+                    <label class="form-check-label text-success" for="flexRadioDefault1" style="font-size: 20px;">
+                        &nbsp;&nbsp;อนุมัติ
                     </label>
                 </div>
-
+                
                 <div class="form-check container justify-content-center d-flex">
-                    <input class="form-check-input bg-danger" type="radio" name="status" id="flexRadioDefault2" 
+                    <input class="form-check-input" type="radio" name="status" id="flexRadioDefault2" 
                            value="False" {% if order.status == False %} checked {% endif %}>
-                    <label class="form-check-label text-danger" for="flexRadioDefault2">&nbsp;&nbsp;
-                        ปฏิเสธ
+                    <label class="custom-radio reject" for="flexRadioDefault2"></label>
+                    <label class="form-check-label text-danger" for="flexRadioDefault2" style="font-size: 20px;">
+                        &nbsp;&nbsp;ปฏิเสธ
                     </label>
                 </div>
 
-                <div class="col mt-3">
+                <div class="col-8 mt-3">
                   <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
                   <input type="datetime-local" value='{{ order.date_receive|date:"Y-m-d\TH:i" }}' name="date_receive" class="form-control"
                     id="exampleFormControlInput1">
                 </div>
+                <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น. <br> กรณีปฏิเสธคำร้องไม่ต้องระบุวันที่</p>
 
                   <div class="col mb-3 mt-3">
                     <label class="form-label">หมายเหตุ</label>
@@ -147,13 +188,14 @@
                 </div>
                 
                 <div class="modal-body">
-                  <div class="form-check container justify-content-center d-flex">
-                      <input class="form-check-input bg-success" type="radio" name="pay_item" id="flexRadioDefault5" 
-                            value="True" required>&nbsp;&nbsp;
-                      <label class="form-check-label text-success" for="flexRadioDefault5">
-                          จ่ายวัสดุแล้ว
-                      </label>
-                  </div>
+                  <div class="form-check container justify-content-center d-flex mb-3">
+                    <input class="form-check-input" type="radio" name="pay_item" id="flexRadioDefault5" 
+                           value="True" required>
+                    <label class="custom-radio" for="flexRadioDefault5"></label>
+                    <label class="form-check-label text-success" for="flexRadioDefault5" style="font-size: 20px;">
+                        &nbsp;&nbsp;จ่ายวัสดุแล้ว
+                    </label>
+                </div>
                 </div>
                 <div class="modal-footer justify-content-between">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>

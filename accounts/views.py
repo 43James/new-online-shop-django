@@ -57,6 +57,10 @@ def change_password(request):
             user = form.save()
             update_session_auth_hash(request, user)  # สำคัญต่อการอัปเดตเซสชันเพื่อป้องกันไม่ให้ผู้ใช้ถูกล็อกเอาท์
             messages.success(request, 'รหัสผ่านของคุณได้รับการอัปเดตเรียบร้อยแล้ว!')
+
+            # ปริ้นข้อมูลของผู้ใช้เมื่อเปลี่ยนรหัสผ่าน
+            print(f"ผู้ใช้ {request.user.first_name} ได้เปลี่ยนรหัสผ่านเรียบร้อยแล้ว")
+
             return redirect('shop:home_page')
         else:
             messages.error(request, 'กรุณาแก้ไขข้อผิดพลาดด้านล่าง.')

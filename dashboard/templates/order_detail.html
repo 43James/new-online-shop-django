@@ -2,6 +2,14 @@
 {% load static %}
 {% load humanize %}
 {% block content %}
+<style>
+    th,
+        td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+</style>
 
 <!-- order payment status -->
 <div class="row">
@@ -88,7 +96,7 @@
                 <p class="text-center">( {{ order.user.get_full_name }} )</p>
                 <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p>
                 {% if order.confirm == True %}
-                <p class="text-center text-success">ยืนยันรับวัสดุแล้ว</p><br>
+                <p class="text-center text-success">{{ order.name_sign }} ยืนยันรับวัสดุแล้ว</p><br>
                 {% else %}
                 <p class="text-center text-danger">ยังไม่ยืนยันรับวัสดุ</p><br>
                 {% endif %}

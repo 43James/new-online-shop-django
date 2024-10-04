@@ -42,8 +42,8 @@
             {% else %}
             <!-- {{ form }} -->
             <input class="form-control mt-4" style="width: 100px;" type="number" name="quantity" min="1" max="10" placeholder="ใส่จำนวน">
-            <input class="form-control mt-4" type="text" name="note" placeholder="หมายเหตุ" required>
-            <h6 class="text-danger">**กรุณาระบุ หมายเหตุ ถ้ามีการเบิกในจำนวนมาก ไม่เช่นนั้นคำร้องจะถูกยกเลิก</h6>
+            <input class="form-control mt-4" type="text" name="note" placeholder="หมายเหตุ*" required>
+            <h6 class="text-danger">**กรุณาระบุ หมายเหตุ ถ้ามีการเบิกในจำนวนมาก ไม่เช่นนั้นคำร้องจะถูกยกเลิก หรือในกรณีใช้ร่วมกับสำนักงาน เช่นกระดาษ A4</h6>
             <h6 class="text-danger">**กรณีไม่มีหมายเหตุ ให้ใส่เครื่องหมาย -</h6>
             <input type="submit" class="btn btn-primary mt-4" value="เพิ่มไปยังรถเข็น">
             {% endif %}
