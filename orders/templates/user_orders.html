@@ -191,13 +191,14 @@
 
             <div class="col mt-3">
               <label for="exampleFormControlInput1" class="form-label">วันที่รับ</label>
-              <input type="datetime-local"  name="date_received" class="form-control"
-                id="exampleFormControlInput1" required>
+              <input type="datetime-local"  name="date_received" class="form-control text-primary"
+              value="{{ now|date:'Y-m-dH:i' }}" id="exampleFormControlInput1" required>
             </div>
 
             <div class="col mb-3 mt-3">
               <!-- <label class="form-label">ลงชื่อ</label> -->
-              <input type="text" name="name_sign" class="form-control text-center" placeholder="ลงชื่อ" required>
+              <input type="text" name="name_sign" class="form-control text-center text-primary" placeholder="ลงชื่อ" 
+                value="{{ user.get_first_name }}" required>  <!-- แสดงชื่อแรกของผู้ใช้ -->
             </div>
 
           </div>
@@ -222,5 +223,19 @@
     <div class="col-md-2"></div>
 </div>
 {% endif %}
+
+<script>
+    // ตั้งค่าวันที่ให้เป็นวันที่ปัจจุบันในฟิลด์วันที่รับ
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('exampleFormControlInput1');
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มต้นที่ 0
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
+    });
+</script>
 
 {% endblock %}

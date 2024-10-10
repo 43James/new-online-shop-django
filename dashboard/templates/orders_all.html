@@ -7,37 +7,7 @@
     window.location.reload();
   }, 60000);  //3000มิลลิวินาที=30วินาที รีเฟรชทุก 30 วินาที
 </script>   
-<style>
-  .form-check-input {
-      display: none; /* ซ่อน radio button ดั้งเดิม */
-  }
 
-  .custom-radio {
-      display: inline-block;
-      width: 40px;
-      height: 40px;
-      border: 2px solid #ccc; /* สีพื้นฐาน */
-      border-radius: 50%; /* ให้เป็นวงกลม */
-      background-color: white; /* สีพื้นหลังเป็นขาว */
-      cursor: pointer;
-      position: relative;
-  }
-
-  .form-check-input:checked + .custom-radio {
-      background-color: green; /* สีพื้นหลังเมื่อเลือก */
-      border: 2px solid green; /* เปลี่ยนสีขอบเมื่อเลือก */
-  }
-
-  /* สำหรับ radio button ปฏิเสธ */
-  .form-check-input:checked + .custom-radio.reject {
-      background-color: red; /* สีพื้นหลังเมื่อเลือก */
-      border: 2px solid red; /* เปลี่ยนสีขอบเมื่อเลือก */
-  }
-
-  .form-check-label {
-          font-size: 24px; /* ขนาดตัวอักษร */
-      }
-</style>
 
 <div class="table-responsive">
   <table class="table table-hover">
@@ -52,6 +22,7 @@
         <th scope="col">ผู้เบิกกดยันยัน</th>
         <th scope="col">ทำรายการ</th>
         <th scope="col">รายละเอียด</th>
+        <!-- <th scope="col">จดหมาย</th> -->
       </tr>
     </thead>
     {% for order in orders_all %}
@@ -116,7 +87,6 @@
           </button>
          {% endif %}
         </td>
-
         
         <!-- Modal -->
         <form action="{% url 'dashboard:approve_orders' order.id %}" method="POST">
@@ -134,7 +104,7 @@
                   <div class="form-check container justify-content-center d-flex mb-3">
                     <input class="form-check-input" type="radio" name="status" id="flexRadioDefault1" 
                            value="True" {% if order.status == True %} checked {% endif %}>
-                    <label class="custom-radio" for="flexRadioDefault1"></label>
+                    <!-- <label class="custom-radio" for="flexRadioDefault1"></label> -->
                     <label class="form-check-label text-success" for="flexRadioDefault1" style="font-size: 20px;">
                         &nbsp;&nbsp;อนุมัติ
                     </label>
@@ -143,7 +113,7 @@
                 <div class="form-check container justify-content-center d-flex">
                     <input class="form-check-input" type="radio" name="status" id="flexRadioDefault2" 
                            value="False" {% if order.status == False %} checked {% endif %}>
-                    <label class="custom-radio reject" for="flexRadioDefault2"></label>
+                    <!-- <label class="custom-radio reject" for="flexRadioDefault2"></label> -->
                     <label class="form-check-label text-danger" for="flexRadioDefault2" style="font-size: 20px;">
                         &nbsp;&nbsp;ปฏิเสธ
                     </label>
@@ -206,8 +176,25 @@
           </div>
         </form>
 
-        <td><a href="{% url 'dashboard:order_detail' order.id %}" class="text-primary text-decoration-none"><i class="bi bi-card-list" style="font-size: 1.5rem;"></i></i></a>
-        </td>
+        <td>
+          <!-- Link ไปยังรายละเอียดคำสั่งซื้อ -->
+          <a href="{% url 'dashboard:order_detail' order.id %}" class="text-primary text-decoration-none">
+              <i class="bi bi-card-list" style="font-size: 1.5rem;"></i>
+          </a>&nbsp;&nbsp;
+      
+          <!-- ปุ่มสำหรับแจ้งเตือนการยืนยันรับวัสดุ -->
+          {% if order.status == False %}
+
+          {% elif order.confirm == False %}
+          <form method="POST" action="{% url 'app_linebot:send_receive_confirmation' order.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-warning btn-sm">
+                  <i class="bi bi-envelope-fill"></i>
+              </button>
+          </form>
+         {% endif %}
+      </td>
+      
       </tr>
       {% empty %}
       <tr>

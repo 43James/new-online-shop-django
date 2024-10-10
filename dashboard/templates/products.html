@@ -61,7 +61,7 @@
                 <!-- <td>{{ product.unitprice }} ฿ / {{ product.unit}}</td> -->
                 <!-- <td>{{ product.total_quantity_received|default:0 }} &nbsp;{{ product.unit}}</td> -->
 
-                {% if product.total_quantity_received|default:0 == 0 %}
+        {% if product.total_quantity_received|default:0 == 0 %}
         <th class="bg-danger">หมด</td>
         {% elif product.total_quantity_received|default:0 <= 5 %}
         <th class="bg-warning">{{ product.total_quantity_received|default:0|intcomma }} &nbsp;{{ product.unit}} (เหลือน้อย)</td>

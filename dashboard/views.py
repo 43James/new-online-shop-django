@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.core.paginator import Paginator
-from app_linebot.views import notify_user_approved, notify_user_pay_confirmed
+from app_linebot.views import notify_admin_order_status, notify_user_approved, notify_user_pay_confirmed
 from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
 from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, Receiving
 from accounts.models import MyUser, Profile, WorkGroup
@@ -2529,7 +2529,7 @@ def approve_orders(request, order_id):
             old_status = ap.status  # เก็บสถานะเดิมก่อนการเปลี่ยนแปลง
             new_status = form.cleaned_data.get('status')
             if new_status == False:
-                print("Order is being rejected, restoring stock...")
+                print("คำสั่งซื้อถูกปฏิเสธ กำลังกู้คืนสต็อก......")
                 # คืนจำนวนสินค้ากลับไปยังสต๊อก
                 for item in ap.items.all():
                     product = item.product
@@ -2541,12 +2541,13 @@ def approve_orders(request, order_id):
                     receiving = item.receiving
                     receiving.quantity += item.quantity
                     receiving.save()
-                    print(f"Restored {item.quantity} to receiving ID {receiving.id}.")
+                    print(f"กู้คืน {item.quantity} to receiving ID {receiving.id}.")
             form.save()
             messages.success(request, 'ดำเนินการสำเร็จ')
 
             # Notify the user about the approval
             notify_user_approved(ap.id)
+            notify_admin_order_status(ap.id)
             
             return redirect(reverse('dashboard:order_detail', args=[order_id]))
         else:

@@ -27,6 +27,7 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'encoding': 'utf-8',  # เพิ่มบรรทัดนี้เพื่อรองรับการเข้ารหัส utf-8
         },
     },
     'loggers': {

@@ -11,7 +11,6 @@
   .form-check-input {
       display: none; /* ซ่อน radio button ดั้งเดิม */
   }
-
   .custom-radio {
       display: inline-block;
       width: 40px;
@@ -22,21 +21,18 @@
       cursor: pointer;
       position: relative;
   }
-
   .form-check-input:checked + .custom-radio {
       background-color: green; /* สีพื้นหลังเมื่อเลือก */
       border: 2px solid green; /* เปลี่ยนสีขอบเมื่อเลือก */
   }
-
   /* สำหรับ radio button ปฏิเสธ */
   .form-check-input:checked + .custom-radio.reject {
       background-color: red; /* สีพื้นหลังเมื่อเลือก */
       border: 2px solid red; /* เปลี่ยนสีขอบเมื่อเลือก */
   }
-  
   .form-check-label {
-        font-size: 24px; /* ขนาดตัวอักษร */
-    }
+          font-size: 24px; /* ขนาดตัวอักษร */
+      }
 </style>
 
   <div class="table-responsive">
@@ -92,7 +88,7 @@
                   <div class="modal-body">
                     <div class="form-check container justify-content-center d-flex mb-3">
                       <input class="form-check-input" type="radio" name="status" id="flexRadioDefault1" 
-                             value="True" {% if order.status == True %} checked {% endif %}>
+                             value="True">
                       <label class="custom-radio" for="flexRadioDefault1"></label>
                       <label class="form-check-label text-success" for="flexRadioDefault1" style="font-size: 20px;">
                           &nbsp;&nbsp;อนุมัติ
@@ -101,7 +97,7 @@
                   
                     <div class="form-check container justify-content-center d-flex">
                         <input class="form-check-input" type="radio" name="status" id="flexRadioDefault2" 
-                              value="False" {% if order.status == False %} checked {% endif %}>
+                              value="False">
                         <label class="custom-radio reject" for="flexRadioDefault2"></label>
                         <label class="form-check-label text-danger" for="flexRadioDefault2" style="font-size: 20px;">
                             &nbsp;&nbsp;ปฏิเสธ
