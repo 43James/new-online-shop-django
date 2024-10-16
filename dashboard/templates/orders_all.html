@@ -16,6 +16,7 @@
         <th scope="col">n</th>
         <th scope="col">ผู้ใช้งาน</th>
         <th scope="col">เลขที่เบิก</th>
+        <th scope="col">วันที่เบิก</th>
         <th scope="col">ยอดรวม</th>
         <th scope="col">สถานะ</th>
         <th scope="col">เจ้าหน้าที่</th>
@@ -31,6 +32,7 @@
         <th scope="row">{{ forloop.counter }}</th>
         <td scope="row">{{ order.user.get_full_name }}</td>
         <td scope="row">{{ order.id }}</td>
+        <td scope="row">{{ order.date_created| date:"d M Y, H:i" }} น.</td>
         <td scope="row">{{ order.get_total_price|intcomma }} ฿</td>
 
 
@@ -71,7 +73,7 @@
           {% if order.status == None %}
           <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
             data-bs-target="#exampleModal{{ order.id }}">
-            ดำเนินการ
+            อนุมัติ/ปฏิเสธ
           </button>
           
           {% elif order.status == False %}

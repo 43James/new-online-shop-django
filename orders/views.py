@@ -10,6 +10,7 @@ from app_linebot.views import notify_admin, notify_admin_receive_confirmation, n
 from dashboard.views import convert_to_buddhist_era, thai_month_name
 from orders.forms import UserApproveForm
 from shop.models import Receiving
+from shop.views import count_unconfirmed_orders
 from .models import Order, Issuing
 from cart.utils.cart import Cart
 from django.http import Http404, HttpResponse
@@ -115,10 +116,10 @@ def create_order(request):
             note=item['note']  # เพิ่มหมายเหตุในรายการ Issuing
         )
     # Notify admin about the new order
-    notify_admin(order.id)
+    # notify_admin(request, order.id)
 
     # Notify user about the new order
-    notify_user(order.id)  # You can also use notify_user_approved if needed
+    # notify_user(order.id)  # You can also use notify_user_approved if needed
     
     return redirect('orders:pay_order', order_id=order.id)
 
@@ -165,6 +166,8 @@ def user_orders(request):
         year=year_ad
      ).select_related('user')
     
+    unconfirmed_count = count_unconfirmed_orders(request.user)
+    
     context = { 'title':'Orders', 
                 'orders': orders,
                 'selected_month': month,
@@ -175,6 +178,7 @@ def user_orders(request):
                 (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
                 (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')],
                 'month_name': thai_month_name(month),
+                'count_unconfirmed_orders': unconfirmed_count, 
                }
     
     previous_month = month - 1 if month > 1 else 12

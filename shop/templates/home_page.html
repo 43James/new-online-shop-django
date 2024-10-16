@@ -3,6 +3,37 @@
 {% block content %}
 
 <body class="home-page">
+
+   <!-- Modal -->
+   <div class="modal fade" id="orderConfirmationModal" tabindex="-1" aria-labelledby="orderConfirmationLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content text-center">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderConfirmationLabel">แจ้งเตือน</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="font-size: 50px; line-height: 1.5;">
+              คุณมีรายการเบิกที่ยังไม่ยืนยันรับวัสดุ <br>
+              กรุณา <strong class="text-danger" style="margin-top: 20px; display: inline-block;"> ยืนยันรับวัสดุ!</strong>
+          </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <a href="{% url 'orders:user_orders' %}" class="btn btn-outline-warning">ยืนยันรับวัสดุ</a>
+                <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button> -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var orderModal = new bootstrap.Modal(document.getElementById('orderConfirmationModal'));
+            orderModal.show();
+        });
+    </script>
+{% endif %}
+
+
   <div class="text-white mb-3">
     {% if selected_category %}
     <div>
@@ -53,26 +84,6 @@
   </div>
   {% endfor %}
 
-
-  <!-- pagination -->
-  <!-- <center class="mt-4">
-    <div class="col-md-2">
-      <ul class="pagination">
-        {% if products.has_previous %}
-        <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}">Previous</a></li>
-        <li class="page-item"><a class="page-link"
-            href="?page={{ products.previous_page_number }}">{{products.previous_page_number}}</a></li>
-        {% endif %}
-        <li class="page-item"><a class="page-link current-page"
-            href="?page={{ products.number }}">{{products.number}}</a></li>
-        {% if products.has_next %}
-        <li class="page-item"><a class="page-link"
-            href="?page={{ products.next_page_number }}">{{products.next_page_number}}</a></li>
-        <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}">Next</a></li>
-        {% endif %}
-      </ul>
-    </div>
-  </center> -->
 
   <nav aria-label="Page navigation example">
     <ul class="pagination justify-content-center mt-4 mb-2">

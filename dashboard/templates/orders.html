@@ -42,6 +42,7 @@
           <th scope="col">n</th>
           <th scope="col">ผู้ใช้งาน</th>
           <th scope="col">เลขที่เบิก</th>
+          <th scope="col">วันที่เบิก</th>
           <th scope="col">ยอดรวม</th>
           <th scope="col">สถานะ</th>
           <th scope="col">ทำรายการ</th>
@@ -54,6 +55,7 @@
           <th scope="row">{{ forloop.counter }}</th>
           <td scope="row">{{ order.user.get_full_name }}</td>
           <td scope="row">{{ order.id }}</td>
+          <td scope="row">{{ order.date_created| date:"d M Y, H:i" }} น.</td>
           <td scope="row">{{ order.get_total_price|intcomma }} ฿</td>
 
           {% if order.status == True %}
@@ -68,7 +70,7 @@
           <td scope="col"><!-- Button trigger modal -->
             <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
               data-bs-target="#exampleModal{{ order.id }}">
-              ดำเนินการ
+              อนุมัติ/ปฏิเสธ
             </button>
           </td>
 
@@ -110,12 +112,12 @@
                         id="exampleFormControlInput1">
                       <!-- <p class="text-danger">กรณีปฏิเสธคำร้องไม่ต้องระบุวันที่</p> -->
                     </div>
-                    <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น. <br> กรณีปฏิเสธคำร้องไม่ต้องระบุวันที่</p>
+                    <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น. <br> กรณีปฏิเสธคำร้องไม่ต้องระบุวันที่รับของ</p>
 
 
                     <div class="col mb-3 mt-3">
                       <label class="form-label">หมายเหตุ</label>
-                      <input type="text" name="other" class="form-control">
+                      <input type="text" name="other" class="form-control" placeholder="กรณีปฏิเสธคำร้อง หรืออนุมัติถ้ามี">
                     </div>
 
                   </div>
@@ -128,8 +130,10 @@
             </div>
           </form>
 
-          <td><a href="{% url 'dashboard:order_detail' order.id %}" class="text-primary text-decoration-none"><i
-                class="bi bi-search fs-5"></i></a>
+          <td><a href="{% url 'dashboard:order_detail' order.id %}" class="text-decoration-none">
+            <button type="button" class="btn btn-sm btn-secondary">
+              ดูรายการเบิก
+            </button></a>
           </td>
 
         </tr>

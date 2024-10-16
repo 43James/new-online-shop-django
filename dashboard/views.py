@@ -2450,6 +2450,17 @@ def orders_all(request):
     # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
     orders_all = Order.objects.all().select_related('user')
 
+    # # ตัวกรองซ่อนออเดอร์ที่มีสถานะ False
+    # hide_unconfirmed = request.GET.get('hide_unconfirmed', 'off') == 'on'
+    # if hide_unconfirmed:
+    #     orders_all = orders_all.filter(status=True)  # แสดงเฉพาะออเดอร์ที่มีสถานะ True
+
+    # ตรวจสอบค่าจาก checkbox
+    show_rejected = request.GET.get('show_rejected', None) == 'on'
+    # หากไม่ต้องการแสดงรายการที่ถูกปฏิเสธให้กรองออก
+    if not show_rejected:
+        orders_all = orders_all.exclude(status=False)
+
     # การค้นหา
     query = request.GET.get('q')
     if query is not None:
@@ -2474,6 +2485,8 @@ def orders_all(request):
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')],
         'month_name': thai_month_name(month),
+        # 'hide_unconfirmed': hide_unconfirmed,  # ส่งสถานะซ่อนออเดอร์ไปยัง template
+        'show_rejected': show_rejected,  # เพิ่มค่า show_rejected ใน context
     }
 
     previous_month = month - 1 if month > 1 else 12

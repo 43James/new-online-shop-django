@@ -170,7 +170,7 @@
             <!-- <li><a href="{% url 'shop:favorites' %}" class="dropdown-item"><i class="bi bi-heart-fill"></i> รายการโปรด
                 <b class="text-primary">{{ request.user.get_likes_count }}</b></a></li> -->
             <li><a href="{% url 'orders:user_orders' %}" class="dropdown-item"><i class="bi bi-bag-fill"></i>
-                รายการเบิก</a></li>
+                รายการเบิก <b class="text-danger">{{ count_unconfirmed_orders }}</b></a></li>
             <li><a href="{% url 'orders:monthly_totals_view' %}" class="dropdown-item"><i class="bi bi-cash-coin"></i></i>
               ยอดที่เบิกวัสดุ</a></li>
             <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}"><i

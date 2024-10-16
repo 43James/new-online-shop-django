@@ -112,11 +112,11 @@ def manager_login(request):
             if user is not None:
                 if user.is_executive:
                     login(request, user)
-                    return redirect('dashboard:dashboard_home')
+                    return redirect('dashboard:orders')
                 
                 elif user.is_manager:
                     login(request, user)
-                    return redirect('dashboard:dashboard_home')
+                    return redirect('dashboard:orders')
                 
                 elif user.is_admin:
                     login(request, user)

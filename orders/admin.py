@@ -5,7 +5,7 @@ from .models import Order, Issuing
 # Register your models here.
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id','user','date_created','date_receive', 'other']
+    list_display = ['id','user','status','date_created','date_receive', 'other']
 
 class IssuingAdmin(admin.ModelAdmin):
     list_display = ('order', 'product', 'receiving', 'price', 'quantity', 'datecreated', 'month', 'year')

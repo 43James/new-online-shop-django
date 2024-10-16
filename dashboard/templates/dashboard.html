@@ -254,8 +254,28 @@
                             </form>
                         </div>
                     </div>
+                    
+                    
                     <div class="col-6">
                     <form method="get" action="{% url 'dashboard:orders_all' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+                        <!-- <div class="col-auto">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" id="hideUnconfirmed" name="hide_unconfirmed" {% if hide_unconfirmed %}checked{% endif %}>
+                                <label class="form-check-label" for="hideUnconfirmed">ซ่อนคำร้องที่ถูกปฏิเสธ</label>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary btn-sm">ปรับปรุง</button>
+                        </div>&nbsp;&nbsp;&nbsp;&nbsp; -->
+                        <div class="col-auto">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" id="showRejected" name="show_rejected" {% if show_rejected  %}checked{% endif %}>
+                                <label class="form-check-label" for="showRejected">แสดงรายการที่ถูกปฏิเสธ</label>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary btn-sm">ปรับปรุง</button>
+                        </div>&nbsp;&nbsp;&nbsp;&nbsp;
                         <div class="col-auto">
                             <select name="month" id="month" class="form-select">
                                 {% for m in months %}

@@ -14,10 +14,11 @@ from django.http import HttpResponse
 from django.utils.dateparse import parse_date
 from datetime import datetime
 from django.utils import timezone
+from linebot.exceptions import LineBotApiError
 
 
-# line_bot_api = LineBotApi('p/7wo/1oBrhYYteqvWuGQQJz5AADd3pnSiyTJByIju6L6rT5fWsifmzRiD8YOoPHYZkSQHNMIcnAyjMq9ad3zjL4LHn4+C5PubjxDeGXrcXO5XIYd65jHw2slPVxQ7akCkzj0ZC+8MRIJ3oIBRpHLAdB04t89/1O/w1cDnyilFU=')
-line_bot_api = LineBotApi('73ckpzhX0833x8i4m/jDhe2lYuGwaTijoooW7dEHndJbl7KUL/6fv4wfa+KXPf3IgSG+8gJ9t8yg2rrCgaAzlg8BtHAiUFVta5BlOGpUz3yuNhaab2KioEspYgX4j5UuapN7WFYGtRfcJqq5SeqzbAdB04t89/1O/w1cDnyilFU=')
+line_bot_api = LineBotApi('p/7wo/1oBrhYYteqvWuGQQJz5AADd3pnSiyTJByIju6L6rT5fWsifmzRiD8YOoPHYZkSQHNMIcnAyjMq9ad3zjL4LHn4+C5PubjxDeGXrcXO5XIYd65jHw2slPVxQ7akCkzj0ZC+8MRIJ3oIBRpHLAdB04t89/1O/w1cDnyilFU=')
+# line_bot_api = LineBotApi('73ckpzhX0833x8i4m/jDhe2lYuGwaTijoooW7dEHndJbl7KUL/6fv4wfa+KXPf3IgSG+8gJ9t8yg2rrCgaAzlg8BtHAiUFVta5BlOGpUz3yuNhaab2KioEspYgX4j5UuapN7WFYGtRfcJqq5SeqzbAdB04t89/1O/w1cDnyilFU=')
 
 # @csrf_exempt
 # def linebot(request):
@@ -667,10 +668,19 @@ def notify_user(order_id):
         print(f"ไม่มีคำร้อง ID {order_id}")
     except UserLine.DoesNotExist:
         print(f"ไม่มี UserLine สำหรับผู้ใช้งาน {order.user.first_name}")
+    except LineBotApiError as e:
+        print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
+        # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
+        if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
+            print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
+        else:
+            print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
 
 
 #ส่งการแจ้งเตือนไปยังแอดมินเมื่อเช็คเอ้าท์สินค้า
-def notify_admin(order_id):
+def notify_admin(request, order_id):
     try:
         order = Order.objects.get(id=order_id)
     except Order.DoesNotExist:
@@ -691,6 +701,7 @@ def notify_admin(order_id):
 
     if not admin_user_ids:
         print("ไม่พบ Line ID สำหรับผู้ใช้ผู้ดูแลระบบ")
+        messages.warning(request, "ไม่พบ Line ID สำหรับผู้ใช้ผู้ดูแลระบบ")
         return
 
     # ดึงรายการสินค้าที่ถูกเบิก
@@ -718,6 +729,8 @@ def notify_admin(order_id):
             line_bot_api.push_message(user_id, TextSendMessage(text=message))
         except Exception as e:
             print(f"เกิดข้อผิดพลาดในการส่งข้อความถึงผู้ใช้ {user_id}: {e}")
+            # เพิ่มการแจ้งเตือนธรรมดาแทนการให้แสดงเออเร่อ
+            messages.warning(request, "ไม่สามารถส่งข้อความแจ้งเตือนผ่าน Line ได้ เนื่องจากคุณถึงจำนวนจำกัดของเดือนแล้ว")
 
 
 
@@ -753,6 +766,15 @@ def notify_user_approved(order_id):
         print(f"ไม่มีคำร้อง ID {order_id}")
     except UserLine.DoesNotExist:
         print(f"ไม่มี UserLine สำหรับผู้ใช้งาน {order.user.username}")
+    except LineBotApiError as e:
+        print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
+        # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
+        if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
+            print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
+        else:
+            print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
 
 
 
@@ -784,6 +806,15 @@ def notify_user_pay_confirmed(order_id):
         print(f"ไม่มีคำร้อง ID {order_id}")
     except UserLine.DoesNotExist:
         print(f"ไม่มี UserLine สำหรับผู้ใช้งาน {order.user.username}")
+    except LineBotApiError as e:
+        print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
+        # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
+        if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
+            print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
+        else:
+            print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
     
 
 
@@ -814,6 +845,15 @@ def notify_admin_receive_confirmation(order_id):
     
     except Order.DoesNotExist:
         print(f"ไม่มีคำร้อง ID {order_id}")
+    except LineBotApiError as e:
+        print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
+        # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
+        if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
+            print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
+        else:
+            print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
 
 
 
@@ -864,6 +904,15 @@ def notify_admin_order_status(order_id):
     
     except Order.DoesNotExist:
         print(f"ไม่มีคำร้อง ID {order_id}")
+    except LineBotApiError as e:
+        print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
+        # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
+        if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
+            print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
+        else:
+            print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
 
 
 # from linebot.exceptions import LineBotApiError
@@ -911,9 +960,7 @@ def notify_admin_order_status(order_id):
 #     return redirect('dashboard:orders_all')  # แทนที่ด้วย view ที่คุณต้องการกลับไป
 
 
-from linebot.models import TextSendMessage
-from linebot.exceptions import LineBotApiError
-
+# ฟังก์ชันส่งการแจ้งเตือนจ่ายวัสดุแล้วไปยังผู้ใช้งาน
 def send_receive_confirmation(request, order_id):
     try:
         order = get_object_or_404(Order, id=order_id)
@@ -944,5 +991,14 @@ def send_receive_confirmation(request, order_id):
     except LineBotApiError as e:
         messages.error(request, f"เกิดข้อผิดพลาด: {str(e)}")
         print(f"เกิดข้อผิดพลาด: {str(e)}")
+    except LineBotApiError as e:
+        print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
+        # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
+        if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
+            print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
+        else:
+            print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
 
     return redirect('dashboard:orders_all')

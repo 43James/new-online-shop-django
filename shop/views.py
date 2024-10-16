@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Q
 from dashboard.views import count_pending_orders
+from orders.models import Order
 from shop.models import MonthlyStockRecord, Product, Category, Receiving, Stock, Subcategory
 from cart.forms import QuantityForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -68,6 +69,11 @@ def paginat(request, list_objects):
 	return page_obj
 
 
+def count_unconfirmed_orders(user):
+    # ดึงข้อมูลออเดอร์ทั้งหมดที่รอการยืนยัน
+    pending_orders = Order.objects.filter(user=user, status=True, pay_item=True, confirm=False)
+    return pending_orders.count()
+
 
 # ในกรณีใช้กับตาราง Product
 @user_passes_test(is_general)
@@ -122,8 +128,23 @@ def home_page(request):
     # รวมวัสดุที่มีในสต็อกไว้ข้างบนและที่ไม่มีในสต็อกไว้ท้าย ๆ
     sorted_products = in_stock_products + out_of_stock_products
 
+    # ตรวจสอบออเดอร์ที่ยังไม่ยืนยันรับวัสดุ
+    # unconfirmed_orders = Order.objects.filter(user=request.user, status=True, pay_item=True, confirm=False)
+    # if unconfirmed_orders.exists():
+    #     messages.info(request, "คุณมีออเดอร์ที่ยังไม่ยืนยันรับวัสดุ กรุณายืนยันรับวัสดุ")
+
+     # ตรวจสอบออเดอร์ที่ยังไม่ยืนยันรับวัสดุ
+    unconfirmed_orders = Order.objects.filter(user=request.user, status=True, pay_item=True, confirm=False)
+    
+    # นับจำนวนออเดอร์ที่รอการยืนยัน
+    count_unconfirmed = unconfirmed_orders.count()
+    
+    if count_unconfirmed > 0:
+        messages.info(request, f"คุณมีออเดอร์ที่ยังไม่ยืนยันรับวัสดุ: {count_unconfirmed} รายการ กรุณายืนยันรับวัสดุ")
+
     # ส่งผลลัพธ์ไปยัง template
-    context = {'products': paginat(request, sorted_products)}
+    context = {'products': paginat(request, sorted_products),
+               'count_unconfirmed_orders': count_unconfirmed,}
     return render(request, 'home_page.html', context)
 
 
@@ -152,22 +173,31 @@ def home_page(request):
 
 
 def product_detail(request, product_id):
-	form = QuantityForm()
-	product = get_object_or_404(Product, product_id=product_id)
-	related_products = Product.objects.filter(category=product.category).all()[:5]
-	total_quantity = Receiving.total_quantity_by_product(product.id)
-	context = {
-		'product_name':product.product_name,
-		'product':product,
-		'form':form,
-		'favorites':'favorites',
-		'related_products':related_products,
-		'stock': Stock.objects.all(),
-		'total_quantity':total_quantity
-	}
-	if request.user.likes.filter(id=product.id).first():
-		context['favorites'] = 'remove'
-	return render(request, 'product_detail.html', context)
+    form = QuantityForm()
+    product = get_object_or_404(Product, product_id=product_id)
+    related_products = Product.objects.filter(category=product.category).all()[:5]
+    total_quantity = Receiving.total_quantity_by_product(product.id)
+     
+    # เรียกใช้ฟังก์ชันนับจำนวนออเดอร์ที่รอการยืนยัน
+    unconfirmed_count = count_unconfirmed_orders(request.user)  # เปลี่ยนชื่อเพื่อหลีกเลี่ยงความสับสน
+
+    context = {
+        'product_name': product.product_name,
+        'product': product,
+        'form': form,
+        'related_products': related_products,
+        'stock': Stock.objects.all(),
+        'total_quantity': total_quantity,
+        'count_unconfirmed_orders': unconfirmed_count,  # ใช้ตัวแปรที่มีชื่อไม่ซ้ำ
+    }
+
+    # ตรวจสอบว่าผู้ใช้ได้เพิ่มสินค้านี้ลงในรายการโปรดหรือไม่
+    if request.user.likes.filter(id=product.id).exists():
+        context['favorites'] = 'remove'  # ถ้าสินค้าอยู่ในรายการโปรด
+    else:
+        context['favorites'] = 'favorites'  # ถ้าไม่อยู่ในรายการโปรด
+
+    return render(request, 'product_detail.html', context)
 
 
 
