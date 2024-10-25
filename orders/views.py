@@ -195,6 +195,7 @@ def monthly_totals_view(request):
     # กรองเฉพาะ order ของผู้ใช้งานปัจจุบันที่เข้าสู่ระบบ และมีสถานะออเดอร์เป็น True
     orders = request.user.orders.filter(status=True)
     monthly_totals = defaultdict(Decimal)
+    count_unconfirmed = count_unconfirmed_orders(request.user)
     
     for order in orders:
         for item in order.items.all():
@@ -207,6 +208,7 @@ def monthly_totals_view(request):
     context = {
         'title': 'Monthly Totals',
         'monthly_totals': monthly_totals_float,
+        'count_unconfirmed_orders': count_unconfirmed,
     }
     return render(request, 'monthly_totals.html', context)
 
@@ -222,8 +224,8 @@ def user_approve(request, order_id):
             print("ยืนยันการรับวัสดุสำเร็จ")
             form.save()
             notify_admin_receive_confirmation(order_id)  # เรียกฟังก์ชันการแจ้งเตือนแอดมิน
-            messages.success(request, 'ยืนยันการรับวัสดุสำเร็จ')
-            return redirect(reverse('orders:user_orders'))
+            # messages.success(request, 'ยืนยันการรับวัสดุสำเร็จ')
+            return redirect(reverse('orders:user_orders') + '?success=true')
         else:
             messages.error(request, 'ดำเนินการไม่สำเร็จ')
     else:

@@ -11,6 +11,8 @@ from dashboard.views import is_manager
 from django.db.models import Q
 from orders.models import Order
 from django.contrib.auth import logout as auth_logout
+
+from shop.views import count_unconfirmed_orders
 from .forms import EditProfileForm, ProfileImageForm, RegistrationForm, ProfileForm, UserLoginForm, ManagerLoginForm, UserProfileForm, UserEditForm, ExtendedProfileForm
 from accounts.models import MyUser, Profile, WorkGroup
 from django.contrib.auth.hashers import make_password
@@ -51,6 +53,7 @@ def is_authorized_admin(user):
 
 @login_required
 def change_password(request):
+    count_unconfirmed = count_unconfirmed_orders(request.user)
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
@@ -66,7 +69,9 @@ def change_password(request):
             messages.error(request, 'กรุณาแก้ไขข้อผิดพลาดด้านล่าง.')
     else:
         form = PasswordChangeForm(request.user)
-    return render(request, 'change_password.html', {'form': form})
+    return render(request, 'change_password.html', 
+                  {'form': form,
+                    'count_unconfirmed_orders': count_unconfirmed,})
 
 
 @user_passes_test(is_authorized_admin)
@@ -295,12 +300,14 @@ def edit_profile (request):
             extended_form = ExtendedProfileForm(instance=user.profile)
         except:
             extended_form = ExtendedProfileForm(request.POST, request.FILES)
+    count_unconfirmed = count_unconfirmed_orders(request.user)
 
     context = {
         'title':'แก้ไขโปรไฟล์',
         "form": form,
         "extended_form": extended_form,
         'pending_orders_count': count_pending_orders(),
+        'count_unconfirmed_orders': count_unconfirmed,
     }
     return render(request, 'edit_profile.html', context)
 
@@ -356,6 +363,7 @@ def edit_profile_manager (request):
 
 @login_required
 def user_profile_detail(request, username):
+    count_unconfirmed = count_unconfirmed_orders(request.user)
     try:
         obj = 1
         user = MyUser.objects.get(username = username)
@@ -371,6 +379,7 @@ def user_profile_detail(request, username):
         'profile': profile,
         'obj': obj,
         'pending_orders_count': count_pending_orders(),
+        'count_unconfirmed_orders': count_unconfirmed,
     }
     return render(request, 'user_profile.html', context)
 
@@ -410,10 +419,13 @@ def upload_profile_picture(request):
             return redirect('accounts:user_profile_detail', username=request.user.username)
     else:
         form = ProfileImageForm()
+    count_unconfirmed = count_unconfirmed_orders(request.user)
     context = {
         'title' : 'อัพโหลดรูปโปรไฟล์',
         'form': form,
         'pending_orders_count': count_pending_orders(),
+        'count_unconfirmed_orders': count_unconfirmed,
+        
     }
     return render(request, 'upload_profile_picture.html', context)
 

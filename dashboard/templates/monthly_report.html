@@ -145,7 +145,7 @@
                 </tr>
                 <tr class="user-column_tr">
                     <th rowspan="2" class="text-center" style="width: 3%;">รหัสวัสดุ</th>
-                    <th rowspan="2" class="text-center" style="width: 20%;">รายการสินค้า</th>
+                    <th rowspan="2" class="text-center" style="width: 15%;">รายการสินค้า</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">หน่วยนับ</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">จำนวนคงเหลือ (ยกมา)</th>
                     <th rowspan="2" class="text-center" style="width: 5%;">จำนวนรับเข้า (ปัจจุบัน)</th>
@@ -170,11 +170,28 @@
                     <td>{{ item.product_id }}</td>
                     <td>{{ item.product }}</td>
                     <td class="text-center">{{ item.unit }}</td>
+
+                    {% if item.previous_balance == 0 %}
+                    <td class="text-center">{{ item.previous_balance|intcomma }}</td>
+                    {% else %}
                     <td class="text-center" style="background-color: #fad5b7;">{{ item.previous_balance|intcomma }}</td>
+                    {% endif %}
+
+                    {% if item.received_current_month == 0 %}
                     <td class="text-center">{{ item.received_current_month|intcomma }}</td>
+                    {% else %}
+                    <td class="text-center bg-info">{{ item.received_current_month|intcomma }}</td>
+                    {% endif %}
+
                     <td class="text-center">{{ item.total_balance|intcomma }}</td>
                     {% for user in all_users %}
+
+                    {% if item.user_issuings|get_item:user == 0 %}
                     <td class="user-column text-center">{{ item.user_issuings|get_item:user }}</td>
+                    {% else %}
+                    <td class="bg-warning text-center">{{ item.user_issuings|get_item:user }}</td>
+                    {% endif %}
+
                     {% empty %}                
                     <td class="text-center">ไม่มีข้อมูลผู้เบิก</td>                    
                     {% endfor %}

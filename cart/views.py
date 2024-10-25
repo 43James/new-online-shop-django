@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from cart.utils.cart import Cart
+from shop.views import count_unconfirmed_orders
 from .forms import QuantityForm
 from shop.models import Product, Receiving
 from django.db import transaction  # import transaction
@@ -58,8 +59,16 @@ def add_to_cart(request, product_id):
 @login_required
 def show_cart(request):
     cart = Cart(request)
-    context = {'title': 'Cart', 'cart': cart}
+    count_unconfirmed = count_unconfirmed_orders(request.user)  # เรียกใช้ฟังก์ชันนับจำนวนออเดอร์ที่ยังไม่ยืนยัน
+
+    context = {
+        'title': 'Cart',
+        'cart': cart,
+        'count_unconfirmed_orders': count_unconfirmed,  # ส่งจำนวนออเดอร์ที่ยังไม่ยืนยันไปยัง context
+    }
+
     return render(request, 'cart.html', context)
+
 
 
 

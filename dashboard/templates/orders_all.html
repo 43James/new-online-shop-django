@@ -16,12 +16,13 @@
         <th scope="col">n</th>
         <th scope="col">ผู้ใช้งาน</th>
         <th scope="col">เลขที่เบิก</th>
-        <th scope="col">วันที่เบิก</th>
-        <th scope="col">ยอดรวม</th>
-        <th scope="col">สถานะ</th>
-        <th scope="col">เจ้าหน้าที่</th>
-        <th scope="col">ผู้เบิกกดยันยัน</th>
-        <th scope="col">ทำรายการ</th>
+        <th scope="col">จำนวน</th>
+        <th scope="col" >ยอดรวม</th>
+        <th scope="col" style="width: 5px;">วันที่เบิก</th>
+        <th scope="col" class="text-center">สถานะ</th>
+        <th scope="col" class="text-center">เจ้าหน้าที่</th>
+        <th scope="col" class="text-center">ผู้เบิกกดยันยัน</th>
+        <th scope="col" class="text-center">ทำรายการ</th>
         <th scope="col">รายละเอียด</th>
         <!-- <th scope="col">จดหมาย</th> -->
       </tr>
@@ -31,9 +32,10 @@
       <tr>
         <th scope="row">{{ forloop.counter }}</th>
         <td scope="row">{{ order.user.get_full_name }}</td>
-        <td scope="row">{{ order.id }}</td>
-        <td scope="row">{{ order.date_created| date:"d M Y, H:i" }} น.</td>
-        <td scope="row">{{ order.get_total_price|intcomma }} ฿</td>
+        <td scope="row">ID {{ order.id }}</td>
+        <td scope="row">{{ order.items.count }} รายการ</td>
+        <td scope="row" >{{ order.get_total_price|intcomma }} ฿</td>
+        <td scope="row" style="font-size: 14px; ">{{ order.date_created| date:"d M Y, H:i" }} น.</td>
 
 
         {% if order.status == True %}
@@ -47,7 +49,7 @@
         {% if order.status == None %}
         <th scope="row" class="text-warning">รออนุมัติ..</td>
         {% elif order.status and order.pay_item == False %}
-          <td scope="col"><!-- Button trigger modal -->
+          <td scope="col" class="text-center"><!-- Button trigger modal -->
             <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
               data-bs-target="#exampleModal2{{ order.id }}">
               ยืนยันการจ่าย
@@ -56,7 +58,8 @@
         {% elif order.status == False and order.pay_item == False %}
         <th><i class="bi bi-x-circle-fill text-danger"></i></th>
         {% else %}
-          <th class="text-success">จ่ายวัสดุแล้ว</th>
+          <th class="text-success"0>23232
+            จ่ายวัสดุแล้ว</th>
         {% endif %}
         
         {% if order.status == None %}
@@ -69,7 +72,7 @@
         <th scope="row" class="text-danger">ยังไม่ตอบรับวัสดุ</th>
         {% endif %}
 
-        <td scope="col"><!-- Button trigger modal -->
+        <td scope="col" class="text-center"><!-- Button trigger modal -->
           {% if order.status == None %}
           <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
             data-bs-target="#exampleModal{{ order.id }}">
@@ -140,11 +143,15 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                  <button type="submit" class="btn btn-primary">ยืนยัน</button>
+                  <!-- <button type="submit" class="btn btn-primary">ยืนยัน</button> -->
+                  <button class="btn btn-success" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">
+                    ยืนยัน
+                  </button>
                 </div>
               </div>
             </div>
           </div>
+          
         </form>
 
         <!-- Modal2 -->
@@ -162,7 +169,7 @@
                 <div class="modal-body">
                   <div class="form-check container justify-content-center d-flex mb-3">
                     <input class="form-check-input" type="radio" name="pay_item" id="flexRadioDefault5" 
-                           value="True" required>
+                           value="True" checked required>
                     <label class="custom-radio" for="flexRadioDefault5"></label>
                     <label class="form-check-label text-success" for="flexRadioDefault5" style="font-size: 20px;">
                         &nbsp;&nbsp;จ่ายวัสดุแล้ว
@@ -171,11 +178,31 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                  <button type="submit" class="btn btn-primary">ยืนยัน</button>
+                  <!-- <button class="btn btn-success" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...';">ยืนยัน</button> -->
+                  <button class="btn btn-success" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">
+                    ยืนยัน
+                  </button>
+
+
                 </div>
               </div>
             </div>
           </div>
+          {% if request.GET.success == 'true' %}
+          <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                  Swal.fire({
+                      title: 'ยืนยันการจ่ายวัสดุสำเร็จ!',
+                      text: 'ข้อมูลการรับวัสดุถูกบันทึกเรียบร้อยแล้ว',
+                      icon: 'success',
+                      timer: 3000,
+                      showConfirmButton: false
+                  }).then(function() {
+                      window.location.href = "{% url 'dashboard:orders_all' %}";
+                  });
+              });
+          </script>
+          {% endif %} 
         </form>
 
         <td>
@@ -200,11 +227,10 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="9" class="text-center">ไม่มีข้อมูลในเดือนนี้</td>
+        <td colspan="10" class="text-center">ไม่มีข้อมูลในเดือนนี้</td>
       </tr>
     </tbody>
     {% endfor %}
   </table>
-
 </div>
 {% endblock %}

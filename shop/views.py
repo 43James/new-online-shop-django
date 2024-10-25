@@ -144,7 +144,8 @@ def home_page(request):
 
     # ส่งผลลัพธ์ไปยัง template
     context = {'products': paginat(request, sorted_products),
-               'count_unconfirmed_orders': count_unconfirmed,}
+               'count_unconfirmed_orders': count_unconfirmed,
+               }
     return render(request, 'home_page.html', context)
 
 
@@ -220,14 +221,23 @@ def remove_from_favorites(request, product_id):
 @user_passes_test(is_general)
 @login_required
 def favorites(request):
-	products = request.user.likes.all()
+    # ดึงสินค้าที่ผู้ใช้ชอบทั้งหมด
+    products = request.user.likes.all()
 
-	# คำนวณ total_quantity สำหรับแต่ละสินค้า
-	for product in products:
-		product.total_quantity = Receiving.total_quantity_by_product(product.id)
+    # คำนวณ total_quantity สำหรับแต่ละสินค้า
+    for product in products:
+        product.total_quantity = Receiving.total_quantity_by_product(product.id)
 
-	context = {'title':'Favorites', 'products':products}
-	return render(request, 'favorites.html', context)
+    # เรียกใช้ฟังก์ชัน count_unconfirmed_orders
+    count_unconfirmed = count_unconfirmed_orders(request.user)
+
+    context = {
+        'title': 'Favorites',
+        'products': products,
+        'count_unconfirmed_orders': count_unconfirmed,  # ส่งผลลัพธ์ของฟังก์ชันไปยัง context
+    }
+
+    return render(request, 'favorites.html', context)
 
 
 @user_passes_test(is_general)
@@ -244,6 +254,7 @@ def search(request):
 @login_required
 def filter_by_category(request, category_id=None, subcategory_id=None):
     categories = Category.objects.all()
+    count_unconfirmed = count_unconfirmed_orders(request.user)
 
     if category_id:
         category = get_object_or_404(Category, pk=category_id)
@@ -269,6 +280,7 @@ def filter_by_category(request, category_id=None, subcategory_id=None):
         'subcategories': subcategories,
         'selected_subcategory': subcategory,
         'products': products,
+        'count_unconfirmed_orders': count_unconfirmed,
     }
 
     return render(request, 'home_page.html', context)

@@ -118,6 +118,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'online_shop.context_processors.return_cart',
                 'online_shop.context_processors.return_categories',
+                'dashboard.context_processors.stock_record_exists',
             ],
         },
     },

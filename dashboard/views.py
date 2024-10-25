@@ -33,6 +33,7 @@ from django.http import Http404
 from openpyxl import Workbook
 from babel.dates import format_datetime
 from django.utils.dateparse import parse_date
+from django.db.models import Subquery, OuterRef
 
 
 
@@ -1802,24 +1803,104 @@ def export_products_to_excel(request):
 
 
 @user_passes_test(is_authorized_manager)
+# @login_required
+# def products(request):
+#     query = request.GET.get('q')
+#     products = Product.objects.all()
+
+#     if query is not None:
+#         lookups = Q(product_id__icontains=query) | Q(product_name__icontains=query)
+#         products = Product.objects.filter(lookups)
+
+#     # ใช้ annotate เพื่อคำนวณจำนวนรวมและวันที่รับเข้าล่าสุด
+#     products = products.annotate(
+#         total_quantity_received=Sum('Receiving__quantity'),
+#         latest_receiving_date=Max('Receiving__id'),
+#         total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField())
+#     ).order_by('-product_id')
+
+#     page = request.GET.get('page')
+
+#     p = Paginator(products, 20)
+#     try:
+#         products = p.page(page)
+#     except:
+#         products = p.page(1)
+
+#     context = {
+#         'title':'รายการวัสดุทั้งหมด' ,
+#         'products':products,
+#         'pending_orders_count': count_pending_orders(),
+# 		'total_quantity':total_quantity
+#         }
+#     return render(request, 'products.html', context)
+
+# @login_required
+# def products(request):
+#     query = request.GET.get('q')
+#     products = Product.objects.all()
+
+#     if query is not None:
+#         lookups = Q(product_id__icontains=query) | Q(product_name__icontains=query)
+#         products = products.filter(lookups)
+
+#     # เรียงตามจำนวนสต็อก โดยวัสดุที่หมดสต็อก (quantityinstock = 0) จะอยู่ท้ายสุด
+#     products = products.annotate(
+#         total_quantity_received=Sum('Receiving__quantity'),
+#         latest_receiving_date=Max('Receiving__id'),
+#         total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField())
+#     ).order_by('-quantityinstock', 'product_name')  # เรียงจากมากไปน้อย, 0 อยู่ท้ายสุด
+
+#     # pagination
+#     page = request.GET.get('page')
+#     p = Paginator(products, 20)
+#     try:
+#         products = p.page(page)
+#     except:
+#         products = p.page(1)
+
+#     context = {
+#         'title': 'รายการวัสดุทั้งหมด',
+#         'products': products,
+#         'pending_orders_count': count_pending_orders(),
+#         'total_quantity': sum(product.quantityinstock for product in products)  # แสดงจำนวนที่เหลือ
+#     }
+#     return render(request, 'products.html', context)
+
 @login_required
 def products(request):
     query = request.GET.get('q')
+    filter_stock = request.GET.get('filter_stock', 'all')  # รับค่าจากปุ่มกรอง
     products = Product.objects.all()
 
     if query is not None:
         lookups = Q(product_id__icontains=query) | Q(product_name__icontains=query)
-        products = Product.objects.filter(lookups)
+        products = products.filter(lookups)
+
+    # กรองวัสดุตามตัวเลือกจากปุ่ม
+    if filter_stock == 'in_stock':
+        products = products.filter(quantityinstock__gt=0)  # แสดงเฉพาะวัสดุที่ยังมีในสต๊อก
+        products = products.order_by('quantityinstock')  # เรียงจากน้อยไปมาก
+    elif filter_stock == 'out_of_stock':
+        products = products.filter(quantityinstock=0)  # แสดงเฉพาะวัสดุที่หมดสต๊อก
+    else:
+        products = products.order_by('id')  # เรียงตามสต็อกทั้งหมด
+
+     # ดึง end_of_month_balance จาก MonthlyStockRecord ของเดือนล่าสุด
+    latest_balance_subquery = MonthlyStockRecord.objects.filter(
+        product=OuterRef('pk')
+    ).order_by('-year', '-month').values('end_of_month_balance')[:1]
 
     # ใช้ annotate เพื่อคำนวณจำนวนรวมและวันที่รับเข้าล่าสุด
     products = products.annotate(
         total_quantity_received=Sum('Receiving__quantity'),
         latest_receiving_date=Max('Receiving__id'),
-        total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField())
-    ).order_by('-product_id')
+        total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField()),
+        end_of_month_balance=Subquery(latest_balance_subquery)  # ดึงจำนวนคงเหลือเดือนล่าสุด
+    )
 
+    # pagination
     page = request.GET.get('page')
-
     p = Paginator(products, 20)
     try:
         products = p.page(page)
@@ -1827,12 +1908,19 @@ def products(request):
         products = p.page(1)
 
     context = {
-        'title':'รายการวัสดุทั้งหมด' ,
-        'products':products,
+        'title': 'รายการวัสดุทั้งหมด',
+        'products': products,
         'pending_orders_count': count_pending_orders(),
-		'total_quantity':total_quantity
-        }
+        'total_quantity': sum(product.quantityinstock for product in products),
+        'filter_stock': filter_stock  # เก็บค่าตัวเลือกการกรองไว้ใน context
+    }
     return render(request, 'products.html', context)
+
+
+
+
+
+
 
 
 @user_passes_test(is_authorized_manager)
@@ -2579,15 +2667,15 @@ def approve_orders(request, order_id):
 @login_required
 def approve_pay(request, order_id):
     ap = get_object_or_404(Order, id=order_id)
-    form = ApprovePayForm(request.POST, instance=ap)
     
     if request.method == 'POST':
+        form = ApprovePayForm(request.POST, instance=ap)
         if form.is_valid():
             print("จ่ายวัสดุแล้ว")
             form.save()
             notify_user_pay_confirmed(order_id)  # เรียกฟังก์ชันการแจ้งเตือน
-            messages.success(request, 'ยืนยันการจ่ายวัสดุสำเร็จ')
-            return redirect(reverse('dashboard:orders_all'))
+            # messages.success(request, 'ยืนยันการจ่ายวัสดุสำเร็จ')
+            return redirect(reverse('dashboard:orders_all') + '?success=true')
         else:
             messages.error(request, 'ดำเนินการไม่สำเร็จ')
     else:
