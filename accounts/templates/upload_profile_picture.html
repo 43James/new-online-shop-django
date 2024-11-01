@@ -9,7 +9,7 @@
         {% csrf_token %}
         {{ form|crispy }}
         <div class="text-center mt-4">
-            <button type="submit" class="btn btn-primary ">อัพโหลด</button> &nbsp;
+            <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">อัพโหลด</button> &nbsp;
             <a href="{% url 'accounts:user_profile_detail' request.user.username %}"
                 class="btn btn-secondary ml-2">ยกเลิก</a>
         </div>

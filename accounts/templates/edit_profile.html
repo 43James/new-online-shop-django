@@ -73,7 +73,7 @@
                     class="btn btn-danger">ย้อนกลับ</a>
             </div>
             <div class="col-6 d-flex justify-content-start">
-                <button class="btn btn-primary" type="submit">บันทึกข้อมูล</button>
+                <button class="btn btn-primary" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">บันทึกข้อมูล</button>
             </div>
         </div>
     </form>

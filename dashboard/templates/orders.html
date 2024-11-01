@@ -70,9 +70,13 @@
             {% endif %}
 
           <td scope="col"><!-- Button trigger modal -->
-            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
               data-bs-target="#exampleModal{{ order.id }}">
-              อนุมัติ/ปฏิเสธ
+              อนุมัติ
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
+              data-bs-target="#exampleModal2{{ order.id }}">
+              ปฏิเสธ
             </button>
           </td>
 
@@ -92,20 +96,11 @@
                   <div class="modal-body">
                     <div class="form-check container justify-content-center d-flex mb-3">
                       <input class="form-check-input" type="radio" name="status" id="flexRadioDefault1" 
-                             value="True">
+                             value="True" checked>
                       <label class="custom-radio" for="flexRadioDefault1"></label>
                       <label class="form-check-label text-success" for="flexRadioDefault1" style="font-size: 20px;">
                           &nbsp;&nbsp;อนุมัติ
                       </label>
-                    </div>
-                  
-                    <div class="form-check container justify-content-center d-flex">
-                        <input class="form-check-input" type="radio" name="status" id="flexRadioDefault2" 
-                              value="False">
-                        <label class="custom-radio reject" for="flexRadioDefault2"></label>
-                        <label class="form-check-label text-danger" for="flexRadioDefault2" style="font-size: 20px;">
-                            &nbsp;&nbsp;ปฏิเสธ
-                        </label>
                     </div>
 
                     <div class="col-8 mt-3">
@@ -114,18 +109,60 @@
                         id="exampleFormControlInput1">
                       <!-- <p class="text-danger">กรณีปฏิเสธคำร้องไม่ต้องระบุวันที่</p> -->
                     </div>
-                    <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น. <br> กรณีปฏิเสธคำร้องไม่ต้องระบุวันที่รับของ</p>
-
+                    <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
 
                     <div class="col mb-3 mt-3">
                       <label class="form-label">หมายเหตุ</label>
-                      <input type="text" name="other" class="form-control" placeholder="กรณีปฏิเสธคำร้อง หรืออนุมัติถ้ามี">
+                      <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
                     </div>
 
                   </div>
                   <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="submit" class="btn btn-primary">ยืนยัน</button>
+                    <!-- <button type="submit" class="btn btn-primary" onclick="this.style.display='none'">ยืนยัน</button> -->
+                    <button class="btn btn-success" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">
+                      ยืนยัน
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <!-- Modal -->
+          <form action="{% url 'dashboard:approve_orders' order.id %}" method="POST">
+            {% csrf_token %}
+            <div class="modal fade" id="exampleModal2{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel2"
+              aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content" style="width: 20rem;">
+                  <div class="modal-header">
+                    <h5 class="modal-title text-center container" id="exampleModalLabel">ดำเนินการ ID {{ order.id }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+
+                  <div class="modal-body">
+                    <div class="form-check container justify-content-center d-flex">
+                        <input class="form-check-input" type="radio" name="status" id="flexRadioDefault2" 
+                              value="False" checked>
+                        <label class="custom-radio reject" for="flexRadioDefault2"></label>
+                        <label class="form-check-label text-danger" for="flexRadioDefault2" style="font-size: 20px;">
+                            &nbsp;&nbsp;ปฏิเสธ
+                        </label>
+                    </div>
+
+                    <div class="col mb-3 mt-3">
+                      <label class="form-label">หมายเหตุ</label>
+                      <input type="text" name="other" class="form-control" placeholder="กรุณาระบุ">
+                    </div>
+                  </div>
+                  <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <!-- <button type="submit" class="btn btn-primary" onclick="this.style.display='none'">ยืนยัน</button> -->
+                    <button class="btn btn-success" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">
+                      ยืนยัน
+                    </button>
                   </div>
                 </div>
               </div>
@@ -141,7 +178,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="8" class="text-center">ไม่มีคำร้องใหม่</td>
+          <td colspan="9" class="text-center">ไม่มีคำร้องใหม่</td>
         </tr>
       </tbody>
       {% endfor %}

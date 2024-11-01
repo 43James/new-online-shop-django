@@ -9,7 +9,7 @@
         
         <div class="d-flex justify-content-between">
             <a href="{% url 'accounts:manage_user'%}" class="btn btn-secondary mt-3">ย้อนกลับ</a>
-            <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
+            <button type="submit" class="btn btn-primary mt-3" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">บันทึก</button>
         </div>
     </form>
 </div>

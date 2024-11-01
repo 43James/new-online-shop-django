@@ -93,7 +93,7 @@
 
       <div class="container-fluid justify-content-center d-flex mt-4">
         <a onclick="history.back()" class="btn btn-danger mr-3" style="margin-right: 20px;">ย้อนกลับ</a>
-        <button class="btn btn-primary" type="submit">บันทึกการแก้ไข</button>
+        <button class="btn btn-primary" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">บันทึกการแก้ไข</button>
       </div>
     </form>
   </div>

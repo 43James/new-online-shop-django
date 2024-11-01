@@ -453,7 +453,6 @@ def linebot(request):
 
 
 
-
                 # เช็คสถานะ
                 elif text.startswith('เช็คสถานะID'):
                     command_parts = text.split()
@@ -621,16 +620,12 @@ def linebot(request):
                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
                         else:
                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"จ่ายวัสดุแล้วID [เลขที่คำร้อง]"'))
-                else:
-                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ คุณไม่มีสิทธิ์ในการดำเนินการนี้'))
+                # else:
+                #     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คุณไม่มีสิทธิ์ในการดำเนินการนี้'))
 
         except json.JSONDecodeError as e:
             print(f"JSON Decode Error: {e}")
     return HttpResponse(status=200)
-
-
-
-
 
 
 
@@ -660,7 +655,7 @@ def notify_user(order_id):
         message = (
             f"{order.user.first_name} รายการเบิกวัสดุเลขที่เบิก {order_id} ของคุณที่ต้องได้รับการอนุมัติ..\n"
             f"รายการวัดสุที่เบิก:\n{items_list}"
-            f"\nยอดเงินรวม: {total_cost} บาท"
+            # f"\nยอดเงินรวม: {total_cost} บาท"
         )
         print(message)
         line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))

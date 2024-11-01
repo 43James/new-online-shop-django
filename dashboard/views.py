@@ -561,6 +561,7 @@ def monthly_stock_sum(request):
         product_id = record.product.id
         if product_id not in product_sums:
             product_sums[product_id] = {
+                'product_id': record.product.product_id,
                 'product_name': record.product.product_name,
                 'total_balance_quarter': 0,
                 'total_price_quarter': 0,
@@ -1899,6 +1900,9 @@ def products(request):
         end_of_month_balance=Subquery(latest_balance_subquery)  # ดึงจำนวนคงเหลือเดือนล่าสุด
     )
 
+    # เพิ่มการเรียงลำดับที่แน่นอนหลังการ annotate
+    products = products.order_by('id')
+
     # pagination
     page = request.GET.get('page')
     p = Paginator(products, 20)
@@ -2556,11 +2560,20 @@ def orders_all(request):
         orders_all = orders_all.filter(lookups)
 
     # กรองตามเดือนและปีที่ระบุ
-    else:
-        orders_all = orders_all.filter(
-            month=month,
-            year=year_ad
-        )
+    # else:
+    #     orders_all = orders_all.filter(
+    #         month=month,
+    #         year=year_ad
+    #     )
+    # กรองตามเดือนและปีที่ระบุ
+    orders_all = orders_all.filter(
+        month=month,
+        year=year_ad
+    )
+    # Debugging print statements
+    # print(f"Selected month: {month}")
+    # print(f"Month name: {thai_month_name(month)}")
+
     context = {
         'title':'คำร้องเบิกวัสดุทั้งหมด', 
         'orders_all':orders_all,

@@ -125,9 +125,9 @@
                                 <div class="input-group">
                                     <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
                                     <button type="button" class="btn btn-danger" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
-                                    <button type="submit" name="filter_stock" value="all" class="{% if filter_stock == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">แสดงทั้งหมด</button>
-                                    <button type="submit" name="filter_stock" value="in_stock" class="{% if filter_stock == 'in_stock' %}btn-primary{% else %}btn-secondary{% endif %}">วัสดุที่ยังมี</button>
-                                    <button type="submit" name="filter_stock" value="out_of_stock" class="{% if filter_stock == 'out_of_stock' %}btn-primary{% else %}btn-secondary{% endif %}">วัสดุที่หมด</button>
+                                    <button type="submit" name="filter_stock" value="all" class="{% if filter_stock == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">แสดงทั้งหมด</button>
+                                    <button type="submit" name="filter_stock" value="in_stock" class="{% if filter_stock == 'in_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">วัสดุที่ยังมี</button>
+                                    <button type="submit" name="filter_stock" value="out_of_stock" class="{% if filter_stock == 'out_of_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">วัสดุที่หมด</button>
                                 </div>
                             </form>
                         </div>
@@ -260,21 +260,12 @@
                         </div>
                     </div>
                     
-                    
                     <div class="col-6">
                     <form method="get" action="{% url 'dashboard:orders_all' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
-                        <!-- <div class="col-auto">
-                            <div class="form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="hideUnconfirmed" name="hide_unconfirmed" {% if hide_unconfirmed %}checked{% endif %}>
-                                <label class="form-check-label" for="hideUnconfirmed">ซ่อนคำร้องที่ถูกปฏิเสธ</label>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <button type="submit" class="btn btn-primary btn-sm">ปรับปรุง</button>
-                        </div>&nbsp;&nbsp;&nbsp;&nbsp; -->
+                        
                         <div class="col-auto">
                             <div class="form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="showRejected" name="show_rejected" {% if show_rejected  %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" id="showRejected" name="show_rejected" {% if show_rejected  %}checked{% endif %} style="display: block;">
                                 <label class="form-check-label" for="showRejected">แสดงรายการที่ถูกปฏิเสธ</label>
                             </div>
                         </div>

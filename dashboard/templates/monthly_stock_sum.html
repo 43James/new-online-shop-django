@@ -155,6 +155,7 @@
             <thead>
                 <tr>
                     <th class="user-column1 text-center">ลำดับ</th>
+                    <th class="user-column1 text-center">รหัสพัสดุ</th>
                     <th class="user-column1 text-center">วัสดุ</th>
                     <th class="user-column1 text-center">รวมจำนวนคงเหลือ</th>
                     <th class="user-column1 text-center">หน่วย</th>
@@ -165,6 +166,7 @@
                 {% for product, data in product_sums.items %}
                     <tr>
                         <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ data.product_id }}</td>
                         <td>{{ data.product_name }}</td>
                         <td class="text-center">{{ data.total_balance_quarter|intcomma }}</td>
                         <td class="text-center">{{ data.unit }}</td>

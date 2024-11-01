@@ -42,8 +42,9 @@ class Order(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
-            self.month = self.month
-            self.year = self.year
+            now = timezone.now()
+            self.month = now.month
+            self.year = now.year
         super().save(*args, **kwargs)
 
     

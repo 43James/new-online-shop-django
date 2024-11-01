@@ -161,6 +161,7 @@
             <thead>
                 <tr>
                     <th class="user-column1 text-center">ลำดับ</th>
+                    <th class="user-column1 text-center">รหัสวัสดุ</th>
                     <th class="user-column1 text-center">วัสดุ</th>
                     <th class="user-column1 text-center">เดือน</th>
                     <th class="user-column1 text-center">ปี</th>
@@ -174,6 +175,7 @@
                 {% for record in records %}
                     <tr>
                         <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ record.product.product_id }}</td>
                         <td>{{ record.product.product_name }}</td>
                         <td class="text-center">{{ record.month }}</td>
                         <td class="text-center">{{ record.year }}</td>

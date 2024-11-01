@@ -16,7 +16,7 @@
                     </div>
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'dashboard:dashboard_home' %}" class="btn btn-secondary">ย้อนกลับ</a>
-                        <button type="submit" class="btn btn-success">บันทึก</button>
+                        <button type="submit" class="btn btn-success" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">บันทึก</button>
                     </div>
                 </form>
             </div>

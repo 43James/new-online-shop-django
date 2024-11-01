@@ -6,6 +6,6 @@
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">อัปโหลด</button>
+    <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">อัปโหลด</button>
   </form>
 {% endblock %}

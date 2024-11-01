@@ -1,12 +1,12 @@
 {% extends "dashboard.html" %}
 {% block content %}
-<div class="col-md-3 mt-5 justify-content-center container">
+<div class="col-md-6 mt-5 justify-content-center container">
     <form method="POST">
         {% csrf_token %}
         {{ form.as_p }}
         <div class="row mb-5">
             <div class="col-6"><a class="btn btn-primary mt-3 w-100 " onclick="history.back()">ย้อนกลับ</a></div>
-            <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">Submit</button></div>
+            <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">Submit</button></div>
         </div>
     </form>
 </div>

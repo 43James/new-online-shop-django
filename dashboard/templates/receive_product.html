@@ -62,7 +62,7 @@
     {{ form.non_field_errors }}
     <div class="row mb-5">
       <div class="col-6"><a class="btn btn-primary mt-3 w-100 " href="{% url 'dashboard:receive_list' %}">ย้อนกลับ</a></div>
-      <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit">บันทึก</button></div>
+      <div class="col-6"><button class=" btn btn-success mt-3 w-100" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">บันทึก</button></div>
     </div>
   </form>
 </div>
