@@ -30,6 +30,36 @@
       background-color: red; /* สีพื้นหลังเมื่อเลือก */
       border: 2px solid red; /* เปลี่ยนสีขอบเมื่อเลือก */
   }
+
+   /* สำหรับ label  */
+.form-group {
+  position: relative;
+  border: 1px solid #ced4da; /* เส้นขอบของฟอร์ม */
+  border-radius: 5px;       /* มุมโค้งเล็กน้อย */
+  padding-top: 15px;        /* เพิ่มระยะห่างด้านบนสำหรับ label */
+}
+
+.floating-label {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: white;
+  padding: 0 5px;
+  transition: 0.2s;
+  color: #6c757d;
+  pointer-events: none;
+}
+
+.form-control:focus + .floating-label,
+.form-control:not(:placeholder-shown) + .floating-label {
+  top: -10px;
+  font-size: 12px;
+  color: #007bff;
+  padding: 0 5px;
+}
+
+
 </style>
 
 <div class="table-responsive">
@@ -61,7 +91,9 @@
         <td scope="row" style="font-size: 14px; ">{{ order.date_created| date:"d M Y, H:i" }} น.</td>
 
 
-        {% if order.status == True %}
+        {% if order.status == True and order.confirm == True %}
+        <th scope="row" class="text-success text-center">เบิกวัสดุสำเร็จ</td>
+        {% elif order.status == True %}
         <th scope="row" class="text-success text-center">อนุมัติ</td>
         {% elif order.status == False %}
         <th scope="row" class="text-danger text-center">ปฏิเสธ</td>
@@ -75,7 +107,7 @@
           <strong class="text-warning">รออนุมัติ..</td>
           {% elif order.status and order.pay_item == False %}
             <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
-              data-bs-target="#exampleModal2{{ order.id }}">
+              data-bs-target="#exampleModal4{{ order.id }}">
               ยืนยันการจ่าย
             </button>
           {% elif order.status == False and order.pay_item == False %}
@@ -106,7 +138,7 @@
             อนุมัติ
           </button>
           <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-            data-bs-target="#exampleModal3{{ order.id }}">
+            data-bs-target="#exampleModal2{{ order.id }}">
             ปฏิเสธ
           </button>
           
@@ -118,13 +150,13 @@
           
           {% elif order.confirm == False %}
           <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
-            data-bs-target="#exampleModal{{ order.id }}">
+            data-bs-target="#exampleModal3{{ order.id }}">
             <i class="bi bi-pencil-square"></i> แก้ไขคำร้อง
           </button>
          {% endif %}
         </td>
         
-        <!-- Modal -->
+        <!-- Modal อนุมัติ -->
         <form action="{% url 'dashboard:approve_orders' order.id %}" method="POST">
           {% csrf_token %}
           <div class="modal fade" id="exampleModal{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel"
@@ -145,6 +177,7 @@
                         &nbsp;&nbsp;อนุมัติ
                     </label>
                   </div>
+                  
 
                   <div class="col-8 mt-3">
                     <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
@@ -152,11 +185,12 @@
                       id="exampleFormControlInput1">
                   </div>
                   <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
+                  
 
                   <div class="col mb-3 mt-3">
                     <label class="form-label">หมายเหตุ</label>
                     {% if order.other == None %}
-                    <input type="text" name="other" class="form-control" placeholder="กรุณาระบุ">
+                    <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
                     {% else %}
                     <input type="text" value="{{ order.other }}" name="other" class="form-control" placeholder="ถ้ามี">
                     {% endif %}
@@ -175,10 +209,10 @@
           </div>
         </form>
 
-        <!-- Modal -->
+        <!-- Modal2 ปฏิเสธ  -->
         <form action="{% url 'dashboard:approve_orders' order.id %}" method="POST">
           {% csrf_token %}
-          <div class="modal fade" id="exampleModal3{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel3"
+          <div class="modal fade" id="exampleModal2{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel2"
             aria-hidden="true">
             <div class="modal-dialog">
               <div class="modal-content" style="width: 20rem;">
@@ -220,12 +254,94 @@
           </div>
         </form>
 
+        <!-- Modal3 แก้ไขข้อมูล -->
+        <form action="{% url 'dashboard:approve_orders' order.id %}" method="POST">
+          {% csrf_token %}
+          <div class="modal fade" id="exampleModal3{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel3"
+            aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content" style="width: 20rem;">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">แก้ไขคำร้อง ID {{ order.id }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                  <div class="form-check container justify-content-center d-flex mb-3">
+                    <input class="form-check-input" type="radio" name="status" id="flexRadioDefault1" 
+                           value="True" style="display: block;" {% if order.status == True %} checked {% endif %}>
+                    <!-- <label class="custom-radio" for="flexRadioDefault1" ></label> -->
+                    <label class="text-success" for="flexRadioDefault1" style="font-size: 20px;">
+                        &nbsp;&nbsp;อนุมัติ
+                    </label>
+                  </div>
+
+                  <div class="form-check container justify-content-center d-flex">
+                    <input class="form-check-input" type="radio" name="status" id="flexRadioDefault2" 
+                        value="False" style="display: block;" {% if order.status == False %} checked {% endif %}>
+                    <!-- <label class="custom-radio reject" for="flexRadioDefault2"></label> -->
+                    <label class="text-danger" for="flexRadioDefault2" style="font-size: 20px;">
+                        &nbsp;&nbsp;ปฏิเสธ
+                    </label>
+                  </div>
+
+                  <!-- <div class="col-8 mt-3">
+                    <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
+                    <input type="datetime-local" value='{{ order.date_receive|date:"Y-m-d\TH:i" }}' name="date_receive" class="form-control"
+                      id="exampleFormControlInput1">
+                  </div>
+                  <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
+                  
+
+                  <div class="col mb-3 mt-3">
+                    <label class="form-label">หมายเหตุ</label>
+                    {% if order.other == None %}
+                    <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
+                    {% else %}
+                    <input type="text" value="{{ order.other }}" name="other" class="form-control" placeholder="ถ้ามี">
+                    {% endif %}
+                  </div> -->
+
+                  <div class="col-8 mt-3">
+                    <div class="form-group position-relative">
+                      <input type="datetime-local" name="date_receive" class="form-control" id="exampleFormControlInput1"
+                             value='{{ order.date_receive|date:"Y-m-d\TH:i" }}' required>
+                      <label for="exampleFormControlInput1" class="floating-label">วันที่รับของ</label>
+                    </div>
+                  </div>
+                  
+                  <div class="col mb-3 mt-5">
+                    <div class="form-group position-relative">
+                      {% if order.other == None %}
+                      <input type="text" name="other" class="form-control" id="other"
+                             placeholder=" "  >
+                      {% else %}
+                      <input type="text" name="other" class="form-control" id="other"
+                             placeholder="ถ้ามี" value="{{ order.other }}">
+                      {% endif %}
+                      <label for="other" class="floating-label">หมายเหตุ</label>
+                    </div>
+                  </div>
+
+                </div>
+                <div class="modal-footer justify-content-between">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                  <!-- <button type="submit" class="btn btn-primary">ยืนยัน</button> -->
+                  <button class="btn btn-success" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">
+                    ยืนยัน
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
 
 
-        <!-- Modal2 -->
+
+        <!-- Modal4 จ่ายวัสดุ-->
         <form action="{% url 'dashboard:approve_pay' order.id %}" method="POST">
           {% csrf_token %}
-          <div class="modal fade" id="exampleModal2{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel2"
+          <div class="modal fade" id="exampleModal4{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel4"
             aria-hidden="true">
             <div class="modal-dialog">
               <div class="modal-content mt-5" style="width: 20rem;">
@@ -242,8 +358,26 @@
                     <label class="form-check-label text-success" for="flexRadioDefault5" style="font-size: 20px;">
                         &nbsp;&nbsp;จ่ายวัสดุแล้ว
                     </label>
+                  </div>
+                  <div class="row">
+                    <div class="col mb-3 mt-3">
+                      <div class="form-group position-relative">
+                        <input type="text" name="name_pay" class="form-control text-center text-primary" id="name_pay"
+                               placeholder=" " value="{{ user.get_first_name }}" required readonly>
+                        <label for="name_pay" class="floating-label">ชื่อ</label>
+                      </div>
+                    </div>
+                    <div class="col mb-3 mt-3">
+                      <div class="form-group position-relative">
+                        <input type="text" name="surname_pay" class="form-control text-center text-primary" id="surname_pay"
+                               placeholder=" " value="{{ user.get_last_name }}" required readonly>
+                        <label for="surname_pay" class="floating-label">สกุล</label>
+                      </div>
+                    </div>
+                  </div>
+                  
                 </div>
-                </div>
+                
                 <div class="modal-footer justify-content-between">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
                   <!-- <button class="btn btn-success" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...';">ยืนยัน</button> -->
@@ -275,9 +409,9 @@
 
         <td>
           <!-- Link ไปยังรายละเอียดคำสั่งซื้อ -->
-          <button href="{% url 'dashboard:order_detail' order.id %}" class="btn btn-primary btn-sm">
+          <a href="{% url 'dashboard:order_detail' order.id %}" class="btn btn-primary btn-sm">
               <i class="bi bi-card-list"></i>
-          </button>&nbsp;&nbsp;
+          </a>&nbsp;&nbsp;
       
           <!-- ปุ่มสำหรับแจ้งเตือนการยืนยันรับวัสดุ -->
           {% if order.status == False %}

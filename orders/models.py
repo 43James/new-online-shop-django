@@ -12,6 +12,8 @@ class Order(models.Model):
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดทออเดอร์')
     status = models.BooleanField(blank=True, null=True,verbose_name="สถานะออเดอร์")
     pay_item = models.BooleanField(default=False, verbose_name="ยืนยันจ่ายวัสดุ")
+    name_pay = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อผู้จ่าย')
+    surname_pay = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุลผู้จ่าย')
     confirm = models.BooleanField(default=False, verbose_name="ยืนยันรับพัสดุ")
     name_sign = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อผู้รับวัสดุ')
     other = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
@@ -59,7 +61,7 @@ class Issuing(models.Model):
     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
     
-
+    
     def __str__(self):
         return str(self.id)
 
@@ -94,3 +96,41 @@ class Issuing(models.Model):
         
     #     # คิวรี่ข้อมูลในฐานข้อมูลตามเดือนและปีที่ระบุ
     #     return cls.objects.filter(datecreated__month=month, datecreated__year=year_ad)
+
+
+
+class Approvereport(models.Model):
+    month_report = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='รายงานการเบิกวัสดุประจำเดือน')
+
+    name_sign1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้สำรวจ1')
+    surname_sign1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้สำรวจ1')
+    position1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง1')
+
+    name_sign2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้สำรวจ2')
+    surname_sign2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้สำรวจ2')
+    position2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง2')
+
+    approve = models.BooleanField(default=False, verbose_name="อนุมัติรายงาน")
+    name_approve = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้ตรวจสอบ')
+    surname_approve = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้ตรวจสอบ')
+    position3 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง3')
+    other = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
+
+    month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
+    year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
+
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
+    date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดท')
+
+    class Meta:
+        ordering = ('-id',)
+    
+    def __str__(self):
+        return str(self.id)
+    
+    def save(self, *args, **kwargs):
+        if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+            now = timezone.now()
+            self.month = now.month
+            self.year = now.year
+        super().save(*args, **kwargs)

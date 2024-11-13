@@ -96,7 +96,8 @@
                 <p class="text-center">( {{ order.user.get_full_name }} )</p>
                 <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p>
                 {% if order.confirm == True %}
-                <p class="text-center text-success">{{ order.name_sign }} ยืนยันรับวัสดุแล้ว</p><br>
+                <p class="text-center text-success">{{ order.name_sign }} ยืนยันรับวัสดุแล้ว</p>
+                <p class="text-center text-success">วันที่รับวัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_received|date:"d / m / Y" }} </p><br>
                 {% else %}
                 <p class="text-center text-danger">ยังไม่ยืนยันรับวัสดุ</p><br>
                 {% endif %}
@@ -118,12 +119,11 @@
     </div>
     <div class="text-center" style="margin-top: 20px;">
         {% if order.pay_item == True %}
-            <p>ลงชื่อ {{ user.first_name }} ผู้จ่ายวัสดุ</p>
+            <p>ลงชื่อ {{ order.name_pay }} ผู้จ่ายวัสดุ</p>
         {% else %}
             <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p>
         {% endif %}
-            <!-- <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p> -->
-            <p>( {{ user.get_full_name }} )</p>
+            <p>(นางสาว{{ order.name_pay }} {{ order.surname_pay }} )</p>
             <p>ตำแหน่ง เจ้าหน้าที่พัสดุ</p>
             {% if order.pay_item == True %}
                 <p class="text-center text-success">จ่ายวัสดุแล้ว</p>

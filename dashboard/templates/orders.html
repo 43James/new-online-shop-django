@@ -56,7 +56,7 @@
           <th scope="row">{{ forloop.counter }}</th>
           <td scope="row">{{ order.user.get_full_name }}</td>
           <td scope="row">ID {{ order.id }}</td>
-          <td scope="row">{{ order.items.count }}</td>
+          <td scope="row">{{ order.items.count }} รายการ</td>
           <td scope="row" style="font-size: 15px; width: 2px;">{{ order.date_created| date:"d M Y, H:i" }} น.</td>
           <td scope="row">{{ order.get_total_price|intcomma }} ฿</td>
 
@@ -103,13 +103,37 @@
                       </label>
                     </div>
 
-                    <div class="col-8 mt-3">
+                    <!-- <div class="col-8 mt-3">
                       <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
                       <input type="datetime-local" name="date_receive" class="form-control"
                         id="exampleFormControlInput1">
-                      <!-- <p class="text-danger">กรณีปฏิเสธคำร้องไม่ต้องระบุวันที่</p> -->
                     </div>
-                    <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
+                    <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p> -->
+
+                    <div class="col-8 mt-3">
+                      <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
+                      <input type="datetime-local" name="date_receive" class="form-control" id="exampleFormControlInput1" readonly>
+                    </div>
+                    
+                    <script>
+                      // สร้างวันที่เริ่มต้นจากวันนี้
+                      const date = new Date();
+                    
+                      // หาวันจันทร์ถัดไป
+                      const day = date.getDay(); // ค่าที่ได้จะอยู่ระหว่าง 0 (อาทิตย์) ถึง 6 (เสาร์)
+                      const daysUntilMonday = (day === 0) ? 1 : (8 - day); // คำนวณหาจำนวนวันที่ต้องเพิ่มเพื่อให้ถึงวันจันทร์
+                      date.setDate(date.getDate() + daysUntilMonday); // เพิ่มวันที่เพื่อให้ถึงวันจันทร์
+                    
+                      // ตั้งเวลาเป็น 16:00 น.
+                      date.setHours(23, 0, 0, 0);
+                    
+                      // จัดรูปแบบวันที่ตามที่ต้องการสำหรับ input type="datetime-local"
+                      const formattedDate = date.toISOString().slice(0, 16);
+                    
+                      // เซตค่าวันที่เริ่มต้นของ input
+                      document.getElementById('exampleFormControlInput1').value = formattedDate;
+                    </script>
+                    
 
                     <div class="col mb-3 mt-3">
                       <label class="form-label">หมายเหตุ</label>
