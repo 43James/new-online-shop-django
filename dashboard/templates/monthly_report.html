@@ -152,8 +152,10 @@
                     <th rowspan="2" class="text-center" style="width: 7%;">รวมจำนวน คงเหลือ+รับเข้า</th>
                     <th colspan="{{ all_users|length }}" class="text-center">รายชื่อผู้เบิกวัสดุ</th>
                     <th rowspan="2" class="text-center" style="width: 10%;">รวมจำนวนที่เบิก</th>
+                    <th rowspan="2" class="text-center" style="width: 10%;">มูลค่าวัสดุที่เบิก</th>
+
                     <th rowspan="2" class="text-center" style="width: 10%;">วัสดุคงเหลือทั้งสิ้น</th>
-                    <th rowspan="2" class="text-center" style="width: 10%;">มูลค่าวัสดุเบิกทั้งสิ้น (บาท)</th>
+                    <th rowspan="2" class="text-center" style="width: 10%;">มูลค่าวัสดุคงเหลือ</th>
                     <!-- <th rowspan="2" class="text-center" style="width: 10%;">จำนวนเงิน</th> -->
                     <!-- <th rowspan="2" class="text-center">หมายเหตุ</th> -->
                 </tr>
@@ -196,8 +198,16 @@
                     <td class="text-center">ไม่มีข้อมูลผู้เบิก</td>                    
                     {% endfor %}
                     <td class="text-center">{{ item.issued_current_month|intcomma }} {{ item.unit }}</td>
-                    <td class="text-center">{{ item.remaining_balance|intcomma }} {{ item.unit }}</td>
                     <td class="text-end">{{ item.total_issued_value|intcomma }} บาท</td>
+
+                    <td class="text-center">{{ item.remaining_balance|intcomma }} {{ item.unit }}</td>
+
+                    {% if item.total_remaining_value == 0 %}
+                    <td class="text-end">{{ item.total_remaining_value2|intcomma }} บาท</td>
+                    {% else %}
+                    <td class="text-end">{{ item.total_remaining_value|intcomma }} บาท</td>
+                    {% endif %}
+
                     <!-- <td class="text-center">{{ item.total_price|intcomma }} บาท</td> -->
                     <!-- <td>{{ item.note }}</td> -->
                 </tr>

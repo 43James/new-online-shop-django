@@ -185,7 +185,7 @@
             <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key-fill text-info"></i>
                 เปลี่ยนรหัสผ่าน</a></li>
             {% if user.is_manager or user.is_admin or user.is_executive%}
-            <li><a class="dropdown-item text-primary" href="{% url 'dashboard:dashboard_home' %}"><i
+            <li><a class="dropdown-item text-primary" href="{% url 'dashboard:orders' %}"><i
                   class="bi bi-person-check"> Dashboard</i></a></li>
             {% endif %}
             

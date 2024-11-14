@@ -8,10 +8,10 @@ from django.utils import timezone
 from requests.exceptions import ConnectTimeout
 from app_linebot.views import notify_admin, notify_admin_receive_confirmation, notify_user
 from dashboard.views import convert_to_buddhist_era, thai_month_name
-from orders.forms import UserApproveForm
+from orders.forms import ApprovereportForm, UserApproveForm
 from shop.models import Receiving
 from shop.views import count_unconfirmed_orders
-from .models import Order, Issuing
+from .models import Approvereport, Order, Issuing
 from cart.utils.cart import Cart
 from django.http import Http404, HttpResponse
 import requests
@@ -116,10 +116,10 @@ def create_order(request):
             note=item['note']  # เพิ่มหมายเหตุในรายการ Issuing
         )
     # Notify admin about the new order
-    # notify_admin(request, order.id)
+    notify_admin(request, order.id)
 
     # Notify user about the new order
-    # notify_user(order.id)  # You can also use notify_user_approved if needed
+    notify_user(order.id)  # You can also use notify_user_approved if needed
     
     return redirect('orders:pay_order', order_id=order.id)
 
@@ -235,6 +235,9 @@ def user_approve(request, order_id):
         'ap': ap,
         'form': form,
     })
+
+
+
 
 
 

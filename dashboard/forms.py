@@ -158,7 +158,7 @@ class ApproveForm(ModelForm):
 class ApprovePayForm(ModelForm):
     class Meta:
         model = Order
-        fields = ('pay_item',)
+        fields = ('pay_item', 'name_pay', 'surname_pay')
         # exclude = ('user', 'datecreated')
     
 

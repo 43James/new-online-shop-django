@@ -52,6 +52,9 @@ class MyUser(AbstractUser):
     def get_first_name(self):
         return f"{self.first_name}"
     
+    def get_last_name(self):
+        return f"{self.last_name}"
+    
 
 class Profile(models.Model):
     user = models.OneToOneField(MyUser, on_delete=models.CASCADE, verbose_name='ผู้ใช้ID')

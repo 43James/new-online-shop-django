@@ -675,6 +675,59 @@ def notify_user(order_id):
 
 
 #ส่งการแจ้งเตือนไปยังแอดมินเมื่อเช็คเอ้าท์สินค้า
+# def notify_admin(request, order_id):
+#     try:
+#         order = Order.objects.get(id=order_id)
+#     except Order.DoesNotExist:
+#         print("ไม่พบคำสั่งซื้อ")
+#         return
+
+#     # ค้นหาผู้ใช้งานที่เป็น manager และ admin
+#     users_to_notify = MyUser.objects.filter(is_manager=True) | MyUser.objects.filter(is_admin=True)
+
+#     # ดึง Line User IDs ของผู้ใช้งานเหล่านี้
+#     admin_user_ids = []
+#     for user in users_to_notify:
+#         try:
+#             user_line = UserLine.objects.get(user=user)
+#             admin_user_ids.append(user_line.userId)
+#         except UserLine.DoesNotExist:
+#             print(f"ไม่มี Line ID สำหรับผู้ใช้ {user.username}")
+
+#     if not admin_user_ids:
+#         print("ไม่พบ Line ID สำหรับผู้ใช้ผู้ดูแลระบบ")
+#         messages.warning(request, "ไม่พบ Line ID สำหรับผู้ใช้ผู้ดูแลระบบ")
+#         return
+
+#     # ดึงรายการสินค้าที่ถูกเบิก
+#     items = order.items.all()  # Assuming `order.items` is the related name for OrderItems
+
+#     # สร้างข้อความรายการสินค้า
+#     items_list = "\n".join([
+#         f"- {item.product.product_name}: {item.quantity} {item.product.unit} ๆ ละ {item.price} บาท หมายเหตุ: {item.note}" 
+#         for item in items
+#     ])
+
+#     # คำนวณจำนวนเงินรวม
+#     total_cost = sum(item.get_cost() for item in items)
+
+#     # สร้างข้อความที่จะส่ง
+#     message = (
+#         f"คำร้องใหม่จากผู้ใช้งาน {order.user.first_name} เลขที่เบิก {order_id} ที่ต้องได้รับการอนุมัติ..\n"
+#         f"รายการวัสดุที่เบิก:\n{items_list}"
+#         f"\nยอดเงินรวม: {total_cost} บาท"
+#     )
+
+#     # ส่งข้อความไปยังผู้ใช้งานที่เป็น manager และ admin
+#     for user_id in admin_user_ids:
+#         try:
+#             line_bot_api.push_message(user_id, TextSendMessage(text=message))
+#         except Exception as e:
+#             print(f"เกิดข้อผิดพลาดในการส่งข้อความถึงผู้ใช้ {user_id}: {e}")
+#             # เพิ่มการแจ้งเตือนธรรมดาแทนการให้แสดงเออเร่อ
+#             messages.warning(request, "ไม่สามารถส่งข้อความแจ้งเตือนผ่าน Line ได้ เนื่องจากคุณถึงจำนวนจำกัดของเดือนแล้ว")
+
+
 def notify_admin(request, order_id):
     try:
         order = Order.objects.get(id=order_id)
@@ -700,7 +753,7 @@ def notify_admin(request, order_id):
         return
 
     # ดึงรายการสินค้าที่ถูกเบิก
-    items = order.items.all()  # Assuming `order.items` is the related name for OrderItems
+    items = order.items.all()
 
     # สร้างข้อความรายการสินค้า
     items_list = "\n".join([
@@ -718,14 +771,14 @@ def notify_admin(request, order_id):
         f"\nยอดเงินรวม: {total_cost} บาท"
     )
 
-    # ส่งข้อความไปยังผู้ใช้งานที่เป็น manager และ admin
-    for user_id in admin_user_ids:
-        try:
-            line_bot_api.push_message(user_id, TextSendMessage(text=message))
-        except Exception as e:
-            print(f"เกิดข้อผิดพลาดในการส่งข้อความถึงผู้ใช้ {user_id}: {e}")
-            # เพิ่มการแจ้งเตือนธรรมดาแทนการให้แสดงเออเร่อ
-            messages.warning(request, "ไม่สามารถส่งข้อความแจ้งเตือนผ่าน Line ได้ เนื่องจากคุณถึงจำนวนจำกัดของเดือนแล้ว")
+    # ส่งข้อความไปยังผู้ใช้งานที่เป็น manager และ admin ในคราวเดียว
+    try:
+        line_bot_api.multicast(admin_user_ids, TextSendMessage(text=message))
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดในการส่งข้อความถึงผู้ใช้: {e}")
+        # เพิ่มการแจ้งเตือนธรรมดาแทนการให้แสดงเออเร่อ
+        messages.warning(request, "ไม่สามารถส่งข้อความแจ้งเตือนผ่าน Line ได้ เนื่องจากคุณถึงจำนวนจำกัดของเดือนแล้ว")
+
 
 
 
@@ -814,6 +867,42 @@ def notify_user_pay_confirmed(order_id):
 
 
 # ส่งการแจ้งเตือนไปยังแอดมินเมื่อผู้ใช้ยืนยันรับพัสดุ
+# def notify_admin_receive_confirmation(order_id):
+#     try:
+#         order = Order.objects.get(id=order_id)
+#         admin_user_ids = UserLine.objects.filter(
+#             user__is_manager=True
+#         ).values_list('userId', flat=True)
+        
+#         admin_user_ids = list(admin_user_ids) + list(
+#             UserLine.objects.filter(user__is_admin=True).values_list('userId', flat=True)
+#         )
+
+#         if order.confirm:
+#             message = f"{order.user.first_name} ได้ยืนยันรับวัสดุคำร้อง ID {order_id} เรียบร้อยแล้ว."
+#         else:
+#             message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} ยังไม่ได้รับการยืนยันรับวัสดุ."
+        
+#         # ลองตรวจสอบการส่งข้อความไปยังแต่ละ admin_user_id
+#         for admin_user_id in admin_user_ids:
+#             try:
+#                 line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
+#                 print(f"ส่งข้อความถึง {admin_user_id} สำเร็จ")
+#             except LineBotApiError as e:
+#                 print(f"ส่งข้อความไม่สำเร็จถึง {admin_user_id}: {e.status_code} {e.error.message}")
+    
+#     except Order.DoesNotExist:
+#         print(f"ไม่มีคำร้อง ID {order_id}")
+#     except LineBotApiError as e:
+#         print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
+#         # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
+#         if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
+#             print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
+#         else:
+#             print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
+#     except Exception as e:
+#         print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
+
 def notify_admin_receive_confirmation(order_id):
     try:
         order = Order.objects.get(id=order_id)
@@ -821,7 +910,8 @@ def notify_admin_receive_confirmation(order_id):
             user__is_manager=True
         ).values_list('userId', flat=True)
         
-        admin_user_ids = list(admin_user_ids) + list(
+        admin_user_ids = set(admin_user_ids)  # ใช้ set เพื่อลดความซ้ำซ้อน
+        admin_user_ids.update(
             UserLine.objects.filter(user__is_admin=True).values_list('userId', flat=True)
         )
 
@@ -830,7 +920,7 @@ def notify_admin_receive_confirmation(order_id):
         else:
             message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} ยังไม่ได้รับการยืนยันรับวัสดุ."
         
-        # ลองตรวจสอบการส่งข้อความไปยังแต่ละ admin_user_id
+        # ส่งข้อความไปยังแต่ละ admin_user_id
         for admin_user_id in admin_user_ids:
             try:
                 line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
@@ -842,7 +932,6 @@ def notify_admin_receive_confirmation(order_id):
         print(f"ไม่มีคำร้อง ID {order_id}")
     except LineBotApiError as e:
         print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
-        # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
         if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
             print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
         else:
@@ -853,22 +942,83 @@ def notify_admin_receive_confirmation(order_id):
 
 
 
+
 # ส่งการแจ้งเตือนไปยังแอดมินเมื่อผู้ใช้ยืนยันรับพัสดุหรือมีการอนุมัติ/ปฏิเสธคำร้อง
+# def notify_admin_order_status(order_id):
+#     try:
+#         order = Order.objects.get(id=order_id)
+#         admin_user_ids = UserLine.objects.filter(
+#             user__is_manager=True
+#         ).values_list('userId', flat=True)  # Get userId of all managers
+
+#         # เพิ่ม userId ของผู้ดูแลระบบ
+#         admin_user_ids = list(admin_user_ids) + list(
+#             UserLine.objects.filter(user__is_admin=True).values_list('userId', flat=True)
+#         )
+        
+#         message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} "  # เริ่มต้นข้อความ
+        
+#         # ตรวจสอบสถานะการอนุมัติคำร้อง
+#         if order.status is True:
+#             if order.date_receive:
+#                 # ตรวจสอบและจัดการ timezone
+#                 timezone = pytz.timezone('Asia/Bangkok')
+#                 order_date_receive_with_timezone = order.date_receive.astimezone(timezone)
+#                 formatted_date = order_date_receive_with_timezone.strftime("%d/%m/%Y")
+#                 formatted_time = order_date_receive_with_timezone.strftime("%H:%M")
+                
+#                 # เพิ่มข้อความที่มีวันที่และเวลา
+#                 message += f"ได้รับการอนุมัติแล้ว ✅ \nเจ้าหน้าที่เตรียมส่งมอบวัสดุในวันที่ {formatted_date} เวลา {formatted_time}."
+#                 # print(f"ได้รับการอนุมัติแล้ว ✅ \nเจ้าหน้าที่เตรียมส่งมอบวัสดุในวันที่ {formatted_date} เวลา {formatted_time}.")
+#             else:
+#                 # ถ้าไม่มีวันที่รับ
+#                 message += f"ได้รับการอนุมัติแล้ว ✅ \nแต่ยังไม่ได้กำหนดวันส่งมอบ."
+#                 # print(f"ได้รับการอนุมัติแล้ว ✅ \nแต่ยังไม่ได้กำหนดวันส่งมอบ.")
+        
+#         elif order.status is False:
+#             message += f"ถูกปฏิเสธ ❌"
+#             # print(f"ID {order_id} ถูกปฏิเสธ ❌")
+        
+#         elif order.status is None:
+#             message += f"ยังไม่ได้รับการยืนยัน"
+#             # print(f"ยังไม่ได้รับการยืนยัน ID {order_id}")
+
+#         # ส่งการแจ้งเตือนไปยังผู้จัดการและผู้ดูแลระบบ
+#         for admin_user_id in admin_user_ids:
+#             line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
+    
+#     except Order.DoesNotExist:
+#         print(f"ไม่มีคำร้อง ID {order_id}")
+#     except LineBotApiError as e:
+#         print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
+#         # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
+#         if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
+#             print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
+#         else:
+#             print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
+#     except Exception as e:
+#         print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
+
+
 def notify_admin_order_status(order_id):
     try:
         order = Order.objects.get(id=order_id)
-        admin_user_ids = UserLine.objects.filter(
+        
+        # ดึง userId ของผู้ใช้งานที่เป็น manager และ admin
+        admin_user_ids = list(UserLine.objects.filter(
             user__is_manager=True
-        ).values_list('userId', flat=True)  # Get userId of all managers
-
-        # เพิ่ม userId ของผู้ดูแลระบบ
-        admin_user_ids = list(admin_user_ids) + list(
+        ).values_list('userId', flat=True)) + list(
             UserLine.objects.filter(user__is_admin=True).values_list('userId', flat=True)
         )
+
+        if not admin_user_ids:
+            print("ไม่พบ Line ID สำหรับผู้ใช้ผู้ดูแลระบบหรือผู้จัดการ")
+            return
+
+        # สร้างข้อความที่จะส่ง
+        message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} "
         
-        message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} "  # เริ่มต้นข้อความ
-        
-        # ตรวจสอบสถานะการอนุมัติคำร้อง
+        # ตรวจสอบสถานะการอนุมัติคำร้องและปรับข้อความใน message
         if order.status is True:
             if order.date_receive:
                 # ตรวจสอบและจัดการ timezone
@@ -879,23 +1029,18 @@ def notify_admin_order_status(order_id):
                 
                 # เพิ่มข้อความที่มีวันที่และเวลา
                 message += f"ได้รับการอนุมัติแล้ว ✅ \nเจ้าหน้าที่เตรียมส่งมอบวัสดุในวันที่ {formatted_date} เวลา {formatted_time}."
-                print(f"ได้รับการอนุมัติแล้ว ✅ \nเจ้าหน้าที่เตรียมส่งมอบวัสดุในวันที่ {formatted_date} เวลา {formatted_time}.")
             else:
                 # ถ้าไม่มีวันที่รับ
                 message += f"ได้รับการอนุมัติแล้ว ✅ \nแต่ยังไม่ได้กำหนดวันส่งมอบ."
-                print(f"ได้รับการอนุมัติแล้ว ✅ \nแต่ยังไม่ได้กำหนดวันส่งมอบ.")
         
         elif order.status is False:
             message += f"ถูกปฏิเสธ ❌"
-            print(f"ID {order_id} ถูกปฏิเสธ ❌")
         
         elif order.status is None:
             message += f"ยังไม่ได้รับการยืนยัน"
-            print(f"ยังไม่ได้รับการยืนยัน ID {order_id}")
-
-        # ส่งการแจ้งเตือนไปยังผู้จัดการและผู้ดูแลระบบ
-        for admin_user_id in admin_user_ids:
-            line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
+        
+        # ส่งการแจ้งเตือนให้ผู้ใช้งานหลายคนในครั้งเดียว
+        line_bot_api.multicast(admin_user_ids, TextSendMessage(text=message))
     
     except Order.DoesNotExist:
         print(f"ไม่มีคำร้อง ID {order_id}")
@@ -908,6 +1053,7 @@ def notify_admin_order_status(order_id):
             print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
     except Exception as e:
         print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
+
 
 
 # from linebot.exceptions import LineBotApiError

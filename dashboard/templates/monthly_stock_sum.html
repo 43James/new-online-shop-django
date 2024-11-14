@@ -59,7 +59,7 @@
             </select>
         </div>
         
-        <div class="col-auto"><h6>เลือกช่วงเวลา</h6></div>
+        <div class="col-auto"><label for="start_month">เลือกเดือน</label></div>
         <div class="col-auto">
             <select name="start_month" id="start_month" class="form-select">
                 {% for m in months %}
@@ -74,7 +74,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-auto"><h5>ถึง</h5></div>
+        <!-- <div class="col-auto"><h5>ถึง</h5></div>
         <div class="col-auto">
             <select name="end_month" id="end_month" class="form-select">
                 {% for m in months %}
@@ -99,7 +99,7 @@
                 <option value="3" {% if quarter == 3 %}selected{% endif %}>ไตรมาส 3 (เม.ย.- มิ.ย.)</option>
                 <option value="4" {% if quarter == 4 %}selected{% endif %}>ไตรมาส 4 (ก.ค.- ก.ย.)</option>
             </select>
-        </div>
+        </div> -->
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">ค้นหา</button>
             <a href="{% url 'dashboard:monthly_stock_sum' %}" class="btn btn-secondary">ยกเลิก</a>
@@ -113,7 +113,8 @@
             document.querySelector('form').submit();       // Submit the form
         }
     </script>
-    <h3 class="text-center">ข้อมูลวัสดุคงเหลือ {{ quarter_text }} {{ month_text }} พ.ศ. {{ year_range_text }} ( {{ selected_categorys }} )</h3>
+        <h3 class="text-center">วัสดุคงเหลือประจำเดือน {{ previous_month_name }} พ.ศ. {{ previous_year_buddhist }}</h3>
+        <!-- <h3 class="text-center">ข้อมูลวัสดุคงเหลือ {{ quarter_text }} {{ month_text }} พ.ศ. {{ year_range_text }} ( {{ selected_categorys }} )</h3> -->
     <div class="row justify-content-end">
         <div class="col-auto">
             <a href="{% url 'dashboard:export_monthly_stock_sum_to_excel' %}?category={{ selected_category }}&start_month={{ selected_start_month }}&start_year={{ selected_start_year }}&end_month={{ selected_end_month }}&end_year={{ selected_end_year }}&quarter={{ quarter }}" class="icon-link justify-content-end">
