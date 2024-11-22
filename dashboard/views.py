@@ -696,7 +696,6 @@ def monthly_stock_sum(request):
 
 
 
-
 def export_monthly_stock_sum_to_excel(request):
     now = datetime.now()
     last_month = now.month - 1 if now.month > 1 else 12
@@ -852,7 +851,6 @@ def export_monthly_stock_sum_to_excel(request):
     response['Content-Disposition'] = f'attachment; filename=monthly_stock_sum_{now.strftime("%Y%m%d")}.xlsx'
     wb.save(response)
     return response
-
 
 
 
@@ -1135,8 +1133,6 @@ def export_to_excel_receive(request):
 
 
 
-
-
 @user_passes_test(is_authorized)
 @login_required
 # รายงานยอดรวมที่มีการเบิกแต่ละเดือน
@@ -1157,6 +1153,7 @@ def report_monthly_totals(request):
     context = {
         'title': 'Monthly Totals',
         'report_monthly_totals': report_monthly_totals_float,
+        'pending_orders_count': count_pending_orders(),
     }
     return render(request, 'report_monthly_totals.html', context)
 
@@ -1865,6 +1862,41 @@ def issuing_report(request):
 @user_passes_test(is_authorized)
 @login_required
 # export to excel product
+# def export_products_to_excel(request):
+#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+#     response['Content-Disposition'] = 'attachment; filename="products.xlsx"'
+
+#     # Create Excel workbook
+#     wb = Workbook()
+#     ws = wb.active
+#     ws.title = "Products"
+
+#     # Define headers
+#     headers = ['หมวดหมู่หลัก', 'หมวดหมู่ย่อย', 'รหัสพัสดุ', 'ชื่อรายการ', 'คำอธิบาย', 'หน่วย','คงเหลือเดือนก่อน', 'สต๊อกคงเหลือเดือนนี้', 'วันที่เพิ่มรายการ', ]
+#     ws.append(headers)
+
+#     # Query data
+#     products = Product.objects.all().select_related('category__category')  # ใช้ select_related เพื่อดึงข้อมูลแบบ prefetch จากแบบจำลอง Category และ Subcategory
+
+#     # Add data rows
+#     for product in products:
+#         row = [
+#             product.category.category.name_cate if product.category else '',  # หมวดหมู่หลัก
+#             product.category.name_sub if product.category else '',  # หมวดหมู่ย่อย
+#             product.product_id,
+#             product.product_name,
+#             product.description,
+#             product.unit,
+#             product.total_quantity_received,  # คงเหลือเดือนก่อน
+#             product.total_quantity_issued,    # สต๊อกคงเหลือเดือนนี้
+#             product.date_created.strftime('%Y-%m-%d %H:%M:%S'),  # แปลง datetime เป็น string ก่อนนำไปใช้
+#         ]
+#         ws.append(row)
+
+#     # Save workbook to response
+#     wb.save(response)
+#     return response
+
 def export_products_to_excel(request):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="products.xlsx"'
@@ -1875,22 +1907,37 @@ def export_products_to_excel(request):
     ws.title = "Products"
 
     # Define headers
-    headers = ['หมวดหมู่หลัก', 'หมวดหมู่ย่อย', 'รหัสพัสดุ', 'ชื่อรายการ', 'คำอธิบาย', 'หน่วย', 'วันที่เพิ่มรายการ', ]
+    headers = ['หมวดหมู่หลัก', 'หมวดหมู่ย่อย', 'รหัสพัสดุ', 'ชื่อรายการ', 'คำอธิบาย', 'หน่วย', 
+               'คงเหลือเดือนก่อน', 'สต๊อกคงเหลือเดือนนี้', 'วันที่เพิ่มรายการ']
     ws.append(headers)
 
-    # Query data
-    products = Product.objects.all().select_related('category__category')  # ใช้ select_related เพื่อดึงข้อมูลแบบ prefetch จากแบบจำลอง Category และ Subcategory
+    # Query products
+    products = Product.objects.all().select_related('category__category')  # ใช้ prefetch_related สำหรับดึงข้อมูล category และ subcategory
 
     # Add data rows
     for product in products:
+        # Get stock for the previous month
+        last_month_record = MonthlyStockRecord.objects.filter(product=product, month=(timezone.now().month - 1), year=timezone.now().year).first()
+        last_month_balance = last_month_record.end_of_month_balance if last_month_record else 0
+        
+        # Get stock for the current month
+        current_month_record = MonthlyStockRecord.objects.filter(product=product, month=timezone.now().month, year=timezone.now().year).first()
+        current_month_balance = current_month_record.end_of_month_balance if current_month_record else 0
+        
+        # Get the total quantity received for the product from the Receiving model
+        total_quantity = Receiving.total_quantity_by_product(product.id)  # ใช้ฟังก์ชัน total_quantity_by_product
+
+        # Add data row
         row = [
-            product.category.category.name_cate if product.category else '',  # หมวดหมู่หลัก
+            product.category.category.name_cate if product.category and product.category.category else '',  # หมวดหมู่หลัก
             product.category.name_sub if product.category else '',  # หมวดหมู่ย่อย
             product.product_id,
             product.product_name,
             product.description,
             product.unit,
-            product.date_created.strftime('%Y-%m-%d %H:%M:%S'),  # แปลง datetime เป็น string ก่อนนำไปใช้
+            last_month_balance,  # คงเหลือเดือนก่อน
+            total_quantity,  # สต๊อกคงเหลือเดือนนี้
+            product.date_created.strftime('%Y-%m-%d %H:%M:%S'),  # วันที่เพิ่มรายการ
         ]
         ws.append(row)
 
@@ -1997,7 +2044,9 @@ def products(request):
     )
 
     # เพิ่มการเรียงลำดับที่แน่นอนหลังการ annotate
-    products = products.order_by('id')
+    # products = products.order_by('id')
+    # เรียงลำดับจากน้อยไปมากตาม total_quantity_received
+    products = products.order_by('total_quantity_received')
 
     # pagination
     page = request.GET.get('page')
@@ -2015,12 +2064,6 @@ def products(request):
         'filter_stock': filter_stock  # เก็บค่าตัวเลือกการกรองไว้ใน context
     }
     return render(request, 'products.html', context)
-
-
-
-
-
-
 
 
 @user_passes_test(is_authorized_manager)
@@ -2340,7 +2383,6 @@ def delete_receive(request, id):
     suppliers = Receiving.objects.filter(id=id).delete()
     messages.success(request, 'ลบรับเข้าสำเร็จ')
     return redirect('dashboard:receive_list')
-
 
 
 
@@ -2726,6 +2768,7 @@ def orders(request):
     return render(request, 'orders.html', context)
 
 
+
 # ใหม่4
 # orders/views.py
 @user_passes_test(is_authorized_manager)
@@ -2796,6 +2839,7 @@ def approve_pay(request, order_id):
     })
 
 
+
 @user_passes_test(is_authorized_manager)
 @login_required
 def order_detail(request, id):
@@ -2808,5 +2852,4 @@ def order_detail(request, id):
         'pending_orders_count': count_pending_orders(),
         }
     return render(request, 'order_detail.html', context)
-
 
