@@ -285,7 +285,7 @@ def export_to_excel(request, month=None, year=None):
     total_row_num = worksheet.max_row + 1  # ระบุหมายเลขแถวที่ต้องการเพิ่ม
 
     # เพิ่มข้อมูลในแถว
-    total_row = [''] * 5 + ['รวมรายจ่ายที่เบิก'] + [f'{total_issued_value_by_user[user]:,} บาท' for user in sorted(all_users)] + [''] + [''] + [f'{total_issued_value:,} บาท'] + ['']
+    total_row = [''] * 5 + ['รวมรายจ่ายที่เบิก'] + [f'{total_issued_value_by_user[user]:,} บาท' for user in sorted(all_users)] + [''] + [f'{total_issued_value:,} บาท'] + [''] + ['']
     worksheet.append(total_row)
 
     # รวมคอลัมน์ 1-7 เข้าด้วยกัน

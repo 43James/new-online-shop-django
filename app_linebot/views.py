@@ -632,10 +632,6 @@ def linebot(request):
 
 
 
-
-
-
-
 #ส่งการแจ้งเตือนไปยังผู้ใช้งานเมื่อเช็คเอ้าท์สินค้า
 def notify_user(order_id):
     try:
@@ -1130,7 +1126,7 @@ def send_receive_confirmation(request, order_id):
         messages.success(request, 'การแจ้งเตือนถูกส่งไปยังผู้ใช้แล้ว')
 
     except LineBotApiError as e:
-        messages.error(request, f"เกิดข้อผิดพลาด: {str(e)}")
+        messages.error(request, f"เกิดข้อผิดพลาด ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
         print(f"เกิดข้อผิดพลาด: {str(e)}")
     except LineBotApiError as e:
         print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
