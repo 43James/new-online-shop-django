@@ -55,6 +55,7 @@ def add_to_cart(request, product_id):
     return redirect('shop:product_detail', product_id=product.product_id)
 
 
+
 @user_passes_test(is_authorized)
 @login_required
 def show_cart(request):

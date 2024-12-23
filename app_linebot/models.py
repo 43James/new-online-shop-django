@@ -8,4 +8,4 @@ class UserLine(models.Model):
     userId = models.CharField(max_length=500)
 
     def __str__(self):
-        return f"{self.user.username}  : {self.userId}"
+        return f"{self.user.username}  : {self.userId} : {self.user.first_name}"

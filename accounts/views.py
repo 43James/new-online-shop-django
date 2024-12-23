@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 import pandas as pd
+from app_linebot.models import UserLine
 from cart.utils.cart import Cart
 from dashboard.views import is_manager
 from django.db.models import Q
@@ -483,26 +484,52 @@ def manager_profile_detail(request, username):
 
 
 @user_passes_test(is_authorized)
+# @login_required
+# def profile_users(request, username):
+        
+#     try:
+#         obj = 1
+#         users = MyUser.objects.get(username = username)
+#         profiles = Profile.objects.get(user_id=users.id)
+
+#     except:
+#         obj = 2
+#         profiles = 'ผู้ใช้งานยังไม่ได้เพิ่มข้อมูลโปรไฟล์'
+        
+#     context = {
+#         'title' : 'ข้อมูลโปรไฟล์ผู้ใช้งาน',
+#         'user': users, 
+#         'profile': profiles,
+#         'obj': obj,
+#         'pending_orders_count': count_pending_orders(),
+#     }
+#     return render(request, 'profile_users.html', context)
+
 @login_required
 def profile_users(request, username):
-        
     try:
         obj = 1
-        users = MyUser.objects.get(username = username)
+        users = MyUser.objects.get(username=username)
         profiles = Profile.objects.get(user_id=users.id)
 
-    except:
+        # ตรวจสอบการผูกบัญชีไลน์
+        line_user_exists = UserLine.objects.filter(user=users).first()
+
+    except MyUser.DoesNotExist:
         obj = 2
         profiles = 'ผู้ใช้งานยังไม่ได้เพิ่มข้อมูลโปรไฟล์'
+        line_user_exists = False  # กรณีไม่มีการผูกบัญชี
         
     context = {
-        'title' : 'ข้อมูลโปรไฟล์ผู้ใช้งาน',
+        'title': 'ข้อมูลโปรไฟล์ผู้ใช้งาน',
         'user': users, 
         'profile': profiles,
         'obj': obj,
         'pending_orders_count': count_pending_orders(),
+        'line_user_exists': line_user_exists,  # ส่งสถานะการผูกบัญชีไลน์
     }
     return render(request, 'profile_users.html', context)
+
 
 
 @user_passes_test(is_authorized)

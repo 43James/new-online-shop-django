@@ -64,6 +64,10 @@
                 <h5>ข้อมูลบัญชี</h5>
             </div>
             <div class="row">
+                <div class="col-lg-5"><b>ID ผู้ใช้งาน</b></div>
+                <div class="col">{{ user.id }}</div>
+            </div>
+            <div class="row">
                 <div class="col-lg-5"><b>ชื่อผู้ใช้</b></div>
                 <div class="col">{{ user.username }}</div>
             </div>
@@ -75,18 +79,18 @@
             <div class="row mx-5">
                 <h5>ข้อมูลการเข้าใช้งานระบบ</h5>
             </div>
-            <!-- <div class="row">
-                <div class="col-lg-5"><b>กำลังใช้งานระบบ</b></div>
-                {% if is_active %}
+            <div class="row">
+                <div class="col-lg-5"><b>ผูกบัญชีไลน์</b></div>
+                {% if line_user_exists %}
                 <div class="col-lg">
-                    <i class="bi bi-x-circle-fill" style="color:red;"></i>
+                    <i class="bi bi-check-circle-fill" style="color:green;"></i> <!-- เครื่องหมายถูกสีเขียว -->
                 </div>
                 {% else %}
                 <div class="col-lg">
-                    <i class="bi bi-check-circle-fill" style="color:green;"></i>
+                    <i class="bi bi-x-circle-fill" style="color:red;"></i> <!-- เครื่องหมายผิดสีแดง -->
                 </div>
                 {% endif %}
-            </div> -->
+            </div>            
             <div class="row">
                 <div class="col-lg-5"><b>สถานะผู้ใช้งาน</b></div>
                 <div class="col-lg" style="color:rgb(0, 134, 0); font-weight: bold;">{% if user.is_general and user.is_manager and user.is_admin %}
