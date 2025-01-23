@@ -150,12 +150,8 @@ def user_orders(request):
     now = datetime.now()
 
     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
-
-    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-    month = int(request.GET.get('month', last_month))
-    year_buddhist = int(request.GET.get('year', last_year + 543))
+    month = int(request.GET.get('month', now.month))
+    year_buddhist = int(request.GET.get('year', now.year + 543))
 
     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
     year_ad = year_buddhist - 543

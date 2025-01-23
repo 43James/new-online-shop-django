@@ -458,7 +458,7 @@ def monthly_report(request, month=None, year=None):
         'month': month,
         'year': year,
         'now': now,
-        'years': range(2020, now.year + 1),
+        'years': range(2023, now.year + 1),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -542,7 +542,13 @@ def record_monthly_stock_view(request):
 # รายงงานจำนวนคงเหลือ ยกมา
 def monthly_stock_records(request):
     now = datetime.now()
-    last_month = now.month - 1 if now.month > 1 else 12
+
+    # # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    # month = int(request.GET.get('month', now.month))
+    # year_buddhist = int(request.GET.get('year', now.year + 543))
+
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    last_month = now.month if now.month > 1 else 12
     last_year = now.year if now.month > 1 else now.year - 1
 
     # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
@@ -553,7 +559,7 @@ def monthly_stock_records(request):
     year_ad = year_buddhist - 543
 
     # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี
-    # records = MonthlyStockRecord.objects.filter(month=month, year=year_ad)
+    records = MonthlyStockRecord.objects.filter(month=month, year=year_ad)
 
     # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี และเรียงตาม ID ของวัสดุ
     records = MonthlyStockRecord.objects.filter(month=month, year=year_ad).order_by('product__id')
@@ -565,7 +571,7 @@ def monthly_stock_records(request):
         'records': records,
         'selected_month': month,
         'selected_year': year_buddhist,
-        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'years': range(2023 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -578,10 +584,9 @@ def monthly_stock_records(request):
     previous_year = year_ad if month > 1 else year_ad - 1
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
-
     return render(request, 'monthly_stock_records.html', context)
 
-
+from dateutil.relativedelta import relativedelta
 @user_passes_test(is_authorized)
 @login_required
 # รายงงานจำนวนวัสดุคงเหลือ ตามไตรมาส
@@ -592,13 +597,12 @@ def monthly_stock_sum(request):
     selected_category_id = request.GET.get('category')
     selected_category = Category.objects.filter(id=selected_category_id).first() if selected_category_id else None
 
-    last_month = now.month - 1 if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
-
-    month = int(request.GET.get('start_month', last_month))
-    year_buddhist = int(request.GET.get('start_year', last_year + 543))
-    end_month = int(request.GET.get('end_month', last_month))
-    end_year_buddhist = int(request.GET.get('end_year', last_year + 543))
+    # ใช้เดือนและปีของเดือนที่แล้วเป็นค่าเริ่มต้น
+    last_month = now - relativedelta(months=1)
+    month = int(request.GET.get('start_month', last_month.month))
+    year_buddhist = int(request.GET.get('start_year', last_month.year + 543))
+    end_month = int(request.GET.get('end_month', now.month))
+    end_year_buddhist = int(request.GET.get('end_year', now.year + 543))
     quarter = int(request.GET.get('quarter', 0))
 
     year_ad = year_buddhist - 543
@@ -631,11 +635,6 @@ def monthly_stock_sum(request):
     else:
         year_range_text = f"{year_buddhist} - {end_year_buddhist}"
 
-    # records = MonthlyStockRecord.objects.filter(
-    #     Q(month__gte=month) & Q(year__gte=year_ad) &
-    #     Q(month__lte=end_month) & Q(year__lte=end_year_ad)
-    # ).order_by('year', 'month')
-
     records = MonthlyStockRecord.objects.filter(month=month, year=year_ad).order_by('product__id')
 
     if selected_category:
@@ -654,6 +653,8 @@ def monthly_stock_sum(request):
                 'total_balance_quarter': 0,
                 'total_price_quarter': 0,
                 'unit': record.product.unit,
+                'month': record.month,
+                'year': record.year,
             }
         product_sums[product_id]['total_balance_quarter'] += record.end_of_month_balance
         product_sums[product_id]['total_price_quarter'] += record.total_price
@@ -663,8 +664,15 @@ def monthly_stock_sum(request):
     total_balance = sum([item['total_balance_quarter'] for item in sorted_product_sums.values()])
     total_price = sum([item['total_price_quarter'] for item in sorted_product_sums.values()])
 
+     # คำนวณเดือนและปีที่แล้ว (เดือนก่อนหน้า) จากค่าที่ผู้ใช้เลือก
+    if month == 1:
+        previous_month = 12
+        previous_year = year_ad - 1
+    else:
+        previous_month = month - 1
+        previous_year = year_ad
+
     context = {
-        # 'title': 'วัสดุคงเหลือประจำเดือนและไตรมาส',
         'title': 'วัสดุคงเหลือประจำเดือน',
         'product_sums': sorted_product_sums,
         'selected_start_month': month,
@@ -677,7 +685,7 @@ def monthly_stock_sum(request):
         'year_range_text': year_range_text,            
         'selected_category': selected_category_id,
         'selected_categorys': selected_category_name,
-        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'years': range(2023 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -687,11 +695,12 @@ def monthly_stock_sum(request):
         'total_price': total_price,
         'pending_orders_count': count_pending_orders(),
     }
+
+    # คำนวณเดือนและปีที่แล้ว (เดือนก่อนหน้า)
     previous_month = month if month > 1 else 12
     previous_year = year_ad if month > 1 else year_ad - 1
-    context['previous_month_name'] = thai_month_name(previous_month)
-    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
-
+    context['previous_month_name'] = thai_month_name(previous_month)  # ฟังก์ชันที่แปลงเดือนเป็นชื่อเดือนภาษาไทย
+    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)  # ฟังก์ชันที่แปลงปีคริสต์ศักราชเป็นปีพุทธศักราช
     return render(request, 'monthly_stock_sum.html', context)
 
 
@@ -854,9 +863,6 @@ def export_monthly_stock_sum_to_excel(request):
 
 
 
-
-
-
 @user_passes_test(is_authorized)
 @login_required
 # export excel รายงงานจำนวนคงเหลือ ยกมา
@@ -951,12 +957,8 @@ def monthly_report_receive(request):
     now = datetime.now()
 
     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
-
-    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-    month = int(request.GET.get('month', last_month))
-    year_buddhist = int(request.GET.get('year', last_year + 543))
+    month = int(request.GET.get('month', now.month))
+    year_buddhist = int(request.GET.get('year', now.year + 543))
 
     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
     year_ad = year_buddhist - 543
@@ -1002,7 +1004,7 @@ def monthly_report_receive(request):
         'selected_category': category_id,
         'selected_category_name': selected_category_name,
         'categories': categories,
-        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'years': range(2023 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -1194,12 +1196,8 @@ def report_order_list(request):
     now = datetime.now()
 
     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
-
-    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-    month = int(request.GET.get('month', last_month))
-    year_buddhist = int(request.GET.get('year', last_year + 543))
+    month = int(request.GET.get('month', now.month))
+    year_buddhist = int(request.GET.get('year', now.year + 543))
 
     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
     year_ad = year_buddhist - 543
@@ -1216,7 +1214,7 @@ def report_order_list(request):
         'order_data': order_data,
         'selected_month': month,
         'selected_year': year_buddhist,
-        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'years': range(2023 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -1319,16 +1317,24 @@ def dashboard_home(request):
     # การกรองตามหมวดหมู่หลัก
     selected_category_id = request.GET.get('category')
     selected_category = Category.objects.filter(id=selected_category_id).first() if selected_category_id else None
-    
-    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
-    
-    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-    start_month = int(request.GET.get('start_month', last_month))
-    start_year_buddhist = int(request.GET.get('start_year', last_year + 543))
-    end_month = int(request.GET.get('end_month', last_month))
-    end_year_buddhist = int(request.GET.get('end_year', last_year + 543))
+
+     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    current_month = now.month
+    current_year_buddhist = now.year + 543
+
+    # ดึงค่าจาก GET หรือใช้ค่าปัจจุบัน
+    start_month = int(request.GET.get('start_month', current_month))
+    start_year_buddhist = int(request.GET.get('start_year', current_year_buddhist))
+    end_month = int(request.GET.get('end_month', current_month))
+    end_year_buddhist = int(request.GET.get('end_year', current_year_buddhist))
+
+    # แปลงปี พ.ศ. เป็น ค.ศ.
+    start_year_ad = start_year_buddhist - 543
+    end_year_ad = end_year_buddhist - 543
+
+    # ตรวจสอบค่าที่ได้รับ
+    print(f"Start Month: {start_month}, Start Year AD: {start_year_ad}")
+    print(f"End Month: {end_month}, End Year AD: {end_year_ad}")
     
     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
     start_year_ad = start_year_buddhist - 543
@@ -1339,13 +1345,21 @@ def dashboard_home(request):
     print(f"End Month: {end_month}, End Year AD: {end_year_ad}")
 
     # กรองข้อมูลการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์แล้ว ตามช่วงเวลาที่เลือก
-    issuing_data = Issuing.objects.filter(
-        order__status=True,
-        year__gte=start_year_ad,
-        year__lte=end_year_ad,
-        month__gte=start_month,
-        month__lte=end_month
-    )
+    issuing_data = Issuing.objects.filter(order__status=True)
+
+    if start_year_ad == end_year_ad:
+        # กรณีปีเดียวกัน
+        issuing_data = issuing_data.filter(
+            year=start_year_ad,
+            month__gte=start_month,
+            month__lte=end_month
+        )
+    else:
+        # กรณีข้ามปี
+        issuing_data = issuing_data.filter(
+            Q(year=start_year_ad, month__gte=start_month) |
+            Q(year=end_year_ad, month__lte=end_month)
+        )
 
     if selected_category:
         issuing_data = issuing_data.filter(product__category__category_id=selected_category.id)
@@ -1428,7 +1442,7 @@ def dashboard_home(request):
             'selected_category': selected_category_id,
             'selected_categorys': selected_category_name,
             'categories': Category.objects.all(),
-            'years': range(2020 + 543, datetime.now().year + 1 + 543),
+            'years': range(2023 + 543, datetime.now().year + 1 + 543),
             'months': [
                 (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
                 (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -1449,7 +1463,7 @@ def dashboard_home(request):
             'selected_category': selected_category_id,
             'selected_categorys': selected_category_name,
             'categories': Category.objects.all(),
-            'years': range(2020 + 543, datetime.now().year + 1 + 543),
+            'years': range(2023 + 543, datetime.now().year + 1 + 543),
             'months': [
                 (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
                 (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -1580,7 +1594,7 @@ def get_random_color():
 #         'selected_start_year': start_year_buddhist,
 #         'selected_end_month': end_month,
 #         'selected_end_year': end_year_buddhist,
-#         'years': range(2020 + 543, datetime.now().year + 1 + 543),
+#         'years': range(2023 + 543, datetime.now().year + 1 + 543),
 #         'months': [
 #             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
 #             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -1592,36 +1606,182 @@ def get_random_color():
 #     return render(request, 'dashboard_report.html', context)
 
 
+# def dashboard_report(request):
+#     now = datetime.now()
+
+#     last_month = now.month if now.month > 1 else 12
+#     last_year = now.year if now.month > 1 else now.year - 1
+
+#     start_month = int(request.GET.get('start_month', last_month))
+#     start_year_buddhist = int(request.GET.get('start_year', last_year + 543))
+#     end_month = int(request.GET.get('end_month', last_month))
+#     end_year_buddhist = int(request.GET.get('end_year', last_year + 543))
+#     selected_category_id = request.GET.get('category')  # รับค่าหมวดหมู่หลักจากพารามิเตอร์ GET
+
+#     start_year_ad = start_year_buddhist - 543
+#     end_year_ad = end_year_buddhist - 543
+
+#     # การกรองตามหมวดหมู่หลัก
+#     combined_data = Issuing.objects.filter(
+#         order__status=True,
+#         year__gte=start_year_ad,
+#         year__lte=end_year_ad,
+#         month__gte=start_month,
+#         month__lte=end_month
+#     )
+
+#     if selected_category_id:
+#         combined_data = combined_data.filter(product__category__id=selected_category_id)
+    
+#     # เพิ่มการหา name_cate ของหมวดหมู่หลัก
+#     selected_category_name = Category.objects.get(id=selected_category_id).name_cate if selected_category_id else "ทั้งหมด"
+
+#     combined_data = combined_data.values(
+#         'order__user__profile__workgroup__work_group',
+#         'product__product_name',
+#         'product__unit',
+#         'month',
+#         'year'
+#     ).annotate(
+#         total_quantity=Sum('quantity'),
+#         total_amount=Sum(F('price') * F('quantity'))
+#     ).order_by('order__user__profile__workgroup__work_group', 'month')
+
+#     # แปลงข้อมูลที่ได้มาเป็น DataFrame
+#     df = pd.DataFrame(list(combined_data))
+
+#     if not df.empty:
+#         df['month'] = df['month'].astype(int)
+#         df['total_amount'] = df['total_amount'].astype(float)
+#         df['total_quantity'] = df['total_quantity'].astype(float)
+        
+#         # เปลี่ยนตัวเลขเป็นชื่อเดือน
+#         month_names = {
+#             1: 'มกราคม', 2: 'กุมภาพันธ์', 3: 'มีนาคม', 4: 'เมษายน',
+#             5: 'พฤษภาคม', 6: 'มิถุนายน', 7: 'กรกฎาคม', 8: 'สิงหาคม',
+#             9: 'กันยายน', 10: 'ตุลาคม', 11: 'พฤศจิกายน', 12: 'ธันวาคม'
+#         }
+
+#         labels = [month_names[m] for m in sorted(df['month'].unique().tolist())]
+#         work_groups = df['order__user__profile__workgroup__work_group'].unique().tolist()
+
+#         # สีสำหรับกลุ่มงานแต่ละกลุ่มงาน
+#         colors = [
+#             'rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)',
+#             'rgba(255, 206, 86, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'
+#         ]
+
+#         # กราฟแนวโน้มมูลค่าการเบิกวัสดุแต่ละกลุ่มงาน
+#         value_datasets = []
+#         for i, work_group in enumerate(work_groups):
+#             group_data = df[df['order__user__profile__workgroup__work_group'] == work_group]
+#             data = [group_data[group_data['month'] == month]['total_amount'].sum() for month in sorted(df['month'].unique())]
+#             value_datasets.append({
+#                 'label': f'{work_group}',
+#                 'data': data,
+#                 'borderColor': colors[i % len(colors)],
+#                 'backgroundColor': colors[i % len(colors)].replace('1)', '1)'),
+#                 'fill': False
+#             })
+
+#         value_chart_data = {
+#             'labels': labels,
+#             'datasets': value_datasets
+#         }
+
+#         # กราฟแนวโน้มการใช้วัสดุแต่ละกลุ่มงานในแต่ละเดือน
+#         quantity_datasets = []
+#         for i, work_group in enumerate(work_groups):
+#             group_data = df[df['order__user__profile__workgroup__work_group'] == work_group]
+#             data = [group_data[group_data['month'] == month]['total_quantity'].sum() for month in sorted(df['month'].unique())]
+#             quantity_datasets.append({
+#                 'label': f'{work_group}',
+#                 'data': data,
+#                 'borderColor': colors[i % len(colors)],
+#                 'backgroundColor': colors[i % len(colors)].replace('1)', '1)'),
+#                 'fill': False
+#             })
+
+#         quantity_chart_data = {
+#             'labels': labels,
+#             'datasets': quantity_datasets
+#         }
+
+#     else:
+#         value_chart_data = {
+#             'labels': [],
+#             'datasets': []
+#         }
+#         quantity_chart_data = {
+#             'labels': [],
+#             'datasets': []
+#         }
+
+#     context = {
+#         'title': 'รายงานแผนภูมิเส้น',
+#         'title2': 'กราฟแนวโน้มมูลค่าการเบิกวัสดุและการใช้วัสดุแต่ละกลุ่มงาน',
+#         'pending_orders_count': count_pending_orders(),
+#         'now': now,
+#         'selected_start_month': start_month,
+#         'selected_start_year': start_year_buddhist,
+#         'selected_end_month': end_month,
+#         'selected_end_year': end_year_buddhist,
+#         'selected_category': selected_category_id,  # เพิ่มการส่งข้อมูลหมวดหมู่หลัก
+#         'selected_categorys': selected_category_name,
+#         'years': range(2023 + 543, datetime.now().year + 1 + 543),
+#         'months': [
+#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+#         ],
+#         'value_chart_data': json.dumps(value_chart_data, ensure_ascii=False, default=str),
+#         'quantity_chart_data': json.dumps(quantity_chart_data, ensure_ascii=False, default=str),
+#         'categories': Category.objects.all()  # เพิ่มข้อมูลหมวดหมู่หลัก
+#     }
+#     return render(request, 'dashboard_report.html', context)
+
 def dashboard_report(request):
     now = datetime.now()
 
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    current_month = now.month
+    current_year_buddhist = now.year + 543
 
-    start_month = int(request.GET.get('start_month', last_month))
-    start_year_buddhist = int(request.GET.get('start_year', last_year + 543))
-    end_month = int(request.GET.get('end_month', last_month))
-    end_year_buddhist = int(request.GET.get('end_year', last_year + 543))
+    start_month = int(request.GET.get('start_month', current_month))
+    start_year_buddhist = int(request.GET.get('start_year', current_year_buddhist))
+    end_month = int(request.GET.get('end_month', current_month))
+    end_year_buddhist = int(request.GET.get('end_year', current_year_buddhist))
     selected_category_id = request.GET.get('category')  # รับค่าหมวดหมู่หลักจากพารามิเตอร์ GET
 
     start_year_ad = start_year_buddhist - 543
     end_year_ad = end_year_buddhist - 543
 
-    # การกรองตามหมวดหมู่หลัก
-    combined_data = Issuing.objects.filter(
-        order__status=True,
-        year__gte=start_year_ad,
-        year__lte=end_year_ad,
-        month__gte=start_month,
-        month__lte=end_month
-    )
+    # การกรองข้อมูลตามเดือนและปี
+    if start_year_ad == end_year_ad:
+        # กรณีที่ปีเริ่มต้นและปีสิ้นสุดเป็นปีเดียวกัน
+        combined_data = Issuing.objects.filter(
+            order__status=True,
+            year=start_year_ad,
+            month__gte=start_month,
+            month__lte=end_month
+        )
+    else:
+        # กรณีที่ปีเริ่มต้นและปีสิ้นสุดเป็นคนละปี
+        combined_data = Issuing.objects.filter(
+            order__status=True
+        ).filter(
+            Q(year=start_year_ad, month__gte=start_month) | 
+            Q(year=end_year_ad, month__lte=end_month) |
+            Q(year__gt=start_year_ad, year__lt=end_year_ad)
+        )
 
     if selected_category_id:
         combined_data = combined_data.filter(product__category__id=selected_category_id)
-    
+
     # เพิ่มการหา name_cate ของหมวดหมู่หลัก
     selected_category_name = Category.objects.get(id=selected_category_id).name_cate if selected_category_id else "ทั้งหมด"
 
+    # การประมวลผลข้อมูลและการแปลงเป็น DataFrame
     combined_data = combined_data.values(
         'order__user__profile__workgroup__work_group',
         'product__product_name',
@@ -1640,7 +1800,7 @@ def dashboard_report(request):
         df['month'] = df['month'].astype(int)
         df['total_amount'] = df['total_amount'].astype(float)
         df['total_quantity'] = df['total_quantity'].astype(float)
-        
+
         # เปลี่ยนตัวเลขเป็นชื่อเดือน
         month_names = {
             1: 'มกราคม', 2: 'กุมภาพันธ์', 3: 'มีนาคม', 4: 'เมษายน',
@@ -1714,7 +1874,7 @@ def dashboard_report(request):
         'selected_end_year': end_year_buddhist,
         'selected_category': selected_category_id,  # เพิ่มการส่งข้อมูลหมวดหมู่หลัก
         'selected_categorys': selected_category_name,
-        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'years': range(2023 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -1722,9 +1882,14 @@ def dashboard_report(request):
         ],
         'value_chart_data': json.dumps(value_chart_data, ensure_ascii=False, default=str),
         'quantity_chart_data': json.dumps(quantity_chart_data, ensure_ascii=False, default=str),
-        'categories': Category.objects.all()  # เพิ่มข้อมูลหมวดหมู่หลัก
+        'categories': Category.objects.all(),  # เพิ่มข้อมูลหมวดหมู่หลัก
+        'current_month': current_month,  # เพิ่มข้อมูลเดือนปัจจุบัน
+        'current_year_buddhist': current_year_buddhist  # เพิ่มข้อมูลปีพ.ศ. ปัจจุบัน
     }
     return render(request, 'dashboard_report.html', context)
+
+
+
 
 
 def issuing_report(request):
@@ -1734,17 +1899,17 @@ def issuing_report(request):
     selected_workgroup_id = request.GET.get('workgroup')
     selected_workgroup = WorkGroup.objects.filter(id=selected_workgroup_id).first() if selected_workgroup_id else None
 
-    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
+     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    current_month = now.month
+    current_year_buddhist = now.year + 543
 
-    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-    start_month = int(request.GET.get('start_month', last_month))
-    start_year_buddhist = int(request.GET.get('start_year', last_year + 543))
-    end_month = int(request.GET.get('end_month', last_month))
-    end_year_buddhist = int(request.GET.get('end_year', last_year + 543))
+    # ดึงค่าจาก GET หรือใช้ค่าปัจจุบัน
+    start_month = int(request.GET.get('start_month', current_month))
+    start_year_buddhist = int(request.GET.get('start_year', current_year_buddhist))
+    end_month = int(request.GET.get('end_month', current_month))
+    end_year_buddhist = int(request.GET.get('end_year', current_year_buddhist))
 
-    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    # แปลงปี พ.ศ. เป็น ค.ศ.
     start_year_ad = start_year_buddhist - 543
     end_year_ad = end_year_buddhist - 543
 
@@ -1752,14 +1917,25 @@ def issuing_report(request):
     print(f"Start Month: {start_month}, Start Year AD: {start_year_ad}")
     print(f"End Month: {end_month}, End Year AD: {end_year_ad}")
 
+
     # กรองข้อมูลการเบิกวัสดุที่ได้รับการอนุมัติออเดอร์แล้ว ตามช่วงเวลาที่เลือก
     issuing_data = Issuing.objects.filter(
-        order__status=True,
-        order__year__gte=start_year_ad,
-        order__year__lte=end_year_ad,
-        order__month__gte=start_month,
-        order__month__lte=end_month
+        order__status=True
     )
+
+    if start_year_ad == end_year_ad:
+        # กรณีที่อยู่ในปีเดียวกัน
+        issuing_data = issuing_data.filter(
+            order__year=start_year_ad,
+            order__month__gte=start_month,
+            order__month__lte=end_month
+        )
+    else:
+        # กรณีที่ข้ามปี
+        issuing_data = issuing_data.filter(
+            Q(order__year=start_year_ad, order__month__gte=start_month) |
+            Q(order__year=end_year_ad, order__month__lte=end_month)
+        )
 
     if selected_workgroup:
         issuing_data = issuing_data.filter(order__user__profile__workgroup__id=selected_workgroup.id)
@@ -1826,7 +2002,7 @@ def issuing_report(request):
             'selected_workgroup_name': selected_workgroup_name,
             'workgroups': WorkGroup.objects.all(),
             'pending_orders_count': count_pending_orders(),
-            'years': range(2020 + 543, datetime.now().year + 1 + 543),
+            'years': range(2023 + 543, datetime.now().year + 1 + 543),
             'months': [
                 (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
                 (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -1847,7 +2023,7 @@ def issuing_report(request):
             'selected_workgroup_name': selected_workgroup_name,
             'workgroups': WorkGroup.objects.all(),
             'pending_orders_count': count_pending_orders(),
-            'years': range(2020 + 543, datetime.now().year + 1 + 543),
+            'years': range(2023 + 543, datetime.now().year + 1 + 543),
             'months': [
                 (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
                 (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -2243,12 +2419,16 @@ def receive_list(request):
     now = datetime.now()
 
     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
+    # last_month = now.month if now.month > 1 else 12
+    # last_year = now.year if now.month > 1 else now.year - 1
 
-    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-    month = int(request.GET.get('month', last_month))
-    year_buddhist = int(request.GET.get('year', last_year + 543))
+    # # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+    # month = int(request.GET.get('month', last_month))
+    # year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    month = int(request.GET.get('month', now.month))
+    year_buddhist = int(request.GET.get('year', now.year + 543))
 
     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
     year_ad = year_buddhist - 543
@@ -2273,7 +2453,7 @@ def receive_list(request):
         'pending_orders_count': count_pending_orders(),
         'selected_month': month,
         'selected_year': year_buddhist,
-        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'years': range(2023 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
@@ -2666,24 +2846,23 @@ def edit_subcategory(request, id):
 def orders_all(request):
     now = datetime.now()
 
-    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
+#     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+#     last_month = now.month if now.month > 1 else 12
+#     last_year = now.year if now.month > 1 else now.year - 1
 
-    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-    month = int(request.GET.get('month', last_month))
-    year_buddhist = int(request.GET.get('year', last_year + 543))
+#     # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+#     month = int(request.GET.get('month', last_month))
+#     year_buddhist = int(request.GET.get('year', last_year + 543))
+
+    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+    month = int(request.GET.get('month', now.month))
+    year_buddhist = int(request.GET.get('year', now.year + 543))
 
     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
     year_ad = year_buddhist - 543
 
     # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
     orders_all = Order.objects.all().select_related('user')
-
-    # # ตัวกรองซ่อนออเดอร์ที่มีสถานะ False
-    # hide_unconfirmed = request.GET.get('hide_unconfirmed', 'off') == 'on'
-    # if hide_unconfirmed:
-    #     orders_all = orders_all.filter(status=True)  # แสดงเฉพาะออเดอร์ที่มีสถานะ True
 
     # ตรวจสอบค่าจาก checkbox
     show_rejected = request.GET.get('show_rejected', None) == 'on'
@@ -2698,33 +2877,23 @@ def orders_all(request):
         orders_all = orders_all.filter(lookups)
 
     # กรองตามเดือนและปีที่ระบุ
-    # else:
-    #     orders_all = orders_all.filter(
-    #         month=month,
-    #         year=year_ad
-    #     )
-    # กรองตามเดือนและปีที่ระบุ
     orders_all = orders_all.filter(
         month=month,
         year=year_ad
     )
-    # Debugging print statements
-    # print(f"Selected month: {month}")
-    # print(f"Month name: {thai_month_name(month)}")
 
     context = {
-        'title':'คำร้องเบิกวัสดุทั้งหมด', 
-        'orders_all':orders_all,
+        'title': 'คำร้องเบิกวัสดุทั้งหมด',
+        'orders_all': orders_all,
         'pending_orders_count': count_pending_orders(),
         'selected_month': month,
         'selected_year': year_buddhist,
-        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'years': range(2023 + 543, datetime.now().year + 1 + 543),
         'months': [
             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')],
         'month_name': thai_month_name(month),
-        # 'hide_unconfirmed': hide_unconfirmed,  # ส่งสถานะซ่อนออเดอร์ไปยัง template
         'show_rejected': show_rejected,  # เพิ่มค่า show_rejected ใน context
     }
 
@@ -2734,6 +2903,7 @@ def orders_all(request):
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
 
     return render(request, 'orders_all.html', context)
+
 
 
 

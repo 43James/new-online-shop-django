@@ -158,6 +158,8 @@
                     <th class="user-column1 text-center">ลำดับ</th>
                     <th class="user-column1 text-center">รหัสพัสดุ</th>
                     <th class="user-column1 text-center">วัสดุ</th>
+                    <th class="user-column1 text-center">เดือน</th>
+                    <th class="user-column1 text-center">ปี</th>
                     <th class="user-column1 text-center">รวมจำนวนคงเหลือ</th>
                     <th class="user-column1 text-center">หน่วย</th>
                     <th class="user-column1 text-center">รวมจำนวนเงิน(บาท)</th>
@@ -169,6 +171,8 @@
                         <td class="text-center">{{ forloop.counter }}</td>
                         <td>{{ data.product_id }}</td>
                         <td>{{ data.product_name }}</td>
+                        <td class="text-center">{{ data.month }}</td>
+                        <td class="text-center">{{ data.year }}</td>
                         <td class="text-center">{{ data.total_balance_quarter|intcomma }}</td>
                         <td class="text-center">{{ data.unit }}</td>
                         <td class="text-center">{{ data.total_price_quarter|intcomma }}</td>

@@ -43,10 +43,10 @@
           <th scope="col">ผู้ใช้งาน</th>
           <th scope="col">เลขที่เบิก</th>
           <th scope="col">จำนวน</th>
-          <th scope="col">วันที่เบิก</th>
           <th scope="col">ยอดรวม</th>
-          <th scope="col">สถานะ</th>
-          <th scope="col">ทำรายการ</th>
+          <th scope="col">วันที่เบิก</th>
+          <th scope="col" class="text-center">สถานะ</th>
+          <th scope="col" class="text-center">ทำรายการ</th>
           <th scope="col">รายละเอียด</th>
         </tr>
       </thead>
@@ -57,19 +57,19 @@
           <td scope="row">{{ order.user.get_full_name }}</td>
           <td scope="row">ID {{ order.id }}</td>
           <td scope="row">{{ order.items.count }} รายการ</td>
-          <td scope="row" style="font-size: 15px; width: 2px;">{{ order.date_created| date:"d M Y, H:i" }} น.</td>
-          <td scope="row">{{ order.get_total_price|intcomma }} ฿</td>
+          <td scope="row">{{ order.get_total_price|intcomma }} บาท</td>
+          <td scope="row" style="font-size: 15px; width: 2px;">{{ order.date_created| date:"d M Y H:i" }} น.</td>
 
           {% if order.status == True %}
-          <th scope="row" class="text-success">อนุมัติ</td>
+          <th scope="row" class="text-success text-center">อนุมัติ</td>
             {% elif order.status == False %}
 
-          <th scope="row" class="text-danger">ปฏิเสธ</td>
+          <th scope="row" class="text-danger text-center">ปฏิเสธ</td>
             {% else %}
-          <th scope="row" class="text-warning">รอดำเนินการ..</td>
+          <th scope="row" class="text-warning text-center">รอดำเนินการ..</td>
             {% endif %}
 
-          <td scope="col"><!-- Button trigger modal -->
+          <td scope="col" class="text-center"><!-- Button trigger modal -->
             <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
               data-bs-target="#exampleModal{{ order.id }}">
               อนุมัติ
