@@ -8,13 +8,14 @@ class RegistrationForm(UserCreationForm):
     perfix = forms.ChoiceField(choices=MyUser.PREFIX_CHOICES, label='คำนำหน้า', widget=forms.Select(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
     email = forms.EmailField(required=True)
     is_general = forms.BooleanField(required=False, label="ผู้ใช้ทั่วไป")
-    is_executive = forms.BooleanField(required=False, label="ผู้บิหาร")
-    is_manager = forms.BooleanField(required=False, label="ผู้จัดการระบบ")
+    is_executive = forms.BooleanField(required=False, label="ผู้บริหาร")
+    is_manager = forms.BooleanField(required=False, label="ผู้มีสิทธิ์อนุมัติ")
+    is_warehouse_manager = forms.BooleanField(required=False, label="ผู้จัดการคลัง")
     is_admin = forms.BooleanField(required=False, label="ผู้ดูแลระบบ")
     
     class Meta:
         model = MyUser
-        fields = ['perfix', 'first_name', 'last_name', 'username', 'email', 'password1', 'password2', 'is_general', 'is_executive','is_manager', 'is_admin']
+        fields = ['perfix', 'first_name', 'last_name', 'username', 'email', 'password1', 'password2', 'is_general', 'is_executive','is_manager', 'is_warehouse_manager', 'is_admin']
 
     
 class ProfileForm(forms.ModelForm):
@@ -29,13 +30,14 @@ class UserEditForm(UserCreationForm):
     email = forms.EmailField(required=True)
     is_general = forms.BooleanField(required=False, label="ผู้ใช้ทั่วไป")
     is_executive = forms.BooleanField(required=False, label="ผู้บริหาร")
-    is_manager = forms.BooleanField(required=False, label="ผู้จัดการระบบ")
+    is_manager = forms.BooleanField(required=False, label="ผู้มีสิทธิ์อนุมัติ")
+    is_warehouse_manager = forms.BooleanField(required=False, label="ผู้จัดการคลัง")
     is_admin = forms.BooleanField(required=False, label="ผู้ดูแลระบบ")
 
     class Meta:
         model = MyUser
         fields = ('username', 'password1', 'password2', 'email', 'perfix', 'first_name', 'last_name', 
-                  'is_general', 'is_executive','is_manager', 'is_admin',)
+                  'is_general', 'is_executive','is_manager', 'is_warehouse_manager', 'is_admin',)
 
 
 
@@ -45,19 +47,20 @@ class UserRegistrationForm(UserCreationForm):
     perfix = forms.ChoiceField(choices=MyUser.PREFIX_CHOICES, label='คำนำหน้า', widget=forms.Select(attrs={'class': 'form-control mt-2', 'style': 'font-weight: bold; color: rgb(8, 0, 255);'}))
     email = forms.EmailField(required=True)
     is_general = forms.BooleanField(required=False, label="ผู้ใช้ทั่วไป")
-    is_manager = forms.BooleanField(required=False, label="ผู้จัดการระบบ")
+    is_manager = forms.BooleanField(required=False, label="ผู้มีสิทธิ์อนุมัติ")
+    is_warehouse_manager = forms.BooleanField(required=False, label="ผู้จัดการคลัง")
     is_admin = forms.BooleanField(required=False, label="ผู้ดูแลระบบ")
 
     class Meta:
         model = MyUser
-        fields = ('username', 'password1', 'password2', 'email', 'perfix', 'first_name', 'last_name', 
-                  'is_general', 'is_executive','is_manager', 'is_admin')
+        fields = ('username', 'password1', 'password2', 'email', 'perfix', 'first_name', 'last_name', 'is_general', 'is_executive','is_manager', 'is_warehouse_manager', 'is_admin')
            
     def save(self, commit=True):
         user = super(UserRegistrationForm, self).save(commit=False)
         user.is_general = True
         user.is_executive = False
         user.is_manager = False
+        user.is_warehouse_manager = False
         user.is_admin = False
 
         if commit:

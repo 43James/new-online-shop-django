@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import MyUser, Profile, WorkGroup
 
 class MyUserAdmin(admin.ModelAdmin):
-    list_display = ['username','email', 'is_general', 'is_executive','is_manager','is_admin','date_created']
+    list_display = ['username','email', 'is_general', 'is_executive', 'is_manager', 'is_warehouse_manager', 'is_admin','date_created']
 
     # กำหนดฟิลด์สำหรับการกรองใน sidebar
     list_filter = ['is_staff', 'is_superuser', 'is_active', 'groups']
@@ -22,7 +22,7 @@ class MyUserAdmin(admin.ModelAdmin):
         ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
-        ('Roles', {'fields': ('is_general', 'is_executive', 'is_manager', 'is_admin')}),
+        ('Roles', {'fields': ('is_general', 'is_executive', 'is_manager', 'is_warehouse_manager', 'is_admin')}),
     )
     
 admin.site.register(MyUser,MyUserAdmin)

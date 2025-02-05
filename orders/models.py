@@ -99,38 +99,62 @@ class Issuing(models.Model):
 
 
 
-class Approvereport(models.Model):
-    month_report = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='รายงานการเบิกวัสดุประจำเดือน')
+# class Approvereport(models.Model):
+#     month_report = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='รายงานการเบิกวัสดุประจำเดือน')
 
-    name_sign1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้สำรวจ1')
-    surname_sign1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้สำรวจ1')
-    position1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง1')
+#     name_sign1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้สำรวจ1')
+#     surname_sign1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้สำรวจ1')
+#     position1 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง1')
 
-    name_sign2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้สำรวจ2')
-    surname_sign2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้สำรวจ2')
-    position2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง2')
+#     name_sign2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้สำรวจ2')
+#     surname_sign2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้สำรวจ2')
+#     position2 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง2')
 
-    approve = models.BooleanField(default=False, verbose_name="อนุมัติรายงาน")
-    name_approve = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้ตรวจสอบ')
-    surname_approve = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้ตรวจสอบ')
-    position3 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง3')
-    other = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
+#     approve = models.BooleanField(default=False, verbose_name="อนุมัติรายงาน")
+#     name_approve = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ชื่อ ผู้ตรวจสอบ')
+#     surname_approve = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='นามสกุล ผู้ตรวจสอบ')
+#     position3 = models.CharField(max_length=50 ,blank=True, null=True, verbose_name='ตำแหน่ง3')
+#     other = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
 
-    month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
-    year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
+#     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
+#     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
 
-    date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
-    date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดท')
+#     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
+#     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดท')
+
+#     class Meta:
+#         ordering = ('-id',)
+    
+#     def __str__(self):
+#         return str(self.id)
+    
+#     def save(self, *args, **kwargs):
+#         if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+#             now = timezone.now()
+#             self.month = now.month
+#             self.year = now.year
+#         super().save(*args, **kwargs)
+
+
+
+# แจ้งเตือนวัสดุหมด
+class OutOfStockNotification(models.Model):
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name='ผู้แจ้ง', related_name='notifications')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='วัสดุ', related_name='notifications')
+    quantity_requested = models.PositiveIntegerField(verbose_name='จำนวนที่ต้องการเพิ่ม')
+    note = models.TextField(blank=True, null=True, verbose_name='หมายเหตุ')
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่แจ้ง')
+    acknowledged = models.BooleanField(default=False, verbose_name='รับทราบ')
+    restocked = models.BooleanField(default=False, verbose_name='เติมสต๊อกแล้ว')
+    acknowledged_note = models.TextField(blank=True, null=True, verbose_name='โน๊ตจากเจ้าหน้าที่')
 
     class Meta:
-        ordering = ('-id',)
-    
+        ordering = ['-date_created']
+        verbose_name = "การแจ้งวัสดุหมด"
+        verbose_name_plural = "การแจ้งวัสดุหมด"
+
     def __str__(self):
-        return str(self.id)
-    
-    def save(self, *args, **kwargs):
-        if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
-            now = timezone.now()
-            self.month = now.month
-            self.year = now.year
-        super().save(*args, **kwargs)
+        return f"แจ้ง {self.product} โดย {self.user.get_full_name()}"
+
+    def get_user_full_name(self):
+        return self.user.get_full_name()

@@ -3,7 +3,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 import pytz
 from accounts.models import MyUser
-from orders.models import Issuing, Order
+from orders.models import Issuing, Order, OutOfStockNotification
+from shop.models import Product
 from .models import UserLine
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
@@ -629,9 +630,6 @@ def linebot(request):
 
 
 
-
-
-
 #ส่งการแจ้งเตือนไปยังผู้ใช้งานเมื่อเช็คเอ้าท์สินค้า
 def notify_user(order_id):
     try:
@@ -670,60 +668,8 @@ def notify_user(order_id):
         print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
 
 
+
 #ส่งการแจ้งเตือนไปยังแอดมินเมื่อเช็คเอ้าท์สินค้า
-# def notify_admin(request, order_id):
-#     try:
-#         order = Order.objects.get(id=order_id)
-#     except Order.DoesNotExist:
-#         print("ไม่พบคำสั่งซื้อ")
-#         return
-
-#     # ค้นหาผู้ใช้งานที่เป็น manager และ admin
-#     users_to_notify = MyUser.objects.filter(is_manager=True) | MyUser.objects.filter(is_admin=True)
-
-#     # ดึง Line User IDs ของผู้ใช้งานเหล่านี้
-#     admin_user_ids = []
-#     for user in users_to_notify:
-#         try:
-#             user_line = UserLine.objects.get(user=user)
-#             admin_user_ids.append(user_line.userId)
-#         except UserLine.DoesNotExist:
-#             print(f"ไม่มี Line ID สำหรับผู้ใช้ {user.username}")
-
-#     if not admin_user_ids:
-#         print("ไม่พบ Line ID สำหรับผู้ใช้ผู้ดูแลระบบ")
-#         messages.warning(request, "ไม่พบ Line ID สำหรับผู้ใช้ผู้ดูแลระบบ")
-#         return
-
-#     # ดึงรายการสินค้าที่ถูกเบิก
-#     items = order.items.all()  # Assuming `order.items` is the related name for OrderItems
-
-#     # สร้างข้อความรายการสินค้า
-#     items_list = "\n".join([
-#         f"- {item.product.product_name}: {item.quantity} {item.product.unit} ๆ ละ {item.price} บาท หมายเหตุ: {item.note}" 
-#         for item in items
-#     ])
-
-#     # คำนวณจำนวนเงินรวม
-#     total_cost = sum(item.get_cost() for item in items)
-
-#     # สร้างข้อความที่จะส่ง
-#     message = (
-#         f"คำร้องใหม่จากผู้ใช้งาน {order.user.first_name} เลขที่เบิก {order_id} ที่ต้องได้รับการอนุมัติ..\n"
-#         f"รายการวัสดุที่เบิก:\n{items_list}"
-#         f"\nยอดเงินรวม: {total_cost} บาท"
-#     )
-
-#     # ส่งข้อความไปยังผู้ใช้งานที่เป็น manager และ admin
-#     for user_id in admin_user_ids:
-#         try:
-#             line_bot_api.push_message(user_id, TextSendMessage(text=message))
-#         except Exception as e:
-#             print(f"เกิดข้อผิดพลาดในการส่งข้อความถึงผู้ใช้ {user_id}: {e}")
-#             # เพิ่มการแจ้งเตือนธรรมดาแทนการให้แสดงเออเร่อ
-#             messages.warning(request, "ไม่สามารถส่งข้อความแจ้งเตือนผ่าน Line ได้ เนื่องจากคุณถึงจำนวนจำกัดของเดือนแล้ว")
-
-
 def notify_admin(request, order_id):
     try:
         order = Order.objects.get(id=order_id)
@@ -762,7 +708,7 @@ def notify_admin(request, order_id):
 
     # สร้างข้อความที่จะส่ง
     message = (
-        f"คำร้องใหม่จากผู้ใช้งาน {order.user.first_name} เลขที่เบิก {order_id} ที่ต้องได้รับการอนุมัติ..\n"
+        f"คำร้องใหม่จาก {order.user.first_name} เลขที่เบิก {order_id} ที่ต้องได้รับการอนุมัติ..\n"
         f"รายการวัสดุที่เบิก:\n{items_list}"
         f"\nยอดเงินรวม: {total_cost} บาท"
     )
@@ -863,42 +809,6 @@ def notify_user_pay_confirmed(order_id):
 
 
 # ส่งการแจ้งเตือนไปยังแอดมินเมื่อผู้ใช้ยืนยันรับพัสดุ
-# def notify_admin_receive_confirmation(order_id):
-#     try:
-#         order = Order.objects.get(id=order_id)
-#         admin_user_ids = UserLine.objects.filter(
-#             user__is_manager=True
-#         ).values_list('userId', flat=True)
-        
-#         admin_user_ids = list(admin_user_ids) + list(
-#             UserLine.objects.filter(user__is_admin=True).values_list('userId', flat=True)
-#         )
-
-#         if order.confirm:
-#             message = f"{order.user.first_name} ได้ยืนยันรับวัสดุคำร้อง ID {order_id} เรียบร้อยแล้ว."
-#         else:
-#             message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} ยังไม่ได้รับการยืนยันรับวัสดุ."
-        
-#         # ลองตรวจสอบการส่งข้อความไปยังแต่ละ admin_user_id
-#         for admin_user_id in admin_user_ids:
-#             try:
-#                 line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
-#                 print(f"ส่งข้อความถึง {admin_user_id} สำเร็จ")
-#             except LineBotApiError as e:
-#                 print(f"ส่งข้อความไม่สำเร็จถึง {admin_user_id}: {e.status_code} {e.error.message}")
-    
-#     except Order.DoesNotExist:
-#         print(f"ไม่มีคำร้อง ID {order_id}")
-#     except LineBotApiError as e:
-#         print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
-#         # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
-#         if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
-#             print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
-#         else:
-#             print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
-#     except Exception as e:
-#         print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
-
 def notify_admin_receive_confirmation(order_id):
     try:
         order = Order.objects.get(id=order_id)
@@ -912,7 +822,7 @@ def notify_admin_receive_confirmation(order_id):
         )
 
         if order.confirm:
-            message = f"{order.user.first_name} ได้ยืนยันรับวัสดุคำร้อง ID {order_id} เรียบร้อยแล้ว."
+            message = f"{order.user.first_name} ยืนยันรับวัสดุ คำร้องID {order_id} เรียบร้อยแล้ว."
         else:
             message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} ยังไม่ได้รับการยืนยันรับวัสดุ."
         
@@ -938,71 +848,14 @@ def notify_admin_receive_confirmation(order_id):
 
 
 
-
-# ส่งการแจ้งเตือนไปยังแอดมินเมื่อผู้ใช้ยืนยันรับพัสดุหรือมีการอนุมัติ/ปฏิเสธคำร้อง
-# def notify_admin_order_status(order_id):
-#     try:
-#         order = Order.objects.get(id=order_id)
-#         admin_user_ids = UserLine.objects.filter(
-#             user__is_manager=True
-#         ).values_list('userId', flat=True)  # Get userId of all managers
-
-#         # เพิ่ม userId ของผู้ดูแลระบบ
-#         admin_user_ids = list(admin_user_ids) + list(
-#             UserLine.objects.filter(user__is_admin=True).values_list('userId', flat=True)
-#         )
-        
-#         message = f"คำร้องเลขที่ {order_id} ของ {order.user.first_name} "  # เริ่มต้นข้อความ
-        
-#         # ตรวจสอบสถานะการอนุมัติคำร้อง
-#         if order.status is True:
-#             if order.date_receive:
-#                 # ตรวจสอบและจัดการ timezone
-#                 timezone = pytz.timezone('Asia/Bangkok')
-#                 order_date_receive_with_timezone = order.date_receive.astimezone(timezone)
-#                 formatted_date = order_date_receive_with_timezone.strftime("%d/%m/%Y")
-#                 formatted_time = order_date_receive_with_timezone.strftime("%H:%M")
-                
-#                 # เพิ่มข้อความที่มีวันที่และเวลา
-#                 message += f"ได้รับการอนุมัติแล้ว ✅ \nเจ้าหน้าที่เตรียมส่งมอบวัสดุในวันที่ {formatted_date} เวลา {formatted_time}."
-#                 # print(f"ได้รับการอนุมัติแล้ว ✅ \nเจ้าหน้าที่เตรียมส่งมอบวัสดุในวันที่ {formatted_date} เวลา {formatted_time}.")
-#             else:
-#                 # ถ้าไม่มีวันที่รับ
-#                 message += f"ได้รับการอนุมัติแล้ว ✅ \nแต่ยังไม่ได้กำหนดวันส่งมอบ."
-#                 # print(f"ได้รับการอนุมัติแล้ว ✅ \nแต่ยังไม่ได้กำหนดวันส่งมอบ.")
-        
-#         elif order.status is False:
-#             message += f"ถูกปฏิเสธ ❌"
-#             # print(f"ID {order_id} ถูกปฏิเสธ ❌")
-        
-#         elif order.status is None:
-#             message += f"ยังไม่ได้รับการยืนยัน"
-#             # print(f"ยังไม่ได้รับการยืนยัน ID {order_id}")
-
-#         # ส่งการแจ้งเตือนไปยังผู้จัดการและผู้ดูแลระบบ
-#         for admin_user_id in admin_user_ids:
-#             line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
-    
-#     except Order.DoesNotExist:
-#         print(f"ไม่มีคำร้อง ID {order_id}")
-#     except LineBotApiError as e:
-#         print(f"เกิดข้อผิดพลาดในการส่งข้อความผ่าน Line: {str(e)}")
-#         # แจ้งเตือนเมื่อไม่สามารถส่งข้อความผ่าน Line ได้
-#         if e.status_code == 429:  # กรณีที่จำนวนการส่งข้อความเกินลิมิต
-#             print("ถึงขีดจำกัดการส่งข้อความในเดือนนี้")
-#         else:
-#             print(f"ข้อผิดพลาดที่ไม่รู้จัก: {str(e)}")
-#     except Exception as e:
-#         print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
-
-
+# ส่งการแจ้งเตือนไปยังผู้จัดการคลังหรือมีการอนุมัติ/ปฏิเสธคำร้องเพื่อเตรียมวัสดุ
 def notify_admin_order_status(order_id):
     try:
         order = Order.objects.get(id=order_id)
         
         # ดึง userId ของผู้ใช้งานที่เป็น manager และ admin
         admin_user_ids = list(UserLine.objects.filter(
-            user__is_manager=True
+            user__is_warehouse_manager=True
         ).values_list('userId', flat=True)) + list(
             UserLine.objects.filter(user__is_admin=True).values_list('userId', flat=True)
         )
@@ -1052,51 +905,6 @@ def notify_admin_order_status(order_id):
 
 
 
-# from linebot.exceptions import LineBotApiError
-# # ฟังก์ชันสำหรับส่งการแจ้งเตือนยืนยันการรับวัสดุไปยังผู้ใช้งาน
-# def send_receive_confirmation(request, order_id):
-#     try:
-#         # ดึงข้อมูล order และ user
-#         order = get_object_or_404(Order, id=order_id)
-#         user_line = get_object_or_404(UserLine, user=order.user)
-
-#         if order.pay_item:
-#             # ตรวจสอบวันรับวัสดุ
-#             if order.date_receive:
-#                 timezone = pytz.timezone('Asia/Bangkok')
-#                 order_date_receive_with_timezone = order.date_receive.astimezone(timezone)
-#                 formatted_date = order_date_receive_with_timezone.strftime("%d/%m/%Y")
-#                 formatted_time = order_date_receive_with_timezone.strftime("%H:%M")
-#                 message = (
-#                     f"{order.user.first_name} เจ้าหน้าที่พัสดุจ่ายวัสดุแล้ว กรุณากดยืนยันการรับวัสดุ "
-#                     # f"ภายในวันที่ {formatted_date} เวลา {formatted_time}"
-#                 )
-#             else:
-#                 message = f"{order.user.first_name} เจ้าหน้าที่พัสดุจ่ายวัสดุแล้ว กรุณายืนยันการรับวัสดุ"
-#         else:
-#             message = "รายการของคุณยังไม่ได้รับการยืนยันจ่ายวัสดุ😓"
-
-#         # ส่งข้อความไปยังผู้ใช้ผ่าน Line
-#         line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))
-#         print("ส่งการแจ้งเตือนแล้ว")
-
-#         # แจ้งเตือนผู้ใช้ว่าได้ส่งการแจ้งเตือนแล้ว
-#         messages.success(request, 'การแจ้งเตือนถูกส่งไปยังผู้ใช้แล้ว')
-#         print("การแจ้งเตือนถูกส่งไปยังผู้ใช้แล้ว")
-#     # except Exception as e:
-#     #     messages.error(request, f"เกิดข้อผิดพลาด: {str(e)}")
-#     #     print(f"เกิดข้อผิดพลาด: {str(e)}")
-#     except LineBotApiError as e:
-#         if e.status_code == 429:
-#             messages.error(request, 'เกินโควต้าการส่งข้อความในเดือนนี้ กรุณาลองใหม่เดือนหน้า')
-#         else:
-#             messages.error(request, f"เกิดข้อผิดพลาด: {str(e)}")
-#         print(f"เกิดข้อผิดพลาด: {str(e)}")
-
-#     # หลังจากส่งการแจ้งเตือนแล้ว กลับไปที่หน้ารายการเดิม
-#     return redirect('dashboard:orders_all')  # แทนที่ด้วย view ที่คุณต้องการกลับไป
-
-
 # ฟังก์ชันส่งการแจ้งเตือนจ่ายวัสดุแล้วไปยังผู้ใช้งาน
 def send_receive_confirmation(request, order_id):
     try:
@@ -1139,3 +947,89 @@ def send_receive_confirmation(request, order_id):
         print(f"เกิดข้อผิดพลาดทั่วไป: {str(e)}")
 
     return redirect('dashboard:orders_all')
+
+
+
+# ส่งการแจ้งเตือนไปยังผู้จัดการคลัง
+def notify_admin_out_of_stock(product_id, user):
+    try:
+        product = get_object_or_404(Product, id=product_id)
+        notification = OutOfStockNotification.objects.filter(product=product, user=user).latest('date_created')
+
+        # ดึง admin และ manager ที่มีบัญชี LINE เชื่อมโยง
+        admin_user_ids = UserLine.objects.filter(user__is_warehouse_manager=True).values_list('userId', flat=True)
+        admin_user_ids = set(admin_user_ids)  # ใช้ set() เพื่อลดความซ้ำซ้อน
+        admin_user_ids.update(
+            UserLine.objects.filter(user__is_admin=True).values_list('userId', flat=True)
+        )
+
+        # ตรวจสอบว่ามีหมายเหตุหรือไม่
+        note_text = f"\n📝 หมายเหตุ: {notification.note}" if notification.note else ""
+
+        # สร้างข้อความแจ้งเตือน
+        message = (
+            f"🔴 แจ้งเตือนวัสดุหมด! 🔴\n"
+            f"📌 {product.product_name} หมดสต๊อกแล้ว\n"
+            f"📋 แจ้งโดย: {user.first_name}\n"
+            f"📅 โปรดดำเนินการเติมสต๊อกโดยเร็ว{note_text}"
+        )
+
+        # ส่งข้อความไปยังแอดมินทุกคน
+        for admin_user_id in admin_user_ids:
+            try:
+                line_bot_api.push_message(admin_user_id, TextSendMessage(text=message))
+                print(f"📩 ส่งการแจ้งเตือนวัสดุหมดไปยัง {admin_user_id} สำเร็จ")
+            except Exception as e:
+                print(f"❌ ไม่สามารถส่งข้อความถึง {admin_user_id}: {str(e)}")
+
+    except Product.DoesNotExist:
+        print(f"❌ ไม่พบวัสดุ ID {product_id}")
+    except OutOfStockNotification.DoesNotExist:
+        print(f"❌ ไม่พบการแจ้งเตือนสำหรับวัสดุ ID {product_id} โดย {user.first_name}")
+    except Exception as e:
+        print(f"❌ เกิดข้อผิดพลาด: {str(e)}")
+
+
+
+
+# ส่งการแจ้งเตือนไปยัง Line ผู้ช้งาน เมื่อมีการรับทราบแจ้งเตือน
+def send_acknowledge_notification(notification):
+    """ ส่งการแจ้งเตือนไปยัง Line เมื่อมีการรับทราบแจ้งเตือน พร้อมโน๊ตจากผู้จัดการคลัง """
+    try:
+        user_line = get_object_or_404(UserLine, user=notification.user)
+
+        # ตรวจสอบว่ามีโน๊ตจากผู้จัดการคลังหรือไม่
+        note_text = f"\n📝 โน๊ตจากผู้จัดการคลัง: {notification.acknowledged_note}" if notification.acknowledged_note else ""
+
+        # สร้างข้อความแจ้งเตือน
+        message = (
+            f"📌 ผลการแจ้งเตือนวัสดุ: '{notification.product.product_name}' ได้รับการรับทราบแล้ว ✅{note_text}"
+        )
+
+        # ส่งข้อความแจ้งเตือนไปยังผู้ใช้
+        line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))
+        print("📩 ส่งแจ้งเตือนรับทราบสำเร็จ")
+
+    except LineBotApiError as e:
+        print(f"❌ เกิดข้อผิดพลาดในการส่งแจ้งเตือนรับทราบ: {str(e)}")
+    except Exception as e:
+        print(f"❌ ข้อผิดพลาดทั่วไป: {str(e)}")
+
+
+# ส่งการแจ้งเตือนไปยัง Line ผู้ใช้งาน เมื่อมีการเติมสต๊อก
+def send_restock_notification(notification):
+    """ ส่งการแจ้งเตือนไปยัง Line เมื่อมีการเติมสต๊อก """
+    try:
+        user_line = get_object_or_404(UserLine, user=notification.user)
+
+        # ตรวจสอบว่ามีโน๊ตจากผู้จัดการคลังหรือไม่
+        note_text = f"\n📝 โน๊ตจากผู้จัดการคลัง: {notification.acknowledged_note}" if notification.acknowledged_note else ""
+
+        message = f"📦 วัสดุ '{notification.product.product_name}' ได้ถูกเติมสต๊อกเรียบร้อยแล้ว 🎉{note_text}"
+
+        line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))
+        print("ส่งแจ้งเตือนเติมสต๊อกสำเร็จ")
+    except LineBotApiError as e:
+        print(f"เกิดข้อผิดพลาดในการส่งแจ้งเตือนเติมสต๊อก: {str(e)}")
+    except Exception as e:
+        print(f"ข้อผิดพลาดทั่วไป: {str(e)}")

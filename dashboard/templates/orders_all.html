@@ -92,19 +92,21 @@
 
 
         {% if order.status == True and order.confirm == True %}
-        <th scope="row" class="text-success text-center">เบิกวัสดุสำเร็จ</td>
+        <th scope="row" class="text-center"><span class="badge bg-success">เบิกวัสดุสำเร็จ</span></td>
         {% elif order.status == True %}
-        <th scope="row" class="text-success text-center">อนุมัติ</td>
+        <th scope="row" class="text-center"><span class="badge bg-success">อนุมัติ</span></td>
         {% elif order.status == False %}
-        <th scope="row" class="text-danger text-center">ปฏิเสธ</td>
+        <th scope="row" class="text-center"><span class="badge bg-danger">ปฏิเสธ</span></td>
         {% else %} 
-        <th scope="row" class="text-warning text-center">รอดำเนินการ..</td>
+        <th scope="row" class="text-center"><span class="badge bg-warning">รอดำเนินการ..</span></td>
+
         {% endif %}
 
 
         <td scope="col" class="text-center">
           {% if order.status == None %}
-          <strong class="text-warning">รออนุมัติ..</td>
+          <!-- <strong class="text-warning">รออนุมัติ..</td> -->
+          <span class="badge bg-warning">รออนุมัติ..</span>
           {% elif order.status and order.pay_item == False %}
             <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
               data-bs-target="#exampleModal4{{ order.id }}">
@@ -113,21 +115,21 @@
           {% elif order.status == False and order.pay_item == False %}
           <i class="bi bi-x-circle-fill text-danger "></i>
           {% else %}
-            <strong class="text-success">
-              จ่ายวัสดุแล้ว</strong>
+          <span class="badge bg-success">จ่ายวัสดุแล้ว</span>
           {% endif %}
         </td>
 
 
         <td scope="col" class="text-center">
           {% if order.status == None %}
-          <strong scope="row" class="text-warning text-center">รออนุมัติ..</strong>
+          <!-- <strong scope="row" class="text-warning text-center">รออนุมัติ..</strong> -->
+          <span class="badge bg-warning">รออนุมัติ..</span>
           {% elif order.confirm == True %}
-          <strong scope="row" class="text-success text-center">รับวัสดุแล้ว</strong>
+          <span class="badge bg-success">รับวัสดุแล้ว</span>
           {% elif order.status == False and order.pay_item == False %}
           <i class="bi bi-x-circle-fill text-danger text-center"></i>
           {% else %}
-          <strong class="text-danger text-center">ยังไม่ตอบรับวัสดุ!</strong>
+          <span class="badge bg-danger">ยังไม่ตอบรับวัสดุ!</span>
           {% endif %}
         </td>
 

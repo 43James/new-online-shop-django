@@ -6,18 +6,19 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from requests.exceptions import ConnectTimeout
-from app_linebot.views import notify_admin, notify_admin_receive_confirmation, notify_user
+from app_linebot.views import notify_admin, notify_admin_receive_confirmation, notify_user, notify_admin_out_of_stock
 from dashboard.views import convert_to_buddhist_era, thai_month_name
-from orders.forms import ApprovereportForm, UserApproveForm
-from shop.models import Receiving
+from orders.forms import UserApproveForm, UserOutOfStockNotificationForm
+from shop.models import Product, Receiving
 from shop.views import count_unconfirmed_orders
-from .models import Approvereport, Order, Issuing
+from .models import Order, Issuing, OutOfStockNotification
 from cart.utils.cart import Cart
 from django.http import Http404, HttpResponse
 import requests
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from datetime import datetime, timedelta
+from django.core.paginator import Paginator
 
 
 # def thai_month_name(month):
@@ -36,6 +37,11 @@ def is_manager(user):
         raise Http404
     return True
 
+def is_warehouse_manager(user):
+    if not user.is_warehouse_manager:
+        raise Http404
+    return True
+
 def is_executive(user):
     if not user.is_executive:
         raise Http404
@@ -48,7 +54,7 @@ def is_admin(user):
 
 def is_authorized(user):
     try:
-        return is_manager(user) and is_executive(user) and is_admin(user)
+        return is_manager(user) and is_warehouse_manager(user) and is_executive(user) and is_admin(user)
     except Http404:
         return True
 
@@ -231,6 +237,48 @@ def user_approve(request, order_id):
         'ap': ap,
         'form': form,
     })
+
+
+
+# ฟังก์ชันสำหรับผู้ใช้งานทั่วไป
+@login_required
+def out_of_stock_notification(request):
+    if request.method == 'POST':
+        form = UserOutOfStockNotificationForm(request.POST)
+        if form.is_valid():
+            notification = form.save(commit=False)
+            notification.user = request.user  # ดึงชื่อผู้ใช้งานจากระบบ
+            notification.save()
+
+            # เรียกฟังก์ชันแจ้งเตือนแอดมิน (ต้องส่ง product_id และ user)
+            notify_admin_out_of_stock(notification.product.id, request.user)
+
+            messages.success(request, 'บันทึกการแจ้งเตือนวัสดุหมดสำเร็จ')
+            return redirect('orders:out_of_stock_notification')  # ตรวจสอบว่า URL นี้มีอยู่ใน urls.py
+    else:
+        form = UserOutOfStockNotificationForm()
+
+    # ดึงข้อมูลวัสดุที่หมด (จำนวนคงเหลือ = 0)
+    products = Product.objects.filter(quantityinstock=0)
+
+    # ดึงข้อมูลทั้งหมดพร้อมข้อมูลผู้ใช้งานและรายการวัสดุ
+    notifications = OutOfStockNotification.objects.select_related('user', 'product').all()
+
+    # pagination
+    page = request.GET.get('page')
+    p = Paginator(notifications, 5)
+    try:
+        notifications = p.page(page)
+    except:
+        notifications = p.page(1)
+
+    context = {
+        'form': form,
+        'notifications': notifications,
+        'products': products,  
+    }
+    return render(request, 'out_of_stock_notification.html', context)
+
 
 
 

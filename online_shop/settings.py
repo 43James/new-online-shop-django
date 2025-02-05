@@ -119,6 +119,8 @@ TEMPLATES = [
                 'online_shop.context_processors.return_cart',
                 'online_shop.context_processors.return_categories',
                 'dashboard.context_processors.stock_record_exists',
+                'dashboard.context_processors.pending_outofstock',
+                'dashboard.context_processors.count_pending_orders',
             ],
         },
     },
@@ -219,6 +221,10 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 
 LOGIN_URL = 'accounts:user_login'
+
+# settings.py
+# AUTH_USER_MODEL = 'accounts.MyUser'
+
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

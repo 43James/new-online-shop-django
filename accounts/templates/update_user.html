@@ -79,9 +79,16 @@
     <div class="form-row field-is_manager mb-2">
       <div class="checkbox-row">
           <input type="checkbox" {% if my.is_manager %}checked{% endif %} name="is_manager">
-          <label class="vCheckboxLabel" for="id_is_manager"></label> <strong> ผู้จัดการระบบ</strong>
+          <label class="vCheckboxLabel" for="id_is_manager"></label> <strong> ผู้มีสิทธิอนุมัติ</strong>
       </div>
-  </div>
+    </div>
+
+    <div class="form-row field-is_warehouse_manager mb-2">
+      <div class="checkbox-row">
+          <input type="checkbox" {% if my.is_warehouse_manager %}checked{% endif %} name="is_warehouse_manager">
+          <label class="vCheckboxLabel" for="id_is_warehouse_manager"></label> <strong> ผู้จัดการคลัง</strong>
+      </div>
+    </div>
     
     <div class="form-row field-is_admin mb-2">
         <div class="checkbox-row">

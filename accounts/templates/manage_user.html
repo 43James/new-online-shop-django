@@ -38,20 +38,24 @@
                     <td scope="row">{{ l.profile.workgroup }}</td>
                     <td scope="row">{{ l.profile.position }}</td>
                     <td scope="row">{{ l.email }}</td>
-                    {% if l.is_general and l.is_manager and l.is_admin %}
+                    {% if l.is_general and l.is_warehouse_manager and l.is_admin %}
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้เข้าถึงสิทธิ์ทั้งหมด</td>
+                    {% elif l.is_general and l.is_manager and l.is_warehouse_manager %}
+                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้ใช้งาน, ผู้มีสิทธิอนุมัติ, ผู้จัดการคลัง</td>
                     {% elif l.is_general and l.is_manager %}
-                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้ใช้งาน, ผู้จัดการระบบ</td>
+                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้ใช้งาน, ผู้มีสิทธิอนุมัติ</td>
                     {% elif l.is_general and l.is_executive %}
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้ใช้งาน, ผู้บริหาร</td>
                     {% elif l.is_manager and l.is_admin %}
-                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้จัดการระบบ,แอดมิน</td>
+                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้มีสิทธิอนุมัติ,แอดมิน</td>
+                    {% elif l.is_warehouse_manager and l.is_admin %}
+                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้จัดการคลัง,แอดมิน</td>
                     {% elif l.is_general %}
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้ใช้งาน</td>
                     {% elif l.is_executive %}
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้บริหาร</td>
                     {% elif l.is_manager %}
-                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้จัดการระบบ</td>
+                    <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">ผู้มีสิทธิอนุมัติ</td>
                     {% elif l.is_admin %}
                     <td scope="row" style="color:rgb(0, 134, 0); font-weight: bold;">แอดมิน</td>
                     {% else %}

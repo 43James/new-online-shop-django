@@ -6,6 +6,8 @@ from django.db.models import Sum
 from django.utils.html import format_html
 from django.core.validators import MinValueValidator
 
+# from accounts.models import MyUser
+
 # from orders.models import Issuing
 
 
@@ -174,4 +176,23 @@ class Stock(models.Model):
 #         return total
     
 
-    
+
+# class OutOfStockNotification(models.Model):
+#     user = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name='ผู้แจ้ง', related_name='notifications')
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='วัสดุ', related_name='notifications')
+#     quantity_requested = models.PositiveIntegerField(verbose_name='จำนวนที่ต้องการเพิ่ม')
+#     note = models.TextField(blank=True, null=True, verbose_name='หมายเหตุ')
+#     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่แจ้ง')
+#     acknowledged = models.BooleanField(default=False, verbose_name='รับทราบ')
+#     restocked = models.BooleanField(default=False, verbose_name='เติมสต๊อกแล้ว')
+
+#     class Meta:
+#         ordering = ['-date_created']
+#         verbose_name = "การแจ้งวัสดุหมด"
+#         verbose_name_plural = "การแจ้งวัสดุหมด"
+
+#     def __str__(self):
+#         return f"แจ้ง {self.product} โดย {self.user.get_full_name()}"
+
+#     def get_user_full_name(self):
+#         return self.user.get_full_name()

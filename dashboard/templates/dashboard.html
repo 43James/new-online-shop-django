@@ -23,7 +23,7 @@
     <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
-     <!-- Bootstrap CSS -->
+    <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap-select CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css" rel="stylesheet">
@@ -428,32 +428,36 @@
                     Dashboard Home
                 </li>
             </a>
-            <a class="text-decoration-none " href="{% url 'dashboard:dashboard_report' %}">
+            <!-- <a class="text-decoration-none " href="{% url 'dashboard:dashboard_report' %}">
                 <li
                     class="rounded list-group-item mt-2  text-primary {% if '/dashboard_report/' in request.path %}active text-white{% endif %}">
                     Line Chart Report
                 </li>
-            </a>
-            <a class="text-decoration-none " href="{% url 'dashboard:issuing_report' %}">
+            </a> -->
+            <!-- <a class="text-decoration-none " href="{% url 'dashboard:issuing_report' %}">
                 <li
                     class="rounded list-group-item mt-2  text-primary {% if '/issuing_report/' in request.path %}active text-white{% endif %}">
                     Issuing Report 
                 </li>
-            </a>
+            </a> -->
             <a class="text-decoration-none " href="{% url 'dashboard:monthly_report' %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/monthly_report/' in request.path %}active text-white{% endif %}" >รายงานประจำเดือน</li>
 
             </a>
-            <a class="text-decoration-none " href="{% url 'dashboard:monthly_stock_sum' %}">
+            <!-- <a class="text-decoration-none " href="{% url 'dashboard:monthly_stock_sum' %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/monthly-stock-sum/' in request.path %}active text-white{% endif %}">รายงานวัสดุคงเหลือ</li>
-            </a>
+            </a> -->
             <div class="dropdown">
                 <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
                     type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
                     รายงานอื่นๆ..
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    <!-- <li><a class="dropdown-item {% if '/monthly_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report' %}">รายงานประจำเดือน</a></li> -->
+                    
+                    <li><a class="dropdown-item {% if '/dashboard_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:dashboard_report' %}">Line Chart Report</a></li>
+                    <li><a class="dropdown-item {% if '/issuing_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:issuing_report' %}">Line Chart Report</a></li>
+                    <li><a class="dropdown-item {% if '/monthly-stock-sum/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_stock_sum' %}">รายงานวัสดุคงเหลือ</a></li>
+
                     <li><a class="dropdown-item {% if '/monthly-report-receive/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report_receive' %}">รายงานรับเข้าประจำเดือน</a></li>
                     <li><a class="dropdown-item {% if '/report_order_list/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:report_order_list' %}">รายการเบิกประจำเดือน รายบุคคล</a></li>
                     <li><a class="dropdown-item {% if '/report-monthly-totals/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:report_monthly_totals' %}">ยอดที่เบิกวัสดุแต่ละเดือน</a></li>
@@ -462,60 +466,69 @@
                 </ul>
             </div>
             <hr>
-            {% if request.user.is_manager or user.is_admin %}
+            {% if request.user.is_manager %}
             <h4 class="text-muted">จัดการวัสดุ</h4>
-            <!-- <a class="text-decoration-none" href="{% url 'dashboard:orders' %}">
-                {% if request.user.is_authenticated %}
-                <li
-                    class="rounded list-group-item mt-2  text-primary {% if '/orders/' in request.path %}active text-white{% endif %}">
-                    คำร้องใหม่ <b class="text-danger">{{ pending_orders_count }}</b>
-                </li>
-                {% endif %}
-            </a> -->
-
-            {% if request.user.is_authenticated %}
             <a class="btn btn-primary rounded list-group-item text-danger text-start {% if '/orders/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:orders' %}">
                 <strong class="">คำร้องใหม่</strong>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger ">
                     {{ pending_orders_count }}
                 </span>
             </a>
-            {% endif %}
-
             <a class="text-decoration-none" href="{% url 'dashboard:orders_all' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/orders_all/' in request.path %}active text-white{% endif %}">
+                <li class="rounded list-group-item mt-2 mb-3 text-primary {% if '/orders_all/' in request.path %}active text-white{% endif %}">
                     คำร้องทั้งหมด</li>
             </a>
-            <hr>
+            {% endif %}
 
-            <a class="text-decoration-none" href="{% url 'dashboard:receive_list' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/receive_list/' in request.path %}active text-white{% endif %}">
-                    รับเข้าวัสดุ</li>
-            </a>
-            <!-- <a class="text-decoration-none" href="{% url 'dashboard:stock' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/stock/' in request.path %}active text-white{% endif %}">
-                    สต๊อกคงเหลือ</li>
-            </a> -->
-            <a class="text-decoration-none" href="{% url 'dashboard:products' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/products/' in request.path %}active text-white{% endif %}">
-                    รายการวัสดุและสต๊อก</li>
-            </a>
+            {% if request.user.is_warehouse_manager or user.is_admin %}
+                <h4 class="text-muted">จัดการวัสดุ</h4>
+                {% if request.user.is_authenticated %}
+                    <a class="btn btn-primary rounded list-group-item text-danger text-start {% if '/orders/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:orders' %}">
+                        <strong class="">คำร้องใหม่</strong>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger ">
+                            {{ pending_orders_count }}
+                        </span>
+                    </a>
+                {% endif %}
+
+                <a class="text-decoration-none" href="{% url 'dashboard:orders_all' %}">
+                    <li class="rounded list-group-item mt-2  text-primary {% if '/orders_all/' in request.path %}active text-white{% endif %}">
+                        คำร้องทั้งหมด</li>
+                </a>
+
+                <a class="btn btn-primary mt-2 rounded list-group-item text-danger text-start {% if '/notification/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:notification' %}">
+                    <strong class="">คำร้องแจ้งวัสดุหมด!</strong>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger ">
+                        {{ pending_outofstock_count }}
+                    </span>
+                </a>
+                <hr>
             
-            {% if stock_record_exists %}
-            <a class="text-decoration-none" href="{% url 'dashboard:record_monthly_stock' %}">
-                <li class="rounded list-group-item mt-2 bg-success text-white {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %}">
-                    นับสต๊อกแล้ว 
-                <i class="bi bi-check-circle-fill text-white"></i>
-                </li>   
-            </a>
+                <a class="text-decoration-none" href="{% url 'dashboard:receive_list' %}">
+                    <li class="rounded list-group-item mt-2  text-primary {% if '/receive_list/' in request.path %}active text-white{% endif %}">
+                        รับเข้าวัสดุ</li>
+                </a>
+            
+                <a class="text-decoration-none" href="{% url 'dashboard:products' %}">
+                    <li class="rounded list-group-item mt-2  text-primary {% if '/products/' in request.path %}active text-white{% endif %}">
+                        รายการวัสดุและสต๊อก</li>
+                </a>
+            
+                {% if stock_record_exists %}
+                <a class="text-decoration-none" href="{% url 'dashboard:record_monthly_stock' %}">
+                    <li class="rounded list-group-item mt-2 bg-success text-white {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %}">
+                        นับสต๊อกแล้ว 
+                    <i class="bi bi-check-circle-fill text-white"></i>
+                    </li>   
+                </a>
             
             {% else %}
-            <a class="text-decoration-none" href="{% url 'dashboard:record_monthly_stock' %}">
-                <li class="rounded list-group-item mt-2 bg-danger text-white {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %}">
-                    คุณยังไม่นับสต๊อกในเดือนนี้<br>(กรุณานับสต๊อกด่วน)
-                    <i class="bi bi-exclamation-octagon-fill"></i>
-                </li>
-            </a>
+                <a class="text-decoration-none" href="{% url 'dashboard:record_monthly_stock' %}">
+                    <li class="rounded list-group-item mt-2 bg-danger text-white {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %}">
+                        คุณยังไม่นับสต๊อกในเดือนนี้<br>(กรุณานับสต๊อกด่วน)
+                        <i class="bi bi-exclamation-octagon-fill"></i>
+                    </li>
+                </a>
             {% endif %}
 
             <!-- <a class="text-decoration-none" href="{% url 'dashboard:total_quantity' %}">
@@ -539,6 +552,7 @@
             </div>
             <hr>
             {% endif %}
+
             <h4 class="text-muted">ข้อมูลของฉัน</h4>
             <a class="text-decoration-none" href="{% url 'accounts:manager_profile_detail' user.username %}">
                 <li class="rounded list-group-item mt-2  text-primary {% if '/profile/manager/' in request.path %}active text-white{% endif %}">
@@ -572,7 +586,7 @@
             <hr>
             {% endif %}
             <div class="row ">
-                {% if request.user.is_manager or user.is_admin or user.is_executive %}
+                {% if request.user.is_manager or user.is_warehouse_manager or user.is_admin or user.is_executive %}
                 <div class="col-6">
                     <a class="text-decoration-none" href="{% url 'shop:home_page' %}">
                         <li class="rounded list-group-item bg-primary mt-2 text-center text-white">เบิกวัสดุ</li>

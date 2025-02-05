@@ -7,11 +7,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.core.paginator import Paginator
-from app_linebot.views import notify_admin_order_status, notify_user_approved, notify_user_pay_confirmed
+from app_linebot.views import notify_admin_order_status, notify_user_approved, notify_user_pay_confirmed, send_acknowledge_notification, send_restock_notification
 from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
 from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, Receiving
 from accounts.models import MyUser, Profile, WorkGroup
-from orders.models import Order, Issuing
+from orders.models import Order, Issuing, OutOfStockNotification
 from .forms import AddProductForm, AddCategoryForm, AddSubcategoryForm, ApprovePayForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, EditWorkGroupForm, MonthYearForm, OrderFilterForm,  ReceivingForm, RecordMonthlyStockForm, WorkGroupForm
 from django.db.models import F
 from django.core.mail import send_mail
@@ -76,12 +76,12 @@ def is_admin(user):
 
 def is_authorized(user):
     # ถ้าผู้ใช้เป็น is_manager, is_executive หรือ is_admin อย่างใดอย่างหนึ่ง
-    if user.is_manager or user.is_executive or user.is_admin:
+    if user.is_manager or user.is_warehouse_manager or user.is_executive or user.is_admin:
         return True
     raise PermissionDenied
 
 def is_authorized_manager(user):
-    if user.is_manager or user.is_admin:
+    if user.is_manager or user.is_warehouse_manager or user.is_admin:
         return True
     raise PermissionDenied
 
@@ -464,7 +464,7 @@ def monthly_report(request, month=None, year=None):
             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
         ],
-        'pending_orders_count': count_pending_orders(),
+        # 'pending_orders_count': count_pending_orders(),
         'month_name': month_name,
         'buddhist_year': buddhist_year,
         'total_issued_value_by_user': total_issued_value_by_user,
@@ -3023,3 +3023,111 @@ def order_detail(request, id):
         }
     return render(request, 'order_detail.html', context)
 
+
+from django.contrib.admin.views.decorators import staff_member_required
+
+
+
+@login_required
+def notification(request):
+    # ดึงข้อมูลวัสดุที่หมด (จำนวนคงเหลือ = 0)
+    products = Product.objects.filter(quantityinstock=0)
+
+    # ดึงข้อมูลทั้งหมดพร้อมข้อมูลผู้ใช้งานและรายการวัสดุ โดยเรียงลำดับจากคำร้องที่ยื่นมาก่อน
+    # notification = OutOfStockNotification.objects.select_related('user', 'product').order_by('date_created')  # เรียงตามเวลาที่สร้าง (จากเก่าไปใหม่)
+    notification = OutOfStockNotification.objects.select_related('user', 'product')
+
+    # pagination
+    page = request.GET.get('page')
+    p = Paginator(notification, 15)
+    try:
+        notification = p.page(page)
+    except:
+        notification = p.page(1)
+
+    context = {
+        'title': 'รายการแจ้งวัสดุหมด', 
+        'notification': notification,  # เปลี่ยนเป็น notification
+        'product': products,  # ส่งข้อมูลวัสดุไปยัง Template
+    }
+    return render(request, 'notification.html', context)
+
+
+
+# @login_required
+# @staff_member_required
+# def acknowledge_notification(request, notification_id):
+#     notification = get_object_or_404(OutOfStockNotification, id=notification_id)
+
+#     if not notification.acknowledged:
+#         notification.acknowledged = True
+#         notification.save()
+#         messages.success(request, f"รับทราบการแจ้งเตือนสำหรับวัสดุ '{notification.product.product_name}' เรียบร้อยแล้ว!")
+#     else:
+#         messages.warning(request, f"การแจ้งเตือนนี้ได้รับการรับทราบแล้วก่อนหน้านี้!")
+
+#     return redirect('dashboard:notification')  # URL ที่คุณต้องการแสดงรายการแจ้งเตือน
+
+
+# @login_required
+# @staff_member_required
+# def restock_notification(request, notification_id):
+#     notification = get_object_or_404(OutOfStockNotification, id=notification_id)
+
+#     if not notification.restocked:
+#         notification.restocked = True
+#         notification.save()
+#         messages.success(request, f"ยืนยันการเติมสต๊อกวัสดุ '{notification.product.product_name}' สำเร็จแล้ว!")
+#     else:
+#         messages.warning(request, f"การเติมสต๊อกสำหรับวัสดุ '{notification.product.product_name}' ได้ดำเนินการแล้วก่อนหน้านี้!")
+
+#     return redirect('dashboard:notification')  # URL ที่คุณต้องการแสดงรายการแจ้งเตือน
+
+from django.views.decorators.csrf import csrf_exempt
+
+# รับทราบการแจ้งเตือนสำหรับวัสดุ
+@csrf_exempt
+@login_required
+@staff_member_required
+def acknowledge_notification(request, notification_id):
+    notification = get_object_or_404(OutOfStockNotification, id=notification_id)
+
+    if request.method == "POST":
+        acknowledged_note = request.POST.get("acknowledged_note", "").strip()
+        if not notification.acknowledged:
+            notification.acknowledged = True
+            notification.acknowledged_note = acknowledged_note
+            notification.save()
+
+         # เรียกใช้ฟังก์ชันแจ้งเตือน
+            send_acknowledge_notification(notification)
+
+            messages.success(request, f"รับทราบการแจ้งเตือนสำหรับวัสดุ '{notification.product.product_name}' เรียบร้อยแล้ว!")
+        else:
+            messages.warning(request, f"การแจ้งเตือนนี้ได้รับการรับทราบแล้วก่อนหน้านี้!")
+
+    return redirect('dashboard:notification')
+
+
+# ยืนยันการเติมสต๊อกวัสดุ
+@csrf_exempt
+@login_required
+@staff_member_required
+def restock_notification(request, notification_id):
+    notification = get_object_or_404(OutOfStockNotification, id=notification_id)
+
+    if request.method == "POST":
+        acknowledged_note = request.POST.get("acknowledged_note", "").strip()
+        if not notification.restocked:
+            notification.restocked = True
+            notification.acknowledged_note = acknowledged_note
+            notification.save()
+
+            # เรียกใช้ฟังก์ชันแจ้งเตือน
+            send_restock_notification(notification)
+            
+            messages.success(request, f"ยืนยันการเติมสต๊อกวัสดุ '{notification.product.product_name}' สำเร็จแล้ว!")
+        else:
+            messages.warning(request, f"การเติมสต๊อกสำหรับวัสดุ '{notification.product.product_name}' ได้ดำเนินการแล้วก่อนหน้านี้!")
+
+    return redirect('dashboard:notification')

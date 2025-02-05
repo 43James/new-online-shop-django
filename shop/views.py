@@ -36,7 +36,7 @@ def is_admin(user):
 
 def is_authorized(user):
     # ถ้าผู้ใช้เป็น is_manager, is_executive หรือ is_admin อย่างใดอย่างหนึ่ง
-    if user.is_manager or user.is_executive or user.is_admin:
+    if user.is_manager or user.is_warehouse_manager or user.is_executive or user.is_admin:
         return True
     raise PermissionDenied
 

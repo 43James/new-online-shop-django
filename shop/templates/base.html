@@ -17,6 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
   
+  
   <title>{% if title %} {{ title }} {% else %} เบิกวัสดุออนไลน์ {% endif %}</title>
   <style>
     #watermark p {
@@ -169,22 +170,32 @@
         <div class="dropdown text-end">
           <a href="#" class="btn btn-primary text-white me-4 d-block link-dark text-decoration-none dropdown-toggle"
             id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">เมนู</a>
+
           <ul class="dropdown-menu" aria-labelledby="dropdownUser1">
             <!-- <li><a href="{% url 'cart:show_cart' %}" class="dropdown-item"><i class="bi bi-cart-fill"></i> รถเข็น <b
                   class="text-primary">{{ cart_count }}</b></a></li> -->
             <!-- <li><a href="{% url 'shop:favorites' %}" class="dropdown-item"><i class="bi bi-heart-fill"></i> รายการโปรด
                 <b class="text-primary">{{ request.user.get_likes_count }}</b></a></li> -->
+
             <li><a href="{% url 'orders:user_orders' %}" class="dropdown-item"><i class="bi bi-card-list text-warning"></i>
-                รายการเบิก <b class="text-warning">{{ count_unconfirmed_orders }}</b></a></li>
+              รายการเบิก <b class="text-warning">{{ count_unconfirmed_orders }}</b></a></li>
+
+            <li><a href="{% url 'orders:out_of_stock_notification' %}" class="dropdown-item"><i class="bi bi-bell-fill text-danger"></i></i>
+              แจ้งวัสดุหมด <b class="text-warning"></b></a></li>
+
             <li><a href="{% url 'orders:monthly_totals_view' %}" class="dropdown-item"><i class="bi bi-cash-coin text-success"></i></i>
               ยอดที่เบิกวัสดุ</a></li>
+
             <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}"><i
                   class="bi bi-person-lines-fill text-primary"></i> ดูโปรไฟล์</a></li>
+
             <!-- <li><a class="dropdown-item" href="{% url 'accounts:edit_profile' %}"><i class="bi bi-person-fill-gear"></i>
                 แก้ไขโปรไฟล์</a></li> -->
+
             <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key-fill text-info"></i>
                 เปลี่ยนรหัสผ่าน</a></li>
-            {% if user.is_manager or user.is_admin or user.is_executive%}
+
+            {% if user.is_manager or user.is_warehouse_manager or user.is_admin or user.is_executive%}
             <li><a class="dropdown-item text-primary" href="{% url 'dashboard:orders' %}"><i
                   class="bi bi-person-check"> Dashboard</i></a></li>
             {% endif %}

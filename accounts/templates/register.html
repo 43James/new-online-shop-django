@@ -128,7 +128,14 @@
     <div class="form-row field-is_manager mb-2">
       <div class="checkbox-row">
         <input type="checkbox" name="{{ user_form.is_manager.name }}" {% if user_form.is_manager.value %}checked{% endif %}>
-        <label class="vCheckboxLabel"></label> <strong> ผู้จัดการระบบ</strong>
+        <label class="vCheckboxLabel"></label> <strong> ผู้มีสิทธิอนุมัติ</strong>
+      </div>
+    </div>
+
+    <div class="form-row field-is_warehouse_manager mb-2">
+      <div class="checkbox-row">
+        <input type="checkbox" name="{{ user_form.is_warehouse_manager.name }}" {% if user_form.is_warehouse_manager.value %}checked{% endif %}>
+        <label class="vCheckboxLabel"></label> <strong> ผู้จัดการคลัง</strong>
       </div>
     </div>
 

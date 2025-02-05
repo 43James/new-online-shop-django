@@ -70,6 +70,11 @@ urlpatterns = [
     path('export-to-excel-receive/', views.export_to_excel_receive, name='export_to_excel_receive'),
     path('report-monthly-totals/', views.report_monthly_totals, name='report_monthly_totals'),
 
+    path('notification/', views.notification, name='notification'),
+    path('notifications/<int:notification_id>/', views.acknowledge_notification, name='acknowledge_notification'),
+    path('notifications/<int:notification_id>/restock/', views.restock_notification, name='restock_notification'),
+    
+
 
 
 

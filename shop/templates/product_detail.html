@@ -54,8 +54,74 @@
         {% else %}
         <a href="{% url 'shop:add_to_favorites' product.id %}" class="btn btn-outline-success mt-3 text-capitalize ">เพิ่มไปที่รายการโปรด</a>
         {% endif %}
+        {% if total_quantity == 0 %}
+        <!-- ปุ่มเปิด Modal -->
+        <button class="btn btn-outline-danger mt-3 text-capitalize notify-out-of-stock"
+            data-bs-toggle="modal" data-bs-target="#outOfStockModal" data-product-id="{{ product.id }}" data-product-name="{{ product.product_name }}">
+            แจ้งวัสดุหมด
+        </button>
+        {% endif %}
+
+
     </div>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="outOfStockModal" tabindex="-1" aria-labelledby="outOfStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title text-center" id="outOfStockModalLabel">แจ้งวัสดุหมด !</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'orders:out_of_stock_notification' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="product" id="selected-product-id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">รายการวัสดุ</label>
+                        <input type="text" id="selected-product-name" class="form-control" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quantity_requested">จำนวนที่ต้องการเพิ่ม</label>
+                        <input type="number" name="quantity_requested" id="quantity_requested" class="form-control" min="1" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="note">หมายเหตุ</label>
+                        <textarea name="note" id="note" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button class="btn btn-primary" type="submit" 
+                            onclick="this.disabled=true; this.innerHTML='กำลังบันทึก...'; this.form.submit();">
+                            บันทึก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modal = document.getElementById('outOfStockModal');
+    modal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget; // ปุ่มที่คลิก
+        var productId = button.getAttribute('data-product-id'); // ดึง product id จากปุ่ม
+        var productName = button.getAttribute('data-product-name'); // ดึงชื่อผลิตภัณฑ์จากปุ่ม
+
+        // ตั้งค่าค่าในฟอร์ม
+        document.getElementById('selected-product-id').value = productId;
+        document.getElementById('selected-product-name').value = productName; // ตั้งค่าชื่อผลิตภัณฑ์ในฟอร์ม
+    });
+});
+
+</script>
 
 <!-- related products -->
 <div class="row mt-4 mb-4">
@@ -79,5 +145,6 @@
         {% endif %}
     {% endfor %}
 </div>
+
 
 {% endblock %}
