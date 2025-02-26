@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     'orders.apps.OrdersConfig',
     'dashboard.apps.DashboardConfig',
     'accounts.apps.AccountsConfig',
+    'assets',
     'django_filters',
     'django.contrib.humanize',
     
@@ -199,16 +200,39 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
+# STATIC_URL = '/static/'
+# STATICFILES = [
+#     STATIC_DIR,
+# ]
+
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# # directory that we want to store uploaded files
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
 STATIC_URL = '/static/'
-STATICFILES = [
-    STATIC_DIR,
+
+# ให้ Django รู้ว่าให้ค้นหาไฟล์ static ในโฟลเดอร์นี้
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # โฟลเดอร์ที่เก็บไฟล์ static ของโปรเจ็กต์
 ]
 
+# กำหนดตำแหน่งที่จะเก็บไฟล์ static หลังจากรัน collectstatic
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# directory that we want to store uploaded files
+# STATICFILES_DIRS = [
+#     BASE_DIR / "static",  # ถ้าคุณใช้โฟลเดอร์ static ใน root ของโปรเจค
+# ]
+
+# STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+# กำหนดที่เก็บไฟล์ที่ผู้ใช้จะอัปโหลด
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 
 # Default primary key field type

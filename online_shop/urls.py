@@ -14,5 +14,10 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
 ]
 
+# if settings.DEBUG:
+#     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# เพิ่มการเสิร์ฟไฟล์สแตติกเมื่ออยู่ในโหมดการพัฒนา
 if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

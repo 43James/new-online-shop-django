@@ -155,7 +155,6 @@
             {% if order.status == False %}
                 <p class="text-center">ลงชื่อ {{ order.user.first_name }} ผู้เบิก</p>
             {% else %}
-
                 <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
             {% endif %}
                 <p class="text-center">( {{ order.user.get_full_name }} )</p>

@@ -455,7 +455,7 @@
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     
                     <li><a class="dropdown-item {% if '/dashboard_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:dashboard_report' %}">Line Chart Report</a></li>
-                    <li><a class="dropdown-item {% if '/issuing_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:issuing_report' %}">Line Chart Report</a></li>
+                    <li><a class="dropdown-item {% if '/issuing_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:issuing_report' %}">Issuing Report</a></li>
                     <li><a class="dropdown-item {% if '/monthly-stock-sum/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_stock_sum' %}">รายงานวัสดุคงเหลือ</a></li>
 
                     <li><a class="dropdown-item {% if '/monthly-report-receive/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report_receive' %}">รายงานรับเข้าประจำเดือน</a></li>
