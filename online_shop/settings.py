@@ -82,7 +82,7 @@ INSTALLED_APPS = [
     'orders.apps.OrdersConfig',
     'dashboard.apps.DashboardConfig',
     'accounts.apps.AccountsConfig',
-    'assets',
+    'assets.apps.AssetsConfig',
     'django_filters',
     'django.contrib.humanize',
     
