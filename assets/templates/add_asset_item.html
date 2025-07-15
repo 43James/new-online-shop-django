@@ -1,0 +1,101 @@
+{% extends "base_sidebar.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>เพิ่มรายการครุภัณฑ์</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <fieldset class="border p-3">
+            <legend class="w-auto">สร้างรหัสครุภัณฑ์ใหม่</legend>
+            <div class="row">
+                <div class="col-md-3">
+                    <label>{{ asset_code_form.asset_type.label }}</label>
+                    {{ asset_code_form.asset_type }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_code_form.asset_kind.label }}</label>
+                    {{ asset_code_form.asset_kind }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_code_form.asset_character.label }}</label>
+                    {{ asset_code_form.asset_character }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_code_form.serial_year.label }}</label>
+                    {{ asset_code_form.serial_year }}
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="border p-3 mt-3">
+            <legend class="w-auto">ข้อมูลรายการครุภัณฑ์</legend>
+            <div class="row">
+                <div class="col-md-6">
+                    <label>{{ asset_item_form.item_name.label }}</label>
+                    {{ asset_item_form.item_name }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.category.label }}</label>
+                    {{ asset_item_form.category }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.quantity.label }}</label>
+                    {{ asset_item_form.quantity }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.unit.label }}</label>
+                    {{ asset_item_form.unit }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.purchase_price.label }}</label>
+                    {{ asset_item_form.purchase_price }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.purchase_date.label }}</label>
+                    {{ asset_item_form.purchase_date }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.fiscal_year.label }}</label>
+                    {{ asset_item_form.fiscal_year }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.lifetime.label }}</label>
+                    {{ asset_item_form.lifetime }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.used_years.label }}</label>
+                    {{ asset_item_form.used_years }}
+                </div>
+                <div class="col-md-6">
+                    <label>{{ asset_item_form.responsible_person.label }}</label>
+                    {{ asset_item_form.responsible_person }}
+                </div>
+                <div class="col-md-6">
+                    <label>{{ asset_item_form.storage_location.label }}</label>
+                    {{ asset_item_form.storage_location }}
+                </div>
+                <div class="col-md-6">
+                    <label>{{ asset_item_form.brand_model.label }}</label>
+                    {{ asset_item_form.brand_model }}
+                </div>
+                <div class="col-md-3">
+                    <label>{{ asset_item_form.damage_status.label }}</label>
+                    {{ asset_item_form.damage_status }}
+                </div>
+                <div class="col-md-6">
+                    <label>{{ asset_item_form.asset_image.label }}</label>
+                    {{ asset_item_form.asset_image }}
+                </div>
+                <div class="col-md-6">
+                    <label>{{ asset_item_form.notes.label }}</label>
+                    {{ asset_item_form.notes }}
+                </div>
+            </div>
+        </fieldset>
+
+        <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
+        <a href="{% url 'asset:asset_list' %}" class="btn btn-secondary mt-3">ยกเลิก</a>
+    </form>
+</div>
+{% endblock %}

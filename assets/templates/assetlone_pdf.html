@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ใบขอยืมอุปกรณ์</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'TH SarabunPSK', sans-serif;
+            margin: 40px;
+            padding: 20px;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #000;
+        }
+        .header {
+            text-align: center;
+        }
+        .logo {
+            max-width: 150px;
+            display: block;
+            margin: auto;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .content {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px; /* เพิ่มระยะห่างระหว่างกล่อง */
+        }
+        .section {
+            flex: 1; /* ปรับให้แต่ละ section ขยายตามขนาดพื้นที่ */
+            border: 1px solid #000;
+            padding: 10px;
+        }
+        .signature {
+            margin-top: 20px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .download-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+            table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <button class="download-btn" onclick="downloadPDF()">ดาวน์โหลด PDF</button>
+    <div class="container" id="pdf-content">
+        <img src="logo.png" alt="โลโก้" class="logo">
+        <h2>ใบขอยืมอุปกรณ์</h2>
+        <h3>อุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี</h3>
+        
+        <p><strong>ชื่อ:</strong> ________________________ <strong>นามสกุล:</strong> ________________________</p>
+        <p><strong>ชื่อโครงการ/ธุรกิจ:</strong> ________________________________________________________</p>
+        <p><strong>โทรศัพท์:</strong> ____________________ <strong>มือถือ:</strong> ____________________ <strong>ที่ทำงาน:</strong> ____________________</p>
+        
+        <h4>ความประสงค์จะขอยืมอุปกรณ์รายการดังต่อไปนี้</h4>
+        <table>
+            <tr>
+                <th>ลำดับ</th>
+                <th>รายการ</th>
+                <th>จำนวน</th>
+                <th>หมายเหตุ</th>
+            </tr>
+            <tr><td>1</td><td></td><td></td><td></td></tr>
+            <tr><td>2</td><td></td><td></td><td></td></tr>
+            <tr><td>3</td><td></td><td></td><td></td></tr>
+        </table>
+        
+        <p><strong>วันที่ต้องการ:</strong> __________ <strong>กำหนดคืน:</strong> __________</p>
+        <p><strong>สภาพปัจจุบันของอุปกรณ์ที่ยืม:</strong> __________ <strong></p>
+
+        <p>ในการขอใช้ครั้งนี้ หากสิ่งของที่นำมาส่งคืนเกิดชำรุดเสียหาย หรือใช้การไม่ได้ หรือสูญหาย ข้าพเจ้ายินดีจัดการแก้ไขให้คงสภาพเดิม โดยเสียค่าใช้จ่ายของตนเอง หรือชดใช้เป็นพัสดุ หรือครุภัณฑ์ ประเภท ชนิด ขนาด ลักษณะและคุณภาพอย่างเดียวกัน หรือชดใช้เป็นเงินตามรายการสิ่งของที่เป็นอยู่ </p>
+
+        <div class="text-end">
+        <p class="signature">ลงชื่อ ________________________ (ผู้ขอยืม)</p>
+        <p class="signature">(____________________________)</p>
+        <p class="signature">ตำแหน่ง ________________________</p>
+        <p class="signature">วันที่ ________________________</p>
+        </div>
+
+      <h4>บันทึกการยืม (สำหรับเจ้าหน้าที่)</h4>
+      <div class="flex-container">
+        <div class="section">
+        <p>
+            <input type="checkbox"> สามารถให้ยืมได้ 
+            <input type="checkbox"> ไม่สามารถให้ยืมได้ เนื่องจาก __________________________________
+        </p>
+        <p class="signature">ลงชื่อ ________________________ (เจ้าหน้าที่)</p>
+        <p class="signature">(____________________________)</p>
+        <p class="signature">ตำแหน่ง ________________________</p>
+        <p class="signature">วันที่ ________________________</p>
+        </div>
+      
+      <div class="section">
+        <p>
+           ข้าพเจ้าได้รับของตามรายการข้างต้นแล้ว
+        </p>
+        <p class="signature">ลงชื่อ ________________________ (ผู้ขอยืม)</p>
+        <p class="signature">(____________________________)</p>
+        <p class="signature">ตำแหน่ง ________________________</p>
+        <p class="signature">วันที่ ________________________</p>
+        </div>
+      </div><br>
+      
+      <h4>บันทึกการส่งคืน</h4>
+        <div class="flex-container">
+            <!-- ฝั่งซ้าย: บันทึกการส่งคืน -->
+            <div class="section">
+                <p>ข้าพเจ้าได้รับของตามรายการข้างต้นแล้ว</p>
+                <p class="signature">ลงชื่อ ________________________ (ผู้ยืม)</p>
+                <p class="signature">(____________________________)</p>
+                <p class="signature">ตำแหน่ง ________________________</p>
+                <p class="signature">วันที่ ________________________</p>
+            </div>
+
+            <!-- ฝั่งขวา: บันทึกผลการใช้งาน -->
+            <div class="section">
+                <h4>บันทึกผลการใช้งาน</h4>
+                <p class="checkbox-group">
+                    <input type="checkbox"> ไม่มีรายการใดชำรุด 
+                    <input type="checkbox"> ชำรุด รายการคือ __________________________________
+                </p>
+                <p class="signature">ลงชื่อ ________________________ (เจ้าหน้าที่ตรวจสอบ)</p>
+                <p class="signature">(____________________________)</p>
+                <p class="signature">ตำแหน่ง ________________________</p>
+                <p class="signature">วันที่ ________________________</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function downloadPDF() {
+            const element = document.getElementById('pdf-content');
+            html2pdf().from(element).save('ใบขอยืมอุปกรณ์.pdf');
+        }
+    </script>
+</body>
+</html>

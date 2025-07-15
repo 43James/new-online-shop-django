@@ -152,7 +152,7 @@ class EditSuppliersForm(ModelForm):
 class ApproveForm(ModelForm):
     class Meta:
         model = Order
-        fields = ('status', 'date_receive', 'other')
+        fields = ('status', 'date_receive', 'date_approved', 'other')
         # exclude = ('user', 'datecreated')
 
 class ApprovePayForm(ModelForm):

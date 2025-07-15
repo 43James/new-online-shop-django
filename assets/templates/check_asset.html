@@ -1,0 +1,80 @@
+{% extends "base_sidebar.html" %}
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+        id="title">
+        <h1 class="h2">Dashboard</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+          </div>
+          <button type="button"
+            class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
+            <i class="bi bi-calendar3"></i>
+            This week
+          </button>
+        </div>
+    </div>
+    
+  <!-- <h2>ตรวจเช็คครุภัณฑ์: {{ asset.item_name }}</h2> -->
+  <!-- <form method="post">
+    {% csrf_token %}
+    <div>
+      <label>{{ form.status.label }}</label>
+      {{ form.status }}
+    </div>
+    <div>
+      <label>{{ form.damage_status.label }}</label>
+      {{ form.damage_status }}
+    </div>
+    <div>
+      <label>{{ form.responsible_person.label }}</label>
+      {{ form.responsible_person }}
+    </div>
+    <button type="submit">บันทึก</button>
+  </form> -->
+  
+  <div class="container mt-4">
+    <h2>ตรวจสอบครุภัณฑ์: {{ asset.item_name }}</h2>
+    <hr>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- สถานะการตรวจเช็ค -->
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="status" name="status" {% if form.status.value %}checked{% endif %}>
+            <label class="form-check-label" for="status">{{ form.status.label }}</label>
+        </div>
+
+        <!-- สถานะการใช้งาน -->
+        <div class="mb-3">
+            <label for="damage_status" class="form-label">{{ form.damage_status.label }}</label>
+            <select class="form-select" id="damage_status" name="damage_status">
+                {% for value, label in form.fields.damage_status.choices %}
+                    <option value="{{ value }}" {% if form.damage_status.value == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- ผู้รับผิดชอบดูแล -->
+        <div class="mb-3">
+            <label for="responsible_person" class="form-label">{{ form.responsible_person.label }}</label>
+            <input type="text" class="form-control" id="responsible_person" name="responsible_person" value="{{ form.responsible_person.value }}">
+        </div>
+
+        <!-- สถานที่เก็บ -->
+        <div class="mb-3">
+            <label for="storage_location" class="form-label">สถานที่เก็บ</label>
+            <select class="form-select" id="storage_location" name="storage_location">
+                {% for location in storage_locations %}
+                    <option value="{{ location.id }}" {% if asset.storage_location.id == location.id %}selected{% endif %}>{{ location.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">บันทึกการตรวจเช็ค</button>
+        <a href="{% url 'assets:asset_list' %}" class="btn btn-secondary">ยกเลิก</a>
+    </form>
+</div>
+{% endblock %}

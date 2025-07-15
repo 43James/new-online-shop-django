@@ -154,7 +154,6 @@ def home_page(request):
 
 
 
-
 @user_passes_test(is_general)
 @login_required
 # def product_detail(request, slug):

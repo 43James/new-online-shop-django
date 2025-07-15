@@ -531,7 +531,6 @@ def profile_users(request, username):
     return render(request, 'profile_users.html', context)
 
 
-
 @user_passes_test(is_authorized)
 @login_required
 def delete_profile_picture_manager(request):
@@ -547,7 +546,10 @@ def delete_profile_picture_manager(request):
 @user_passes_test(is_admin)
 @login_required
 def manage_user(request):
-    my = MyUser.objects.all()
+    # my = MyUser.objects.all()
+    my = MyUser.objects.prefetch_related('userline_set').all()  # โหลด user ทั้งหมดพร้อม UserLine
+
+    userline = UserLine.objects.all()
     
     query = request.GET.get('q')
     if query is not None:
@@ -563,6 +565,7 @@ def manage_user(request):
 
     return render(request, "manage_user.html",{
         "my" : my,
+        "userline" : userline,
         'title':'จัดการสมาชิก',
         'pending_orders_count': count_pending_orders(),
     })

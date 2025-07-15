@@ -1,0 +1,43 @@
+{% extends "base_sidebar.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+        id="title">
+        <h1 class="h2">Home</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+          </div>
+          <button type="button"
+            class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
+            <i class="bi bi-calendar3"></i>
+            This week
+          </button>
+        </div>
+    </div>
+
+<div class="container mt-4">
+    <h2>ระบบจัดการครุภัณฑ์</h2>
+
+    <div class="btn-group mt-3">
+        <!-- ปุ่มเพิ่มรายการครุภัณฑ์ -->
+        <a href="{% url 'assets:add_asset_item' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> เพิ่มรายการครุภัณฑ์
+        </a>
+
+        <!-- ปุ่มเพิ่มการครอบครองครุภัณฑ์ -->
+        <a href="{% url 'assets:create_asset_ownership' %}" class="btn btn-success">
+            <i class="fas fa-user-plus"></i> เพิ่มการครอบครองครุภัณฑ์
+        </a>
+
+        <!-- ปุ่มตรวจเช็คครุภัณฑ์ -->
+        <a href="{% url 'assets:check_asset' %}" class="btn btn-info">
+            <i class="fas fa-search"></i> ตรวจเช็คครุภัณฑ์
+        </a>
+    </div>
+</div>
+
+<!-- ใส่ Font Awesome สำหรับไอคอน -->
+<script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+{% endblock %}

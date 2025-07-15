@@ -180,10 +180,25 @@
                     </label>
                   </div>
                   
-
                   <div class="col-8 mt-3">
                     <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
-                    <input type="datetime-local" name="date_receive" class="form-control" id="exampleFormControlInput1" readonly>
+                    <input type="datetime-local" 
+                           name="date_receive" 
+                           class="form-control" 
+                           id="exampleFormControlInput1" readonly 
+                           style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                  </div>
+                  <h6 class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</h6>
+
+                  <div class="col-8">
+                    <label for="exampleFormControlInput2" class="form-label">วันที่อนุมัติ</label>
+                    <input type="datetime-local"
+                           name="date_approved"
+                           class="form-control form-control-sm text-secondary"
+                           value="{{ now|date:'Y-m-d\\TH:i' }}"
+                           id="exampleFormControlInput2"
+                           readonly
+                           style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
                   </div>
                   
                   <script>
@@ -204,9 +219,21 @@
                     // เซตค่าวันที่เริ่มต้นของ input
                     document.getElementById('exampleFormControlInput1').value = formattedDate;
                   </script>
-                  <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
-                  
 
+                  <script>
+                    // ตั้งค่าวันที่ให้เป็นวันที่ปัจจุบันในฟิลด์วันที่รับ
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const dateInput = document.getElementById('exampleFormControlInput2');
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มต้นที่ 0
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
+                    });
+                </script>
+    
                   <div class="col mb-3 mt-3">
                     <label class="form-label">หมายเหตุ</label>
                     {% if order.other == None %}
@@ -251,6 +278,31 @@
                           &nbsp;&nbsp;ปฏิเสธ
                       </label>
                   </div>
+
+                  <div class="col-8">
+                    <label for="exampleFormControlInput3" class="form-label">วันที่อนุมัติ</label>
+                    <input type="datetime-local"
+                           name="date_approved"
+                           class="form-control form-control-sm text-secondary"
+                           value="{{ now|date:'Y-m-d\\TH:i' }}"
+                           id="exampleFormControlInput3"
+                           readonly
+                           style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                  </div>
+
+                  <script>
+                    // ตั้งค่าวันที่ให้เป็นวันที่ปัจจุบันในฟิลด์วันที่รับ
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const dateInput = document.getElementById('exampleFormControlInput3');
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มต้นที่ 0
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
+                    });
+                  </script>
 
                   <div class="col mb-3 mt-3">
                     <label class="form-label">หมายเหตุ</label>

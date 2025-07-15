@@ -1,0 +1,10 @@
+{% extends "base_sidebar.html" %}
+
+{% block content %}
+<h2>เพิ่มการครอบครองครุภัณฑ์</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">บันทึก</button>
+</form>
+{% endblock %}

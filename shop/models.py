@@ -108,12 +108,22 @@ class Receiving(models.Model):
     def __str__(self):
         return str(self.product)
     
+    # def save(self, *args, **kwargs):
+    #     if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+    #         self.month = self.month
+    #         self.year = self.year
+    #     super().save(*args, **kwargs)
     def save(self, *args, **kwargs):
-        if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
-            self.month = self.month
-            self.year = self.year
+        # ถ้ามีการกำหนดวันที่รับเข้า
+        if self.date_received:
+            self.month = self.date_received.month
+            self.year = self.date_received.year
+        else:
+            # fallback (ใช้วันเวลาปัจจุบันถ้าไม่มี date_received)
+            self.month = timezone.now().month
+            self.year = timezone.now().year
         super().save(*args, **kwargs)
-    
+
     @staticmethod
     def total_quantity_by_product(product_id):
         result = Receiving.objects.filter(product_id=product_id).aggregate(total_quantity=Sum('quantity'))

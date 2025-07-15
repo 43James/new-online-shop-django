@@ -1,0 +1,7 @@
+<!-- ฟอร์มขอยืม -->
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">ส่งคำขอยืม</button>
+</form>

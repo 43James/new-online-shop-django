@@ -112,6 +112,7 @@
                 <p class="text-center">ตำแหน่ง หัวหน้าเจ้าหน้าที่</p>
             {% if order.status == True %}
                 <p class="text-center text-success">อนุมัติคำร้อง</p>
+                <p class="text-center text-success">วันที่อนุมัติ :&nbsp;&nbsp;วันที่ {{ order.date_approved |date:"d / m / Y" }} </p><br>
                 {% else %}
                 <p class="text-center text-danger"></p>
             {% endif %}<br>
