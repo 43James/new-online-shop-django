@@ -2911,7 +2911,6 @@ def approve_pay(request, order_id):
     })
 
 
-
 @user_passes_test(is_authorized_manager)
 @login_required
 def order_detail(request, id):
@@ -2927,7 +2926,6 @@ def order_detail(request, id):
 
 
 from django.contrib.admin.views.decorators import staff_member_required
-
 
 
 @login_required

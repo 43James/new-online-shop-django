@@ -113,13 +113,14 @@ def create_order(request):
     order = Order.objects.create(user=request.user)
     for item in cart:
         receiving = get_object_or_404(Receiving, id=item['receiving_id'])  # ดึง Receiving object
+        note_value = item.get('note', '').strip() or '-'  # ✔ บังคับให้มี '-' ถ้าไม่ได้กรอก
         Issuing.objects.create(
             order=order,
             product=item['product'],
             price=item['price'],
             quantity=item['quantity'],
             receiving=receiving,  # ใช้ Receiving object
-            note=item['note']  # เพิ่มหมายเหตุในรายการ Issuing
+            note=note_value # เพิ่มหมายเหตุในรายการ Issuing
         )
     # Notify admin about the new order
     notify_admin(request, order.id)

@@ -128,6 +128,7 @@
             <p>ตำแหน่ง เจ้าหน้าที่พัสดุ</p>
             {% if order.pay_item == True %}
                 <p class="text-center text-success">จ่ายวัสดุแล้ว</p>
+                <p class="text-center text-success">วันที่จ่ายพัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_pay |date:"d / m / Y" }} </p><br>
                 {% else %}
                 <p class="text-center text-danger">ยังไม่จ่ายพัสดุ</p>
             {% endif %}<br>

@@ -179,26 +179,44 @@
                         &nbsp;&nbsp;อนุมัติ
                     </label>
                   </div>
-                  
-                  <div class="col-8 mt-3">
-                    <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
-                    <input type="datetime-local" 
-                           name="date_receive" 
-                           class="form-control" 
-                           id="exampleFormControlInput1" readonly 
-                           style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
-                  </div>
-                  <h6 class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</h6>
 
-                  <div class="col-8">
-                    <label for="exampleFormControlInput2" class="form-label">วันที่อนุมัติ</label>
+                  <!-- วันที่รับของ -->
+                  <div class="col form-floating mb-1 mt-3">
                     <input type="datetime-local"
-                           name="date_approved"
-                           class="form-control form-control-sm text-secondary"
-                           value="{{ now|date:'Y-m-d\\TH:i' }}"
-                           id="exampleFormControlInput2"
-                           readonly
-                           style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                          name="date_receive"
+                          class="form-control form-control-sm text-secondary"                          
+                          id="exampleFormControlInput1"
+                          readonly
+                          style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    <label for="exampleFormControlInput1">วันที่รับของ</label>
+                    <!-- <h6 class="text-danger text-center">**จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.**</h6> -->
+                  </div>
+
+                  <!-- คำเตือน -->
+                  <div class="text-danger small mb-3">
+                    <p class="mb-1">** จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
+                  </div>
+
+                  <!-- วันที่อนุมัติ -->
+                  <div class="col form-floating mb-3 mt-3">
+                    <input type="datetime-local"
+                          name="date_approved"
+                          class="form-control form-control-sm text-secondary"
+                          value="{{ now|date:'Y-m-d\\TH:i' }}"
+                          id="exampleFormControlInput2"
+                          readonly
+                          style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    <label for="exampleFormControlInput2">วันที่อนุมัติ</label>
+                  </div>
+
+                  <!-- หมายเหตุ -->
+                  <div class="col form-floating mb-3">
+                    {% if order.other == None %}
+                      <input type="text" name="other" class="form-control" id="floatingOther" placeholder="หมายเหตุ" required>
+                    {% else %}
+                      <input type="text" value="{{ order.other }}" name="other" class="form-control" id="floatingOther" placeholder="หมายเหตุ" required>
+                    {% endif %}
+                    <label for="floatingOther">หมายเหตุ</label>
                   </div>
                   
                   <script>
@@ -233,15 +251,6 @@
                         dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
                     });
                 </script>
-    
-                  <div class="col mb-3 mt-3">
-                    <label class="form-label">หมายเหตุ</label>
-                    {% if order.other == None %}
-                    <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
-                    {% else %}
-                    <input type="text" value="{{ order.other }}" name="other" class="form-control" placeholder="ถ้ามี">
-                    {% endif %}
-                  </div>
 
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -279,7 +288,7 @@
                       </label>
                   </div>
 
-                  <div class="col-8">
+                  <!-- <div class="col-8">
                     <label for="exampleFormControlInput3" class="form-label">วันที่อนุมัติ</label>
                     <input type="datetime-local"
                            name="date_approved"
@@ -288,12 +297,34 @@
                            id="exampleFormControlInput3"
                            readonly
                            style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                  </div> -->
+
+                  <!-- วันที่ปฏิเสธ -->
+                  <div class="col form-floating mb-3 mt-3">
+                    <input type="datetime-local"
+                          name="date_approved"
+                          class="form-control form-control-sm text-secondary"
+                          value="{{ now|date:'Y-m-d\\TH:i' }}"
+                          id="dateApprovedInput1{{ order.id }}"
+                          readonly
+                          style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    <label for="dateApprovedInput1{{ order.id }}">วันที่ปฏิเสธ</label>
+                  </div>
+
+                  <!-- หมายเหตุ -->
+                  <div class="col form-floating mb-3">
+                    {% if order.other == None %}
+                      <input type="text" name="other" class="form-control" id="floatingOther" placeholder="หมายเหตุ" required>
+                    {% else %}
+                      <input type="text" value="{{ order.other }}" name="other" class="form-control" id="floatingOther" placeholder="หมายเหตุ" required>
+                    {% endif %}
+                    <label for="floatingOther">หมายเหตุ</label>
                   </div>
 
                   <script>
                     // ตั้งค่าวันที่ให้เป็นวันที่ปัจจุบันในฟิลด์วันที่รับ
                     document.addEventListener('DOMContentLoaded', function() {
-                        const dateInput = document.getElementById('exampleFormControlInput3');
+                        const dateInput = document.getElementById('dateApprovedInput1{{ order.id }}');
                         const now = new Date();
                         const year = now.getFullYear();
                         const month = String(now.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มต้นที่ 0
@@ -303,15 +334,6 @@
                         dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
                     });
                   </script>
-
-                  <div class="col mb-3 mt-3">
-                    <label class="form-label">หมายเหตุ</label>
-                    {% if order.other == None %}
-                    <input type="text" name="other" class="form-control" placeholder="กรณีปฏิเสธคำร้อง หรืออนุมัติถ้ามี" required>
-                    {% else %}
-                    <input type="text" value="{{ order.other }}" name="other" class="form-control" placeholder="กรณีปฏิเสธคำร้อง หรืออนุมัติถ้ามี" required>
-                    {% endif %}
-                  </div>
 
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -357,43 +379,80 @@
                     </label>
                   </div>
 
-                  <!-- <div class="col-8 mt-3">
-                    <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
-                    <input type="datetime-local" value='{{ order.date_receive|date:"Y-m-d\TH:i" }}' name="date_receive" class="form-control"
-                      id="exampleFormControlInput1">
+                  <!-- วันที่รับของ -->
+                  <div class="col form-floating mb-1 mt-3">
+                    <input type="datetime-local"
+                          name="date_receive"
+                          class="form-control form-control-sm text-secondary"
+                          value='{{ order.date_receive|date:"Y-m-d\TH:i" }}' required
+                          id="dateReceiveInput{{ order.id }}"
+                          style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    <label for="dateReceiveInput{{ order.id }}">วันที่รับของ</label>
+                    <!-- <h6 class="text-danger text-center">**จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.**</h6> -->
                   </div>
-                  <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
-                  
 
-                  <div class="col mb-3 mt-3">
-                    <label class="form-label">หมายเหตุ</label>
+                  <!-- คำเตือน -->
+                  <div class="text-danger small mb-3">
+                    <p class="mb-1">** จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
+                  </div>
+
+                  <!-- วันที่อนุมัติ -->
+                  <div class="col form-floating mb-3 mt-3">
+                    <input type="datetime-local"
+                          name="date_approved"
+                          class="form-control form-control-sm text-secondary"
+                          value="{{ now|date:'Y-m-d\\TH:i' }}"
+                          id="dateApprovedInput{{ order.id }}"
+                          style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    <label for="dateApprovedInput{{ order.id }}">วันที่อนุมัติ/ปฏิเสธ</label>
+                  </div>
+
+                  <!-- หมายเหตุ -->
+                  <div class="col form-floating mb-3">
                     {% if order.other == None %}
-                    <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
+                      <input type="text" name="other" class="form-control" id="floatingOther" placeholder="หมายเหตุ" required>
                     {% else %}
-                    <input type="text" value="{{ order.other }}" name="other" class="form-control" placeholder="ถ้ามี">
+                      <input type="text" value="{{ order.other }}" name="other" class="form-control" id="floatingOther" placeholder="หมายเหตุ" required>
                     {% endif %}
-                  </div> -->
+                    <label for="floatingOther">หมายเหตุ</label>
+                  </div>
 
-                  <div class="col-8 mt-3">
-                    <div class="form-group position-relative">
-                      <input type="datetime-local" name="date_receive" class="form-control" id="exampleFormControlInput1"
-                             value='{{ order.date_receive|date:"Y-m-d\TH:i" }}' required>
-                      <label for="exampleFormControlInput1" class="floating-label">วันที่รับของ</label>
-                    </div>
-                  </div>
-                  
-                  <div class="col mb-3 mt-5">
-                    <div class="form-group position-relative">
-                      {% if order.other == None %}
-                      <input type="text" name="other" class="form-control" id="other"
-                             placeholder=" "  >
-                      {% else %}
-                      <input type="text" name="other" class="form-control" id="other"
-                             placeholder="ถ้ามี" value="{{ order.other }}">
-                      {% endif %}
-                      <label for="other" class="floating-label">หมายเหตุ</label>
-                    </div>
-                  </div>
+                  <script>
+                    // ตั้งค่าวันที่ให้เป็นวันที่ปัจจุบันในฟิลด์วันที่รับ
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const dateInput = document.getElementById('dateApprovedInput{{ order.id }}');
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มต้นที่ 0
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
+                    });
+                  </script>
+
+                  <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                      const radioApprove = document.getElementById('flexRadioDefault1');
+                      const radioReject = document.getElementById('flexRadioDefault2');
+                      const dateReceiveInput = document.getElementById('dateReceiveInput{{ order.id }}');
+
+                      radioApprove.addEventListener('change', function() {
+                        if (this.checked) {
+                          // ถ้าเลือก "อนุมัติ" ให้คืนค่าเดิม (หรือจะไม่ทำอะไรก็ได้)
+                          dateReceiveInput.required = true;
+                        }
+                      });
+
+                      radioReject.addEventListener('change', function() {
+                        if (this.checked) {
+                          // ถ้าเลือก "ปฏิเสธ" ให้ล้างช่องวันที่รับของ
+                          dateReceiveInput.value = '';
+                          dateReceiveInput.required = false;
+                        }
+                      });
+                    });
+                  </script>
 
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -431,23 +490,55 @@
                         &nbsp;&nbsp;จ่ายวัสดุแล้ว
                     </label>
                   </div>
-                  <div class="row">
-                    <div class="col mb-3 mt-3">
-                      <div class="form-group position-relative">
-                        <input type="text" name="name_pay" class="form-control text-center text-primary" id="name_pay"
-                               placeholder=" " value="{{ user.get_first_name }}" required readonly>
-                        <label for="name_pay" class="floating-label">ชื่อ</label>
-                      </div>
-                    </div>
-                    <div class="col mb-3 mt-3">
-                      <div class="form-group position-relative">
-                        <input type="text" name="surname_pay" class="form-control text-center text-primary" id="surname_pay"
-                               placeholder=" " value="{{ user.get_last_name }}" required readonly>
-                        <label for="surname_pay" class="floating-label">สกุล</label>
-                      </div>
-                    </div>
-                  </div>
                   
+                  <!-- ชื่อ -->
+                  <div class="col form-floating mb-3 mt-3">
+                    <input type="text"
+                          name="name_pay"
+                          class="form-control form-control-sm text-secondary"
+                          value='{{ user.get_first_name }}' required readonly
+                          id="name_pay"
+                          style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    <label for="name_pay">ชื่อ</label>
+                  </div>
+
+                  <!-- สกุล -->
+                  <div class="col form-floating mb-3 mt-3">
+                    <input type="text"
+                          name="surname_pay"
+                          class="form-control form-control-sm text-secondary"
+                          value='{{ user.get_last_name }}' required readonly
+                          id="surname_pay"
+                          style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    <label for="surname_pay">สกุล</label>
+                  </div>
+              
+                  <!-- วันที่จ่าย -->
+                  <div class="col form-floating mb-3 mt-3">
+                    <input type="datetime-local"
+                      name="date_pay"
+                      class="form-control form-control-sm text-secondary"
+                      value=""
+                      id="datePayInput{{ order.id }}"
+                      style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    <label for="datePayInput{{ order.id }}">วันที่จ่ายพัสดุ</label>
+                  </div>
+
+                  <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                      const dateInput = document.getElementById('datePayInput{{ order.id }}');
+                      if (dateInput) {
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                      }
+                    });
+                  </script>
+
                 </div>
                 
                 <div class="modal-footer justify-content-between">
@@ -456,8 +547,6 @@
                   <button class="btn btn-success" type="submit" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; this.form.submit();">
                     ยืนยัน
                   </button>
-
-
                 </div>
               </div>
             </div>

@@ -103,34 +103,41 @@
                       </label>
                     </div>
 
-                    <!-- <div class="col-8 mt-3">
-                      <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
-                      <input type="datetime-local" name="date_receive" class="form-control"
-                        id="exampleFormControlInput1">
-                    </div>
-                    <p class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p> -->
-
-                    <div class="col-8 mt-3">
-                      <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
-                      <input type="datetime-local" 
-                             name="date_receive" 
-                             class="form-control" 
-                             id="exampleFormControlInput1" readonly 
-                             style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
-                    </div>
-                    <h6 class="text-danger">จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</h6>
-  
-                    <div class="col-8">
-                      <label for="exampleFormControlInput2" class="form-label">วันที่อนุมัติ</label>
+                    <!-- วันที่รับของ -->
+                    <div class="col form-floating mb-2 mt-3">
                       <input type="datetime-local"
-                             name="date_approved"
-                             class="form-control form-control-sm text-secondary"
-                             value="{{ now|date:'Y-m-d\\TH:i' }}"
-                             id="exampleFormControlInput2"
-                             readonly
-                             style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                            name="date_receive"
+                            class="form-control form-control-sm text-secondary"                          
+                            id="exampleFormControlInput1"
+                            readonly
+                            style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                      <label for="exampleFormControlInput1">วันที่รับของ</label>
+                      <!-- <h6 class="text-danger text-center">**จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.**</h6> -->
                     </div>
-                    
+
+                  <!-- คำเตือน -->
+                  <div class="text-danger small mb-3">
+                    <p class="mb-1">** จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.</p>
+                  </div>
+
+                    <!-- วันที่อนุมัติ -->
+                    <div class="col form-floating mb-3 mt-3">
+                      <input type="datetime-local"
+                            name="date_approved"
+                            class="form-control form-control-sm text-secondary"
+                            value="{{ now|date:'Y-m-d\\TH:i' }}"
+                            id="exampleFormControlInput2"
+                            readonly
+                            style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                      <label for="exampleFormControlInput2">วันที่อนุมัติ</label>
+                    </div>
+
+                  <!-- หมายเหตุ -->
+                  <div class="col form-floating mb-3 mt-3">
+                    <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
+                    <label for="floatingOther">หมายเหตุ</label>
+                  </div>
+
                     <script>
                       // สร้างวันที่เริ่มต้นจากวันนี้
                       const date = new Date();
@@ -163,12 +170,7 @@
                           dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
                       });
                     </script>
-                    
-                    <div class="col mb-3 mt-3">
-                      <label class="form-label">หมายเหตุ</label>
-                      <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
-                    </div>
-
+                                        
                   </div>
                   <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
@@ -205,7 +207,7 @@
                         </label>
                     </div>
 
-                    <div class="col-8">
+                    <!-- <div class="col-8">
                       <label for="exampleFormControlInput3" class="form-label">วันที่อนุมัติ</label>
                       <input type="datetime-local"
                              name="date_approved"
@@ -214,7 +216,25 @@
                              id="exampleFormControlInput3"
                              readonly
                              style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                    </div> -->
+
+                    <!-- วันที่ปฏิเสธ -->
+                    <div class="col form-floating mb-3 mt-3">
+                      <input type="datetime-local"
+                            name="date_approved"
+                            class="form-control form-control-sm text-secondary"
+                            value="{{ now|date:'Y-m-d\\TH:i' }}"
+                            id="exampleFormControlInput3"
+                            readonly
+                            style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                      <label for="exampleFormControlInput3">วันที่ปฏิเสธ</label>
                     </div>
+
+                  <!-- หมายเหตุ -->
+                  <div class="col form-floating mb-3 mt-3">
+                    <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
+                    <label for="floatingOther">หมายเหตุ</label>
+                  </div>
 
                     <script>
                       // ตั้งค่าวันที่ให้เป็นวันที่ปัจจุบันในฟิลด์วันที่รับ
@@ -230,10 +250,11 @@
                       });
                     </script>
 
-                    <div class="col mb-3 mt-3">
+                    <!-- <div class="col mb-3 mt-3">
                       <label class="form-label">หมายเหตุ</label>
                       <input type="text" name="other" class="form-control" placeholder="กรุณาระบุ">
-                    </div>
+                    </div> -->
+
                   </div>
                   <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>

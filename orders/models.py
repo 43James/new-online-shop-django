@@ -19,6 +19,7 @@ class Order(models.Model):
     other = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
     date_receive = models.DateTimeField(blank=True, null=True, verbose_name='วันที่นัดรับพัสดุ')
     date_received = models.DateTimeField(blank=True, null=True, verbose_name='วันที่ได้รับพัสดุ')
+    date_pay = models.DateTimeField(blank=True, null=True, verbose_name='วันที่จ่ายพัสดุ')
     date_approved = models.DateTimeField(blank=True, null=True, verbose_name='วันที่อนุมัติ')
     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)

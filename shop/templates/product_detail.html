@@ -2,6 +2,20 @@
 {% load humanize %}
 
 {% block content %}
+<style>
+    .btn-outline-pink {
+        color: #ff0077;
+        border: 1px solid #ff0077;
+        background-color: transparent;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    
+    .btn-outline-pink:hover {
+        background-color: #e83e8c;
+        color: #fff;
+    }
+    </style>
+
 <div class="container mt-2"></div>
 <div class="row mb-3 mt-5">
     
@@ -14,95 +28,146 @@
         {% endif %}
     </div>
 
-    <!-- product content -->
-    <div class="col-md-6 p-4 justify-content-center container" style="margin-left: 11px; background-color: white; border-radius: 20px;">
+    <!-- related products -->
+    <div class="col-md-6 p-4 container" style="margin-left: 11px; background-color: white; border-radius: 20px;">
         <!-- category -->
         <div class="border-bottom mb-2 pb-2">
-            <span class="text-muted ">หมวดหมู่ :</span><a class="text-decoration-none text-dark" href=""> {{ product.category }}</a>
+            <span class="text-muted">หมวดหมู่ :</span>
+            <a class="text-decoration-none text-dark" href="">{{ product.category }}</a>
         </div>
+    
         <!-- title -->
         <h2>{{ product.product_name }}</h2>
         <h4 class="mt-3 text-dark">รหัสวัสดุ : {{ product.product_id }}</h4>
-        <!-- price -->
-        <!-- <h4 class="mt-3 text-dark">ราคา : {{ product.price }} ฿</h4> -->
+    
+        <!-- quantity -->
         {% if total_quantity == 0 %}
-        <h3 class="mt-3 mb-4"><h style="color: red; font-style: italic; font-weight: bold;">หมด</h></h3>
+            <h3 class="mt-3 mb-4">
+                <span style="color: red; font-style: italic; font-weight: bold;">หมด</span>
+            </h3>
         {% else %}
-        <h5 class="mt-3 mb-4 text-dark">จำนวน : <h style="color: rgb(47, 0, 255); font-weight: bold;">{{ total_quantity|intcomma }} {{ product.unit }}</h></h5>
+            <h5 class="mt-3 mb-4 text-dark">
+                จำนวน :
+                <span style="color: rgb(47, 0, 255); font-weight: bold;">
+                    {{ total_quantity|intcomma }} {{ product.unit }}
+                </span>
+            </h5>
         {% endif %}
+    
         <!-- description -->
         <strong class="mt-4 pe-3">รายละเอียดเพิ่มเติม :</strong>
-        <h>{{ product.description|linebreaks }}</h>
-
-        <!-- cart btn -->
+        <p>{{ product.description|linebreaks }}</p>
+        <hr>
+        <!-- cart form -->
         <form method="post" action="{% url 'cart:add_to_cart' product.id %}">
             {% csrf_token %}
-            {% if total_quantity == 0 %}
-            <!-- <input type="submit" class="btn btn-primary mt-4" value="เพิ่มไปยังรถเข็น"> -->
-            {% else %}
-            <!-- {{ form }} -->
-            <input class="form-control mt-4" style="width: 100px;" type="number" name="quantity" min="1" max="10" placeholder="ใส่จำนวน">
-            <input class="form-control mt-4" type="text" name="note" placeholder="หมายเหตุ*" required>
-            <h6 class="text-danger">**กรุณาระบุ หมายเหตุ ถ้ามีการเบิกในจำนวนมาก ไม่เช่นนั้นคำร้องจะถูกยกเลิก หรือในกรณีใช้ร่วมกับสำนักงาน เช่นกระดาษ A4</h6>
-            <h6 class="text-danger">**กรณีไม่มีหมายเหตุ ให้ใส่เครื่องหมาย -</h6>
-            <input type="submit" class="btn btn-primary mt-4" value="เพิ่มไปยังรถเข็น">
-            {% endif %}
-        </form>
-        <br>
-        {% if favorites == 'remove' %}
-        <a href="{% url 'shop:remove_from_favorites' product.id %}" class="btn btn-outline-danger mt-3 text-capitalize ">ลบออกจากรายการโปรด</a>
-        {% else %}
-        <a href="{% url 'shop:add_to_favorites' product.id %}" class="btn btn-outline-success mt-3 text-capitalize ">เพิ่มไปที่รายการโปรด</a>
-        {% endif %}
-        {% if total_quantity == 0 %}
-        <!-- ปุ่มเปิด Modal -->
-        <button class="btn btn-outline-danger mt-3 text-capitalize notify-out-of-stock"
-            data-bs-toggle="modal" data-bs-target="#outOfStockModal" data-product-id="{{ product.id }}" data-product-name="{{ product.product_name }}">
-            แจ้งวัสดุหมด
-        </button>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Modal -->
-<div class="modal fade" id="outOfStockModal" tabindex="-1" aria-labelledby="outOfStockModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title text-center" id="outOfStockModalLabel">แจ้งวัสดุหมด !</h2>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            {% if total_quantity != 0 %}
+               <!-- ช่องใส่จำนวน -->
+            <div class="mb-3">
+                <label for="quantity" class="form-label fw-semibold text-dark">จำนวนที่ต้องการเบิก</label>
+                <div class="input-group rounded">
+                    <input type="number" class="form-control" name="quantity" id="quantity"
+                        min="1" max="10" placeholder="ใส่จำนวน" style="max-width: 150px;">
+                    <span class="input-group-text">{{ product.unit }}</span>
+                </div>
             </div>
-            <div class="modal-body">
-                <form method="post" action="{% url 'orders:out_of_stock_notification' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="product" id="selected-product-id">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">รายการวัสดุ</label>
-                        <input type="text" id="selected-product-name" class="form-control" readonly>
+
+            <!-- ช่องใส่หมายเหตุ -->
+            <div class="mb-1">
+                <label for="note" class="form-label fw-semibold text-dark">หมายเหตุ (ไม่จำเป็นต้องกรอก)</label>
+                <textarea class="form-control shadow-sm rounded" name="note" id="note"
+                        rows="2" placeholder="ถ้ามี เช่น เบิกใช้ร่วมกัน, เบิกไปแจกแผนก, เบิกเก็บสำรอง เป็นต้น..."></textarea>
+            </div>
+
+            <!-- คำเตือน -->
+            <div class="text-danger small mb-3">
+                <p class="mb-1">** กรุณาระบุหมายเหตุ ถ้ามีการเบิกในจำนวนมาก</p>
+                <p>** ถ้าไม่มีหมายเหตุ ไม่ต้องกรอก</p>
+            </div>
+            {% endif %}
+    
+            <div class="d-flex flex-wrap gap-3 justify-content-center mt-4">
+                {% if total_quantity != 0 %}
+                    <!-- ปุ่มเพิ่มไปยังรถเข็น -->
+                    <button type="submit" class="btn btn-success px-4 py-2 d-inline-flex align-items-center gap-2 shadow rounded-pill">
+                        <i class="bi bi-cart-plus-fill"></i> 
+                        เพิ่มไปยังรถเข็น
+                    </button>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- ปุ่มรายการโปรด -->
+        <div class="d-flex justify-content-center flex-wrap gap-3 mt-4">
+            {% if favorites == 'remove' %}
+                <a href="{% url 'shop:remove_from_favorites' product.id %}" 
+                    class="btn btn-outline-danger d-inline-flex align-items-center gap-2 rounded-pill shadow-sm">
+                    <i class="bi bi-heartbreak-fill"></i>
+                    ลบออกจากรายการโปรด
+                </a>
+            {% else %}
+                <a href="{% url 'shop:add_to_favorites' product.id %}" 
+                    class="btn btn-outline-pink d-inline-flex align-items-center gap-2 rounded-pill shadow-sm">
+                    <i class="bi bi-heart-fill"></i>
+                    เพิ่มไปที่รายการโปรด
+                </a>
+            {% endif %}
+            
+            <!-- ปุ่มแจ้งวัสดุหมด -->
+            {% if total_quantity == 0 %}
+                <button class="btn btn-outline-danger d-inline-flex align-items-center gap-2 rounded-pill shadow-sm notify-out-of-stock"
+                    data-bs-toggle="modal" data-bs-target="#outOfStockModal"
+                    data-product-id="{{ product.id }}" data-product-name="{{ product.product_name }}">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                        แจ้งวัสดุหมด
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="outOfStockModal" tabindex="-1" aria-labelledby="outOfStockModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title text-center" id="outOfStockModalLabel">แจ้งวัสดุหมด !</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="quantity_requested">จำนวนที่ต้องการเพิ่ม</label>
-                        <input type="number" name="quantity_requested" id="quantity_requested" class="form-control" min="1" required>
+                    <div class="modal-body">
+                        <form method="post" action="{% url 'orders:out_of_stock_notification' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="product" id="selected-product-id">
+                                
+                            <div class="mb-3">
+                                <label class="form-label">รายการวัสดุ</label>
+                                <input type="text" id="selected-product-name" class="form-control shadow-sm" readonly>
+                            </div>
+                                
+                            <div class="input-group rounded mb-3">
+                                <input type="number" class="form-control shadow-sm" name="quantity_requested" id="quantity_requested"
+                                    min="1" max="10" placeholder="ใส่จำนวนที่ต้องการ" required>
+                                <span class="input-group-text">{{ product.unit }}</span>
+                            </div>
+                                
+                            <div class="mb-3">
+                                <label for="note" class="form-label fw-semibold text-dark">หมายเหตุ</label>
+                                <textarea class="form-control shadow-sm rounded" name="note" id="note"
+                                    rows="2" placeholder="ถ้ามี เช่น เบิกใช้ร่วมกัน, เบิกไปแจกแผนก, เบิกเก็บสำรอง เป็นต้น..."></textarea>
+                            </div>
+                                
+                            <div class="text-center">
+                                <button class="btn btn-primary" type="submit" 
+                                    onclick="this.disabled=true; this.innerHTML='กำลังบันทึก...'; this.form.submit();">
+                                    บันทึก
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="note">หมายเหตุ</label>
-                        <textarea name="note" id="note" class="form-control" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="text-center">
-                        <button class="btn btn-primary" type="submit" 
-                            onclick="this.disabled=true; this.innerHTML='กำลังบันทึก...'; this.form.submit();">
-                            บันทึก
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 
 <!-- JavaScript -->
 <script>
@@ -118,8 +183,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('selected-product-name').value = productName; // ตั้งค่าชื่อผลิตภัณฑ์ในฟอร์ม
     });
 });
-
 </script>
+
 
 <!-- related products -->
 <div class="row mt-4 mb-4">
@@ -146,3 +211,72 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 {% endblock %}
+
+<!-- product content -->
+<div class="col-md-6 p-4 justify-content-center container" style="margin-left: 11px; background-color: white; border-radius: 20px;">
+    <!-- category -->
+    <div class="border-bottom mb-2 pb-2">
+        <span class="text-muted ">หมวดหมู่ :</span><a class="text-decoration-none text-dark" href=""> {{ product.category }}</a>
+    </div>
+    <!-- title -->
+    <h2>{{ product.product_name }}</h2>
+    <h4 class="mt-3 text-dark">รหัสวัสดุ : {{ product.product_id }}</h4>
+    <!-- price -->
+    <!-- <h4 class="mt-3 text-dark">ราคา : {{ product.price }} ฿</h4> -->
+    {% if total_quantity == 0 %}
+    <h3 class="mt-3 mb-4"><h style="color: red; font-style: italic; font-weight: bold;">หมด</h></h3>
+    {% else %}
+    <h5 class="mt-3 mb-4 text-dark">จำนวน : <h style="color: rgb(47, 0, 255); font-weight: bold;">{{ total_quantity|intcomma }} {{ product.unit }}</h></h5>
+    {% endif %}
+    <!-- description -->
+    <strong class="mt-4 pe-3">รายละเอียดเพิ่มเติม :</strong>
+    <h>{{ product.description|linebreaks }}</h>
+
+    <!-- cart btn -->
+    <form method="post" action="{% url 'cart:add_to_cart' product.id %}">
+        {% csrf_token %}
+        {% if total_quantity == 0 %}
+        <!-- <input type="submit" class="btn btn-primary mt-4" value="เพิ่มไปยังรถเข็น"> -->
+        {% else %}
+        <!-- {{ form }} -->
+        <input class="form-control mt-4" style="width: 100px;" type="number" name="quantity" min="1" max="10" placeholder="ใส่จำนวน">
+        <input class="form-control mt-4" type="text" style="color: #6c757d;" name="note"  placeholder="หมายเหตุ (ถ้าไม่มีไม่ต้องระบุ)" >
+        <h6 class="text-danger mt-2">**กรุณาระบุ หมายเหตุ ถ้ามีการเบิกในจำนวนมาก ไม่เช่นนั้นคำร้องจะถูกยกเลิก หรือในกรณีใช้ร่วมกับสำนักงาน เช่นกระดาษ A4</h6>
+        <h6 class="text-danger mt-4">**ถ้าไม่มีหมายเหตุ ไม่ต้องกรอก </h6>
+        <!-- <input type="submit" class="btn btn-primary mt-4" value="เพิ่มไปยังรถเข็น"> -->
+        <!-- <button type="submit" class="btn btn-success mt-4 px-4 py-2 d-flex align-items-center gap-2 shadow rounded-pill">
+            <i class="bi bi-cart-plus-fill"></i> 
+            เพิ่มไปยังรถเข็น
+          </button>               -->
+        {% endif %}
+    </form>
+    <br>
+    <!-- {% if favorites == 'remove' %}
+    <a href="{% url 'shop:remove_from_favorites' product.id %}" class="btn btn-outline-danger mt-3 text-capitalize ">ลบออกจากรายการโปรด</a>
+    {% else %}
+    <a href="{% url 'shop:add_to_favorites' product.id %}" class="btn btn-outline-success mt-3 text-capitalize ">เพิ่มไปที่รายการโปรด</a>
+    {% endif %} -->
+
+    {% if favorites == 'remove' %}
+    <a href="{% url 'shop:remove_from_favorites' product.id %}" 
+    class="btn btn-outline-danger mt-3 d-flex align-items-center gap-2 rounded-pill shadow-sm">
+        <i class="bi bi-heartbreak-fill"></i>
+        ลบออกจากรายการโปรด
+    </a>
+    {% else %}
+    <a href="{% url 'shop:add_to_favorites' product.id %}" 
+    class="btn btn-outline-success mt-3 d-flex align-items-center gap-2 rounded-pill shadow-sm">
+        <i class="bi bi-heart-fill"></i>
+        เพิ่มไปที่รายการโปรด
+    </a>
+    {% endif %}
+
+    
+    {% if total_quantity == 0 %}
+    <!-- ปุ่มเปิด Modal -->
+    <button class="btn btn-outline-danger mt-3 text-capitalize notify-out-of-stock"
+        data-bs-toggle="modal" data-bs-target="#outOfStockModal" data-product-id="{{ product.id }}" data-product-name="{{ product.product_name }}">
+        แจ้งวัสดุหมด
+    </button>
+    {% endif %}
+</div>
