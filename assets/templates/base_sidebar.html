@@ -130,29 +130,39 @@
     </a>
     <hr>
     <ul class="nav nav-pills flex-column mb-auto">
+      <li>
+        <a href="#" class="nav-link link-body-emphasis">
+          <p class="bi bi-speedometer" style="position:fixed;"> Dashboard</p><br>
+        </a>
+      </li>
       <li class="nav-item">
-        <a href="{% url 'assets:home_assets' %}" class="nav-link link-body-emphasis" aria-current="page">
-          <p class="bi bi-house-door" style="position:fixed;"> Home</p><br>
+        <a href="{% url 'assets:home_assets' %}" class="nav-link link-body-emphasis {% if '/home/' in request.path %}active text-white{% endif %}">
+          <p class="bi bi-house-door-fill" style="position:fixed;"> หน้าแรก</p><br>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'assets:loan_list' %}" class="nav-link link-body-emphasis text-primary {% if '/loan-list/' in request.path %}active text-white btn btn-success{% endif %}">
+          <p class="bi bi-bag-plus-fill" style="position:fixed;"> ยืมครุภัณฑ์</p><br>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'assets:repair_report' %}" class="nav-link link-body-emphasis text-danger {% if '/repair-report/' in request.path %}active text-white btn btn-success{% endif %}">
+          <p class="bi bi-exclamation-triangle-fill" style="position:fixed;"> แจ้งซ่อมครุภัณฑ์</p><br>
         </a>
       </li>
       <li>
         <a href="#" class="nav-link link-body-emphasis">
-          <p class="bi bi-speedometer2" style="position:fixed;"> Dashboard</p><br>
+          <p class="bi bi-table" style="position:fixed;"> รายการครุภัณฑ์</p><br>
         </a>
       </li>
       <li>
         <a href="#" class="nav-link link-body-emphasis">
-          <p class="bi bi-table" style="position:fixed;"> Orders</p><br>
+          <p class="bi bi-person-circle" style="position:fixed;"> การครอบครองครุภัณฑ์</p><br>
         </a>
       </li>
       <li>
         <a href="#" class="nav-link link-body-emphasis">
-          <p class="bi bi-grid" style="position:fixed;"> Products</p><br>
-        </a>
-      </li>
-      <li>
-        <a href="#" class="nav-link link-body-emphasis">
-          <p class="bi bi-person-circle" style="position:fixed;"> Customers</p><br>
+          <p class="bi bi-clipboard2-check-fill" style="position:fixed;"> ตรวจนับครุภัณฑ์</p><br>
         </a>
       </li>
     </ul>
@@ -161,24 +171,24 @@
       <li class="mb-1">
         <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
           data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="false">
-          Home
+          ครุภัณฑ์
         </button>
         <div class="collapse" id="home-collapse">
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Overview</a></li>
-            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Updates</a></li>
-            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Reports</a></li>
+            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการครุภัณฑ์</a></li>
+            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">การครอบครองครุภัณฑ์</a></li>
+            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">ตรวจนับครุภัณฑ์</a></li>
           </ul>
         </div>
       </li>
       <li class="mb-1">
         <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
           data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-expanded="false">
-          Dashboard
+          ยืมครุภัณฑ์
         </button>
         <div class="collapse" id="dashboard-collapse">
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Overview</a></li>
+            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">ยืมครุภัณฑ์</a></li>
             <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Weekly</a></li>
             <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Monthly</a></li>
             <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Annually</a></li>

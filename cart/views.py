@@ -31,6 +31,38 @@ def is_authorized(user):
     except Http404:
         return True
 
+# def auto_clear_cart(request):
+#     if not request.session.get('cart_cleared'):  # ✅ ยังไม่เคลียร์
+#         cart = Cart(request)
+#         cart.logout()
+#         request.session['cart_cleared'] = True   # ✅ Mark ว่าเคลียร์แล้ว
+#         return JsonResponse({'success': True})
+#     return JsonResponse({'success': False, 'message': 'already cleared'})
+
+def auto_clear_cart(request):
+    cart = request.session.get('cart', {})
+    cleared = request.session.get('cart_cleared', False)
+
+    if cleared:
+        return JsonResponse({'success': False, 'message': 'already cleared'})
+
+    for item_id, item in cart.items():
+        added_time_str = item.get('added_time')
+        if added_time_str:
+            added_time = timezone.datetime.fromisoformat(added_time_str)
+            if timezone.now() - added_time > timedelta(minutes=2):
+                # คืนจำนวน stock ไปยังฐานข้อมูล
+                product = Product.objects.get(id=item_id)
+                product.stock += item['quantity']
+                product.save()
+
+    # ล้าง cart
+    request.session['cart'] = {}
+    request.session['cart_cleared'] = True  # ✅ ป้องกันการคืนซ้ำ
+    request.session.modified = True
+
+    return JsonResponse({'success': True})
+
 # ใหม่2
 @user_passes_test(is_authorized)
 @login_required

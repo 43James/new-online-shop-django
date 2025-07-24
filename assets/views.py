@@ -19,6 +19,10 @@ def asset_list(request):
     return render(request, 'asset_list.html')
 
 
+def repair_report(request):
+    return render(request, 'repair_report.html')
+
+
 # # บันทึกรายการครุภัณฑ์
 # @login_required
 # def create_asset_item(request):
@@ -97,7 +101,7 @@ def check_asset(request, asset_id):
 
     return render(request, "asset_check_form.html", {"form": form, "asset": asset, "storage_locations": storage_locations})
 
-
+# รายการยืม
 def loan_list(request):
     """แสดงรายการยืมของผู้ใช้"""
     loans = AssetLoan.objects.filter(user=request.user).order_by("-loan_date")
