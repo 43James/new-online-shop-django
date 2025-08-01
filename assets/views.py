@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import AssetCode, AssetItem, AssetCheck, AssetLoan, StorageLocation
-from .forms import AssetCheckForm, AssetCodeForm, AssetItemForm, AssetLoanApprovalForm, AssetLoanForm, AssetOwnershipForm
+from .models import AssetCode, AssetItem, AssetCheck, AssetLoan, StorageLocation, Category, Subcategory, StorageLocation
+from .forms import AssetCheckForm, AssetCodeForm, AssetItemForm, AssetLoanApprovalForm, AssetLoanForm, AssetOwnershipForm, CategoryForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
 from django.utils import timezone
 from django.contrib import messages
+from django.db.models import Q
 
 
 # Create your views here.
@@ -56,7 +57,11 @@ def add_asset_item(request):
             asset_item.asset_code = asset_code
             asset_item.save()
 
-            return redirect("asset:asset_list")  # เปลี่ยนเส้นทางไปหน้ารายการครุภัณฑ์
+            messages.success(request, "✅ บันทึกรายการครุภัณฑ์เรียบร้อยแล้ว")
+            return redirect("assets:asset_list")  # แก้ namespace ให้ตรงกับของคุณ
+
+        else:
+            messages.error(request, "❌ กรุณาตรวจสอบความถูกต้องของข้อมูล")
 
     else:
         asset_code_form = AssetCodeForm()
@@ -197,3 +202,229 @@ def approve_return(request, loan_id):
         messages.success(request, f"อนุมัติการคืนของ {loan.user.username}")
     
     return redirect("asset:loan_approval_list")
+
+# ฟังก์ชันค้นหา
+# def search_category(request):
+#     query = request.GET.get('q')
+#     subcategories = Subcategory.objects.filter(name_sub__icontains=query)
+#     categories = Category.objects.filter(name_cate__icontains=query)
+
+#     return render(request, 'asset_search_results.html', {
+#         'query': query,
+#         'subcategories': subcategories,
+#         'categories': categories,
+#     })
+
+# --------------------------------------------------------------------------------------------
+
+# รายการหมวดหมู่
+def asset_list_cate(request):
+    query = request.GET.get('q')  # รับค่าค้นหาจาก input ชื่อ 'q'
+
+    # เรียกข้อมูลทั้งหมดหรือกรองตามการค้นหา
+    if query:
+        categories = Category.objects.filter(
+            Q(name_cate__icontains=query)
+        )
+    else:
+        categories = Category.objects.all()
+
+    # ✅ เช็คถ้ามีการส่ง POST เพื่อเพิ่มหมวดหมู่
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ เพิ่มหมวดหมู่หลักเรียบร้อยแล้ว')
+            return redirect('assets:asset_list_cate')
+        else:
+            messages.error(request, '❌ ไม่สามารถเพิ่มหมวดหมู่หลักได้ กรุณาตรวจสอบข้อมูล')
+    else:
+        form = CategoryForm()
+
+    return render(request, 'asset_list_cate.html', {
+        'categories': categories,
+        'form': form,
+        'query': query,  # ส่งค่าการค้นหาไปยัง template เพื่อแสดงผล
+    })
+
+# เพิ่มหมวดหมู่
+def add_category_asset(request):
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ เพิ่มหมวดหมู่หลักเรียบร้อยแล้ว')
+            return redirect('assets:add_category_asset')
+        else:
+            messages.error(request, '❌ ไม่สามารถเพิ่มหมวดหมู่หลักได้ กรุณาตรวจสอบข้อมูล')
+    else:
+        form = CategoryForm()
+    return render(request, 'add_category_asset.html', {'form': form})
+
+# แก้ไขหมวดหมู่
+def edit_category_asset(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ แก้ไขหมวดหมู่หลักเรียบร้อยแล้ว')
+            return redirect('assets:asset_list_cate')
+        else:
+            messages.error(request, '❌ แก้ไขไม่สำเร็จ กรุณาตรวจสอบข้อมูล')
+    else:
+        form = CategoryForm(instance=category)
+
+    return render(request, 'asset_list_cate.html', {'form': form})
+
+# ลบหมวดหมู่หลัก
+def delete_category_asset(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    category.delete()
+    messages.success(request, '🗑 ลบหมวดหมู่หลักเรียบร้อยแล้ว')
+    return redirect('assets:asset_list_cate')
+
+# --------------------------------------------------------------------------------------------
+
+
+# รายหมวดหมู่ย่อยย่อย
+def asset_list_subcate(request):
+    query = request.GET.get('q')  # รับค่าค้นหาจาก input ชื่อ 'q'
+
+    # เรียกข้อมูลทั้งหมดหรือกรองตามการค้นหา
+    if query:
+        subcategories = Subcategory.objects.filter(
+            Q(name_sub__icontains=query) |
+            Q(category__name_cate__icontains=query)
+        )
+    else:
+        subcategories = Subcategory.objects.all()
+
+    categories = Category.objects.all()
+
+    if request.method == 'POST':
+        form = SubcategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ เพิ่มหมวดหมู่ย่อยเรียบร้อยแล้ว')
+            return redirect('assets:asset_list_subcate')
+        else:
+            messages.error(request, '❌ ไม่สามารถเพิ่มหมวดหมู่ย่อยได้ กรุณาตรวจสอบข้อมูล')
+    else:
+        form = SubcategoryForm()
+
+    return render(request, 'asset_list_subcate.html', {
+        'subcategories': subcategories,
+        'categories': categories,
+        'form': form,
+        'query': query,  # ส่งค่าการค้นหาไปยัง template เพื่อแสดงผล
+    })
+
+# เพิ่มหมวดหมู่ย่อย
+def add_subcategory_asset(request):
+    if request.method == 'POST':
+        form = SubcategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ เพิ่มหมวดหมู่ย่อยเรียบร้อยแล้ว')
+            return redirect('assets:add_subcategory_asset')
+        else:
+            messages.error(request, '❌ ไม่สามารถเพิ่มหมวดหมู่ย่อยได้ กรุณาตรวจสอบข้อมูล')
+    else:
+        form = SubcategoryForm()
+    return render(request, 'add_subcategory_asset.html', {'form': form})
+
+# แก้ไขหมวดหมู่ย่อย
+def edit_subcategory_asset(request, pk):
+    subcategory = get_object_or_404(Subcategory, pk=pk)
+    if request.method == 'POST':
+        form = SubcategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ แก้ไขหมวดหมู่ย่อยเรียบร้อยแล้ว')
+            return redirect('assets:asset_list_subcate')
+        else:
+            messages.error(request, '❌ แก้ไขไม่สำเร็จ กรุณาตรวจสอบข้อมูล')
+    else:
+        form = SubategoryForm(instance=category)
+
+    return render(request, 'asset_list_subcate.html', {'form': form})
+
+# ลบหมวดหมู่ย่อย
+def delete_subcategory_asset(request, pk):
+    subcategory = get_object_or_404(Subcategory, pk=pk)
+    subcategory.delete()
+    messages.success(request, '🗑 ลบหมวดหมู่ย่อยเรียบร้อยแล้ว')
+    return redirect('assets:asset_list_subcate')
+
+# --------------------------------------------------------------------------------------------
+
+
+# def add_storage_location(request):
+#     if request.method == 'POST':
+#         form = StorageLocationForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, '✅ เพิ่มสถานที่เก็บเรียบร้อยแล้ว')
+#             return redirect('assets:add_storage_location')
+#         else:
+#             messages.error(request, '❌ ไม่สามารถเพิ่มสถานที่เก็บได้ กรุณาตรวจสอบข้อมูล')
+#     else:
+#         form = StorageLocationForm()
+#     return render(request, 'add_storage_location.html', {'form': form})
+
+
+# รายสถานที่เก็บครุภัณฑ์ และเพิ่มรายการ
+def asset_list_storage_location(request):
+    query = request.GET.get('q')  # รับค่าค้นหาจาก input ชื่อ 'q'
+
+    # เรียกข้อมูลทั้งหมดหรือกรองตามการค้นหา
+    if query:
+        storagelocations = StorageLocation.objects.filter(
+            Q(name__icontains=query)
+        )
+    else:
+        storagelocations = StorageLocation.objects.all()
+
+    if request.method == 'POST':
+        form = StorageLocationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ เพิ่มสถานที่เก็บครุภัณฑ์เรียบร้อยแล้ว')
+            return redirect('assets:asset_list_storage_location')
+        else:
+            messages.error(request, '❌ ไม่สามารถเพิ่มสถานที่เก็บครุภัณฑ์ได้ กรุณาตรวจสอบข้อมูล')
+    else:
+        form = StorageLocationForm()
+
+    return render(request, 'asset_list_location.html', {
+        'storagelocations': storagelocations,
+        'form': form,
+        'query': query,  # ส่งค่าการค้นหาไปยัง template เพื่อแสดงผล
+    })
+
+
+# ✅ แก้ไขรายการสถานที่เก็บครุภัณฑ์
+def edit_storage_location_asset(request, pk):
+    storagelocation = get_object_or_404(StorageLocation, pk=pk)  # ✅ Model ชื่อ StorageLocation
+
+    if request.method == 'POST':
+        form = StorageLocationForm(request.POST, instance=storagelocation)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '✅ แก้ไขสถานที่เก็บครุภัณฑ์เรียบร้อยแล้ว')
+            return redirect('assets:asset_list_storage_location')
+        else:
+            messages.error(request, '❌ แก้ไขไม่สำเร็จ กรุณาตรวจสอบข้อมูล')
+    else:
+        form = StorageLocationForm(instance=storagelocation)
+
+    return render(request, 'asset_list_location.html', {'form': form})
+
+
+# ✅ ลบรายการสถานที่เก็บครุภัณฑ์
+def delete_storage_location_asset(request, pk):
+    storagelocation = get_object_or_404(StorageLocation, pk=pk)  # ✅ Model ชื่อ StorageLocation
+    storagelocation.delete()
+    messages.success(request, '🗑 ลบรายการสถานที่เก็บครุภัณฑ์เรียบร้อยแล้ว')
+    return redirect('assets:asset_list_storage_location')  # เปลี่ยนชื่อให้ตรงกับ url ที่ใช้งาน

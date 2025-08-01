@@ -30,5 +30,27 @@ urlpatterns = [
     # รายการแจ้งซ่อม
     path("repair-report/", views.repair_report, name="repair_report"),
 
+    # หมวดหมู่หลัก
+    # path("category-list/", views.asset_list_cate, name="asset_list_cate"),
+    # path('add-category/', views.add_category_asset, name='add_category_asset'),
+    path('category/list/', views.asset_list_cate, name='asset_list_cate'),
+    path('category/add/', views.add_category_asset, name='add_category_asset'),
+    path('category/edit/<int:pk>/', views.edit_category_asset, name='edit_category_asset'),
+    path('category/delete/<int:pk>/', views.delete_category_asset, name='delete_category_asset'),
+    # หมวดหมู่ย่อย,ที่เก็บ
+    path('subcategory/list/', views.asset_list_subcate, name='asset_list_subcate'),
+    path('subcategory/add/', views.add_subcategory_asset, name='add_subcategory_asset'),
+    path('subcategory/edit/<int:pk>/', views.edit_subcategory_asset, name='edit_subcategory_asset'),
+    path('subcategory/delete/<int:pk>/', views.delete_subcategory_asset, name='delete_subcategory_asset'),
+    # ช่องค้นหา
+    # path('category/search/', views.search_category, name='search_category'),
+    # path('add-storage/', views.add_storage_location, name='add_storage_location'),
+
+    # ที่เก็บ
+    path('storage_location/list/', views.asset_list_storage_location, name='asset_list_storage_location'),
+    # path('storage_location/add/', views.add_storage_location_asset, name='add_storage_location_asset'),
+    path('storage_location/edit/<int:pk>/', views.edit_storage_location_asset, name='edit_storage_location_asset'),
+    path('storage_location/delete/<int:pk>/', views.delete_storage_location_asset, name='delete_storage_location_asset'),
+
 ]
 

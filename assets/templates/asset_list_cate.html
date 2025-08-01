@@ -1,0 +1,127 @@
+<!-- รายการของหมวดหมู่หลัก -->
+
+{% extends "base_sidebar.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+    id="title">
+    <h1 class="h2">รายการหมวดหมู่หลักครุภัณฑ์</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+      <div class="btn-group me-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
+        <i class="bi bi-calendar3"></i>
+        This week
+      </button>
+    </div>
+  </div>
+
+  <div class="row">
+  </div>
+
+  <div class="container-fluid col-md-6">
+    <!-- ฟอร์มค้นหา -->
+    <form method="get" class="mb-3 d-flex" role="search">
+      <input type="text" name="q" class="form-control me-2" placeholder="ค้นหาหมวดหมู่หลัก..." value="{{ query|default:'' }}">
+      <button class="btn btn-outline-primary col-2" type="submit">🔍 ค้นหา</button>
+    </form>
+
+    {% if query %}
+      <p class="text-muted">ผลการค้นหาสำหรับ: <strong>{{ query }}</strong></p>
+    {% endif %}
+    <!-- <div class="btn-group mb-3">
+      <a href="{% url 'assets:add_category_asset' %}" type="button" class="btn btn-outline-success"><i
+          class="bi bi-plus-circle"></i> เพิ่มรายการ</a>
+    </div> -->
+    <div class="btn-group mb-3">
+      <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addModal">
+        <i class="bi bi-plus-circle"></i> เพิ่มรายการ
+      </button>
+    </div>
+
+    <table class="table table-bordered table-bordered rounded-4 overflow-hidden shadow-sm">
+      <thead>
+        <tr>
+          <th style="width: 8%;">ลำดับ</th>
+          <th>ชื่อหมวดหมู่หลัก</th>
+          <th class="text-center">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for category in categories %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ category.name_cate }}</td>
+          <td class="text-center">
+            <!-- ปุ่มแก้ไข -->
+            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ category.id }}">
+              <i class="bi bi-pencil-square"></i> แก้ไข
+            </button>
+
+            <!-- ปุ่มลบ -->
+            <a href="{% url 'assets:delete_category_asset' category.id %}" class="btn btn-sm btn-danger"
+              onclick="return confirm('คุณต้องการลบหมวดหมู่นี้ใช่หรือไม่?');">
+              <i class="bi bi-trash"></i> ลบ
+            </a>
+          </td>
+        </tr>
+
+        <!-- ✅ Modal แก้ไข (ย้ายเข้ามาในลูป) -->
+        <div class="modal fade" id="editModal{{ category.id }}" tabindex="-1"
+          aria-labelledby="editModalLabel{{ category.id }}" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <form method="POST" action="{% url 'assets:edit_category_asset' category.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                  <h5 class="modal-title" id="editModalLabel{{ category.id }}">แก้ไขหมวดหมู่หลัก</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">ชื่อหมวดหมู่หลัก</label>
+                    <input type="text" name="name_cate" class="form-control" value="{{ category.name_cate }}" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                  <button type="submit" class="btn btn-primary ms-2"
+                    onclick="this.disabled=true; this.innerHTML='กำลังบันทึกข้อมูล...'; this.form.submit();">💾
+                    บันทึก</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+
+        <!-- ✅ Modal เพิ่มหมวดหมู่ -->
+        <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <form method="POST" action="{% url 'assets:asset_list_cate' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                  <h5 class="modal-title" id="addModalLabel">เพิ่มหมวดหมู่หลัก</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">ชื่อหมวดหมู่หลัก</label>
+                    <input type="text" name="name_cate" class="form-control" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                  <button type="submit" class="btn btn-success">💾 บันทึก</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+{% endblock %}

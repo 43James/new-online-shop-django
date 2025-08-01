@@ -1,0 +1,28 @@
+{% extends 'base_sidebar.html' %}
+{% block content %}
+
+<h2>ผลการค้นหา "{{ query }}"</h2>
+
+{% if categories %}
+  <h4>หมวดหมู่หลัก</h4>
+  <ul>
+    {% for cat in categories %}
+      <li>{{ cat.name_cate }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>ไม่พบหมวดหมู่หลัก</p>
+{% endif %}
+
+{% if subcategories %}
+  <h4>หมวดหมู่ย่อย</h4>
+  <ul>
+    {% for sub in subcategories %}
+      <li>{{ sub.name_subcate }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>ไม่พบหมวดหมู่ย่อย</p>
+{% endif %}
+
+{% endblock %}

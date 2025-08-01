@@ -151,50 +151,8 @@
   }
 </script>
 
+
 <!-- JavaScript: นับถอยหลัง -->
-  <!-- <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const timers = document.querySelectorAll(".countdown-timer");
-      let cartCleared = false;  // เพื่อกันไม่ให้เรียกหลายรอบ
-  
-      timers.forEach(timer => {
-        const addedTime = new Date(timer.getAttribute("data-added-time"));
-        const expireTime = new Date(addedTime.getTime() + 1 * 60000);  // นับถอยหลัง 1 นาที
-  
-        function updateTimer() {
-          const now = new Date();
-          const diff = expireTime - now;
-  
-          if (diff <= 0) {
-            timer.innerText = "หมดเวลา";
-            timer.classList.add("text-danger");
-            timer.closest("tr").classList.add("opacity-50");
-  
-            // เรียกคืนสต็อก + เคลียร์ตะกร้า + รีเฟรชหน้า
-            if (!cartCleared) {
-              cartCleared = true;
-              fetch("{% url 'cart:auto_clear_cart' %}")
-                .then(response => response.json())
-                .then(data => {
-                  if (data.success) {
-                    window.location.reload();
-                  }
-                });
-            }
-          } else {
-            const minutes = Math.floor(diff / 60000);
-            const seconds = Math.floor((diff % 60000) / 1000);
-            timer.innerText = `${minutes}:${seconds.toString().padStart(2, '0')} นาที`;
-          }
-        }
-  
-        updateTimer();
-        setInterval(updateTimer, 1000);  // อัปเดตทุกวินาที
-      });
-    });
-  </script> -->
-
-
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const timers = document.querySelectorAll(".countdown-timer");
@@ -203,7 +161,7 @@
 
     timers.forEach(timer => {
       const addedTime = new Date(timer.getAttribute("data-added-time"));
-      const expireTime = new Date(addedTime.getTime() + 1 * 60000);
+      const expireTime = new Date(addedTime.getTime() + 2 * 60000);
 
       function updateTimer() {
         const now = new Date();
@@ -231,15 +189,9 @@
           timer.innerText = `${minutes}:${seconds.toString().padStart(2, '0')} นาที`;
         }
       }
-
       updateTimer();
       setInterval(updateTimer, 1000);
     });
   });
 </script>
-  
-  
-  
-
-
 {% endblock %}

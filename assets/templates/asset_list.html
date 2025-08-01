@@ -1,0 +1,92 @@
+<!-- รายการของแจ้งซ่อม -->
+
+{% extends "base_sidebar.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <div
+      class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+      id="title">
+      <h1 class="h2">รายการครุภัณฑ์</h1>
+      <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+        </div>
+        <button type="button"
+          class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
+          <i class="bi bi-calendar3"></i>
+          This week
+        </button>
+      </div>
+    </div>
+
+    <div class="row">
+    </div>
+
+    <!-- Nueva grafica -->
+    <div class="row">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="#">รายการครุภัณฑ์</a></li>
+          <li class="breadcrumb-item active" aria-current="page">เพิ่มครุภัณฑ์</li>
+          <li class="breadcrumb-item active" aria-current="page">แก้ไขครุภัณฑ์</li>
+          <li class="breadcrumb-item active" aria-current="page">รายละเอียดครุภัณฑ์</li>
+        </ol>
+      </nav>
+    </div>
+    <div class="btn-group mb-3">
+        <a href="{% url 'assets:add_asset_item' %}" type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle"></i> เพิ่มรายการ</a>
+    </div>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>รูปครุภัณฑ์</th>
+                <th>ชื่อครุภัณฑ์</th>
+                <th>รหัส</th>
+                <th>หมวดหมู่</th>
+                <th>หน่วยนับ</th>
+                <th>ปีที่ใช้งาน</th>
+                <th>อายุการใช้งาน (ปี)</th>
+                <th>ใช้มาแล้วกี่ปี</th>
+                <th>ผู้รับผิดชอบดูแลกำกับ</th>
+                <th>สถานที่เก็บ</th>
+                <th>สถานะการใช้งาน</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for loan in loans %}
+            <tr>
+                <td>{{ loan.asset.item_name }}</td>
+                <td>{{ loan.loan_date }}</td>
+                <td>{{ loan.date_due }}</td>
+                <td>{{ loan.get_status_display }}</td>
+                <td>
+                    {% if loan.status == "approved" and not loan.confirm %}
+                    <!-- ปุ่มยืนยันรับครุภัณฑ์ -->
+                    <form method="post" action="{% url 'confirm_receipt' loan.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-sm">ยืนยันรับครุภัณฑ์</button>
+                    </form>
+                    {% elif loan.status == "borrowed" %}
+                    <!-- ปุ่มแจ้งคืน -->
+                    <form method="post" action="{% url 'request_return' loan.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning btn-sm">แจ้งคืน</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="11" class="text-center">ไม่มีรายการยืม</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

@@ -1,0 +1,29 @@
+{% extends "base_sidebar.html" %}
+{% block content %}
+
+
+<div class="container col-md-6 ">
+    <h2 class="mb-3 mt-3">เพิ่มหมวดหมู่หลัก</h2>
+    <form method="POST" action="{% url 'assets:add_category_asset' %}">
+    <fieldset class="border p-4 rounded">
+        {% csrf_token %}
+        <!-- {{ form.as_p }} -->
+        <div class="row g-3">
+            <div class="col-md-6 container justify-content-center">
+              <label class="form-label" for="id_category_name">ชื่อหมวดหมู่หลัก</label>
+              <input type="text" name="name_cate" class="form-control" id="id_category_name" required>
+              <!-- แสดง error จากฟอร์ม Django -->
+              {% if form.name_cate.errors %}
+              <div class="text-danger mt-1">{{ form.name_cate.errors|striptags }}</div>
+          {% endif %}
+            </div>
+        </div>
+        <div class="mt-4 mb-3 d-flex justify-content-center">
+            <a onclick="history.back()" class="btn btn-secondary">ยกเลิก</a>
+            <button type="submit" class="btn btn-primary ms-2" onclick="this.disabled=true; this.innerHTML='กำลังบันทึกข้อมูล...'; this.form.submit();">💾 บันทึก</button>
+        </div>
+    </fieldset>
+    </form>
+    
+</html>
+{% endblock %}

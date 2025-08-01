@@ -1,5 +1,5 @@
 from django import forms
-from .models import AssetCheck, AssetCode, AssetItem, AssetLoan, AssetOwnership, StorageLocation
+from .models import AssetCheck, AssetCode, AssetItem, AssetLoan, AssetOwnership, StorageLocation, Category, Subcategory, StorageLocation
 
 
 class AssetCodeForm(forms.ModelForm):
@@ -46,9 +46,29 @@ class AssetItemForm(forms.ModelForm):
             "notes": "หมายเหตุ",
             "asset_image": "รูปภาพครุภัณฑ์",
         }
+        widgets = {
+            "notes": forms.Textarea(attrs={
+                "rows": 2,   # ปรับให้สั้นลง
+                "cols": 40,  # ปรับความกว้าง
+                "class": "form-control"
+            }),
+        }
 
 
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name_cate']
 
+class SubcategoryForm(forms.ModelForm):
+    class Meta:
+        model = Subcategory
+        fields = ['name_sub', 'category']
+
+class StorageLocationForm(forms.ModelForm):
+    class Meta:
+        model = StorageLocation
+        fields = ['name']
 
 
 

@@ -31,12 +31,22 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"
     integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="style.css">
-  
 
   <!-- โหลด JavaScript จากโฟลเดอร์ sidebar -->
   <script src="{% static 'sidebar/color-modes.js' %}"></script>
   <script src="{% static 'sidebar/dashboard.js' %}"></script>
   
+  <script type="text/javascript">
+    $(document).ready(function () {
+
+        window.setTimeout(function () {
+            $(".alert").fadeTo(1000, 0).slideUp(1000, function () {
+                $(this).remove();
+            });
+        }, 1500);
+
+    });
+  </script>
 
   <style>
     body {
@@ -151,7 +161,7 @@
         </a>
       </li>
       <li>
-        <a href="#" class="nav-link link-body-emphasis">
+        <a href="{% url 'assets:asset_list' %}" class="nav-link link-body-emphasis {% if '/asset-list/' in request.path %}active text-white btn btn-success{% endif %}">
           <p class="bi bi-table" style="position:fixed;"> รายการครุภัณฑ์</p><br>
         </a>
       </li>
@@ -165,23 +175,28 @@
           <p class="bi bi-clipboard2-check-fill" style="position:fixed;"> ตรวจนับครุภัณฑ์</p><br>
         </a>
       </li>
+      <!-- <li>
+        <a href="{% url 'assets:asset_list_cate' %}" class="nav-link link-body-emphasis">
+          <p class="bi bi-clipboard2-check-fill" style="position:fixed;"> เพิ่มหมวดหมู่หลัก</p><br>
+        </a>
+      </li> -->
     </ul>
     <hr>
-    <!-- <ul class="list-unstyled ps-0">
+    <ul class="list-unstyled ps-0">
       <li class="mb-1">
         <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
           data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="false">
-          ครุภัณฑ์
+          อื่นๆ
         </button>
         <div class="collapse" id="home-collapse">
           <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการครุภัณฑ์</a></li>
-            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">การครอบครองครุภัณฑ์</a></li>
-            <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">ตรวจนับครุภัณฑ์</a></li>
+            <li><a href="{% url 'assets:asset_list_cate' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการหมวดหมู่หลัก</a></li>
+            <li><a href="{% url 'assets:asset_list_subcate' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการหมวดหมู่ย่อย</a></li>
+            <li><a href="{% url 'assets:asset_list_storage_location' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการสถานที่เก็บครุภัณฑ์</a></li>
           </ul>
         </div>
       </li>
-      <li class="mb-1">
+      <!-- <li class="mb-1">
         <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
           data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-expanded="false">
           ยืมครุภัณฑ์
@@ -223,8 +238,8 @@
             <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Sign out</a></li>
           </ul>
         </div>
-      </li>
-    </ul> -->
+      </li> -->
+    </ul>
     <!-- <hr> -->
     <div class="dropdown">
       {% if user.profile.img.url == user.profile.img.url %}
@@ -300,10 +315,12 @@
               <a class="nav-link disabled" aria-disabled="true">Disabled</a>
             </li> -->
           </ul>
-          <form class="d-flex" role="search">
+          <!-- <form class="d-flex" role="search">
             <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
             <button class="btn btn-outline-success" type="submit">Search</button>
-          </form>
+          </form> -->
+         
+
   
           <!-- Cambair Tema -->
           <div class="dropdown-center" style="padding-left: 10px;">
@@ -360,7 +377,27 @@
     <!-- NavBar Fin -->
 
     <div class="container-fluid">
-
+      
+        <!-- messages -->
+        {% if messages %}
+        <div class="messages container col-5 d-flex justify-content-center mt-3">
+            {% for message in messages %}
+            {% if 'error' in message.tags %} <ul class="alert alert-danger text-center">
+                <h6>{{ message }}</h6>
+            </ul> {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if messages %}
+        <div class="messages container col-5 d-flex justify-content-center mt-3">
+            {% for message in messages %}
+            {% if 'success' in message.tags %} <ul class="alert alert-success text-center">
+                <h6>{{ message }}</h6>
+            </ul> {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         <!-- content -->
         {% block content %}{% endblock %}
     
