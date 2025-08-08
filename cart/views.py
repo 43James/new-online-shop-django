@@ -66,25 +66,53 @@ def auto_clear_cart(request):
 # ใหม่2
 @user_passes_test(is_authorized)
 @login_required
+# def add_to_cart(request, product_id):
+#     cart = Cart(request)
+#     product = get_object_or_404(Product, id=product_id)
+#     form = QuantityForm(request.POST)
+#     if form.is_valid():
+#         data = form.cleaned_data
+#         quantity_to_add = data['quantity']
+#         note = request.POST.get('note', '')  # รับค่า note จาก POST data
+        
+#         receivings = Receiving.objects.filter(product=product, quantity__gt=0).order_by('date_created')
+#         total_receiving_quantity = sum(receiving.quantity for receiving in receivings)
+#         if quantity_to_add > total_receiving_quantity:
+#             messages.error(request, 'จำนวนสินค้าในสต็อกไม่เพียงพอ!')
+#         else:
+#             cart.add(product=product, quantity=quantity_to_add, note=note)
+#             messages.success(request, 'เพิ่มลงในรถเข็นแล้ว')
+#     else:
+#         messages.error(request, 'กรุณาเพิ่มสินค้าลงในรถเข็น!')
+#     return redirect('shop:product_detail', product_id=product.product_id)
+
+
+@login_required
 def add_to_cart(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
     form = QuantityForm(request.POST)
+
     if form.is_valid():
         data = form.cleaned_data
         quantity_to_add = data['quantity']
-        note = request.POST.get('note', '')  # รับค่า note จาก POST data
-        
+        note = request.POST.get('note', '')
+
         receivings = Receiving.objects.filter(product=product, quantity__gt=0).order_by('date_created')
         total_receiving_quantity = sum(receiving.quantity for receiving in receivings)
+
         if quantity_to_add > total_receiving_quantity:
             messages.error(request, 'จำนวนสินค้าในสต็อกไม่เพียงพอ!')
         else:
-            cart.add(product=product, quantity=quantity_to_add, note=note)
-            messages.success(request, 'เพิ่มลงในรถเข็น!')
+            success = cart.add(product=product, quantity=quantity_to_add, note=note)
+            if success:
+                messages.success(request, 'เพิ่มลงในรถเข็นแล้ว!')
+            # ไม่ต้อง else เพราะข้อความ error ถูกแสดงจากใน cart.add แล้ว
     else:
         messages.error(request, 'กรุณาเพิ่มสินค้าลงในรถเข็น!')
+
     return redirect('shop:product_detail', product_id=product.product_id)
+
 
 
 

@@ -105,13 +105,15 @@
 
                     <!-- วันที่รับของ -->
                     <div class="col form-floating mb-2 mt-3">
+                    <!-- วันที่รับของ (ตั้งเป็นวันจันทร์ถัดไป 23:00) -->
                       <input type="datetime-local"
-                            name="date_receive"
-                            class="form-control form-control-sm text-secondary"                          
-                            id="exampleFormControlInput1"
-                            readonly
-                            style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
-                      <label for="exampleFormControlInput1">วันที่รับของ</label>
+                          name="date_receive"
+                          class="form-control form-control-sm text-secondary date-receive-input"
+                          data-order-id="{{ order.id }}"
+                          id="date_receive_{{ order.id }}"
+                          readonly
+                          style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
+                      <label for="date_receive_{{ order.id }}">วันที่รับของ</label>
                       <!-- <h6 class="text-danger text-center">**จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.**</h6> -->
                     </div>
 
@@ -122,14 +124,15 @@
 
                     <!-- วันที่อนุมัติ -->
                     <div class="col form-floating mb-3 mt-3">
+                    <!-- วันที่อนุมัติ (ตั้งเป็นวันนี้ 23:00) -->
                       <input type="datetime-local"
                             name="date_approved"
-                            class="form-control form-control-sm text-secondary"
-                            value="{{ now|date:'Y-m-d\\TH:i' }}"
-                            id="exampleFormControlInput2"
+                            class="form-control form-control-sm text-secondary date-approved-input"
+                            data-order-id="{{ order.id }}"
+                            id="date_approved_{{ order.id }}"
                             readonly
                             style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
-                      <label for="exampleFormControlInput2">วันที่อนุมัติ</label>
+                      <label for="dateApprovedInput{{ order.id }}">วันที่อนุมัติ</label>
                     </div>
 
                   <!-- หมายเหตุ -->
@@ -137,40 +140,7 @@
                     <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
                     <label for="floatingOther">หมายเหตุ</label>
                   </div>
-
-                    <script>
-                      // สร้างวันที่เริ่มต้นจากวันนี้
-                      const date = new Date();
-                    
-                      // หาวันจันทร์ถัดไป
-                      const day = date.getDay(); // ค่าที่ได้จะอยู่ระหว่าง 0 (อาทิตย์) ถึง 6 (เสาร์)
-                      const daysUntilMonday = (day === 0) ? 1 : (8 - day); // คำนวณหาจำนวนวันที่ต้องเพิ่มเพื่อให้ถึงวันจันทร์
-                      date.setDate(date.getDate() + daysUntilMonday); // เพิ่มวันที่เพื่อให้ถึงวันจันทร์
-                    
-                      // ตั้งเวลาเป็น 16:00 น.
-                      date.setHours(23, 0, 0, 0);
-                    
-                      // จัดรูปแบบวันที่ตามที่ต้องการสำหรับ input type="datetime-local"
-                      const formattedDate = date.toISOString().slice(0, 16);
-                    
-                      // เซตค่าวันที่เริ่มต้นของ input
-                      document.getElementById('exampleFormControlInput1').value = formattedDate;
-                    </script>
-
-                    <script>
-                      // ตั้งค่าวันที่ให้เป็นวันที่ปัจจุบันในฟิลด์วันที่รับ
-                      document.addEventListener('DOMContentLoaded', function() {
-                          const dateInput = document.getElementById('exampleFormControlInput2');
-                          const now = new Date();
-                          const year = now.getFullYear();
-                          const month = String(now.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มต้นที่ 0
-                          const day = String(now.getDate()).padStart(2, '0');
-                          const hours = String(now.getHours()).padStart(2, '0');
-                          const minutes = String(now.getMinutes()).padStart(2, '0');
-                          dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
-                      });
-                    </script>
-                                        
+                      
                   </div>
                   <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
@@ -207,27 +177,16 @@
                         </label>
                     </div>
 
-                    <!-- <div class="col-8">
-                      <label for="exampleFormControlInput3" class="form-label">วันที่อนุมัติ</label>
-                      <input type="datetime-local"
-                             name="date_approved"
-                             class="form-control form-control-sm text-secondary"
-                             value="{{ now|date:'Y-m-d\\TH:i' }}"
-                             id="exampleFormControlInput3"
-                             readonly
-                             style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
-                    </div> -->
-
                     <!-- วันที่ปฏิเสธ -->
                     <div class="col form-floating mb-3 mt-3">
                       <input type="datetime-local"
                             name="date_approved"
-                            class="form-control form-control-sm text-secondary"
+                            class="form-control form-control-sm text-secondary date-approved-input"
                             value="{{ now|date:'Y-m-d\\TH:i' }}"
-                            id="exampleFormControlInput3"
+                            id="date_approved_{{ order.id }}"
                             readonly
                             style="background-color: #f8f9fa; color: #6c757d; font-size: 0.85rem;">
-                      <label for="exampleFormControlInput3">วันที่ปฏิเสธ</label>
+                      <label for="dateApprovedInput{{ order.id }}">วันที่ปฏิเสธ</label>
                     </div>
 
                   <!-- หมายเหตุ -->
@@ -235,25 +194,6 @@
                     <input type="text" name="other" class="form-control" placeholder="ถ้ามี">
                     <label for="floatingOther">หมายเหตุ</label>
                   </div>
-
-                    <script>
-                      // ตั้งค่าวันที่ให้เป็นวันที่ปัจจุบันในฟิลด์วันที่รับ
-                      document.addEventListener('DOMContentLoaded', function() {
-                          const dateInput = document.getElementById('exampleFormControlInput3');
-                          const now = new Date();
-                          const year = now.getFullYear();
-                          const month = String(now.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มต้นที่ 0
-                          const day = String(now.getDate()).padStart(2, '0');
-                          const hours = String(now.getHours()).padStart(2, '0');
-                          const minutes = String(now.getMinutes()).padStart(2, '0');
-                          dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`; // ตั้งค่าฟิลด์เป็นวันที่และเวลาปัจจุบัน
-                      });
-                    </script>
-
-                    <!-- <div class="col mb-3 mt-3">
-                      <label class="form-label">หมายเหตุ</label>
-                      <input type="text" name="other" class="form-control" placeholder="กรุณาระบุ">
-                    </div> -->
 
                   </div>
                   <div class="modal-footer justify-content-between">
@@ -282,42 +222,37 @@
       {% endfor %}
     </table>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      // 📌 ตั้งค่าวันที่รับของ: วันจันทร์ถัดไป เวลา 23:00
+      const dateReceiveInputs = document.querySelectorAll('.date-receive-input');
+  
+      dateReceiveInputs.forEach(function(input) {
+          const date = new Date();
+          const day = date.getDay(); // 0 = Sunday, ..., 6 = Saturday
+          const daysUntilMonday = (day === 0) ? 1 : (8 - day);
+          date.setDate(date.getDate() + daysUntilMonday);
+          date.setHours(23, 0, 0, 0);
+          const formattedDate = date.toISOString().slice(0, 16);
+          input.value = formattedDate;
+      });
+  
+      // 📌 ตั้งค่าวันที่อนุมัติ: เวลาปัจจุบันตามเครื่องผู้ใช้ (Local Time)
+      const dateApprovedInputs = document.querySelectorAll('.date-approved-input');
+
+      dateApprovedInputs.forEach(function(input) {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+
+          const formattedNow = `${year}-${month}-${day}T${hours}:${minutes}`;
+          input.value = formattedNow;
+      });
+  });
+</script>
 {% endblock %}
-
-
-<div class="modal fade" id="exampleModal{{ order.id }}" tabindex="-1" aria-labelledby="exampleModalLabel"
-  aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="content col-md-6 rounded" style="background-color: white;">
-
-      <div class="modal-header">
-        <h5 class="modal-title text-center container" id="exampleModalLabel">ดำเนินการ ID {{ order.id }}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-      <div class="modal-body">
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="status" id="flexRadioDefault1">
-          <label class="form-check-label" for="flexRadioDefault1">
-            อนุมัติ
-          </label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="refuse" id="flexRadioDefault2">
-          <label class="form-check-label" for="flexRadioDefault2">
-            ปฏิเสธ
-          </label>
-        </div>
-
-        <div class="col mb-3 mt-3">
-          <label for="exampleFormControlInput1" class="form-label">วันที่รับของ</label>
-          <input type="datetime-local" name="date_receive" class="form-control" id="exampleFormControlInput1">
-        </div>
-
-        <div class="modal-footer justify-content-center">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-          <button type="submit" class="btn btn-primary">บันทึก</button>
-        </div>
-      </div>
-    </div>
-  </div>
+ 

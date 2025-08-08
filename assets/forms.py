@@ -14,20 +14,14 @@ class AssetCodeForm(forms.ModelForm):
         }
 
 class AssetItemForm(forms.ModelForm):
-    # เพิ่มฟอร์มสำหรับสร้างรหัสครุภัณฑ์
-    asset_code = forms.ModelChoiceField(
-        queryset=AssetCode.objects.all(),
-        required=False,
-        label="รหัสครุภัณฑ์ (เลือกหรือสร้างใหม่)"
-    )
-
     class Meta:
         model = AssetItem
         fields = [
-            "item_name", "category", "asset_code", "quantity", "unit", 
-            "purchase_price", "purchase_date", "fiscal_year", "lifetime", "used_years", 
-            "responsible_person", "storage_location", "brand_model", "damage_status", 
-            "notes", "asset_image"
+            "item_name", "subcategory",
+            "quantity", "unit", "purchase_price", "purchase_date", 
+            "fiscal_year", "lifetime", "used_years", 
+            "responsible_person", "storage_location", 
+            "brand_model", "damage_status", "notes", "asset_image"
         ]
         labels = {
             "item_name": "ชื่อรายการครุภัณฑ์",
@@ -48,11 +42,59 @@ class AssetItemForm(forms.ModelForm):
         }
         widgets = {
             "notes": forms.Textarea(attrs={
-                "rows": 2,   # ปรับให้สั้นลง
-                "cols": 40,  # ปรับความกว้าง
+                "rows": 2,
+                "cols": 40,
                 "class": "form-control"
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ✅ ลบ '---------' ออกจาก category
+        self.fields['subcategory'].empty_label = None
+
+
+
+# class AssetItemForm(forms.ModelForm):
+#     # เพิ่มฟอร์มสำหรับสร้างรหัสครุภัณฑ์
+#     asset_code = forms.ModelChoiceField(
+#         queryset=AssetCode.objects.all(),
+#         required=False,
+#         label="รหัสครุภัณฑ์ (เลือกหรือสร้างใหม่)"
+#     )
+
+#     class Meta:
+#         model = AssetItem
+#         fields = [
+#             "item_name", "category", "asset_code", "quantity", "unit", 
+#             "purchase_price", "purchase_date", "fiscal_year", "lifetime", "used_years", 
+#             "responsible_person", "storage_location", "brand_model", "damage_status", 
+#             "notes", "asset_image"
+#         ]
+#         labels = {
+#             "item_name": "ชื่อรายการครุภัณฑ์",
+#             "category": "หมวดหมู่ครุภัณฑ์",
+#             "quantity": "จำนวน",
+#             "unit": "หน่วยนับ",
+#             "purchase_price": "ราคาที่ซื้อ",
+#             "purchase_date": "วันที่ซื้อ",
+#             "fiscal_year": "ปีที่ใช้งาน",
+#             "lifetime": "อายุการใช้งาน (ปี)",
+#             "used_years": "ใช้มาแล้วกี่ปี",
+#             "responsible_person": "ผู้รับผิดชอบ",
+#             "storage_location": "สถานที่เก็บ",
+#             "brand_model": "ยี่ห้อ/รุ่น",
+#             "damage_status": "สถานะการใช้งาน",
+#             "notes": "หมายเหตุ",
+#             "asset_image": "รูปภาพครุภัณฑ์",
+#         }
+#         widgets = {
+#             "notes": forms.Textarea(attrs={
+#                 "rows": 2,   # ปรับให้สั้นลง
+#                 "cols": 40,  # ปรับความกว้าง
+#                 "class": "form-control"
+#             }),
+#         }
 
 
 class CategoryForm(forms.ModelForm):

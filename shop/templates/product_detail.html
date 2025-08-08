@@ -20,7 +20,7 @@
 <div class="row mb-3 mt-5">
     
     <!-- product image -->
-    <div class="col-md-5">
+    <div class="col-md-5 mb-3">
         {% if product.image %}
         <img style="object-fit: cover; " class="rounded" src="{{ product.image.url }}" width="390" height="380">
         {% else %}
@@ -63,11 +63,22 @@
             {% csrf_token %}
             {% if total_quantity != 0 %}
                <!-- ช่องใส่จำนวน -->
-            <div class="mb-3">
+            <!-- <div class="mb-3">
                 <label for="quantity" class="form-label fw-semibold text-dark">จำนวนที่ต้องการเบิก</label>
                 <div class="input-group rounded">
                     <input type="number" class="form-control" name="quantity" id="quantity"
                         min="1" max="10" placeholder="ใส่จำนวน" style="max-width: 150px;">
+                    <span class="input-group-text">{{ product.unit }}</span>
+                </div>
+            </div> -->
+            <!-- ช่องใส่จำนวน -->
+            <div class="mb-3">
+                <label for="quantity" class="form-label fw-semibold text-dark">จำนวนที่ต้องการเบิก</label>
+                <div class="input-group rounded" style="max-width: 200px;">
+                    <button type="button" class="btn btn-outline-secondary" id="button-minus">−</button>
+                    <input type="number" class="form-control text-center" name="quantity" id="quantity"
+                        min="0" max="10" value="0" placeholder="ใส่จำนวน" aria-label="จำนวน">
+                    <button type="button" class="btn btn-outline-secondary" id="button-plus">+</button>
                     <span class="input-group-text">{{ product.unit }}</span>
                 </div>
             </div>
@@ -172,6 +183,33 @@
         </div>
     </div>
 </div>
+
+<!-- ช่องใส่จำนวน -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('quantity');
+        const btnMinus = document.getElementById('button-minus');
+        const btnPlus = document.getElementById('button-plus');
+        const min = parseInt(input.min) || 0;
+        const max = parseInt(input.max) || 10;
+    
+        btnMinus.addEventListener('click', () => {
+            let currentValue = parseInt(input.value) || min;
+            if(currentValue > min) {
+                input.value = currentValue - 1;
+                input.dispatchEvent(new Event('change'));
+            }
+        });
+    
+        btnPlus.addEventListener('click', () => {
+            let currentValue = parseInt(input.value) || min;
+            if(currentValue < max) {
+                input.value = currentValue + 1;
+                input.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+    </script>
 
 
 <!-- JavaScript -->

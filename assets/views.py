@@ -38,13 +38,49 @@ def repair_report(request):
 
 
 # บันทึกรายการครุภัณฑ์
+# def add_asset_item(request):
+#     if request.method == "POST":
+#         asset_code_form = AssetCodeForm(request.POST)
+#         asset_item_form = AssetItemForm(request.POST, request.FILES)
+
+#         if asset_code_form.is_valid() and asset_item_form.is_valid():
+#             # เช็คว่ามีรหัสครุภัณฑ์อยู่แล้วหรือไม่
+#             asset_code, created = AssetCode.objects.get_or_create(
+#                 asset_type=asset_code_form.cleaned_data["asset_type"],
+#                 asset_kind=asset_code_form.cleaned_data["asset_kind"],
+#                 asset_character=asset_code_form.cleaned_data["asset_character"],
+#                 serial_year=asset_code_form.cleaned_data["serial_year"],
+#             )
+
+#             # บันทึกรายการครุภัณฑ์
+#             asset_item = asset_item_form.save(commit=False)
+#             asset_item.asset_code = asset_code
+#             asset_item.save()
+
+#             messages.success(request, "✅ บันทึกรายการครุภัณฑ์เรียบร้อยแล้ว")
+#             return redirect("assets:asset_list")  # แก้ namespace ให้ตรงกับของคุณ
+
+#         else:
+#             messages.error(request, "❌ กรุณาตรวจสอบความถูกต้องของข้อมูล")
+
+#     else:
+#         asset_code_form = AssetCodeForm()
+#         asset_item_form = AssetItemForm()
+
+#     return render(request, "add_asset_item.html", {
+#         "asset_code_form": asset_code_form,
+#         "asset_item_form": asset_item_form
+#     })
+
 def add_asset_item(request):
+    categories = Category.objects.prefetch_related("subcategories").all()
+
     if request.method == "POST":
         asset_code_form = AssetCodeForm(request.POST)
         asset_item_form = AssetItemForm(request.POST, request.FILES)
 
         if asset_code_form.is_valid() and asset_item_form.is_valid():
-            # เช็คว่ามีรหัสครุภัณฑ์อยู่แล้วหรือไม่
+            # ดึงหรือสร้างรหัสครุภัณฑ์ใหม่
             asset_code, created = AssetCode.objects.get_or_create(
                 asset_type=asset_code_form.cleaned_data["asset_type"],
                 asset_kind=asset_code_form.cleaned_data["asset_kind"],
@@ -52,13 +88,13 @@ def add_asset_item(request):
                 serial_year=asset_code_form.cleaned_data["serial_year"],
             )
 
-            # บันทึกรายการครุภัณฑ์
+            # ผูก asset_code เข้ากับรายการ
             asset_item = asset_item_form.save(commit=False)
             asset_item.asset_code = asset_code
             asset_item.save()
 
             messages.success(request, "✅ บันทึกรายการครุภัณฑ์เรียบร้อยแล้ว")
-            return redirect("assets:asset_list")  # แก้ namespace ให้ตรงกับของคุณ
+            return redirect("assets:asset_list")
 
         else:
             messages.error(request, "❌ กรุณาตรวจสอบความถูกต้องของข้อมูล")
@@ -69,8 +105,11 @@ def add_asset_item(request):
 
     return render(request, "add_asset_item.html", {
         "asset_code_form": asset_code_form,
-        "asset_item_form": asset_item_form
+        "asset_item_form": asset_item_form,
+        "categories": categories,  # ส่งหมวดหมู่หลักพร้อมหมวดย่อย
+
     })
+
 
 
 # บันทึกการครอบครองครุภัณฑ์

@@ -121,9 +121,9 @@ class Category(models.Model):
 # หมวดหมู่ย่อย
 class Subcategory(models.Model):
     name_sub = models.CharField(max_length=100, verbose_name='หมวดหมู่ย่อย')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category', verbose_name='หมวดหมู่หลัก')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories', verbose_name='หมวดหมู่หลัก')
 
-    class Meta:
+    class Meta: 
         ordering = ('-id',)
 
     def __str__(self):
@@ -159,7 +159,8 @@ class AssetItem(models.Model):
         ('ใช้อยู่', 'ใช้อยู่'),
     ]
     item_name = models.CharField(max_length=255, verbose_name="ชื่อรายการครุภัณฑ์")
-    category = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='Subcategory', null=True, blank=True, verbose_name='หมวดหมู่')
+    # category = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='Subcategory', null=True, blank=True, verbose_name='หมวดหมู่')
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='asset_items', null=True, blank=True, verbose_name='หมวดหมู่')
     asset_code = models.ForeignKey(AssetCode, on_delete=models.CASCADE, verbose_name="รหัสครุภัณฑ์")
     quantity = models.IntegerField(verbose_name="จำนวน")
     unit = models.CharField(max_length=50, verbose_name="หน่วยนับ")

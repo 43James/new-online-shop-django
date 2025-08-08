@@ -108,26 +108,58 @@ def is_authorized(user):
 
 @user_passes_test(is_authorized)
 @login_required
+# def create_order(request):
+#     cart = Cart(request)
+#     order = Order.objects.create(user=request.user)
+#     for item in cart:
+#         receiving = get_object_or_404(Receiving, id=item['receiving_id'])  # ดึง Receiving object
+#         note_value = item.get('note', '').strip() or '-'  # ✔ บังคับให้มี '-' ถ้าไม่ได้กรอก
+#         Issuing.objects.create(
+#             order=order,
+#             product=item['product'],
+#             price=item['price'],
+#             quantity=item['quantity'],
+#             receiving=receiving,  # ใช้ Receiving object
+#             note=note_value # เพิ่มหมายเหตุในรายการ Issuing
+#         )
+#     # Notify admin about the new order
+#     notify_admin(request, order.id)
+
+#     # Notify user about the new order
+#     notify_user(order.id)  # You can also use notify_user_approved if needed
+    
+#     return redirect('orders:pay_order', order_id=order.id)
+
 def create_order(request):
     cart = Cart(request)
+    
+    if not any(cart):
+        messages.error(request, "รถเข็นว่างเปล่า")
+        return redirect('shop:home_page')
+
     order = Order.objects.create(user=request.user)
+
     for item in cart:
-        receiving = get_object_or_404(Receiving, id=item['receiving_id'])  # ดึง Receiving object
-        note_value = item.get('note', '').strip() or '-'  # ✔ บังคับให้มี '-' ถ้าไม่ได้กรอก
+        receiving = get_object_or_404(Receiving, id=item['receiving_id'])
+        note_value = item.get('note', '').strip() or '-'
+
+        # ดึง Product instance จาก ID
+        product_instance = get_object_or_404(Product, id=item['product']['id'])
+
         Issuing.objects.create(
             order=order,
-            product=item['product'],
+            product=product_instance,
             price=item['price'],
             quantity=item['quantity'],
-            receiving=receiving,  # ใช้ Receiving object
-            note=note_value # เพิ่มหมายเหตุในรายการ Issuing
+            receiving=receiving,
+            note=note_value
         )
-    # Notify admin about the new order
-    notify_admin(request, order.id)
 
-    # Notify user about the new order
-    notify_user(order.id)  # You can also use notify_user_approved if needed
-    
+    # แจ้งเตือน
+    notify_admin(request, order.id)
+    notify_user(order.id)
+
+    cart.clear()  # ล้างรถเข็นหลังจากยืนยันเบิก
     return redirect('orders:pay_order', order_id=order.id)
 
 

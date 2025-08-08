@@ -4,11 +4,11 @@
 
 <style>
     th,
-        td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
-        }
+    td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: center;
+    }
 </style>
 
 <div class="table-responsive">
@@ -22,7 +22,7 @@
                 <th scope="col">รับเข้า</th>
                 <th scope="col">คงเหลือ</th>
                 <th colspan="2">ราคา/หน่วย</th>
-                
+
                 <th scope="col">วันที่รับเข้า</th>
                 {% if request.user.is_admin %}
                 <th scope="col">วันที่อัพเดต</th>
@@ -39,15 +39,15 @@
                 <th scope="row">{{ forloop.counter }}</th>
                 <td><a class="text-decoration-none">{{ re.product.product_id}}</a></td>
                 <!-- ตรวจสอบว่ามีไฟล์หรือไม่ -->
-                
+
                 <td>{{ re.product.category.category.name_cate}}</td>
                 <td>{{ re.product.product_name}}</td>
                 <td style="background-color: rgb(255, 221, 107)">{{ re.quantityreceived }}</td>
 
                 {% if re.quantity == 0 %}
                 <td style="background-color: #ff0000;">{{ re.quantity|intcomma }} </td>
-                {% elif re.quantity <= 5 %} 
-                <td style="background-color: rgb(250, 124, 21)">{{ re.quantity|intcomma }}</td>
+                {% elif re.quantity <= 5 %} <td style="background-color: rgb(250, 124, 21)">{{ re.quantity|intcomma }}
+                    </td>
                     {% else %}
                     <td style="background-color: #1eff00;">{{ re.quantity|intcomma }} </td>
                     {% endif %}
@@ -77,12 +77,13 @@
                     {% endif %}
 
                     {% if request.user.is_admin %}
-                    <td><a class="text-danger text-decoration-none" data-bs-toggle="modal" data-bs-target="#exampleModal{{re.id}}" ><i class="bi bi-trash-fill"></i></a></td>
+                    <td><a class="text-danger text-decoration-none" data-bs-toggle="modal"
+                            data-bs-target="#exampleModal{{re.id}}"><i class="bi bi-trash-fill"></i></a></td>
                     {% else %}
                     <td class="text-danger">admin</td>
                     {% endif %}
             </tr>
-            
+
         </tbody>
         <!-- Modal -->
         <div class="modal fade" id="exampleModal{{re.id}}" tabindex="-1" aria-labelledby="exampleModalLabel"
@@ -95,8 +96,9 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-center">
-                        ท่านต้องการลบข้อมูลการรับเข้า <br><strong>{{re.product.product_id}}&nbsp; {{re.product.product_name}}</strong> ใช่หรือไม่!
-                    </div> 
+                        ท่านต้องการลบข้อมูลการรับเข้า <br><strong>{{re.product.product_id}}&nbsp;
+                            {{re.product.product_name}}</strong> ใช่หรือไม่!
+                    </div>
                     <div class="modal-footer">
                         <div class="row w-100">
                             <div class="col-6 d-flex justify-content-start">
@@ -112,9 +114,9 @@
             </div>
         </div>
         {% empty %}
-      <tr>
-        <td colspan="12" class="text-center">ไม่มีข้อมูลในเดือนนี้</td>
-      </tr>
+        <tr>
+            <td colspan="12" class="text-center">ไม่มีข้อมูลในเดือนนี้</td>
+        </tr>
         {% endfor %}
     </table>
 </div>

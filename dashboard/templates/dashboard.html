@@ -35,7 +35,7 @@
     <!-- Bootstrap-select JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
     
-   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <style>
         body {
@@ -118,21 +118,20 @@
                     <!-- search form -->
                     {% if '/products/' in request.path %}
                     <div class="col-6">
-                    <div class="row">
-                        <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_product'%}"><i class="bi bi-plus-circle"></i> เพิ่มวัสดุ</a></div>
-                        <div class="col-auto mb-3" >
-                            <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:products' %}">
-                                <div class="input-group">
-                                    <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
-                                    <button type="button" class="btn btn-danger" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
-                                    <button type="submit" name="filter_stock" value="all" class="{% if filter_stock == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">แสดงทั้งหมด</button>
-                                    <button type="submit" name="filter_stock" value="in_stock" class="{% if filter_stock == 'in_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">วัสดุที่ยังมี</button>
-                                    <button type="submit" name="filter_stock" value="out_of_stock" class="{% if filter_stock == 'out_of_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">วัสดุที่หมด</button>
-                                </div>
-                            </form>
+                        <div class="row">
+                            <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_product'%}"><i class="bi bi-plus-circle"></i> เพิ่มวัสดุ</a></div>
+                            <div class="col-auto mb-3" >
+                                <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:products' %}">
+                                    <div class="input-group">
+                                        <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                        <button type="button" class="btn btn-danger" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                                        <button type="submit" name="filter_stock" value="all" class="{% if filter_stock == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">แสดงทั้งหมด</button>
+                                        <button type="submit" name="filter_stock" value="in_stock" class="{% if filter_stock == 'in_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">วัสดุที่ยังมี</button>
+                                        <button type="submit" name="filter_stock" value="out_of_stock" class="{% if filter_stock == 'out_of_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">วัสดุที่หมด</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                   
                     </div>
                     <div class="col-6">
                         <div class=" mb-3">
@@ -179,21 +178,20 @@
                             </form>
                         </div>
                     </div>
-                    
 
                     {% elif '/suppliers/' in request.path %}
                     <div class="col-6">
-                    <div class="row">
-                    <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_suppliers'%}">เพิ่มข้อมูล</a></div>
-                    <div class="col-5 mb-3" >
-                        <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:suppliers' %}">
-                            <div class="input-group">
-                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
-                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                        <div class="row">
+                            <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_suppliers'%}">เพิ่มข้อมูล</a></div>
+                            <div class="col-5 mb-3" >
+                                <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:suppliers' %}">
+                                    <div class="input-group">
+                                        <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                        <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                                    </div>
+                                </form>
                             </div>
-                        </form>
-                    </div>
-                    </div>
+                        </div>
                     </div>
 
                     {% elif '/receive_list/' in request.path %}
@@ -210,30 +208,36 @@
                             </div>
                         </div> 
                     </div>
-                        <div class="col-6 mb-4">
-                            <form method="get" action="{% url 'dashboard:receive_list' %}" class="row gy-2 gx-3 align-items-center justify-content-end">
-                                <div class="col-auto">
-                                    <select name="month" id="month" class="form-select">
-                                        {% for m in months %}
-                                            <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-auto">
-                                    <select name="year" id="year" class="form-select">
-                                        {% for y in years %}
-                                            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-primary">ค้นหา</button>
-                                    <a type="button" class="btn btn-secondary" href="{% url 'dashboard:receive_list' %}" >ยกเลิก</a>
-                                </div>
-                            </form>
-                        </div>
                     
-
+                    <div class="col mb-4">
+                        <form method="get" action="{% url 'dashboard:receive_list' %}" class="row gy-2 gx-3 align-items-center justify-content-end">
+                            <div class="col-auto">
+                                <select name="month" id="month" class="form-select">
+                                    {% for m in months %}
+                                        <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <select name="year" id="year" class="form-select">
+                                    {% for y in years %}
+                                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary">ค้นหา</button>
+                                <a type="button" class="btn btn-secondary" href="{% url 'dashboard:receive_list' %}" >ยกเลิก</a>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-auto mb-4">
+                        <a href="{% url 'dashboard:export_receive_to_excel' %}?month={{ selected_month }}&year={{ selected_year }}" class="btn btn-success">
+                            Export <i class="fa fa-file-excel-o" style="font-size:20px"></i> 
+                        </a>
+                    </div>
+                    
+                    
                     {% elif '/total_quantity/' in request.path %}
                     
                     <div class="row">
@@ -356,17 +360,17 @@
 
                     {% elif '/workgroup/' in request.path %}
                     <div class="col-6">
-                    <div class="row">
-                        <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_work_group'%}">เพิ่มข้อมูล</a></div>
-                    <div class="col-5 mb-3" >
-                        <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:workgroup' %}">
-                            <div class="input-group">
-                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
-                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                        <div class="row">
+                            <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_work_group'%}">เพิ่มข้อมูล</a></div>
+                            <div class="col-5 mb-3" >
+                                <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:workgroup' %}">
+                                    <div class="input-group">
+                                        <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                        <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                                    </div>
+                                </form>
                             </div>
-                        </form>
-                    </div>
-                    </div>
+                        </div>
                     </div>
                     <div class="col-6">
                         <div class=" mb-3">
