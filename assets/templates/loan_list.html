@@ -1,83 +1,218 @@
-<!-- รายการของผู้ยืม -->
-
 {% extends "base_sidebar.html" %}
 {% block content %}
 
-<div class="container-fluid">
+<body class="home-page">
+  <style>
+    #watermark p {
+      position: absolute;
+      color: rgb(255, 0, 0);
+      font-size: 30px;
+      top: 30%;
+      font-weight: bold;
+      width: 100%;
+      pointer-events: none;
+      -webkit-transform: rotate(-20deg);
+      -moz-transform: rotate(-45deg);
+      text-shadow: 2px 2px 4px rgba(255, 255, 0, 0.904);
+    }
+  </style>
 
-    <div
-      class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
-      id="title">
-      <h1 class="h2">รายการครุภัณฑ์ที่ยืม</h1>
-      <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
-        </div>
-        <button type="button"
-          class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
-          <i class="bi bi-calendar3"></i>
-          This week
-        </button>
+  {% if messages %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var orderModal = new bootstrap.Modal(document.getElementById('orderConfirmationModal'));
+      orderModal.show();
+    });
+  </script>
+  {% endif %}
+
+  {% if request.user.is_authenticated %}
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategory" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            หมวดหมู่หลัก
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategory">
+            {% for category in categories %}
+            <li>
+              <a class="dropdown-item" href="{% url 'assets:loan-list' %}?category={{ category.id }}">
+                {{ category.name_cate }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+      </ul>
+
+      {% if selected_category %}
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategorySub" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            หมวดหมู่ย่อย
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategorySub">
+            {% for subcategory in subcategories %}
+            <li>
+              <a class="dropdown-item"
+                href="{% url 'assets:loan-list' %}?category={{ selected_category.id }}&subcategory={{ subcategory.id }}">
+                {{ subcategory.name_sub }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+      </ul>
+      {% endif %}
+    </div>
+  </nav>
+
+  <div class="text-primary mt-3">
+    {% if selected_category %}
+    <h5>หมวดหมู่ที่เลือก: <i>{{ selected_category.name_cate }}</i></h5>
+    {% endif %}
+    {% if selected_subcategory %}
+    <h6>หมวดหมู่ย่อยที่เลือก: <i>{{ selected_subcategory.name_sub }}</i></h6>
+    {% endif %}
+  </div>
+
+  {% if asset_items %}
+  <div class="d-flex flex-wrap">
+    {% for assetitem in asset_items %}
+    <div class="card me-3 mb-3 mt-4" style="width: 11rem; margin-left: 20px;">
+      {% if assetitem.status_assetloan %}
+      <div id="watermark">
+        <a href="{{ assetitem.get_absolute_url }}">
+          {% if assetitem.asset_image %}
+          <img class="card-img mt-2" width="134" height="150" style="object-fit: cover; opacity: 0.5;"
+            src="{{ assetitem.asset_image.url }}">
+          {% else %}
+          <img class="card-img mt-2" width="134" height="150" style="object-fit: cover; opacity: 0.5;"
+            src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+          {% endif %}
+        </a>
+        <p class="text-center text-danger mt-1">ไม่ว่าง</p>
+      </div>
+      {% else %}
+      <a href="{{ assetitem.get_absolute_url }}">
+        {% if assetitem.asset_image %}
+        <img class="card-img mt-2" width="134" height="150" style="object-fit: cover;"
+          src="{{ assetitem.asset_image.url }}">
+        {% else %}
+        <img class="card-img mt-2" width="134" height="150" style="object-fit: cover;"
+          src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+        {% endif %}
+      </a>
+      {% endif %}
+
+      <div class="mt-3 text-center">
+        <h6 class="card-title element">{{ assetitem.item_name }}</h6>
       </div>
     </div>
+    {% endfor %}
+  </div>
 
-    <div class="row">
+  <nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center mt-2 mb-2">
+      {% if asset_items.has_previous %}
+      <li class="page-item">
+        <a class="page-link"
+          href="?page=1{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">หน้าแรก</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link"
+          href="?page={{ asset_items.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">ก่อนหน้า</a>
+      </li>
+      {% endif %}
+
+      {% for i in asset_items.paginator.page_range %}
+      {% if asset_items.number == i %}
+      <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+      {% elif i > asset_items.number|add:'-2' and i < asset_items.number|add:'2' %} <li class="page-item"><a
+          class="page-link"
+          href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">{{
+          i }}</a></li>
+        {% endif %}
+        {% endfor %}
+
+        {% if asset_items.has_next %}
+        <li class="page-item">
+          <a class="page-link"
+            href="?page={{ asset_items.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">ถัดไป</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link"
+            href="?page={{ asset_items.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">หน้าสุดท้าย</a>
+        </li>
+        {% endif %}
+    </ul>
+  </nav>
+
+  {% else %}
+  <div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 mt-5 pt-5 text-center">
+      <h3 class="text-muted">ไม่มีรายการครุภัณฑ์!</h3>
     </div>
+    <div class="col-md-2"></div>
+  </div>
+  {% endif %}
 
-    <!-- Nueva grafica -->
-    <div class="row">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="#">Home</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Overview</li>
-        </ol>
-      </nav>
-    </div>
+</body>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>ครุภัณฑ์</th>
-                <th>วันที่ยืม</th>
-                <th>กำหนดคืน</th>
-                <th>สถานะ</th>
-                <th>การจัดการ</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for loan in loans %}
-            <tr>
-                <td>{{ loan.asset.item_name }}</td>
-                <td>{{ loan.loan_date }}</td>
-                <td>{{ loan.date_due }}</td>
-                <td>{{ loan.get_status_display }}</td>
-                <td>
-                    {% if loan.status == "approved" and not loan.confirm %}
-                    <!-- ปุ่มยืนยันรับครุภัณฑ์ -->
-                    <form method="post" action="{% url 'confirm_receipt' loan.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-sm">ยืนยันรับครุภัณฑ์</button>
-                    </form>
-                    {% elif loan.status == "borrowed" %}
-                    <!-- ปุ่มแจ้งคืน -->
-                    <form method="post" action="{% url 'request_return' loan.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-warning btn-sm">แจ้งคืน</button>
-                    </form>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="text-center">ไม่มีรายการยืม</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-
-
+<style>
+  .page-link.current-page {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+  }
+</style>
+{% endif %}
 {% endblock %}
 
+
+
+<!-- <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategory" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        หมวดหมู่หลัก
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategory">
+                        {% for category in categories %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'assets:filter_by_category_asset' category.id %}">
+                                {{ category.name_cate }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ul>
+
+            {% if selected_category %}
+            <ul class="navbar-nav mb-2 mb-lg-0">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategorySub" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        หมวดหมู่ย่อย
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategorySub">
+                        {% for subcategory in subcategories %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'assets:filter_by_category_asset' selected_category.id subcategory.id %}">
+                                {{ subcategory.name_sub }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ul>
+            {% endif %}
+        </div>
+    </nav> -->

@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-kr1p-zj6!vss$(xd2f7vk8nw*3g@-ao92zzg8^@u!mj(l#s)+i'
+SITE_URL = 'http://localhost:8000' # หรือ 'http://localhost:8000' สำหรับการทดสอบในเครื่อง
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = False

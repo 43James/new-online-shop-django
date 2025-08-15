@@ -52,7 +52,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for category in categories %}
+        {% for category in categories.object_list %}
         <tr>
           <td>{{ forloop.counter }}</td>
           <td>{{ category.name_cate }}</td>
@@ -124,4 +124,37 @@
             </div>
           </div>
         </div>
+      </tbody>
+    </table>
+    <nav aria-label="Page navigation example">
+      <ul class="pagination justify-content-center mt-2 mb-2">
+          {% if categories.has_previous %}
+          <li class="page-item">
+              <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}">หน้าแรก</a>
+          </li>
+          <li class="page-item">
+              <a class="page-link" href="?page={{ categories.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">ก่อนหน้า</a>
+          </li>
+          {% endif %}
+  
+          {% for i in categories.paginator.page_range %}
+              {% if categories.number == i %}
+                  <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+              {% elif i > categories.number|add:'-2' and i < categories.number|add:'2' %}
+                  <li class="page-item"><a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a></li>
+              {% endif %}
+          {% endfor %}
+  
+          {% if categories.has_next %}
+          <li class="page-item">
+              <a class="page-link" href="?page={{ categories.next_page_number }}{% if query %}&q={{ query }}{% endif %}">ถัดไป</a>
+          </li>
+          <li class="page-item">
+              <a class="page-link" href="?page={{ categories.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">หน้าสุดท้าย</a>
+          </li>
+          {% endif %}
+      </ul>
+  </nav>
+  </div>
+</div>
 {% endblock %}

@@ -1,5 +1,5 @@
 from django import forms
-from .models import AssetCheck, AssetCode, AssetItem, AssetLoan, AssetOwnership, StorageLocation, Category, Subcategory, StorageLocation
+from .models import AssetCheck, AssetCode, AssetItem, AssetLoan, AssetOwnership, StorageLocation, AssetCategory, Subcategory, StorageLocation
 
 
 class AssetCodeForm(forms.ModelForm):
@@ -21,11 +21,12 @@ class AssetItemForm(forms.ModelForm):
             "quantity", "unit", "purchase_price", "purchase_date", 
             "fiscal_year", "lifetime", "used_years", 
             "responsible_person", "storage_location", 
-            "brand_model", "damage_status", "notes", "asset_image"
+            "brand_model", "damage_status", "notes", "asset_image",
+            "status_borrowing", "status_assetloan", # ✅ เพิ่ม 2 ฟิลด์นี้
         ]
         labels = {
             "item_name": "ชื่อรายการครุภัณฑ์",
-            "category": "หมวดหมู่ครุภัณฑ์",
+            "subcategory": "หมวดหมู่ครุภัณฑ์",
             "quantity": "จำนวน",
             "unit": "หน่วยนับ",
             "purchase_price": "ราคาที่ซื้อ",
@@ -39,6 +40,8 @@ class AssetItemForm(forms.ModelForm):
             "damage_status": "สถานะการใช้งาน",
             "notes": "หมายเหตุ",
             "asset_image": "รูปภาพครุภัณฑ์",
+            "status_borrowing": "ครุภัณฑ์ที่ยืมได้", # ✅ เพิ่ม label ให้ฟิลด์ใหม่
+            "status_assetloan": "สถานะการยืม", # ✅ เพิ่ม label ให้ฟิลด์ใหม่
         }
         widgets = {
             "notes": forms.Textarea(attrs={
@@ -99,7 +102,7 @@ class AssetItemForm(forms.ModelForm):
 
 class CategoryForm(forms.ModelForm):
     class Meta:
-        model = Category
+        model = AssetCategory
         fields = ['name_cate']
 
 class SubcategoryForm(forms.ModelForm):

@@ -1,92 +1,184 @@
-<!-- รายการของแจ้งซ่อม -->
-
 {% extends "base_sidebar.html" %}
 {% block content %}
 
 <div class="container-fluid">
 
-    <div
-      class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
-      id="title">
-      <h1 class="h2">รายการครุภัณฑ์</h1>
-      <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom" id="title">
+        <h1 class="h2">รายการครุภัณฑ์</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+            </div>
         </div>
-        <button type="button"
-          class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
-          <i class="bi bi-calendar3"></i>
-          This week
-        </button>
-      </div>
     </div>
 
     <div class="row">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">หน้าหลัก</a></li>
+                <li class="breadcrumb-item active" aria-current="page">รายการครุภัณฑ์</li>
+            </ol>
+        </nav>
     </div>
-
-    <!-- Nueva grafica -->
-    <div class="row">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="#">รายการครุภัณฑ์</a></li>
-          <li class="breadcrumb-item active" aria-current="page">เพิ่มครุภัณฑ์</li>
-          <li class="breadcrumb-item active" aria-current="page">แก้ไขครุภัณฑ์</li>
-          <li class="breadcrumb-item active" aria-current="page">รายละเอียดครุภัณฑ์</li>
-        </ol>
-      </nav>
-    </div>
+    
     <div class="btn-group mb-3">
         <a href="{% url 'assets:add_asset_item' %}" type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle"></i> เพิ่มรายการ</a>
     </div>
 
-    <table class="table table-bordered">
-        <thead>
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
             <tr>
-                <th>รูปครุภัณฑ์</th>
+                <th>รูปภาพ</th>
                 <th>ชื่อครุภัณฑ์</th>
-                <th>รหัส</th>
+                <th>รหัสครุภัณฑ์</th>
                 <th>หมวดหมู่</th>
-                <th>หน่วยนับ</th>
+                <!-- <th>หน่วยนับ</th> -->
                 <th>ปีที่ใช้งาน</th>
                 <th>อายุการใช้งาน (ปี)</th>
                 <th>ใช้มาแล้วกี่ปี</th>
                 <th>ผู้รับผิดชอบดูแลกำกับ</th>
                 <th>สถานที่เก็บ</th>
                 <th>สถานะการใช้งาน</th>
-
+                <th>ครุภัณฑ์ที่ยืมได้</th>
+                <th>จัดการ</th>
             </tr>
         </thead>
         <tbody>
-            {% for loan in loans %}
+            {% for asset in assets %}
             <tr>
-                <td>{{ loan.asset.item_name }}</td>
-                <td>{{ loan.loan_date }}</td>
-                <td>{{ loan.date_due }}</td>
-                <td>{{ loan.get_status_display }}</td>
                 <td>
-                    {% if loan.status == "approved" and not loan.confirm %}
-                    <!-- ปุ่มยืนยันรับครุภัณฑ์ -->
-                    <form method="post" action="{% url 'confirm_receipt' loan.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-sm">ยืนยันรับครุภัณฑ์</button>
-                    </form>
-                    {% elif loan.status == "borrowed" %}
-                    <!-- ปุ่มแจ้งคืน -->
-                    <form method="post" action="{% url 'request_return' loan.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-warning btn-sm">แจ้งคืน</button>
-                    </form>
+                    {% if asset.asset_image %}
+                    <img src="{{ asset.asset_image.url }}" alt="{{ asset.item_name }}" style="width: 50px; height: 50px; object-fit: cover;">
+                    {% else %}
+                    ไม่มีรูป
                     {% endif %}
+                </td>
+                <td>{{ asset.item_name }}</td>
+                <td>SP-{{ asset.asset_code }}</td>
+                <td>{{ asset.subcategory.name_sub }}</td>
+                <!-- <td>{{ asset.unit }}</td> -->
+                <td>{{ asset.fiscal_year }}</td>
+                <td>{{ asset.lifetime }} ปี</td>
+                <td>{{ asset.used_years }} ปี</td>
+                <td>{{ asset.responsible_person }}</td>
+                <td>{{ asset.storage_location }}</td>
+                <td>
+                    <span class="badge 
+                        {% if asset.damage_status == 'ใช้อยู่' %} bg-success 
+                        {% elif asset.damage_status == 'ชำรุด' %} bg-danger 
+                        {% elif asset.damage_status == 'เสื่อม' %} bg-warning 
+                        {% else %} bg-secondary {% endif %}">
+                        {{ asset.get_damage_status_display }}
+                    </span>
+                </td>
+                <td><span class="badge bg-danger">{% if asset.status_borrowing %} ยืมได้ {% else %} ยืมไม่ได้ {% endif %}</span></td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'assets:asset_detail' asset.pk %}" class="btn btn-sm btn-info" title="ดูรายละเอียด"><i class="bi bi-eye"></i></a>
+                        <a href="{% url 'assets:asset_edit' asset.pk %}" class="btn btn-sm btn-warning" title="แก้ไข"><i class="bi bi-pencil"></i></a>
+                        <button type="button" class="btn btn-sm btn-danger" title="ลบ" data-bs-toggle="modal" data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}" data-delete-url="{% url 'assets:asset_delete' asset.pk %}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="11" class="text-center">ไม่มีรายการยืม</td>
+                <td colspan="12" class="text-center">ไม่มีรายการครุภัณฑ์</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    {% if assets.has_other_pages %}
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center mt-2 mb-2">
+            {% if assets.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ assets.previous_page_number }}">ก่อนหน้า</a></li>
+            {% endif %}
+
+            {% for i in assets.paginator.page_range %}
+                {% if assets.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% elif i > assets.number|add:'-2' and i < assets.number|add:'2' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if assets.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ assets.next_page_number }}">ถัดไป</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center mt-2 mb-2">
+            {% if assets.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}">หน้าแรก</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ assets.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">ก่อนหน้า</a>
+            </li>
+            {% endif %}
+      
+            {% for i in assets.paginator.page_range %}
+                {% if assets.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% elif i > assets.number|add:'-2' and i < assets.number|add:'2' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+      
+            {% if assets.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ assets.next_page_number }}{% if query %}&q={{ query }}{% endif %}">ถัดไป</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ assets.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">หน้าสุดท้าย</a>
+            </li>
+            {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">ยืนยันการลบข้อมูล</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    คุณต้องการลบรายการครุภัณฑ์ "<strong id="asset-name"></strong>" ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <form id="deleteForm" method="post" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var deleteModal = document.getElementById('deleteModal');
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var assetName = button.getAttribute('data-asset-name');
+                var deleteUrl = button.getAttribute('data-delete-url');
+                
+                var modalTitle = deleteModal.querySelector('.modal-title');
+                var modalBody = deleteModal.querySelector('#asset-name');
+                var deleteForm = deleteModal.querySelector('#deleteForm');
+                
+                modalBody.textContent = assetName;
+                deleteForm.action = deleteUrl;
+            });
+        });
+    </script>
+
 </div>
 {% endblock %}
-

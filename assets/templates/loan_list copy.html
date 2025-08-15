@@ -1,0 +1,161 @@
+{% extends "base_sidebar.html" %}
+{% block content %}
+
+<body class="home-page">
+  <style>
+    #watermark p {
+      position: absolute;
+      color: rgb(255, 0, 0);
+      font-size: 30px;
+      top: 30%;
+      /* text-align: center; */
+      font-weight: bold;
+      width: 100%;
+      pointer-events: none;
+      -webkit-transform: rotate(-20deg);
+      -moz-transform: rotate(-45deg);
+      text-shadow: 2px 2px 4px rgba(255, 255, 0, 0.904);
+    }
+    
+  </style>
+  
+{% if messages %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var orderModal = new bootstrap.Modal(document.getElementById('orderConfirmationModal'));
+        orderModal.show();
+    });
+</script>
+{% endif %}
+
+{% if request.user.is_authenticated %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              หมวดหมู่หลัก
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              {% for category in categories %}
+              <li class="dropdown-item">
+                <a class="dropdown-item" href="{% url 'assets:filter_by_category_asset' category.id %}">
+                  {{ category.name_cate }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </li>
+
+          {% if selected_category %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownSub" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">หมวดหมู่ย่อย</a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownSub">
+              {% for subcategory in subcategories %}
+              <li class="dropdown-item">
+                <a class="dropdown-item" href="{% url 'assets:filter_by_category_asset' selected_category.id subcategory.id %}">
+                  {{ subcategory.name_sub }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </li>
+          {% endif %}
+
+
+<div class="text-white mb-3">
+    {% if selected_category %}
+        <h5>หมวดหมู่ที่เลือก : <i>{{ selected_category.name_cate }}</i></h5>
+    {% endif %}
+    {% if selected_subcategory %}
+        <h6>หมวดหมู่ย่อยที่เลือก : <i>{{ selected_subcategory.name_sub }}</i></h6>
+    {% endif %}
+</div>
+
+{% if assetsitem %}
+<div class="d-flex flex-wrap">
+    {% for assetitem in assetsitem %}
+    <div class="card me-3 mb-3 mt-4" style="width: 11rem; margin-left: 20px;">
+
+        {% if assetitem.status_assetloan %}
+        <div id="watermark">
+            <a href="{{ assetitem.get_absolute_url }}">
+                {% if assetitem.asset_image %}
+                    <img class="card-img mt-2" width="134" height="150" style="object-fit: cover; opacity: 0.5;"
+                         src="{{ assetitem.asset_image.url }}">
+                {% else %}
+                    <img class="card-img mt-2" width="134" height="150" style="object-fit: cover; opacity: 0.5;"
+                         src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+                {% endif %}
+            </a>
+            <p class="text-center text-danger mt-1">ไม่ว่าง</p>
+        </div>
+        {% else %}
+        <a href="{{ assetitem.get_absolute_url }}">
+            {% if assetitem.asset_image %}
+                <img class="card-img mt-2" width="134" height="150" style="object-fit: cover;"
+                     src="{{ assetitem.asset_image.url }}">
+            {% else %}
+                <img class="card-img mt-2" width="134" height="150" style="object-fit: cover;"
+                     src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+            {% endif %}
+        </a>
+        {% endif %}
+
+        <div class="mt-3 text-center">
+            <h6 class="card-title element">{{ assetitem.item_name }}</h6>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center mt-2 mb-2">
+        {% if assetsitem.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}">หน้าแรก</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ assetsitem.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">ก่อนหน้า</a>
+            </li>
+        {% endif %}
+
+        {% for i in assetsitem.paginator.page_range %}
+            {% if assetsitem.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% elif i > assetsitem.number|add:'-2' and i < assetsitem.number|add:'2' %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if assetsitem.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ assetsitem.next_page_number }}{% if query %}&q={{ query }}{% endif %}">ถัดไป</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ assetsitem.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">หน้าสุดท้าย</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% else %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 mt-5 pt-5 text-center">
+        <h3 class="text-muted">ไม่มีรายการครุภัณฑ์!</h3>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+{% endif %}
+
+</body>
+
+<style>
+.page-link.current-page {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+</style>
+{% endif %}
+{% endblock %}

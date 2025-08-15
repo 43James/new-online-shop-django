@@ -1,0 +1,116 @@
+{% extends "base_sidebar.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3 text-center">รายละเอียดครุภัณฑ์</h2>
+    <h6 class="text-end text-success">วันที่เพิ่มข้อมูล : {{ asset.date_asset_created|date:"d  M  Y เวลา H:i น." }}</h6>
+    <h6 class="text-end text-primary">วันที่อัพเดทข้อมูล : {{ asset.date_asset_updated|date:"d  M  Y เวลา H:i น." }}</h6>
+
+    <div class="card shadow-sm">
+        <div class="row g-0">
+            <div class="col-md-4 p-3">
+                {% if asset.asset_image %}
+                    <img src="{{ asset.asset_image.url }}" class="img-fluid" alt="{{ asset.item_name }}" style="width: 100%; object-fit: cover; border-radius: 15px;">
+                {% else %}
+                    <img src="https://via.placeholder.com/300" class="img-fluid rounded-lg-start" alt="ไม่มีรูปภาพ">
+                {% endif %}
+            </div>
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h5 class="card-title">{{ asset.item_name }}</h5>
+                    <p class="card-text"><strong>รหัสครุภัณฑ์:</strong> SP-{{ asset.asset_code }}</p>
+                    <p class="card-text"><strong>หมวดหมู่:</strong> {{ asset.subcategory }}</p>
+                    <p class="card-text"><strong>สถานที่จัดเก็บ:</strong> {{ asset.storage_location }}</p>
+                    <p class="card-text"><strong>สถานะการใช้งาน:</strong> 
+                        <span class="badge 
+                        {% if asset.damage_status == 'ใช้อยู่' %} bg-success 
+                        {% elif asset.damage_status == 'ชำรุด' %} bg-danger 
+                        {% elif asset.damage_status == 'เสื่อม' %} bg-warning 
+                        {% else %} bg-secondary {% endif %}">
+                        {{ asset.get_damage_status_display }}
+                    </span>
+                    </p>
+                    <p class="card-text">
+                        <strong>ครุภัณฑ์ที่ยืมได้:</strong> 
+                        <span class="badge {% if asset.status_borrowing %} bg-success {% else %} bg-danger {% endif %}">
+                            {% if asset.status_borrowing %} ยืมได้ {% else %} ยืมไม่ได้ {% endif %}
+                        </span>
+                    </p>
+                    <p class="card-text">
+                        <strong>สถานะการยืม:</strong> 
+                        <span class="badge {% if asset.status_assetloan %} bg-warning {% else %} bg-success {% endif %}">
+                            {% if asset.status_assetloan %} ถูกยืมแล้ว {% else %} ว่าง {% endif %}
+                        </span>
+                    </p>
+                    <hr>
+                    <p class="card-text"><strong>ราคาที่ซื้อ:</strong> {{ asset.purchase_price }} บาท</p>
+                    <p class="card-text"><strong>วันที่ซื้อ:</strong> {{ asset.purchase_date|date:"d M Y" }}</p> 
+                    <p class="card-text"><strong>ปีงบประมาณ:</strong> {{ asset.fiscal_year }}</p>
+                    <p class="card-text"><strong>อายุการใช้งาน:</strong> {{ asset.lifetime }} ปี</p>
+                    <p class="card-text"><strong>ใช้มาแล้ว:</strong> {{ asset.used_years }} ปี</p>
+                    <p class="card-text"><strong>ค่าความเสื่อมต่อปี:</strong> {{ asset.annual_depreciation }} บาทต่อปี</p>
+                    <p class="card-text"><strong>ผู้รับผิดชอบ:</strong> {{ asset.responsible_person }}</p>
+                    <p class="card-text"><strong>ยี่ห้อ/รุ่น:</strong> {{ asset.brand_model }}</p>
+                    {% if asset.notes %}
+                        <p class="card-text"><strong>หมายเหตุ:</strong> {{ asset.notes }}</p>
+                    {% endif %}
+                    
+                    {% if asset.qr_code %}
+                    <div class="mt-3">
+                        <h6>QR Code:</h6>
+                        <img src="{{ asset.qr_code.url }}" alt="QR Code" style="width:150px;">
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-3 mb-3">
+                        <a href="{% url 'assets:asset_edit' asset.pk %}" class="btn btn-warning">แก้ไข</a>
+                        <button type="button" class="btn btn-danger" title="ลบ" data-bs-toggle="modal" 
+                        data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}" 
+                        data-delete-url="{% url 'assets:asset_delete' asset.pk %}">ลบ
+                        </button>
+                        <a href="{% url 'assets:asset_list' %}" class="btn btn-secondary">กลับ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">ยืนยันการลบข้อมูล</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    คุณต้องการลบรายการครุภัณฑ์ "<strong id="asset-name"></strong>" ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <form id="deleteForm" method="post" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var deleteModal = document.getElementById('deleteModal');
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var assetName = button.getAttribute('data-asset-name');
+                var deleteUrl = button.getAttribute('data-delete-url');
+                
+                var modalTitle = deleteModal.querySelector('.modal-title');
+                var modalBody = deleteModal.querySelector('#asset-name');
+                var deleteForm = deleteModal.querySelector('#deleteForm');
+                
+                modalBody.textContent = assetName;
+                deleteForm.action = deleteUrl;
+            });
+        });
+    </script>
+</div>
+{% endblock %}

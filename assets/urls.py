@@ -13,6 +13,9 @@ urlpatterns = [
     path('add-asset/', views.add_asset_item, name='add_asset_item'),
     path("check-asset/", views.check_asset, name="check_asset"),
     path("asset-list/", views.asset_list, name="asset_list"),
+    path('asset/<int:pk>/', views.asset_detail, name='asset_detail'),
+    path('asset/<int:pk>/edit/', views.asset_edit, name='asset_edit'),
+    path('asset/<int:pk>/delete/', views.asset_delete, name='asset_delete'),
     # path("asset/check/<int:asset_id>/", views.check_asset, name="check_asset"),
 
     # เพิ่มผู้ครอบครอง
@@ -20,7 +23,11 @@ urlpatterns = [
 
 
     # รายการที่ยืม ยืม อนุมัติยืม ยืนยันรับ แจ้งคืน อนุมันิคืน
-    path("loan-list/", views.loan_list, name="loan_list"),
+    path("loan-list/", views.loan_list, name="loan-list"), 
+
+    # path('filter_by_category_asset/<int:category_id>/', views.filter_by_category_asset, name='filter_by_category_asset'),
+    # path('filter_by_category_asset/<int:category_id>/<int:subcategory_id>/', views.filter_by_category_asset, name='filter_by_category_asset'),
+
     path("request-loan/", views.request_loan, name="request_loan"),
     path("loan-approval/<int:loan_id>/", views.loan_approval, name="loan_approval"),
     path("confirm-receipt/<int:loan_id>/", views.confirm_receipt, name="confirm_receipt"),

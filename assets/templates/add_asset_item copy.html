@@ -1,0 +1,348 @@
+{% extends "base_sidebar.html" %}
+{% load form_tags %}
+
+{% block content %}
+<div class="container ">
+  <h2 class="mb-3 mt-3">เพิ่มรายการครุภัณฑ์</h2>
+  <form method="POST" enctype="multipart/form-data" action="{% url 'assets:add_asset_item' %}">
+    {% csrf_token %}
+
+
+    <fieldset class="border p-4 rounded mb-4">
+      <legend class="w-auto px-2">สร้างรหัสครุภัณฑ์ใหม่</legend>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label" for="id_asset_type">ประเภท</label>
+          <input type="text" name="asset_type" class="form-control" id="id_asset_type"
+            value="{{ asset_code_form.asset_type.value|default_if_none:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_asset_kind">ชนิด</label>
+          <input type="text" name="asset_kind" class="form-control" id="id_asset_kind"
+            value="{{ asset_code_form.asset_kind.value|default_if_none:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_asset_character">ลักษณะ</label>
+          <input type="text" name="asset_character" class="form-control" id="id_asset_character"
+            value="{{ asset_code_form.asset_character.value|default_if_none:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_serial_year">ลำดับ/ปี</label>
+          <input type="text" name="serial_year" class="form-control" id="id_serial_year"
+            value="{{ asset_code_form.serial_year.value|default_if_none:'' }}" required>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="border p-4 rounded">
+      <legend class="w-auto px-2">ข้อมูลรายการครุภัณฑ์</legend>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="id_item_name">ชื่อครุภัณฑ์</label>
+          <input type="text" name="item_name" class="form-control" id="id_item_name"
+            value="{{ asset_item_form.item_name.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_category">หมวดหมู่</label>
+          <select name="subcategory" class="form-select selectpicker" data-live-search="true" id="id_category" required>
+            <option value="">-- เลือกหมวดหมู่ --</option>
+            {% for category in categories %}
+              <option value="" disabled>📂 {{ category }}</option>
+              {% for sub in category.subcategories.all %}
+                <option value="{{ sub.id }}" {% if asset_item_form.instance.category and asset_item_form.instance.category.id == sub.id %}selected{% endif %}>
+                  &nbsp;&nbsp;&nbsp;├ {{ sub.name_sub }}
+                </option>
+              {% endfor %}
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-1">
+          <label class="form-label" for="id_quantity">จำนวน</label>
+          <input min="0" max="1" value="1" placeholder="ใส่จำนวน" type="number" name="quantity" class="form-control" id="id_quantity"
+            value="{{ asset_item_form.quantity.value|default_if_none:'' }}" readonly >
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_unit">หน่วย</label>
+          <input type="text" name="unit" class="form-control" id="id_unit"
+            value="{{ asset_item_form.unit.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_purchase_price">ราคาจัดซื้อ</label>
+          <input type="number" name="purchase_price" class="form-control" id="id_purchase_price"
+            value="{{ asset_item_form.purchase_price.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_purchase_date">วันที่จัดซื้อ</label>
+          <input type="date" name="purchase_date" class="form-control" id="id_purchase_date"
+            value="{{ asset_item_form.purchase_date.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_fiscal_year">ปีงบประมาณ</label>
+          <input type="number" name="fiscal_year" class="form-control" id="id_fiscal_year"
+            value="{{ asset_item_form.fiscal_year.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_lifetime">อายุการใช้งาน (ปี)</label>
+          <input type="number" name="lifetime" class="form-control" id="id_lifetime"
+            value="{{ asset_item_form.lifetime.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_used_years">ระยะเวลาที่ใช้งานแล้ว (ปี)</label>
+          <input type="number" name="used_years" class="form-control" id="id_used_years"
+            value="{{ asset_item_form.used_years.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_responsible_person">ผู้รับผิดชอบดูแล/กำกับ</label>
+          <input type="text" name="responsible_person" class="form-control" id="id_responsible_person"
+            value="{{ asset_item_form.responsible_person.value|default_if_none:'' }}" placeholder="ชื่อ-สกุล" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_brand_model">ยี่ห้อ/รุ่น</label>
+          <input type="text" name="brand_model" class="form-control" id="id_brand_model"
+            value="{{ asset_item_form.brand_model.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_storage_location">สถานที่จัดเก็บ</label>
+          <select name="storage_location" class="form-select selectpicker" data-live-search="true" id="id_storage_location" required>
+            <option value="">-- เลือกสถานที่จัดเก็บ --</option>
+            {% for value, label in asset_item_form.storage_location.field.choices %}
+              {% if value != "" and label != "---------" %}
+                <option value="{{ value }}" {% if asset_item_form.storage_location.value == value %}selected{% endif %}>{{ label }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_damage_status">สถานะชำรุด</label>
+          <select name="damage_status" class="form-select selectpicker" data-live-search="true" id="id_damage_status">
+            <option value="">-- เลือกสถานะ --</option>
+            {% for value, label in asset_item_form.damage_status.field.choices %}
+              {% if value != "" and label != "---------" %}
+                <option value="{{ value }}" {% if asset_item_form.damage_status.value == value %}selected{% endif %}>{{ label }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label" for="id_asset_image">แนบรูปภาพ</label>
+          <input type="file" name="asset_image" class="form-control" id="id_asset_image">
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label" for="id_notes">หมายเหตุ</label>
+          <textarea name="notes" class="form-control" id="id_notes" rows="2"
+            placeholder="ถ้ามี...">{{ asset_item_form.notes.value|default_if_none:'' }}</textarea>
+        </div>
+      </div>
+
+      <div class="mt-4 mb-3 d-flex justify-content-center">
+        <a onclick="history.back()" class="btn btn-secondary">ยกเลิก</a>
+        <button type="submit" class="btn btn-primary ms-2"
+          onclick="this.disabled=true; this.innerHTML='กำลังบันทึกข้อมูล...'; this.form.submit();">💾 บันทึก</button>
+      </div>
+    </fieldset>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
+
+<div class="container ">
+  <h2 class="mb-3 mt-3">เพิ่มรายการครุภัณฑ์</h2>
+  <form method="POST" enctype="multipart/form-data" action="{% url 'assets:add_asset_item' %}">
+    {% csrf_token %}
+
+    <!-- รหัสครุภัณฑ์ -->
+    <fieldset class="border p-4 rounded mb-4">
+      <legend class="w-auto px-2">สร้างรหัสครุภัณฑ์ใหม่</legend>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label" for="id_asset_type">ประเภท</label>
+          <input type="text" name="asset_type" class="form-control" id="id_asset_type"
+            value="{{ asset_code_form.asset_type.value|default_if_none:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_asset_kind">ชนิด</label>
+          <input type="text" name="asset_kind" class="form-control" id="id_asset_kind"
+            value="{{ asset_code_form.asset_kind.value|default_if_none:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_asset_character">ลักษณะ</label>
+          <input type="text" name="asset_character" class="form-control" id="id_asset_character"
+            value="{{ asset_code_form.asset_character.value|default_if_none:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="id_serial_year">ลำดับ/ปี</label>
+          <input type="text" name="serial_year" class="form-control" id="id_serial_year"
+            value="{{ asset_code_form.serial_year.value|default_if_none:'' }}" required>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- รายการครุภัณฑ์ -->
+    <fieldset class="border p-4 rounded">
+      <legend class="w-auto px-2">ข้อมูลรายการครุภัณฑ์</legend>
+      <div class="row g-3">
+        <div class="col-md-5">
+          <label class="form-label" for="id_item_name">ชื่อครุภัณฑ์</label>
+          <input type="text" name="item_name" class="form-control" id="id_item_name"
+            value="{{ asset_item_form.item_name.value|default_if_none:'' }}" required>
+        </div>
+
+        <!-- <div class="col-md-2">
+          <label class="form-label" for="id_category">หมวดหมู่</label>
+          <select name="category" class="form-select" id="id_category" required>
+            <option value="">-- เลือกหมวดหมู่ --</option>
+            {% for value, label in asset_item_form.category.field.choices %}
+            {% if value != "" and label != "---------" %}
+            <option value="{{ value }}" {% if asset_item_form.category.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div> -->
+<!-- 
+        <div class="col-md-2">
+          <label class="form-label" for="id_category">หมวดหมู่</label>
+          <select name="subcategory" class="form-select" id="id_category" required>
+            <option value="">-- เลือกหมวดหมู่ --</option>
+            {% for category in categories %}
+              <option value="" disabled>📂 {{ category.name }}</option>
+              {% for sub in category.subcategory_set.all %}
+                <option value="{{ sub.id }}" {% if asset_item_form.instance.subcategory and asset_item_form.instance.subcategory.id == sub.id %}selected{% endif %}>
+                  &nbsp;&nbsp;&nbsp;├ {{ sub.name }}
+                </option>
+              {% endfor %}
+            {% endfor %}
+          </select>
+        </div> -->
+        <div class="col-md-2 me-4">
+          <label class="form-label" for="id_category">หมวดหมู่</label>
+          <select name="subcategory" class="form-select selectpicker" data-live-search="true" id="id_category" required>
+            <option value="">-- เลือกหมวดหมู่ --</option>
+            {% for category in categories %}
+              <option value="" disabled>📂 {{ category }}</option>
+              {% for sub in category.subcategories.all %}
+                <option value="{{ sub.id }}" {% if asset_item_form.instance.category and asset_item_form.instance.category.id == sub.id %}selected{% endif %}>
+                  &nbsp;&nbsp;&nbsp;├ {{ sub.name_sub }}
+                </option>
+              {% endfor %}
+            {% endfor %}
+          </select>
+        </div>
+       
+        
+        
+        <div class="col-md-2">
+          <label class="form-label" for="id_quantity">จำนวน</label>
+          <input min="0" max="1" value="0" placeholder="ใส่จำนวน" type="number" name="quantity" class="form-control" id="id_quantity"
+            value="{{ asset_item_form.quantity.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_unit">หน่วย</label>
+          <input type="text" name="unit" class="form-control" id="id_unit"
+            value="{{ asset_item_form.unit.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_purchase_price">ราคาจัดซื้อ</label>
+          <input type="number" name="purchase_price" class="form-control" id="id_purchase_price"
+            value="{{ asset_item_form.purchase_price.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_purchase_date">วันที่จัดซื้อ</label>
+          <input type="date" name="purchase_date" class="form-control" id="id_purchase_date"
+            value="{{ asset_item_form.purchase_date.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_fiscal_year">ปีงบประมาณ</label>
+          <input type="number" name="fiscal_year" class="form-control" id="id_fiscal_year"
+            value="{{ asset_item_form.fiscal_year.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_lifetime">อายุการใช้งาน (ปี)</label>
+          <input type="number" name="lifetime" class="form-control" id="id_lifetime"
+            value="{{ asset_item_form.lifetime.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_used_years">ระยะเวลาที่ใช้งานแล้ว (ปี)</label>
+          <input type="number" name="used_years" class="form-control" id="id_used_years"
+            value="{{ asset_item_form.used_years.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_responsible_person">ผู้รับผิดชอบดูแล/กำกับ</label>
+          <input type="text" name="responsible_person" class="form-control" id="id_responsible_person"
+            value="{{ asset_item_form.responsible_person.value|default_if_none:'' }}" placeholder="ชื่อ-สกุล" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_brand_model">ยี่ห้อ/รุ่น</label>
+          <input type="text" name="brand_model" class="form-control" id="id_brand_model"
+            value="{{ asset_item_form.brand_model.value|default_if_none:'' }}" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_storage_location">สถานที่จัดเก็บ</label>
+          <select name="storage_location" class="form-select selectpicker" data-live-search="true" id="id_storage_location" required>
+            <option value="">-- เลือกสถานที่จัดเก็บ --</option>
+            {% for value, label in asset_item_form.storage_location.field.choices %}
+              {% if value != "" and label != "---------" %}
+                <option value="{{ value }}" {% if asset_item_form.storage_location.value == value %}selected{% endif %}>{{ label }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_damage_status">สถานะชำรุด</label>
+          <select name="damage_status" class="form-select selectpicker" data-live-search="true" id="id_damage_status">
+            <option value="">-- เลือกสถานะ --</option>
+            {% for value, label in asset_item_form.damage_status.field.choices %}
+              {% if value != "" and label != "---------" %}
+                <option value="{{ value }}" {% if asset_item_form.damage_status.value == value %}selected{% endif %}>{{ label }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_asset_image">แนบรูปภาพ</label>
+          <input type="file" name="asset_image" class="form-control" id="id_asset_image">
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label" for="id_notes">หมายเหตุ</label>
+          <textarea name="notes" class="form-control" id="id_notes" rows="2"
+            placeholder="ถ้ามี...">{{ asset_item_form.notes.value|default_if_none:'' }}</textarea>
+        </div>
+      </div>
+
+      <div class="mt-4 mb-3 d-flex justify-content-center">
+        <a onclick="history.back()" class="btn btn-secondary">ยกเลิก</a>
+        <button type="submit" class="btn btn-primary ms-2"
+          onclick="this.disabled=true; this.innerHTML='กำลังบันทึกข้อมูล...'; this.form.submit();">💾 บันทึก</button>
+      </div>
+    </fieldset>
+  </form>
+</div>

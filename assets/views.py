@@ -1,11 +1,18 @@
 from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import AssetCode, AssetItem, AssetCheck, AssetLoan, StorageLocation, Category, Subcategory, StorageLocation
+from assets.models import AssetCode, AssetItem, AssetCheck, AssetLoan, StorageLocation, AssetCategory, Subcategory, StorageLocation
 from .forms import AssetCheckForm, AssetCodeForm, AssetItemForm, AssetLoanApprovalForm, AssetLoanForm, AssetOwnershipForm, CategoryForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
 from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import render, redirect
+from django.conf import settings
+import qrcode
+from io import BytesIO
+from datetime import date
+from django.core.files.base import ContentFile
 
 
 # Create your views here.
@@ -16,89 +23,113 @@ def home_assets(request):
     return render(request, 'home_assets.html')
 
 
-def asset_list(request):
-    return render(request, 'asset_list.html')
-
-
 def repair_report(request):
     return render(request, 'repair_report.html')
 
 
-# # บันทึกรายการครุภัณฑ์
-# @login_required
-# def create_asset_item(request):
-#     if request.method == 'POST':
-#         form = AssetItemForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             form.save()
-#             return redirect('assets:asset_list')  # เปลี่ยนไปหน้ารายการครุภัณฑ์หลังจากบันทึก
-#     else:
-#         form = AssetItemForm()
-#     return render(request, 'create_asset_item.html', {'form': form})
+
+# รายการครุภัณฑ์
+def asset_list(request):
+    # ดึงข้อมูลรายการครุภัณฑ์ทั้งหมด
+    assets_list = AssetItem.objects.all().order_by('id')
+
+    # สร้าง Paginator object
+    paginator = Paginator(assets_list, 10) # แสดง 10 รายการต่อหน้า
+
+    page = request.GET.get('page')
+    try:
+        assets = paginator.page(page)
+    except PageNotAnInteger:
+        # ถ้าไม่มีหมายเลขหน้า ให้แสดงหน้าแรก
+        assets = paginator.page(1)
+    except EmptyPage:
+        # ถ้าหมายเลขหน้าเกินจำนวนหน้าทั้งหมด ให้แสดงหน้าสุดท้าย
+        assets = paginator.page(paginator.num_pages)
+    
+    # ส่งข้อมูล assets ที่ถูกแบ่งหน้าแล้วไปยัง template
+    return render(request, 'asset_list.html', {'assets': assets})
 
 
 # บันทึกรายการครุภัณฑ์
 # def add_asset_item(request):
+#     categories = Category.objects.prefetch_related("subcategories").all()
+
 #     if request.method == "POST":
 #         asset_code_form = AssetCodeForm(request.POST)
 #         asset_item_form = AssetItemForm(request.POST, request.FILES)
 
 #         if asset_code_form.is_valid() and asset_item_form.is_valid():
-#             # เช็คว่ามีรหัสครุภัณฑ์อยู่แล้วหรือไม่
-#             asset_code, created = AssetCode.objects.get_or_create(
-#                 asset_type=asset_code_form.cleaned_data["asset_type"],
-#                 asset_kind=asset_code_form.cleaned_data["asset_kind"],
-#                 asset_character=asset_code_form.cleaned_data["asset_character"],
-#                 serial_year=asset_code_form.cleaned_data["serial_year"],
-#             )
+#             try:
+#                 # ดึงหรือสร้างรหัสครุภัณฑ์ใหม่
+#                 asset_code, created = AssetCode.objects.get_or_create(
+#                     asset_type=asset_code_form.cleaned_data["asset_type"],
+#                     asset_kind=asset_code_form.cleaned_data["asset_kind"],
+#                     asset_character=asset_code_form.cleaned_data["asset_character"],
+#                     serial_year=asset_code_form.cleaned_data["serial_year"],
+#                 )
 
-#             # บันทึกรายการครุภัณฑ์
-#             asset_item = asset_item_form.save(commit=False)
-#             asset_item.asset_code = asset_code
-#             asset_item.save()
+#                 # ผูก asset_code เข้ากับรายการ
+#                 asset_item = asset_item_form.save(commit=False)
+#                 asset_item.asset_code = asset_code
+                
+#                 # คำนวณค่าความเสื่อมก่อนบันทึก
+#                 if asset_item.lifetime > 0:
+#                     asset_item.annual_depreciation = asset_item.purchase_price / asset_item.lifetime
+                
+#                 asset_item.save()
 
-#             messages.success(request, "✅ บันทึกรายการครุภัณฑ์เรียบร้อยแล้ว")
-#             return redirect("assets:asset_list")  # แก้ namespace ให้ตรงกับของคุณ
+#                 # สร้างและบันทึก QR Code หลังจากที่บันทึก asset_item แล้ว (เพื่อจะได้ id)
+#                 asset_item.generate_qr_code()
+#                 asset_item.save() # บันทึกอีกครั้งเพื่อเก็บชื่อไฟล์ QR Code
 
+#                 messages.success(request, "✅ บันทึกรายการครุภัณฑ์เรียบร้อยแล้ว")
+#                 return redirect("assets:asset_list")
+
+#             except Exception as e:
+#                 messages.error(request, f"❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล: {e}")
+                
 #         else:
-#             messages.error(request, "❌ กรุณาตรวจสอบความถูกต้องของข้อมูล")
-
+#             messages.error(request, "❌ กรุณาตรวจสอบความถูกต้องของข้อมูลในฟอร์ม")
+    
 #     else:
 #         asset_code_form = AssetCodeForm()
 #         asset_item_form = AssetItemForm()
 
 #     return render(request, "add_asset_item.html", {
 #         "asset_code_form": asset_code_form,
-#         "asset_item_form": asset_item_form
+#         "asset_item_form": asset_item_form,
+#         "categories": categories,
 #     })
 
 def add_asset_item(request):
-    categories = Category.objects.prefetch_related("subcategories").all()
+    categories = AssetCategory.objects.prefetch_related("subcategories").all()
 
     if request.method == "POST":
         asset_code_form = AssetCodeForm(request.POST)
         asset_item_form = AssetItemForm(request.POST, request.FILES)
 
         if asset_code_form.is_valid() and asset_item_form.is_valid():
-            # ดึงหรือสร้างรหัสครุภัณฑ์ใหม่
-            asset_code, created = AssetCode.objects.get_or_create(
-                asset_type=asset_code_form.cleaned_data["asset_type"],
-                asset_kind=asset_code_form.cleaned_data["asset_kind"],
-                asset_character=asset_code_form.cleaned_data["asset_character"],
-                serial_year=asset_code_form.cleaned_data["serial_year"],
-            )
+            try:
+                # บันทึก AssetCode ก่อนเพื่อตรวจสอบว่า serial_year ซ้ำหรือไม่
+                asset_code = asset_code_form.save()
+                
+                # ผูก asset_code เข้ากับรายการ
+                asset_item = asset_item_form.save(commit=False)
+                asset_item.asset_code = asset_code
+                
+                # ใช้ฟังก์ชัน save() ของ AssetItem ที่เราแก้ไขไว้
+                asset_item.save()
 
-            # ผูก asset_code เข้ากับรายการ
-            asset_item = asset_item_form.save(commit=False)
-            asset_item.asset_code = asset_code
-            asset_item.save()
+                messages.success(request, "✅ บันทึกรายการครุภัณฑ์เรียบร้อยแล้ว")
+                return redirect("assets:asset_list")
 
-            messages.success(request, "✅ บันทึกรายการครุภัณฑ์เรียบร้อยแล้ว")
-            return redirect("assets:asset_list")
-
+            except IntegrityError:
+                # จัดการกรณีที่ serial_year ซ้ำ
+                messages.error(request, "❌ เกิดข้อผิดพลาด: รหัสลำดับ/ปีนี้มีอยู่ในระบบแล้ว")
+            except Exception as e:
+                messages.error(request, f"❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล: {e}")
         else:
-            messages.error(request, "❌ กรุณาตรวจสอบความถูกต้องของข้อมูล")
-
+            messages.error(request, "❌ กรุณาตรวจสอบความถูกต้องของข้อมูลในฟอร์ม")
     else:
         asset_code_form = AssetCodeForm()
         asset_item_form = AssetItemForm()
@@ -106,11 +137,89 @@ def add_asset_item(request):
     return render(request, "add_asset_item.html", {
         "asset_code_form": asset_code_form,
         "asset_item_form": asset_item_form,
-        "categories": categories,  # ส่งหมวดหมู่หลักพร้อมหมวดย่อย
-
+        "categories": categories,
     })
 
 
+# รายละเอียดครุภัณฑ์
+def asset_detail(request, pk):
+    """ฟังก์ชันสำหรับแสดงรายละเอียดของครุภัณฑ์"""
+    asset = get_object_or_404(AssetItem, pk=pk)
+    # หากต้องการใช้ฟังก์ชัน calculate_annual_depreciation
+    annual_depreciation = asset.calculate_annual_depreciation()
+    return render(request, 'asset_detail.html', {
+        'asset': asset,
+        'annual_depreciation': annual_depreciation
+    })
+
+
+# แก้ไขครุภัณฑ์
+def asset_edit(request, pk):
+    """ฟังก์ชันสำหรับแก้ไขข้อมูลครุภัณฑ์"""
+    asset = get_object_or_404(AssetItem, pk=pk)
+    
+    if request.method == 'POST':
+        asset_item_form = AssetItemForm(request.POST, request.FILES, instance=asset)
+        asset_code_form = AssetCodeForm(request.POST, instance=asset.asset_code)
+        
+        if asset_item_form.is_valid() and asset_code_form.is_valid():
+            try:
+                # บันทึก asset_code ก่อนเพื่อตรวจสอบความถูกต้องและป้องกัน IntegrityError
+                asset_code_form.save()
+                
+                # บันทึก asset_item โดยไม่ต้อง commit ก่อน
+                asset_item = asset_item_form.save(commit=False)
+                
+                # ใช้เมธอด save() ของโมเดล AssetItem ที่เราได้ปรับปรุงไว้
+                # ซึ่งจะจัดการการคำนวณค่าเสื่อมและสร้าง QR code โดยอัตโนมัติ
+                asset_item.save()
+
+                messages.success(request, '✅ แก้ไขข้อมูลครุภัณฑ์เรียบร้อยแล้ว')
+                return redirect('assets:asset_detail', pk=asset.pk)
+            
+            except IntegrityError:
+                # จัดการกรณีที่ serial_year ซ้ำ
+                messages.error(request, '❌ รหัสครุภัณฑ์ (ลำดับ/ปี) นี้มีอยู่ในระบบแล้ว กรุณาตรวจสอบ')
+            except Exception as e:
+                messages.error(request, f'❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล: {e}')
+        else:
+            messages.error(request, '❌ กรุณาตรวจสอบความถูกต้องของข้อมูลในฟอร์ม')
+    else:
+        # สร้างฟอร์มสำหรับแสดงผลในหน้า edit
+        asset_item_form = AssetItemForm(instance=asset)
+        asset_code_form = AssetCodeForm(instance=asset.asset_code)
+    
+    categories = AssetCategory.objects.prefetch_related("subcategories").all()
+    
+    return render(request, 'asset_edit.html', {
+        'asset_item_form': asset_item_form,
+        'asset_code_form': asset_code_form,
+        'asset': asset,
+        'categories': categories,
+    })
+
+# ลบครุภัณฑ์
+def asset_delete(request, pk):
+    """
+    ฟังก์ชันสำหรับลบข้อมูลครุภัณฑ์
+    จะทำงานเฉพาะเมื่อได้รับ POST request จาก Modal ในหน้า asset_list เท่านั้น
+    """
+    if request.method == 'POST':
+        asset = get_object_or_404(AssetItem, pk=pk)
+        asset_code_to_delete = asset.asset_code
+        asset.delete()
+        
+        # ตรวจสอบว่ามีรายการอื่นใช้ AssetCode นี้หรือไม่ ถ้าไม่ใช้ให้ลบทิ้ง
+        if not AssetItem.objects.filter(asset_code=asset_code_to_delete).exists():
+            asset_code_to_delete.delete()
+            
+        messages.success(request, '🗑️ ลบรายการครุภัณฑ์เรียบร้อยแล้ว')
+        return redirect('assets:asset_list')
+        
+    # หากเข้าถึง URL นี้ด้วย GET request จะถูก redirect กลับไปที่หน้ารายการ
+    return redirect('assets:asset_list')
+
+# -------------------------------------------------------------------------------------------------------------------------------------------
 
 # บันทึกการครอบครองครุภัณฑ์
 @login_required
@@ -145,12 +254,117 @@ def check_asset(request, asset_id):
 
     return render(request, "asset_check_form.html", {"form": form, "asset": asset, "storage_locations": storage_locations})
 
-# รายการยืม
-def loan_list(request):
-    """แสดงรายการยืมของผู้ใช้"""
-    loans = AssetLoan.objects.filter(user=request.user).order_by("-loan_date")
-    return render(request, "loan_list.html", {"loans": loans})
+# # รายการยืม
+# def loan_list(request):
+#     query = request.GET.get('q', '')
+#     category_id = request.GET.get('category')
+#     subcategory_id = request.GET.get('subcategory')
+#     page = request.GET.get('page', 1)
 
+#     # เริ่ม query และจัดเรียงข้อมูล
+#     assets = AssetItem.objects.all().select_related('subcategory__category').order_by('id') 
+
+#     # ค้นหาด้วยชื่อ
+#     if query:
+#         assets = assets.filter(item_name__icontains=query)
+
+#     # กรองหมวดหมู่หลัก
+#     selected_category = None
+#     if category_id:
+#         # ใช้ AssetCategory ที่ถูกต้อง
+#         selected_category = get_object_or_404(AssetCategory, id=category_id)
+#         assets = assets.filter(subcategory__category=selected_category)
+
+#     # กรองหมวดหมู่ย่อย
+#     selected_subcategory = None
+#     if subcategory_id:
+#         selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
+#         assets = assets.filter(subcategory=selected_subcategory)
+
+#     # Pagination
+#     p = Paginator(assets, 10)
+    
+#     try:
+#         asset_items = p.page(page)
+#     except PageNotAnInteger:
+#         asset_items = p.page(1)
+#     except EmptyPage:
+#         asset_items = p.page(p.num_pages)
+
+#     # ดึงข้อมูลหมวดหมู่ทั้งหมด เพื่อนำไปใช้ในเมนู dropdown ของเทมเพลต
+#     categories = AssetCategory.objects.all()
+
+#     context = {
+#         'asset_items': asset_items,
+#         'query': query,
+#         'selected_category': selected_category,
+#         'selected_subcategory': selected_subcategory,
+#         'categories': categories, # ส่ง categories เข้าไปใน context
+#     }
+#     return render(request, 'loan_list.html', context)
+
+# ฟังก์ชัน loan_list ที่ได้รับการแก้ไขและรวมการทำงานทั้งหมด
+@login_required
+def loan_list(request):
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category')
+    subcategory_id = request.GET.get('subcategory')
+    page = request.GET.get('page', 1)
+
+    # เริ่มต้น QuerySet โดยกรองเฉพาะรายการที่ status_borrowing=True
+    assets = AssetItem.objects.filter(status_borrowing=True).select_related('subcategory__category').order_by('id')
+
+    # ตัวแปรสำหรับใช้ใน template
+    selected_category = None
+    selected_subcategory = None
+    
+    # กรองข้อมูลตามคำค้นหา
+    if query:
+        assets = assets.filter(item_name__icontains=query)
+
+    # กรองข้อมูลตามหมวดหมู่หลัก
+    if category_id:
+        try:
+            selected_category = get_object_or_404(AssetCategory, id=category_id)
+            assets = assets.filter(subcategory__category=selected_category)
+        except:
+            messages.error(request, 'ไม่พบหมวดหมู่ที่ต้องการ')
+            return redirect('assets:loan-list')
+
+    # กรองข้อมูลตามหมวดหมู่ย่อย
+    if subcategory_id:
+        try:
+            selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
+            assets = assets.filter(subcategory=selected_subcategory)
+        except:
+            messages.error(request, 'ไม่พบหมวดหมู่ย่อยที่ต้องการ')
+            return redirect('assets:loan-list')
+
+    # Pagination
+    p = Paginator(assets, 10)
+    
+    try:
+        asset_items = p.page(page)
+    except PageNotAnInteger:
+        asset_items = p.page(1)
+    except EmptyPage:
+        asset_items = p.page(p.num_pages)
+
+    # ดึงข้อมูลหมวดหมู่ทั้งหมดสำหรับเมนู
+    categories = AssetCategory.objects.all()
+    subcategories = []
+    if selected_category:
+        subcategories = Subcategory.objects.filter(category=selected_category)
+
+    context = {
+        'asset_items': asset_items,
+        'query': query,
+        'selected_category': selected_category,
+        'selected_subcategory': selected_subcategory,
+        'categories': categories,
+        'subcategories': subcategories,
+    }
+    return render(request, 'loan_list.html', context)
 
 def request_loan(request):
     """ส่งคำขอยืม"""
@@ -262,11 +476,11 @@ def asset_list_cate(request):
 
     # เรียกข้อมูลทั้งหมดหรือกรองตามการค้นหา
     if query:
-        categories = Category.objects.filter(
+        categories = AssetCategory.objects.filter(
             Q(name_cate__icontains=query)
         )
     else:
-        categories = Category.objects.all()
+        categories = AssetCategory.objects.all()
 
     # ✅ เช็คถ้ามีการส่ง POST เพื่อเพิ่มหมวดหมู่
     if request.method == 'POST':
@@ -279,6 +493,15 @@ def asset_list_cate(request):
             messages.error(request, '❌ ไม่สามารถเพิ่มหมวดหมู่หลักได้ กรุณาตรวจสอบข้อมูล')
     else:
         form = CategoryForm()
+
+
+    page = request.GET.get('page')
+
+    p = Paginator(categories, 5)
+    try:
+        categories = p.page(page)
+    except:
+        categories = p.page(1)
 
     return render(request, 'asset_list_cate.html', {
         'categories': categories,
@@ -326,20 +549,23 @@ def delete_category_asset(request, pk):
 # --------------------------------------------------------------------------------------------
 
 
-# รายหมวดหมู่ย่อยย่อย
+# รายการหมวดหมู่ย่อย
 def asset_list_subcate(request):
-    query = request.GET.get('q')  # รับค่าค้นหาจาก input ชื่อ 'q'
+    query = request.GET.get('q')
 
-    # เรียกข้อมูลทั้งหมดหรือกรองตามการค้นหา
+    # ✅ แก้ไขตรงนี้: กำหนดค่า subcategories_list ไว้ก่อน
     if query:
-        subcategories = Subcategory.objects.filter(
+        # ถ้ามีคำค้นหา ให้กรองข้อมูล
+        subcategories_list = Subcategory.objects.filter(
             Q(name_sub__icontains=query) |
             Q(category__name_cate__icontains=query)
-        )
+        ).order_by('id')
     else:
-        subcategories = Subcategory.objects.all()
+        # ถ้าไม่มีคำค้นหา ให้ดึงข้อมูลทั้งหมด
+        subcategories_list = Subcategory.objects.all().order_by('id')
 
-    categories = Category.objects.all()
+    # ดึงรายการหมวดหมู่หลักทั้งหมดสำหรับ Modal (แยกจาก Paginator)
+    categories = AssetCategory.objects.all()
 
     if request.method == 'POST':
         form = SubcategoryForm(request.POST)
@@ -352,11 +578,22 @@ def asset_list_subcate(request):
     else:
         form = SubcategoryForm()
 
+    page = request.GET.get('page')
+
+    # ✅ Paginator จะสร้างจาก subcategories_list ที่ถูกกำหนดค่าแล้วเสมอ
+    p = Paginator(subcategories_list, 10)
+    try:
+        subcategories = p.page(page)
+    except PageNotAnInteger:
+        subcategories = p.page(1)
+    except EmptyPage:
+        subcategories = p.page(p.num_pages)
+
     return render(request, 'asset_list_subcate.html', {
         'subcategories': subcategories,
         'categories': categories,
         'form': form,
-        'query': query,  # ส่งค่าการค้นหาไปยัง template เพื่อแสดงผล
+        'query': query,
     })
 
 # เพิ่มหมวดหมู่ย่อย

@@ -174,7 +174,7 @@
         </a>
       </li>
       <li>
-        <a href="{% url 'assets:loan-list' %}" class="nav-link link-body-emphasis text-primary {% if '/loan-list/' in request.path %}active text-white btn btn-success{% endif %}">
+        <a href="{% url 'assets:loan_list' %}" class="nav-link link-body-emphasis text-primary {% if '/loan-list/' in request.path %}active text-white btn btn-success{% endif %}">
           <p class="bi bi-bag-plus-fill" style="position:fixed;"> ยืมครุภัณฑ์</p><br>
         </a>
       </li>
@@ -265,7 +265,7 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav me-auto mb-lg-0">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <!-- <li class="nav-item">
               <a class="nav-link active" aria-current="page" href="#">Home</a>
             </li>
@@ -372,7 +372,7 @@
         
         <!-- content -->
         {% block content %}{% endblock %}
-    </div>
+    
 
       <!-- <div class="row">
         <footer class="pt-5 d-flex justify-content-between">
@@ -391,98 +391,87 @@
         </footer>
       </div> -->
 
+    </div>
   </main>
-</body>
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"
-        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-        crossorigin="anonymous"></script>
 
-<!-- Popper.js (สำหรับ Bootstrap tooltip, dropdown) -->
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous"></script>
+  <!-- Script de bootstap 5.2.3 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+    crossorigin="anonymous"></script>
+  <!-- Jquery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
-<!-- Bootstrap 5.3.2 Bundle (รวม Popper ในตัวแล้ว) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-        crossorigin="anonymous"></script>
-
-<!-- Chartist.js -->
-<script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.2/dist/chart.umd.js"
-        integrity="sha384-eI7PSr3L1XLISH8JdDII5YN/njoSsxfbrkCTnJrzXt+ENP5MOVBxD+l6sEG4zoLp"
-        crossorigin="anonymous"></script>
-
-<!-- GitHub buttons -->
-<script async defer src="https://buttons.github.io/buttons.js"></script>
-
-<!-- สคริปต์ของคุณ -->
-<script src="dashboard.js"></script>
-
-<!-- Chartist Line Chart -->
-<script>
-  new Chartist.Line('#traffic-chart', {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-    series: [
-      [23000, 25000, 19000, 34000, 56000, 64000]
-    ]
-  }, {
-    low: 0,
-    showArea: true
-  });
-</script>
-
-<!-- Toggle Class -->
-<script>
-  function changeclass() {
-    $("#main").toggleClass('col-sm-10 col-sm-12');
-  }
-</script>
-
-<!-- เปลี่ยนธีม -->
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const themeToggleBtns = document.querySelectorAll("[data-bs-theme-value]");
-    const htmlElement = document.documentElement;
-    const logoImg = document.querySelector("#logo-img");
-
-    // โหลดธีมจาก LocalStorage
-    const savedTheme = localStorage.getItem("theme") || "auto";
-    applyTheme(savedTheme);
-
-    themeToggleBtns.forEach((btn) => {
-      btn.addEventListener("click", function () {
-        const selectedTheme = this.getAttribute("data-bs-theme-value");
-        localStorage.setItem("theme", selectedTheme);
-        applyTheme(selectedTheme);
-      });
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.2/dist/chart.umd.js"
+    integrity="sha384-eI7PSr3L1XLISH8JdDII5YN/njoSsxfbrkCTnJrzXt+ENP5MOVBxD+l6sEG4zoLp"
+    crossorigin="anonymous"></script>
+  <!-- Github buttons -->
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+  <script src="dashboard.js"></script>
+  <script>
+    new Chartist.Line('#traffic-chart', {
+      labels: ['January', 'Februrary', 'March', 'April', 'May', 'June'],
+      series: [
+        [23000, 25000, 19000, 34000, 56000, 64000]
+      ]
+    }, {
+      low: 0,
+      showArea: true
     });
+  </script>
 
-    function applyTheme(theme) {
-      if (theme === "auto") {
-        theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      }
-      htmlElement.setAttribute("data-bs-theme", theme);
+  <script>
+    function changeclass() {
+      $("#main").toggleClass('col-sm-10 col-sm-12');
+    }
+
+    // เปลี่ยนสีธีม
+      document.addEventListener("DOMContentLoaded", function () {
+      const themeToggleBtns = document.querySelectorAll("[data-bs-theme-value]");
+      const htmlElement = document.documentElement;
+      const logoImg = document.querySelector("#logo-img"); // เพิ่มการเลือกโลโก้
+
+      // โหลดธีมที่เคยเลือกไว้จาก LocalStorage
+      const savedTheme = localStorage.getItem("theme") || "auto";
+      applyTheme(savedTheme);
 
       themeToggleBtns.forEach((btn) => {
-        btn.classList.remove("active");
-        btn.setAttribute("aria-pressed", "false");
+        btn.addEventListener("click", function () {
+          const selectedTheme = this.getAttribute("data-bs-theme-value");
+          localStorage.setItem("theme", selectedTheme);
+          applyTheme(selectedTheme);
+        });
       });
 
-      document.querySelector(`[data-bs-theme-value="${theme}"]`)?.classList.add("active");
-      document.querySelector(`[data-bs-theme-value="${theme}"]`)?.setAttribute("aria-pressed", "true");
+      function applyTheme(theme) {
+        if (theme === "auto") {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        htmlElement.setAttribute("data-bs-theme", theme);
 
-      // เปลี่ยนโลโก้
-      if (theme === "dark") {
-        logoImg.src = "{% static 'sidebar/logo-ubu-spark-011w.png' %}";
-      } else {
-        logoImg.src = "{% static 'sidebar/logo-ubu-spark-011.png' %}";
+        // อัปเดตปุ่ม dropdown ที่ active
+        themeToggleBtns.forEach((btn) => {
+          btn.classList.remove("active");
+          btn.setAttribute("aria-pressed", "false");
+        });
+
+        document.querySelector(`[data-bs-theme-value="${theme}"]`)?.classList.add("active");
+        document.querySelector(`[data-bs-theme-value="${theme}"]`)?.setAttribute("aria-pressed", "true");
+
+        // เปลี่ยนโลโก้ตามธีม
+        if (theme === "dark") {
+          logoImg.src = "{% static 'sidebar/logo-ubu-spark-011w.png' %}";
+        } else {
+          logoImg.src = "{% static 'sidebar/logo-ubu-spark-011.png' %}";
+        }
       }
-    }
-  });
-</script>
+    });
+  </script>
+</body>
 
 </html>
