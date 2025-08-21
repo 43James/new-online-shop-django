@@ -13,7 +13,7 @@
         <div class="col-md-3">
           <label class="form-label" for="id_asset_type">ประเภท</label>
           <input type="text" name="asset_type" class="form-control {% if asset_code_form.asset_type.errors %}is-invalid{% endif %}" id="id_asset_type"
-            value="{{ asset_code_form.asset_type.value|default_if_none:'' }}" required>
+            value="{{ asset_code_form.asset_type.value|default_if_none:'' }}" placeholder="ประเภท (เช่น 1100)" required>
           {% for error in asset_code_form.asset_type.errors %}
             <div class="invalid-feedback d-block">{{ error }}</div>
           {% endfor %}
@@ -21,7 +21,7 @@
         <div class="col-md-3">
           <label class="form-label" for="id_asset_kind">ชนิด</label>
           <input type="text" name="asset_kind" class="form-control {% if asset_code_form.asset_kind.errors %}is-invalid{% endif %}" id="id_asset_kind"
-            value="{{ asset_code_form.asset_kind.value|default_if_none:'' }}" required>
+            value="{{ asset_code_form.asset_kind.value|default_if_none:'' }}" placeholder="ชนิด (เช่น 119)" required>
           {% for error in asset_code_form.asset_kind.errors %}
             <div class="invalid-feedback d-block">{{ error }}</div>
           {% endfor %}
@@ -29,7 +29,7 @@
         <div class="col-md-3">
           <label class="form-label" for="id_asset_character">ลักษณะ</label>
           <input type="text" name="asset_character" class="form-control {% if asset_code_form.asset_character.errors %}is-invalid{% endif %}" id="id_asset_character"
-            value="{{ asset_code_form.asset_character.value|default_if_none:'' }}" required>
+            value="{{ asset_code_form.asset_character.value|default_if_none:'' }}" placeholder="ลักษณะ (เช่น 006)" required>
           {% for error in asset_code_form.asset_character.errors %}
             <div class="invalid-feedback d-block">{{ error }}</div>
           {% endfor %}
@@ -37,7 +37,7 @@
         <div class="col-md-3">
           <label class="form-label" for="id_serial_year">ลำดับ/ปี</label>
           <input type="text" name="serial_year" class="form-control {% if asset_code_form.serial_year.errors %}is-invalid{% endif %}" id="id_serial_year"
-            value="{{ asset_code_form.serial_year.value|default_if_none:'' }}" required>
+            value="{{ asset_code_form.serial_year.value|default_if_none:'' }}" placeholder="ลำดับ/ปี (เช่น 10/68)" required>
           {% for error in asset_code_form.serial_year.errors %}
             <div class="invalid-feedback d-block">{{ error }}</div>
           {% endfor %}

@@ -33,7 +33,7 @@
                 <th>ชื่อครุภัณฑ์</th>
                 <th>รหัสครุภัณฑ์</th>
                 <th>หมวดหมู่</th>
-                <!-- <th>หน่วยนับ</th> -->
+                <th>หมวดหมู่ย่อย</th>
                 <th>ปีที่ใช้งาน</th>
                 <th>อายุการใช้งาน (ปี)</th>
                 <th>ใช้มาแล้วกี่ปี</th>
@@ -57,13 +57,14 @@
                 <td>{{ asset.item_name }}</td>
                 <td>SP-{{ asset.asset_code }}</td>
                 <td>{{ asset.subcategory.name_sub }}</td>
+                <td>{{ asset.subcategory.category.name_cate }}</td>
                 <!-- <td>{{ asset.unit }}</td> -->
                 <td>{{ asset.fiscal_year }}</td>
                 <td>{{ asset.lifetime }} ปี</td>
                 <td>{{ asset.used_years }} ปี</td>
                 <td>{{ asset.responsible_person }}</td>
                 <td>{{ asset.storage_location }}</td>
-                <td>
+                <td class="text-center">
                     <span class="badge 
                         {% if asset.damage_status == 'ใช้อยู่' %} bg-success 
                         {% elif asset.damage_status == 'ชำรุด' %} bg-danger 
@@ -72,7 +73,12 @@
                         {{ asset.get_damage_status_display }}
                     </span>
                 </td>
-                <td><span class="badge bg-danger">{% if asset.status_borrowing %} ยืมได้ {% else %} ยืมไม่ได้ {% endif %}</span></td>
+                {% if asset.status_borrowing %}
+                    <td class="text-center"><span class="badge bg-success"> ยืมได้ </span></td>
+                {% else %}
+                    <td class="text-center"><span class="badge bg-danger"> ยืมไม่ได้ </span></td>
+                {% endif %}
+
                 <td>
                     <div class="btn-group" role="group">
                         <a href="{% url 'assets:asset_detail' asset.pk %}" class="btn btn-sm btn-info" title="ดูรายละเอียด"><i class="bi bi-eye"></i></a>

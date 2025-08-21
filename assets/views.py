@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from assets.models import AssetCode, AssetItem, AssetCheck, AssetLoan, StorageLocation, AssetCategory, Subcategory, StorageLocation
@@ -7,12 +6,14 @@ from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.shortcuts import render, redirect
 from django.conf import settings
 import qrcode
+from django.http import JsonResponse
+from django.db import transaction
 from io import BytesIO
 from datetime import date
 from django.core.files.base import ContentFile
+from datetime import datetime, timedelta
 
 
 # Create your views here.
@@ -23,8 +24,8 @@ def home_assets(request):
     return render(request, 'home_assets.html')
 
 
-def repair_report(request):
-    return render(request, 'repair_report.html')
+# def repair_report(request):
+#     return render(request, 'repair_report.html')
 
 
 
@@ -254,32 +255,428 @@ def check_asset(request, asset_id):
 
     return render(request, "asset_check_form.html", {"form": form, "asset": asset, "storage_locations": storage_locations})
 
-# # รายการยืม
+# ------------------------------------------------------------------------------------------------------------------------------------
+
+
+# # แก้ไขฟังก์ชัน loan_list
+# # ---- loan_list ----
+# @login_required
 # def loan_list(request):
 #     query = request.GET.get('q', '')
 #     category_id = request.GET.get('category')
 #     subcategory_id = request.GET.get('subcategory')
 #     page = request.GET.get('page', 1)
 
-#     # เริ่ม query และจัดเรียงข้อมูล
-#     assets = AssetItem.objects.all().select_related('subcategory__category').order_by('id') 
+#     # ✅ เลือกเฉพาะที่ “ยืมได้”
+#     assets = (
+#         AssetItem.objects
+#         .filter(status_borrowing=True)
+#         .select_related('subcategory', 'subcategory__category', 'asset_code')
+#         .order_by('id')
+#     )
 
-#     # ค้นหาด้วยชื่อ
+#     selected_category = None
+#     selected_subcategory = None
+
 #     if query:
 #         assets = assets.filter(item_name__icontains=query)
 
-#     # กรองหมวดหมู่หลัก
-#     selected_category = None
 #     if category_id:
-#         # ใช้ AssetCategory ที่ถูกต้อง
 #         selected_category = get_object_or_404(AssetCategory, id=category_id)
 #         assets = assets.filter(subcategory__category=selected_category)
 
-#     # กรองหมวดหมู่ย่อย
-#     selected_subcategory = None
 #     if subcategory_id:
 #         selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
 #         assets = assets.filter(subcategory=selected_subcategory)
+
+#     p = Paginator(assets, 10)
+#     try:
+#         asset_items = p.page(page)
+#     except PageNotAnInteger:
+#         asset_items = p.page(1)
+#     except EmptyPage:
+#         asset_items = p.page(p.num_pages)
+
+#     # ✅ ใช้ session เป็น list ของ id (int)
+#     cart_asset_ids = [int(x) for x in request.session.get('cart', [])]
+#     assets_in_cart = (
+#         AssetItem.objects
+#         .filter(id__in=cart_asset_ids)
+#         .select_related('asset_code')
+#     )
+
+#     categories = AssetCategory.objects.all()
+#     subcategories = Subcategory.objects.filter(category=selected_category) if selected_category else []
+    
+#     context = {
+#         'asset_items': asset_items,
+#         'query': query,
+#         'selected_category': selected_category,
+#         'selected_subcategory': selected_subcategory,
+#         'categories': categories,
+#         'subcategories': subcategories,
+#         'assets_in_cart': assets_in_cart,
+#         'cart_count': len(cart_asset_ids),   # ✅ จุดที่เพิ่ม
+        
+#     }
+#     return render(request, 'loan_list.html', context)
+
+
+# # ---- add_to_cart ----
+# @login_required
+# def add_to_cart(request, asset_id):
+#     cart = request.session.get('cart', [])
+#     if not isinstance(cart, list):
+#         cart = []
+
+#     if len(cart) >= 5:
+#         messages.error(request, 'ไม่สามารถเพิ่มรายการได้เกิน 5 รายการในตะกร้า!')
+#         return redirect('assets:loan_list')
+
+#     if int(asset_id) in cart:
+#         messages.info(request, 'ครุภัณฑ์นี้อยู่ในตะกร้าแล้ว')
+#         return redirect('assets:loan_list')
+
+#     asset = get_object_or_404(AssetItem, id=asset_id)
+#     if asset.status_assetloan:
+#         messages.error(request, f'ครุภัณฑ์ "{asset.item_name}" ไม่พร้อมให้ยืมในขณะนี้')
+#         return redirect('assets:loan_list')   # ✅ แก้เป็น loan_list
+
+#     cart.append(int(asset_id))
+#     request.session['cart'] = cart
+#     request.session.modified = True
+#     messages.success(request, 'เพิ่มครุภัณฑ์ลงในตะกร้าเรียบร้อยแล้ว')
+#     return redirect('assets:loan_list')
+
+
+# # ---- remove_from_cart ----
+# @login_required
+# def remove_from_cart(request, asset_id):
+#     cart = request.session.get('cart', [])
+#     if not isinstance(cart, list):
+#         cart = []
+
+#     try:
+#         cart.remove(int(asset_id))
+#         request.session['cart'] = cart
+#         request.session.modified = True
+#         messages.success(request, 'ลบครุภัณฑ์ออกจากตะกร้าเรียบร้อยแล้ว')
+#     except (ValueError, TypeError):
+#         messages.error(request, 'ไม่พบรายการครุภัณฑ์ที่ต้องการลบ')
+
+#     return redirect('assets:loan_list')
+
+
+# # ---- confirm_loan ----
+# @login_required
+# def confirm_loan(request):
+#     cart_asset_ids = [int(x) for x in request.session.get("cart", [])]
+#     if not cart_asset_ids:
+#         messages.error(request, 'ไม่มีครุภัณฑ์ในตะกร้า')
+#         return redirect('assets:loan_list')
+
+#     assets_to_loan = AssetItem.objects.filter(id__in=cart_asset_ids)
+
+#     with transaction.atomic():
+#         for asset in assets_to_loan:
+#             AssetLoan.objects.create(
+#                 asset=asset,
+#                 user=request.user,
+#                 date_due=datetime.now().date() + timedelta(days=7),
+#                 status='pending'
+#             )
+#             asset.status_assetloan = True
+#             asset.save(update_fields=['status_assetloan'])
+
+#     request.session['cart'] = []  # ✅ เคลียร์ตะกร้า
+#     request.session.modified = True
+
+#     messages.success(request, 'ส่งคำขอยืมสำเร็จแล้ว!')
+#     return redirect('assets:loan_list')
+
+
+
+
+@login_required
+def loan_list(request):
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category')
+    subcategory_id = request.GET.get('subcategory')
+    page = request.GET.get('page', 1)
+
+    # ✅ เลือกเฉพาะที่ “ยืมได้” ตามฟิลด์ของคุณ: status_borrowing=True
+    qs = (
+        AssetItem.objects
+        .filter(status_borrowing=True)  # พร้อมให้ยืม
+        .select_related('subcategory', 'subcategory__category', 'asset_code')
+        .order_by('id')
+    )
+
+    selected_category = None
+    selected_subcategory = None
+
+    if query:
+        qs = qs.filter(item_name__icontains=query)
+
+    if category_id:
+        selected_category = get_object_or_404(AssetCategory, id=category_id)
+        qs = qs.filter(subcategory__category=selected_category)
+
+    if subcategory_id:
+        selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
+        qs = qs.filter(subcategory=selected_subcategory)
+
+    p = Paginator(qs, 10)
+    try:
+        asset_items = p.page(page)
+    except PageNotAnInteger:
+        asset_items = p.page(1)
+    except EmptyPage:
+        asset_items = p.page(p.num_pages)
+
+    # ✅ ใช้ session เป็น list ของ id (int)
+    cart = request.session.get('cart', [])
+    if not isinstance(cart, list):
+        cart = []
+    cart_asset_ids = [int(x) for x in cart]
+
+    assets_in_cart = AssetItem.objects.filter(id__in=cart_asset_ids).select_related('asset_code')
+
+    categories = AssetCategory.objects.all()
+    subcategories = Subcategory.objects.filter(category=selected_category) if selected_category else Subcategory.objects.none()
+
+    context = {
+        'asset_items': asset_items,
+        'query': query,
+        'selected_category': selected_category,
+        'selected_subcategory': selected_subcategory,
+        'categories': categories,
+        'subcategories': subcategories,
+        'assets_in_cart': assets_in_cart,
+        'cart_count': len(cart_asset_ids),
+    }
+    # ✅ context เป็น dict แน่นอน แก้ปัญหา "'list' object has no attribute 'items'"
+    print("DEBUG CONTEXT:", type(context), context)  # 👈 เพิ่มบรรทัดนี้ก่อน return
+    # ในฟังก์ชัน loan_list ของคุณ
+    print("Cart session at start of view:", request.session.get('cart'))
+    if 'test_data' not in request.session:
+        request.session['test_data'] = 'test_value'
+        request.session.modified = True
+        print("Session modified")
+    else:
+        print("Session already has test_data")
+
+    # บรรทัดนี้ควรแสดงข้อมูลตะกร้าที่ถูกต้อง หาก session ทำงาน
+    print("Cart session at end of view:", request.session.get('cart'))
+    return render(request, 'loan_list.html', context)
+
+
+# ================= AJAX เพิ่ม/ลบตะกร้า =================
+@login_required
+def add_to_cart_ajax(request):
+    if request.method == "POST":
+        asset_id = request.POST.get("asset_id")
+        cart = request.session.get("cart", [])
+        if not isinstance(cart, list):
+            cart = []
+
+        try:
+            asset_id = int(asset_id)
+            if asset_id not in cart:
+                asset = AssetItem.objects.select_related('asset_code').get(id=asset_id)
+                cart.append(asset_id)
+                request.session["cart"] = cart
+                request.session.modified = True
+                
+                # ✅ เพิ่มข้อมูล asset ที่จำเป็นเข้าไปใน JsonResponse
+                return JsonResponse({
+                    "success": True, 
+                    "cart_count": len(cart),
+                    "asset_id": asset.id,
+                    "asset_name": asset.item_name,
+                    "asset_code": str(asset.asset_code),  # แปลงเป็น str เพื่อให้แสดงผลได้
+                })
+        except (ValueError, AssetItem.DoesNotExist):
+            return JsonResponse({"success": False, "message": "ไม่พบรายการครุภัณฑ์"})
+            
+        return JsonResponse({"success": False, "message": "ครุภัณฑ์นี้อยู่ในตะกร้าแล้ว"})
+    return JsonResponse({"success": False, "message": "วิธีเรียกไม่ถูกต้อง"})
+
+
+@login_required
+def remove_from_cart_ajax(request):
+    if request.method == "POST":
+        asset_id = request.POST.get("asset_id")
+        cart = request.session.get("cart", [])
+        if not isinstance(cart, list):
+            cart = []
+        try:
+            cart.remove(int(asset_id))
+            request.session["cart"] = cart
+            request.session.modified = True
+            return JsonResponse({"success": True, "cart_count": len(cart)})
+        except (ValueError, TypeError):
+            return JsonResponse({"success": False, "message": "ไม่พบรายการครุภัณฑ์"})
+    return JsonResponse({"success": False, "message": "วิธีเรียกไม่ถูกต้อง"})
+
+
+@login_required
+def confirm_loan(request):
+    if request.method != 'POST':
+        messages.error(request, 'วิธีส่งคำขอไม่ถูกต้อง')
+        return redirect('assets:loan_list')
+
+    cart_asset_ids = [int(x) for x in request.session.get("cart", [])]
+    if not cart_asset_ids:
+        messages.error(request, 'ไม่มีครุภัณฑ์ในตะกร้า')
+        return redirect('assets:loan_list')
+
+    assets_to_loan = AssetItem.objects.filter(id__in=cart_asset_ids)
+
+    with transaction.atomic():
+        for asset in assets_to_loan:
+            AssetLoan.objects.create(
+                asset=asset,
+                user=request.user,
+                date_due=datetime.now().date() + timedelta(days=7),
+                status='pending'
+            )
+            asset.status_assetloan = True
+            asset.save(update_fields=['status_assetloan'])
+
+    request.session['cart'] = []
+    request.session.modified = True
+
+    messages.success(request, 'ส่งคำขอยืมสำเร็จแล้ว!')
+    return redirect('assets:loan_list')
+
+
+# @login_required
+# def add_to_cart(request, asset_id):
+#     # ✅ cart เป็น list เสมอ
+#     cart = request.session.get('cart', [])
+#     if not isinstance(cart, list):
+#         cart = []
+
+#     # จำกัดจำนวนไม่เกิน 5
+#     if len(cart) >= 5:
+#         messages.error(request, 'ไม่สามารถเพิ่มรายการได้เกิน 5 รายการในตะกร้า!')
+#         return redirect('assets:loan_list')  # ✅ ชื่อ url name ตรงกับ urls.py
+
+#     # ไม่ให้ซ้ำ
+#     if int(asset_id) in [int(x) for x in cart]:
+#         messages.info(request, 'ครุภัณฑ์นี้อยู่ในตะกร้าแล้ว')
+#         return redirect('assets:loan_list')
+
+#     # ตรวจสถานะ
+#     asset = get_object_or_404(AssetItem, id=asset_id)
+#     if asset.status_assetloan:
+#         messages.error(request, f'ครุภัณฑ์ "{asset.item_name}" ไม่พร้อมให้ยืมในขณะนี้')
+#         return redirect('assets:loan_list')  # ✅ ห้ามใช้ loan-list
+
+#     cart.append(int(asset_id))
+#     request.session['cart'] = cart
+#     request.session.modified = True
+#     messages.success(request, 'เพิ่มครุภัณฑ์ลงในตะกร้าเรียบร้อยแล้ว')
+#     return redirect('assets:loan_list')
+
+
+# @login_required
+# def remove_from_cart(request, asset_id):
+#     cart = request.session.get('cart', [])
+#     if not isinstance(cart, list):
+#         cart = []
+#     try:
+#         cart.remove(int(asset_id))
+#         request.session['cart'] = cart
+#         request.session.modified = True
+#         messages.success(request, 'ลบครุภัณฑ์ออกจากตะกร้าเรียบร้อยแล้ว')
+#     except (ValueError, TypeError):
+#         messages.error(request, 'ไม่พบรายการครุภัณฑ์ที่ต้องการลบ')
+#     return redirect('assets:loan_list')
+
+
+# @login_required
+# def confirm_loan(request):
+#     # ✅ รองรับเฉพาะ POST เพื่อความถูกต้อง
+#     if request.method != 'POST':
+#         messages.error(request, 'วิธีส่งคำขอไม่ถูกต้อง')
+#         return redirect('assets:loan_list')
+
+#     cart_asset_ids = [int(x) for x in request.session.get("cart", [])]
+#     if not cart_asset_ids:
+#         messages.error(request, 'ไม่มีครุภัณฑ์ในตะกร้า')
+#         return redirect('assets:loan_list')
+
+#     assets_to_loan = AssetItem.objects.filter(id__in=cart_asset_ids)
+
+#     with transaction.atomic():
+#         for asset in assets_to_loan:
+#             # ✅ ถ้ามีโมเดลชื่ออื่น ใช้ชื่อโมเดลจริงแทน AssetLoan
+#             AssetLoan.objects.create(
+#                 asset=asset,
+#                 user=request.user,
+#                 date_due=datetime.now().date() + timedelta(days=7),
+#                 status='pending'
+#             )
+#             # set เป็นยืมอยู่
+#             asset.status_assetloan = True
+#             asset.save(update_fields=['status_assetloan'])
+
+#     # ✅ ล้างตะกร้า
+#     request.session['cart'] = []
+#     request.session.modified = True
+
+#     messages.success(request, 'ส่งคำขอยืมสำเร็จแล้ว!')
+#     return redirect('assets:loan_list')
+
+
+
+
+
+
+
+
+
+
+
+
+# ฟังก์ชัน loan_list ที่ได้รับการแก้ไขและรวมการทำงานทั้งหมด
+# @login_required
+# def loan_list(request):
+#     query = request.GET.get('q', '')
+#     category_id = request.GET.get('category')
+#     subcategory_id = request.GET.get('subcategory')  
+#     page = request.GET.get('page', 1)
+
+#     # เริ่มต้น QuerySet โดยกรองเฉพาะรายการที่ status_borrowing=True
+#     assets = AssetItem.objects.filter(status_borrowing=True).select_related('subcategory__category').order_by('id')
+
+#     # ตัวแปรสำหรับใช้ใน template
+#     selected_category = None
+#     selected_subcategory = None
+    
+#     # กรองข้อมูลตามคำค้นหา
+#     if query:
+#         assets = assets.filter(item_name__icontains=query)
+
+#     # กรองข้อมูลตามหมวดหมู่หลัก
+#     if category_id:
+#         try:
+#             selected_category = get_object_or_404(AssetCategory, id=category_id)
+#             assets = assets.filter(subcategory__category=selected_category)
+#         except:
+#             messages.error(request, 'ไม่พบหมวดหมู่ที่ต้องการ')
+#             return redirect('assets:loan-list')
+
+#     # กรองข้อมูลตามหมวดหมู่ย่อย
+#     if subcategory_id:
+#         try:
+#             selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
+#             assets = assets.filter(subcategory=selected_subcategory)
+#         except:
+#             messages.error(request, 'ไม่พบหมวดหมู่ย่อยที่ต้องการ')
+#             return redirect('assets:loan-list')
 
 #     # Pagination
 #     p = Paginator(assets, 10)
@@ -291,102 +688,122 @@ def check_asset(request, asset_id):
 #     except EmptyPage:
 #         asset_items = p.page(p.num_pages)
 
-#     # ดึงข้อมูลหมวดหมู่ทั้งหมด เพื่อนำไปใช้ในเมนู dropdown ของเทมเพลต
+#     # ดึงข้อมูลหมวดหมู่ทั้งหมดสำหรับเมนู
 #     categories = AssetCategory.objects.all()
+#     subcategories = []
+#     if selected_category:
+#         subcategories = Subcategory.objects.filter(category=selected_category)
 
 #     context = {
 #         'asset_items': asset_items,
 #         'query': query,
 #         'selected_category': selected_category,
 #         'selected_subcategory': selected_subcategory,
-#         'categories': categories, # ส่ง categories เข้าไปใน context
+#         'categories': categories,
+#         'subcategories': subcategories,
 #     }
 #     return render(request, 'loan_list.html', context)
 
-# ฟังก์ชัน loan_list ที่ได้รับการแก้ไขและรวมการทำงานทั้งหมด
+
+# @login_required
+# def add_to_cart(request, asset_id):
+#     # ตรวจสอบและทำให้แน่ใจว่า 'cart' ใน session เป็น list เสมอ
+#     if 'cart' not in request.session or not isinstance(request.session['cart'], list):
+#         request.session['cart'] = []
+
+#     cart = request.session['cart']
+
+#     if asset_id not in cart:
+#         cart.append(asset_id)
+#         request.session.modified = True
+#         messages.success(request, 'เพิ่มครุภัณฑ์ลงในตะกร้าเรียบร้อยแล้ว')
+#     else:
+#         messages.info(request, 'ครุภัณฑ์นี้อยู่ในตะกร้าแล้ว')
+    
+#     return redirect('assets:loan-list')
+
+# @login_required
+# def remove_from_cart(request, asset_id):
+#     # ตรวจสอบและทำให้แน่ใจว่า 'cart' ใน session เป็น list เสมอ
+#     if 'cart' in request.session and isinstance(request.session['cart'], list):
+#         cart = request.session['cart']
+#         if asset_id in cart:
+#             cart.remove(asset_id)
+#             request.session.modified = True
+#             messages.success(request, 'ลบครุภัณฑ์ออกจากตะกร้าเรียบร้อยแล้ว')
+
+#     return redirect('assets:loan-list')
+
+# @login_required
+# def confirm_loan(request):
+#     cart_asset_ids = request.session.get("cart", [])
+#     if not cart_asset_ids:
+#         messages.error(request, 'ไม่มีครุภัณฑ์ในตะกร้า')
+#         return redirect('assets:loan-list')
+
+#     # สร้าง LoanRequest และเพิ่มครุภัณฑ์เข้าไปใน M2M field
+#     loan_request = LoanRequest.objects.create(
+#         user=request.user,
+#         # เพิ่มข้อมูลอื่นๆ ที่จำเป็น
+#     )
+#     assets_to_loan = AssetItem.objects.filter(id__in=cart_asset_ids)
+#     loan_request.assets.set(assets_to_loan)
+
+#     # เปลี่ยนสถานะครุภัณฑ์
+#     for asset in assets_to_loan:
+#         asset.status_assetloan = True
+#         asset.save()
+
+#     # ล้างตะกร้าใน session และบันทึกการเปลี่ยนแปลง
+#     del request.session['cart']
+#     request.session.modified = True
+
+#     messages.success(request, 'ส่งคำขอยืมสำเร็จแล้ว!')
+#     return redirect('assets:loan-list')
+
+
+# @login_required
+# def request_loan(request):
+#     """ส่งคำขอยืม (แบบใช้ฟอร์มเดี่ยว ๆ)"""
+#     if request.method == "POST":
+#         form = AssetLoanForm(request.POST)
+#         if form.is_valid():
+#             loan = form.save(commit=False)
+#             loan.user = request.user
+#             loan.status = "pending"
+#             loan.save()
+#             messages.success(request, "ส่งคำขอยืมสำเร็จ รอการอนุมัติ")
+#             return redirect("assets:loan-list")
+#     else:
+#         form = AssetLoanForm()
+#     return render(request, "request_loan.html", {"form": form})
+
+
 @login_required
-def loan_list(request):
-    query = request.GET.get('q', '')
-    category_id = request.GET.get('category')
-    subcategory_id = request.GET.get('subcategory')
-    page = request.GET.get('page', 1)
-
-    # เริ่มต้น QuerySet โดยกรองเฉพาะรายการที่ status_borrowing=True
-    assets = AssetItem.objects.filter(status_borrowing=True).select_related('subcategory__category').order_by('id')
-
-    # ตัวแปรสำหรับใช้ใน template
-    selected_category = None
-    selected_subcategory = None
+def loan_approval_list(request):
+    """
+    หน้าแสดงรายการคำขออนุมัติการยืมและคืนครุภัณฑ์
+    """
+    # กรองคำขอที่รออนุมัติและรออนุมัติการคืน
+    # qs = AssetLoan.objects.filter(status__in=['pending', 'returned_pending']).order_by('-loan_date')
+    qs = AssetLoan.objects.all().order_by('-loan_date')
     
-    # กรองข้อมูลตามคำค้นหา
-    if query:
-        assets = assets.filter(item_name__icontains=query)
-
-    # กรองข้อมูลตามหมวดหมู่หลัก
-    if category_id:
-        try:
-            selected_category = get_object_or_404(AssetCategory, id=category_id)
-            assets = assets.filter(subcategory__category=selected_category)
-        except:
-            messages.error(request, 'ไม่พบหมวดหมู่ที่ต้องการ')
-            return redirect('assets:loan-list')
-
-    # กรองข้อมูลตามหมวดหมู่ย่อย
-    if subcategory_id:
-        try:
-            selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
-            assets = assets.filter(subcategory=selected_subcategory)
-        except:
-            messages.error(request, 'ไม่พบหมวดหมู่ย่อยที่ต้องการ')
-            return redirect('assets:loan-list')
-
-    # Pagination
-    p = Paginator(assets, 10)
-    
-    try:
-        asset_items = p.page(page)
-    except PageNotAnInteger:
-        asset_items = p.page(1)
-    except EmptyPage:
-        asset_items = p.page(p.num_pages)
-
-    # ดึงข้อมูลหมวดหมู่ทั้งหมดสำหรับเมนู
-    categories = AssetCategory.objects.all()
-    subcategories = []
-    if selected_category:
-        subcategories = Subcategory.objects.filter(category=selected_category)
+    # pagination (ไม่บังคับ แต่ช่วยให้หน้าไม่ยาวเกินไป)
+    paginator = Paginator(qs, 15)  # แสดง 15 รายการต่อหน้า
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'asset_items': asset_items,
-        'query': query,
-        'selected_category': selected_category,
-        'selected_subcategory': selected_subcategory,
-        'categories': categories,
-        'subcategories': subcategories,
+        'page_obj': page_obj,
     }
-    return render(request, 'loan_list.html', context)
-
-def request_loan(request):
-    """ส่งคำขอยืม"""
-    if request.method == "POST":
-        form = AssetLoanForm(request.POST)
-        if form.is_valid():
-            loan = form.save(commit=False)
-            loan.user = request.user
-            loan.status = "pending"  # ตั้งค่าเป็นรออนุมัติ
-            loan.save()
-            messages.success(request, "ส่งคำขอยืมสำเร็จ รอการอนุมัติ")
-            return redirect("asset:loan_list")
-    else:
-        form = AssetLoanForm()
-
-    return render(request, "request_loan.html", {"form": form})
+    return render(request, 'loan_approval_list.html', context)
 
 
+@login_required
 def loan_approval(request, loan_id):
-    """อนุมัติหรือปฏิเสธคำขอ"""
+    """ผู้ดูแล อนุมัติหรือปฏิเสธคำขอ"""
     loan = get_object_or_404(AssetLoan, id=loan_id)
-    asset = loan.asset  # ดึงครุภัณฑ์ที่ถูกยืมมาใช้งาน
+    asset = loan.asset
 
     if request.method == "POST":
         form = AssetLoanApprovalForm(request.POST, instance=loan)
@@ -394,67 +811,78 @@ def loan_approval(request, loan_id):
             loan = form.save(commit=False)
 
             if loan.status == "approved":
-                loan.status = "borrowed"  # เปลี่ยนเป็น "กำลังยืม"
-                asset.status_assetloan = True  # เปลี่ยนสถานะครุภัณฑ์เป็นถูกยืม
-                messages.success(request, f"อนุมัติการยืมของ {loan.user.username}")
-            
+                # รอผู้ใช้มากดยืนยันการรับ
+                messages.success(request, f"อนุมัติการยืมของ {loan.user.username} แล้ว")
+
             elif loan.status == "rejected":
-                asset.status_assetloan = False  # กรณีปฏิเสธ ให้คืนสถานะว่าว่าง
+                asset.status_assetloan = False
                 messages.warning(request, f"ปฏิเสธคำขอของ {loan.user.username}")
 
             loan.save()
-            asset.save()  # บันทึกสถานะครุภัณฑ์
-            return redirect("asset:loan_approval_list")
+            asset.save()
+            return redirect("assets:loan-approval-list")
     else:
         form = AssetLoanApprovalForm(instance=loan)
 
     return render(request, "loan_approval.html", {"form": form, "loan": loan})
 
 
+@login_required
 def confirm_receipt(request, loan_id):
-    """ยืนยันการรับครุภัณฑ์"""
+    """ผู้ใช้ยืนยันการรับครุภัณฑ์"""
     loan = get_object_or_404(AssetLoan, id=loan_id, user=request.user)
-    
+    asset = loan.asset
+
     if loan.status == "approved" and not loan.confirm:
         loan.confirm = True
-        loan.status = "borrowed"  # เปลี่ยนเป็นสถานะ "กำลังยืม"
+        loan.status = "borrowed"
         loan.date_received = timezone.now()
         loan.save()
+
+        asset.status_assetloan = True  # ตอนนี้ถึงเปลี่ยนเป็นไม่ว่าง
+        asset.save()
+
         messages.success(request, "ยืนยันรับครุภัณฑ์เรียบร้อยแล้ว")
     else:
         messages.warning(request, "ไม่สามารถยืนยันรับครุภัณฑ์ได้")
-    
-    return redirect("asset:loan_list")
+
+    return redirect("assets:loan-list")
 
 
+@login_required
 def request_return(request, loan_id):
-    """แจ้งคืนครุภัณฑ์"""
+    """ผู้ใช้แจ้งคืนครุภัณฑ์"""
     loan = get_object_or_404(AssetLoan, id=loan_id, user=request.user)
 
     if loan.status == "borrowed":
-        loan.status = "returned_pending"  # แจ้งคืน
+        loan.status = "returned_pending"
         loan.save()
         messages.success(request, "แจ้งคืนครุภัณฑ์แล้ว รอการอนุมัติ")
-    
-    return redirect("asset:loan_list")
+    else:
+        messages.warning(request, "ไม่สามารถแจ้งคืนได้")
+
+    return redirect("assets:loan-list")
 
 
+@login_required
 def approve_return(request, loan_id):
-    """อนุมัติการคืน"""
+    """ผู้ดูแล อนุมัติการคืน"""
     loan = get_object_or_404(AssetLoan, id=loan_id)
+    asset = loan.asset
 
     if loan.status == "returned_pending":
         loan.date_of_return = timezone.now().date()
         loan.status = "returned"
         loan.save()
 
-        # อัปเดตสถานะการยืมของครุภัณฑ์
-        loan.asset.status_assetloan = False
-        loan.asset.save()
+        asset.status_assetloan = False
+        asset.save()
 
         messages.success(request, f"อนุมัติการคืนของ {loan.user.username}")
-    
-    return redirect("asset:loan_approval_list")
+    else:
+        messages.warning(request, "ไม่สามารถอนุมัติการคืนได้")
+
+    return redirect("assets:loan-approval-list")
 
 # ฟังก์ชันค้นหา
 # def search_category(request):

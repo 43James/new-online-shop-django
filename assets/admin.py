@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AssetItem, AssetCode, StorageLocation, Subcategory, AssetCategory
+from .models import AssetItem, AssetCode, StorageLocation, Subcategory, AssetCategory, AssetLoan
 
 # Register your models here.
 
@@ -20,3 +20,12 @@ class AssetCodeAdmin(admin.ModelAdmin):
     search_fields = ['id', 'asset_type', 'serial_year']
 
 admin.site.register(AssetCode,AssetCodeAdmin)
+
+
+class AssetLoanAdmin(admin.ModelAdmin):
+    list_display = ['id','asset', 'user', 'loan_date','status']
+
+    # ✅ ค้นหาได้จาก ID, 
+    search_fields = ['id', 'asset']
+
+admin.site.register(AssetLoan,AssetLoanAdmin)

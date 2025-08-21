@@ -23,19 +23,18 @@ urlpatterns = [
 
 
     # รายการที่ยืม ยืม อนุมัติยืม ยืนยันรับ แจ้งคืน อนุมันิคืน
-    path("loan-list/", views.loan_list, name="loan-list"), 
-
-    # path('filter_by_category_asset/<int:category_id>/', views.filter_by_category_asset, name='filter_by_category_asset'),
-    # path('filter_by_category_asset/<int:category_id>/<int:subcategory_id>/', views.filter_by_category_asset, name='filter_by_category_asset'),
-
-    path("request-loan/", views.request_loan, name="request_loan"),
+    path("loan-list/", views.loan_list, name="loan_list"), 
+    path('add-to-cart-ajax/', views.add_to_cart_ajax, name='add_to_cart_ajax'),
+    path('remove-from-cart-ajax/', views.remove_from_cart_ajax, name='remove_from_cart_ajax'),
+    path("confirm-loan/", views.confirm_loan, name="confirm_loan"),
+    path("loan-approval-list/", views.loan_approval_list, name="loan-approval-list"),
     path("loan-approval/<int:loan_id>/", views.loan_approval, name="loan_approval"),
     path("confirm-receipt/<int:loan_id>/", views.confirm_receipt, name="confirm_receipt"),
     path("return/<int:loan_id>/", views.request_return, name="request_return"),
     path("approve-return/<int:loan_id>/", views.approve_return, name="approve_return"),
 
     # รายการแจ้งซ่อม
-    path("repair-report/", views.repair_report, name="repair_report"),
+    # path("repair-report/", views.repair_report, name="repair_report"),
 
     # หมวดหมู่หลัก
     # path("category-list/", views.asset_list_cate, name="asset_list_cate"),

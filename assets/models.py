@@ -209,15 +209,6 @@ class AssetItem(models.Model):
             return self.purchase_price / self.lifetime
         return 0
 
-    # def save(self, *args, **kwargs):
-    #     """ บันทึกค่าความเสื่อมต่อปีโดยอัตโนมัติ แต่ไม่คำนวณค่าความเสื่อมของครุภัณฑ์หมวดหมู่ 'ต่ำกว่าเกณฑ์' """
-    #     if self.subcategory and self.subcategory.name_sub == "ต่ำกว่าเกณฑ์":
-    #         self.annual_depreciation = 0  # ไม่คำนวณค่าความเสื่อม
-    #     else:
-    #         self.annual_depreciation = self.calculate_annual_depreciation()
-
-    #     self.generate_qr_code()
-    #     super().save(*args, **kwargs)
     def save(self, *args, **kwargs):
         """ บันทึกค่าความเสื่อมต่อปีโดยอัตโนมัติ และสร้าง QR Code """
         # คำนวณค่าความเสื่อมก่อนบันทึก
@@ -246,7 +237,6 @@ class AssetOwnership(models.Model):
         return f"{self.user.username} - {self.asset.item_name}"
 
 
-
 # การตรวจเช็คครุภัณฑ์
 class AssetCheck(models.Model):
     asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์ที่ตรวจเช็ค")
@@ -268,21 +258,6 @@ class AssetCheck(models.Model):
         self.month = self.check_date.month
         self.year = self.check_date.year
         super().save(*args, **kwargs)
-
-
-
-# การบันทึกการซ่อมบำรุง
-# class MaintenanceRecord(models.Model):
-#     asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์ที่ซ่อมบำรุง")
-#     maintenance_date = models.DateField(verbose_name="วันที่ซ่อมบำรุง")
-#     Notification_date = models.DateField(verbose_name="วันที่แจ้ง")
-#     Completion_date = models.DateField(verbose_name="วันที่เสร็จ")
-#     description = models.TextField(verbose_name="รายละเอียดการซ่อมบำรุง ความเห็น หลักฐาน")
-#     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="ค่าใช้จ่ายในการซ่อมบำรุง")
-
-#     def __str__(self):
-#         return f"{self.asset.item_name} - {self.maintenance_date}"
-
 
 
 # การยืมและคืนครุภัณฑ์
@@ -318,3 +293,20 @@ class AssetLoan(models.Model):
         elif self.date_of_return:
             self.status = 'returned'
         super().save(*args, **kwargs)
+
+
+
+
+# การบันทึกการซ่อมบำรุง
+# class MaintenanceRecord(models.Model):
+#     asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์ที่ซ่อมบำรุง")
+#     maintenance_date = models.DateField(verbose_name="วันที่ซ่อมบำรุง")
+#     Notification_date = models.DateField(verbose_name="วันที่แจ้ง")
+#     Completion_date = models.DateField(verbose_name="วันที่เสร็จ")
+#     description = models.TextField(verbose_name="รายละเอียดการซ่อมบำรุง ความเห็น หลักฐาน")
+#     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="ค่าใช้จ่ายในการซ่อมบำรุง")
+
+#     def __str__(self):
+#         return f"{self.asset.item_name} - {self.maintenance_date}"
+
+

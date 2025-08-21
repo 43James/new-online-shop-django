@@ -1,218 +1,246 @@
 {% extends "base_sidebar.html" %}
+{% load static %}
+
 {% block content %}
 
-<body class="home-page">
-  <style>
-    #watermark p {
-      position: absolute;
-      color: rgb(255, 0, 0);
-      font-size: 30px;
-      top: 30%;
-      font-weight: bold;
-      width: 100%;
-      pointer-events: none;
-      -webkit-transform: rotate(-20deg);
-      -moz-transform: rotate(-45deg);
-      text-shadow: 2px 2px 4px rgba(255, 255, 0, 0.904);
-    }
-  </style>
+<meta name="csrf-token" content="{{ csrf_token }}">
 
-  {% if messages %}
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      var orderModal = new bootstrap.Modal(document.getElementById('orderConfirmationModal'));
-      orderModal.show();
-    });
-  </script>
-  {% endif %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>รายการครุภัณฑ์ที่ยืมได้</h3>
 
-  {% if request.user.is_authenticated %}
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategory" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            หมวดหมู่หลัก
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategory">
-            {% for category in categories %}
-            <li>
-              <a class="dropdown-item" href="{% url 'assets:loan-list' %}?category={{ category.id }}">
-                {{ category.name_cate }}
-              </a>
-            </li>
-            {% endfor %}
-          </ul>
-        </li>
-      </ul>
-
-      {% if selected_category %}
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategorySub" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            หมวดหมู่ย่อย
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategorySub">
-            {% for subcategory in subcategories %}
-            <li>
-              <a class="dropdown-item"
-                href="{% url 'assets:loan-list' %}?category={{ selected_category.id }}&subcategory={{ subcategory.id }}">
-                {{ subcategory.name_sub }}
-              </a>
-            </li>
-            {% endfor %}
-          </ul>
-        </li>
-      </ul>
+    <a href="#" class="nav-link position-relative" data-bs-toggle="modal" data-bs-target="#cartModal">
+      <i class="bi bi-cart3 fs-4"></i>
+      {% if cart_count > 0 %}
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        {{ cart_count }}
+      </span>
       {% endif %}
-    </div>
-  </nav>
-
-  <div class="text-primary mt-3">
-    {% if selected_category %}
-    <h5>หมวดหมู่ที่เลือก: <i>{{ selected_category.name_cate }}</i></h5>
-    {% endif %}
-    {% if selected_subcategory %}
-    <h6>หมวดหมู่ย่อยที่เลือก: <i>{{ selected_subcategory.name_sub }}</i></h6>
-    {% endif %}
+    </a>
   </div>
 
-  {% if asset_items %}
-  <div class="d-flex flex-wrap">
-    {% for assetitem in asset_items %}
-    <div class="card me-3 mb-3 mt-4" style="width: 11rem; margin-left: 20px;">
-      {% if assetitem.status_assetloan %}
-      <div id="watermark">
-        <a href="{{ assetitem.get_absolute_url }}">
-          {% if assetitem.asset_image %}
-          <img class="card-img mt-2" width="134" height="150" style="object-fit: cover; opacity: 0.5;"
-            src="{{ assetitem.asset_image.url }}">
-          {% else %}
-          <img class="card-img mt-2" width="134" height="150" style="object-fit: cover; opacity: 0.5;"
-            src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
-          {% endif %}
-        </a>
-        <p class="text-center text-danger mt-1">ไม่ว่าง</p>
-      </div>
-      {% else %}
-      <a href="{{ assetitem.get_absolute_url }}">
-        {% if assetitem.asset_image %}
-        <img class="card-img mt-2" width="134" height="150" style="object-fit: cover;"
-          src="{{ assetitem.asset_image.url }}">
-        {% else %}
-        <img class="card-img mt-2" width="134" height="150" style="object-fit: cover;"
-          src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
-        {% endif %}
-      </a>
-      {% endif %}
-
-      <div class="mt-3 text-center">
-        <h6 class="card-title element">{{ assetitem.item_name }}</h6>
-      </div>
+  <!-- ฟอร์มค้นหา -->
+  <form method="get" class="row g-2 mb-4">
+    <div class="col-md-4"><input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อครุภัณฑ์..." value="{{ query }}"></div>
+    <div class="col-md-3">
+      <select name="category" class="form-select">
+        <option value="">-- เลือกหมวดหลัก --</option>
+        {% for category in categories %}
+          <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+            {{ category.name_cate }}
+          </option>
+        {% endfor %}
+      </select>
     </div>
-    {% endfor %}
+    <div class="col-md-3">
+      <select name="subcategory" class="form-select">
+        <option value="">-- เลือกหมวดย่อย --</option>
+        {% for subcategory in subcategories %}
+          <option value="{{ subcategory.id }}" {% if selected_subcategory and selected_subcategory.id == subcategory.id %}selected{% endif %}>
+            {{ subcategory.name_sub }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">ค้นหา</button></div>
+  </form>
+
+  <!-- ตารางครุภัณฑ์ -->
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>รูป</th><th>ชื่อ</th><th>รหัส</th><th>หมวด</th><th>หมวดย่อย</th><th>การทำงาน</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for asset in asset_items %}
+        <tr>
+          <td>{% if asset.asset_image %}<img src="{{ asset.asset_image.url }}" style="width:50px;height:50px;object-fit:cover">{% else %}ไม่มีรูป{% endif %}</td>
+          <td>{{ asset.item_name }}</td>
+          <td>SP-{{ asset.asset_code }}</td>
+          <td>{% if asset.subcategory and asset.subcategory.category %}{{ asset.subcategory.category.name_cate }}{% endif %}</td>
+          <td>{% if asset.subcategory %}{{ asset.subcategory.name_sub }}{% endif %}</td>
+          <td>
+            {% if asset.status_assetloan %}
+              <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
+            {% else %}
+              <a href="javascript:void(0)" class="btn btn-sm btn-success add-to-cart-btn" data-id="{{ asset.id }}">เพิ่มในตะกร้า</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center">ไม่พบข้อมูล</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
-  <nav aria-label="Page navigation example">
-    <ul class="pagination justify-content-center mt-2 mb-2">
+  <!-- pagination -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
       {% if asset_items.has_previous %}
       <li class="page-item">
-        <a class="page-link"
-          href="?page=1{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">หน้าแรก</a>
-      </li>
+        <a class="page-link" href="?page={{ asset_items.previous_page_number }}&q={{ query }}&category={{ selected_category.id|default:'' }}&subcategory={{ selected_subcategory.id|default:'' }}">ก่อนหน้า</a>
+      </li>{% endif %}
+      <li class="page-item disabled"><a class="page-link">หน้า {{ asset_items.number }} จาก {{ asset_items.paginator.num_pages }}</a></li>
+      {% if asset_items.has_next %}
       <li class="page-item">
-        <a class="page-link"
-          href="?page={{ asset_items.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">ก่อนหน้า</a>
-      </li>
-      {% endif %}
-
-      {% for i in asset_items.paginator.page_range %}
-      {% if asset_items.number == i %}
-      <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-      {% elif i > asset_items.number|add:'-2' and i < asset_items.number|add:'2' %} <li class="page-item"><a
-          class="page-link"
-          href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">{{
-          i }}</a></li>
-        {% endif %}
-        {% endfor %}
-
-        {% if asset_items.has_next %}
-        <li class="page-item">
-          <a class="page-link"
-            href="?page={{ asset_items.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">ถัดไป</a>
-        </li>
-        <li class="page-item">
-          <a class="page-link"
-            href="?page={{ asset_items.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">หน้าสุดท้าย</a>
-        </li>
-        {% endif %}
+        <a class="page-link" href="?page={{ asset_items.next_page_number }}&q={{ query }}&category={{ selected_category.id|default:'' }}&subcategory={{ selected_subcategory.id|default:'' }}">ถัดไป</a>
+      </li>{% endif %}
     </ul>
   </nav>
+</div>
 
-  {% else %}
-  <div class="row">
-    <div class="col-md-2"></div>
-    <div class="col-md-8 mt-5 pt-5 text-center">
-      <h3 class="text-muted">ไม่มีรายการครุภัณฑ์!</h3>
+<!-- Modal ตะกร้า -->
+<div class="modal fade" id="cartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">ตะกร้าครุภัณฑ์</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+          {% for asset in assets_in_cart %}
+          <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ asset.id }}">
+            {{ asset.item_name }} (SP-{{ asset.asset_code }})
+            <a href="javascript:void(0)" class="btn btn-sm btn-danger remove-from-cart-btn" data-id="{{ asset.id }}">ลบ</a>
+          </li>
+          {% empty %}
+          <p class="text-center">ไม่มีครุภัณฑ์</p>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <form action="{% url 'assets:confirm_loan' %}" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary" {% if cart_count == 0 %}disabled{% endif %}>ยืนยันการยืม</button>
+        </form>
+      </div>
     </div>
-    <div class="col-md-2"></div>
   </div>
-  {% endif %}
+</div>
 
-</body>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+      const badge = document.querySelector(".badge");
+      
+      // ตรวจสอบสถานะครุภัณฑ์ในตะกร้าเมื่อโหลดหน้าครั้งแรก
+      const cartItems = document.querySelectorAll('#cartModal .list-group-item');
+      const inCartIds = new Set();
+      cartItems.forEach(item => {
+          inCartIds.add(item.dataset.id);
+      });
+  
+      document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
+          const assetId = btn.dataset.id;
+          if (inCartIds.has(assetId)) {
+              // หากอยู่ในตะกร้าแล้ว ให้เปลี่ยนสถานะปุ่มทันที
+              btn.disabled = true;
+              btn.classList.remove('btn-success');
+              btn.classList.add('btn-secondary');
+              btn.textContent = 'เพิ่มแล้ว';
+          }
+  
+          btn.addEventListener("click", function() {
+              const btnClicked = this;
+              fetch("{% url 'assets:add_to_cart_ajax' %}", {
+                  method: "POST",
+                  headers: {
+                      "X-CSRFToken": csrfToken,
+                      "Content-Type": "application/x-www-form-urlencoded"
+                  },
+                  body: `asset_id=${assetId}`
+              }).then(res => res.json()).then(data => {
+                  if (data.success) {
+                      alert("เพิ่มครุภัณฑ์ลงตะกร้าเรียบร้อยแล้ว");
+  
+                      // อัปเดตตัวเลขบน badge
+                      if (badge) {
+                          badge.textContent = data.cart_count;
+                      }
+  
+                      // เพิ่มรายการใน modal
+                      const ul = document.querySelector("#cartModal .list-group");
+                      const li = document.createElement("li");
+                      li.className = "list-group-item d-flex justify-content-between align-items-center";
+                      li.dataset.id = data.asset_id;
+                      li.innerHTML = `${data.asset_name} (SP-${data.asset_code}) <a href="javascript:void(0)" class="btn btn-sm btn-danger remove-from-cart-btn" data-id="${data.asset_id}">ลบ</a>`;
+                      ul.appendChild(li);
+  
+                      // เพิ่ม event listener ให้ปุ่ม "ลบ" ใหม่
+                      li.querySelector(".remove-from-cart-btn").addEventListener("click", removeHandler);
+  
+                      // ปิดการใช้งานปุ่ม "เพิ่มในตะกร้า"
+                      btnClicked.disabled = true;
+                      btnClicked.classList.remove('btn-success');
+                      btnClicked.classList.add('btn-secondary');
+                      btnClicked.textContent = 'เพิ่มแล้ว';
+  
+                      // เปิดใช้งานปุ่ม "ยืนยันการยืม" ใน Modal
+                      document.querySelector('#cartModal .modal-footer button[type="submit"]').disabled = false;
+                      
+                  } else {
+                      alert(data.message);
+                  }
+              });
+          });
+      });
+  
+      // ลบออกจากตะกร้า
+      function removeHandler() {
+          const assetId = this.dataset.id;
+          const btn = this;
+          fetch("{% url 'assets:remove_from_cart_ajax' %}", {
+              method: "POST",
+              headers: {
+                  "X-CSRFToken": csrfToken,
+                  "Content-Type": "application/x-www-form-urlencoded"
+              },
+              body: `asset_id=${assetId}`
+          }).then(res => res.json()).then(data => {
+              if (data.success) {
+                  updateBadge(data.cart_count);
+                  btn.closest("li").remove();
+                  
+                  // ค้นหาปุ่ม "เพิ่มในตะกร้า" ที่เกี่ยวข้องและเปิดใช้งานใหม่
+                  const originalBtn = document.querySelector(`.add-to-cart-btn[data-id="${assetId}"]`);
+                  if (originalBtn) {
+                      originalBtn.disabled = false;
+                      originalBtn.classList.remove('btn-secondary');
+                      originalBtn.classList.add('btn-success');
+                      originalBtn.textContent = 'เพิ่มในตะกร้า';
+                  }
+  
+                  // ปิดการใช้งานปุ่ม "ยืนยันการยืม" หากตะกร้าว่าง
+                  if (data.cart_count === 0) {
+                       document.querySelector('#cartModal .modal-footer button[type="submit"]').disabled = true;
+                  }
+              } else {
+                  alert(data.message);
+              }
+          });
+      }
+      
+      // กำหนด event listener สำหรับปุ่มลบที่มีอยู่แล้วใน Modal เมื่อโหลดหน้า
+      document.querySelectorAll(".remove-from-cart-btn").forEach(btn => {
+          btn.addEventListener("click", removeHandler);
+      });
+  
+      // ฟังก์ชันอัปเดตตัวเลขบน badge
+      function updateBadge(count) {
+          if (badge) {
+              badge.textContent = count;
+              if (count > 0) {
+                   badge.style.display = 'block';
+              } else {
+                   badge.style.display = 'none';
+              }
+          }
+      }
+  });
+  </script>
 
-<style>
-  .page-link.current-page {
-    color: #fff;
-    background-color: #007bff;
-    border-color: #007bff;
-  }
-</style>
-{% endif %}
 {% endblock %}
-
-
-
-<!-- <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategory" role="button" data-bs-toggle="dropdown"
-                       aria-expanded="false">
-                        หมวดหมู่หลัก
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategory">
-                        {% for category in categories %}
-                        <li>
-                            <a class="dropdown-item" href="{% url 'assets:filter_by_category_asset' category.id %}">
-                                {{ category.name_cate }}
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            </ul>
-
-            {% if selected_category %}
-            <ul class="navbar-nav mb-2 mb-lg-0">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategorySub" role="button" data-bs-toggle="dropdown"
-                       aria-expanded="false">
-                        หมวดหมู่ย่อย
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategorySub">
-                        {% for subcategory in subcategories %}
-                        <li>
-                            <a class="dropdown-item" href="{% url 'assets:filter_by_category_asset' selected_category.id subcategory.id %}">
-                                {{ subcategory.name_sub }}
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            </ul>
-            {% endif %}
-        </div>
-    </nav> -->

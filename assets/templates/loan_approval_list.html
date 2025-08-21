@@ -1,0 +1,83 @@
+{% extends "base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>รายการรออนุมัติการยืม/คืน</h3>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>วันที่ยืม</th>
+                    <th>ครุภัณฑ์</th>
+                    <th>รหัสครุภัณฑ์</th>
+                    <th>ผู้ยืม</th>
+                    <th>กำหนดคืน</th>
+                    <th>สถานะ</th>
+                    <th>การทำงาน</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in page_obj %}
+                <tr>
+                    <td>{{ loan.loan_date }}</td>
+                    <td>{{ loan.asset.item_name }}</td>
+                    <td>SP-{{ loan.asset.asset_code }}</td>
+                    <td>{{ loan.user.username }}</td>
+                    <td>{{ loan.date_due }}</td>
+                    <td>
+                        {% if loan.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">รออนุมัติ</span>
+                        {% elif loan.status == 'approved' %}
+                            <span class="badge bg-success">อนุมัติแล้ว</span>
+                        {% elif loan.status == 'borrowed' %}
+                            <span class="badge bg-primary">กำลังยืม</span>
+                        {% elif loan.status == 'returned_pending' %}
+                            <span class="badge bg-info text-dark">รออนุมัติการคืน</span>
+                        {% elif loan.status == 'returned' %}
+                            <span class="badge bg-secondary">คืนแล้ว</span>
+                        {% elif loan.status == 'rejected' %}
+                            <span class="badge bg-danger">ปฏิเสธ</span>
+                        {% elif loan.status == 'overdue' %}
+                            <span class="badge bg-danger">เกินกำหนด</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if loan.status == 'pending' %}
+                            <a href="{% url 'assets:loan_approval' loan.id %}" class="btn btn-sm btn-success">อนุมัติการยืม</a>
+                        {% elif loan.status == 'returned_pending' %}
+                            <a href="{% url 'assets:approve_return' loan.id %}" class="btn btn-sm btn-primary">อนุมัติการคืน</a>
+                        {% else %}
+                            <span class="text-muted">ไม่มี</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">ไม่มีรายการที่ต้องอนุมัติ</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">ก่อนหน้า</a>
+            </li>
+            {% endif %}
+            <li class="page-item disabled"><a class="page-link">หน้า {{ page_obj.number }} จาก {{ page_obj.paginator.num_pages }}</a></li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">ถัดไป</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

@@ -19,6 +19,7 @@
                     <h5 class="card-title">{{ asset.item_name }}</h5>
                     <p class="card-text"><strong>รหัสครุภัณฑ์:</strong> SP-{{ asset.asset_code }}</p>
                     <p class="card-text"><strong>หมวดหมู่:</strong> {{ asset.subcategory }}</p>
+                    <p class="card-text"><strong>หมวดหมู่ย่อย:</strong> {{ asset.subcategory.category.name_cate }}</p>
                     <p class="card-text"><strong>สถานที่จัดเก็บ:</strong> {{ asset.storage_location }}</p>
                     <p class="card-text"><strong>สถานะการใช้งาน:</strong> 
                         <span class="badge 

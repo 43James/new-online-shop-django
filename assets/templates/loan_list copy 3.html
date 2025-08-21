@@ -1,0 +1,327 @@
+{% extends "base_sidebar.html" %}
+{% block content %}
+
+<body class="home-page">
+  <style>
+    #watermark p {
+      position: absolute;
+      color: rgb(255, 0, 0);
+      font-size: 30px;
+      top: 30%;
+      font-weight: bold;
+      width: 100%;
+      pointer-events: none;
+      -webkit-transform: rotate(-20deg);
+      -moz-transform: rotate(-45deg);
+      text-shadow: 2px 2px 4px rgba(255, 255, 0, 0.904);
+    }
+  </style>
+
+  {% if messages %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var orderModal = new bootstrap.Modal(document.getElementById('orderConfirmationModal'));
+      orderModal.show();
+    });
+  </script>
+  {% endif %}
+
+  {% if request.user.is_authenticated %}
+  <!-- <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategory" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            หมวดหมู่หลัก
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategory">
+            {% for category in categories %}
+            <li>
+              <a class="dropdown-item" href="{% url 'assets:loan-list' %}?category={{ category.id }}">
+                {{ category.name_cate }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+      </ul>
+
+      {% if selected_category %}
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategorySub" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            หมวดหมู่ย่อย
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategorySub">
+            {% for subcategory in subcategories %}
+            <li>
+              <a class="dropdown-item"
+                href="{% url 'assets:loan-list' %}?category={{ selected_category.id }}&subcategory={{ subcategory.id }}">
+                {{ subcategory.name_sub }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+      </ul>
+      {% endif %}
+    </div>
+  </nav> -->
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+
+      <!-- หมวดหมู่หลัก -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategory" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            หมวดหมู่หลัก
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategory">
+            {% for category in categories %}
+            <li>
+              <a class="dropdown-item" href="{% url 'assets:loan-list' %}?category={{ category.id }}">
+                {{ category.name_cate }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+      </ul>
+
+      <!-- หมวดหมู่ย่อย -->
+      {% if selected_category %}
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategorySub" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            หมวดหมู่ย่อย
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategorySub">
+            {% for subcategory in subcategories %}
+            <li>
+              <a class="dropdown-item"
+                href="{% url 'assets:loan-list' %}?category={{ selected_category.id }}&subcategory={{ subcategory.id }}">
+                {{ subcategory.name_sub }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+      </ul>
+      {% endif %}
+
+      <!-- ปุ่มตะกร้า -->
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a href="#" class="nav-link position-relative" data-bs-toggle="modal" data-bs-target="#cartModal">
+            <i class="bi bi-cart3 fs-5"></i>
+            {% if request.session.cart %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              {{ request.session.cart|length }}
+            </span>
+            {% endif %}
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="text-primary mt-3">
+    {% if selected_category %}
+    <h5>หมวดหมู่ที่เลือก: <i>{{ selected_category.name_cate }}</i></h5>
+    {% endif %}
+    {% if selected_subcategory %}
+    <h6>หมวดหมู่ย่อยที่เลือก: <i>{{ selected_subcategory.name_sub }}</i></h6>
+    {% endif %}
+  </div>
+
+  {% if asset_items %}
+  <div class="d-flex flex-wrap">
+    {% for assetitem in asset_items %}
+    <div class="card me-3 mb-3 mt-4" style="width: 11rem; margin-left: 20px;">
+
+      {% if assetitem.status_assetloan %}
+      <div id="watermark">
+        <a href="#" data-bs-toggle="modal" data-bs-target="#assetModal{{ assetitem.id }}">
+          {% if assetitem.asset_image %}
+          <img class="card-img mt-2" width="134" height="150" style="object-fit: cover; opacity: 0.5;"
+            src="{{ assetitem.asset_image.url }}">
+          {% else %}
+          <img class="card-img mt-2" width="134" height="150" style="object-fit: cover; opacity: 0.5;"
+            src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+          {% endif %}
+        </a>
+        <p class="text-center text-danger mt-1">ไม่ว่าง</p>
+      </div>
+      {% else %}
+      <a href="#" data-bs-toggle="modal" data-bs-target="#assetModal{{ assetitem.id }}">
+        {% if assetitem.asset_image %}
+        <img class="card-img mt-2" width="134" height="150" style="object-fit: cover;"
+          src="{{ assetitem.asset_image.url }}">
+        {% else %}
+        <img class="card-img mt-2" width="134" height="150" style="object-fit: cover;"
+          src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+        {% endif %}
+      </a>
+      {% endif %}
+
+      <div class="mt-3 text-center">
+        <h6 class="card-title element">{{ assetitem.item_name }}</h6>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="assetModal{{ assetitem.id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ assetitem.item_name }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-5">
+                {% if assetitem.asset_image %}
+                <img src="{{ assetitem.asset_image.url }}" class="img-fluid rounded">
+                {% else %}
+                <img src="https://img2.pic.in.th/pic/no-pict.png" class="img-fluid rounded">
+                {% endif %}
+              </div>
+              <div class="col-md-7">
+                <p><strong>ชื่อครุภัณฑ์:</strong> {{ assetitem.item_name }}</p>
+                <p><strong>หมวดหมู่:</strong> {{ assetitem.subcategory.category.name_cate }}</p>
+                {% if assetitem.subcategory %}
+                <p><strong>หมวดหมู่ย่อย:</strong> {{ assetitem.subcategory.name_sub }}</p>
+                {% endif %}
+                <p><strong>สถานะ:</strong>
+                  {% if assetitem.status_assetloan %}
+                  <span class="text-danger">ไม่ว่าง</span>
+                  {% else %}
+                  <span class="text-success">พร้อมใช้งาน</span>
+                  {% endif %}
+                </p>
+                <a href="{% url 'assets:add-to-cart' assetitem.id %}" class="btn btn-success">
+                  เพิ่มลงตะกร้า
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% endfor %}
+  </div>
+
+  <nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center mt-2 mb-2">
+      {% if asset_items.has_previous %}
+      <li class="page-item">
+        <a class="page-link"
+          href="?page=1{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">หน้าแรก</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link"
+          href="?page={{ asset_items.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">ก่อนหน้า</a>
+      </li>
+      {% endif %}
+
+      {% for i in asset_items.paginator.page_range %}
+      {% if asset_items.number == i %}
+      <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+      {% elif i > asset_items.number|add:'-2' and i < asset_items.number|add:'2' %} <li class="page-item"><a
+          class="page-link"
+          href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">{{
+          i }}</a></li>
+        {% endif %}
+        {% endfor %}
+
+        {% if asset_items.has_next %}
+        <li class="page-item">
+          <a class="page-link"
+            href="?page={{ asset_items.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">ถัดไป</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link"
+            href="?page={{ asset_items.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.id }}{% endif %}">หน้าสุดท้าย</a>
+        </li>
+        {% endif %}
+    </ul>
+  </nav>
+
+  {% else %}
+  <div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 mt-5 pt-5 text-center">
+      <h3 class="text-muted">ไม่มีรายการครุภัณฑ์!</h3>
+    </div>
+    <div class="col-md-2"></div>
+  </div>
+  {% endif %}
+
+  <!-- Cart Modal -->
+<!-- <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="cartModalLabel">ตะกร้าครุภัณฑ์</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% if request.session.cart %}
+          {% with assets=assets_in_cart %}
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>รูปภาพ</th>
+                <th>ชื่อครุภัณฑ์</th>
+                <th>รหัส</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for asset in assets %}
+              <tr>
+                <td>
+                  {% if asset.asset_image %}
+                  <img src="{{ asset.asset_image.url }}" width="60" height="60" style="object-fit: cover;">
+                  {% else %}
+                  ไม่มีรูป
+                  {% endif %}
+                </td>
+                <td>{{ asset.item_name }}</td>
+                <td>SP-{{ asset.asset_code }}</td>
+                <td>
+                  <a href="{% url 'assets:remove_from_cart' asset.id %}" class="btn btn-sm btn-danger">ลบ</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endwith %}
+        {% else %}
+          <p class="text-muted">ยังไม่มีครุภัณฑ์ในตะกร้า</p>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <a href="{% url 'assets:confirm_loan' %}" class="btn btn-primary">ส่งคำขอยืม</a>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+</body>
+
+<style>
+  .page-link.current-page {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+  }
+</style>
+{% endif %}
+{% endblock %}
