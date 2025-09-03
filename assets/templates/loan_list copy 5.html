@@ -1,0 +1,246 @@
+{% extends "base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+
+<meta name="csrf-token" content="{{ csrf_token }}">
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>รายการครุภัณฑ์ที่ยืมได้</h3>
+
+    <a href="#" class="nav-link position-relative" data-bs-toggle="modal" data-bs-target="#cartModal">
+      <i class="bi bi-cart3 fs-4"></i>
+      {% if cart_count > 0 %}
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        {{ cart_count }}
+      </span>
+      {% endif %}
+    </a>
+  </div>
+
+  <!-- ฟอร์มค้นหา -->
+  <form method="get" class="row g-2 mb-4">
+    <div class="col-md-4"><input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อครุภัณฑ์..." value="{{ query }}"></div>
+    <div class="col-md-3">
+      <select name="category" class="form-select">
+        <option value="">-- เลือกหมวดหลัก --</option>
+        {% for category in categories %}
+          <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+            {{ category.name_cate }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="subcategory" class="form-select">
+        <option value="">-- เลือกหมวดย่อย --</option>
+        {% for subcategory in subcategories %}
+          <option value="{{ subcategory.id }}" {% if selected_subcategory and selected_subcategory.id == subcategory.id %}selected{% endif %}>
+            {{ subcategory.name_sub }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">ค้นหา</button></div>
+  </form>
+
+  <!-- ตารางครุภัณฑ์ -->
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>รูป</th><th>ชื่อ</th><th>รหัส</th><th>หมวด</th><th>หมวดย่อย</th><th>การทำงาน</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for asset in asset_items %}
+        <tr>
+          <td>{% if asset.asset_image %}<img src="{{ asset.asset_image.url }}" style="width:50px;height:50px;object-fit:cover">{% else %}ไม่มีรูป{% endif %}</td>
+          <td>{{ asset.item_name }}</td>
+          <td>SP-{{ asset.asset_code }}</td>
+          <td>{% if asset.subcategory and asset.subcategory.category %}{{ asset.subcategory.category.name_cate }}{% endif %}</td>
+          <td>{% if asset.subcategory %}{{ asset.subcategory.name_sub }}{% endif %}</td>
+          <td>
+            {% if asset.status_assetloan %}
+              <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
+            {% else %}
+              <a href="" class="btn btn-sm btn-success add-to-cart-btn" data-id="{{ asset.id }}">เพิ่มในตะกร้า</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center">ไม่พบข้อมูล</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- pagination -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      {% if asset_items.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ asset_items.previous_page_number }}&q={{ query }}&category={{ selected_category.id|default:'' }}&subcategory={{ selected_subcategory.id|default:'' }}">ก่อนหน้า</a>
+      </li>{% endif %}
+      <li class="page-item disabled"><a class="page-link">หน้า {{ asset_items.number }} จาก {{ asset_items.paginator.num_pages }}</a></li>
+      {% if asset_items.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ asset_items.next_page_number }}&q={{ query }}&category={{ selected_category.id|default:'' }}&subcategory={{ selected_subcategory.id|default:'' }}">ถัดไป</a>
+      </li>{% endif %}
+    </ul>
+  </nav>
+</div>
+
+<!-- Modal ตะกร้า -->
+<div class="modal fade" id="cartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">ตะกร้าครุภัณฑ์</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+          {% for asset in assets_in_cart %}
+          <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ asset.id }}">
+            {{ asset.item_name }} (SP-{{ asset.asset_code }})
+            <a href="" class="btn btn-sm btn-danger remove-from-cart-btn" data-id="{{ asset.id }}">ลบ</a>
+          </li>
+          {% empty %}
+          <p class="text-center">ไม่มีครุภัณฑ์</p>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <form action="{% url 'assets:confirm_loan' %}" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary" {% if cart_count == 0 %}disabled{% endif %}>ยืนยันการยืม</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+      const badge = document.querySelector(".badge");
+      
+      // ตรวจสอบสถานะครุภัณฑ์ในตะกร้าเมื่อโหลดหน้าครั้งแรก
+      const cartItems = document.querySelectorAll('#cartModal .list-group-item');
+      const inCartIds = new Set();
+      cartItems.forEach(item => {
+          inCartIds.add(item.dataset.id);
+      });
+  
+      document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
+          const assetId = btn.dataset.id;
+          if (inCartIds.has(assetId)) {
+              // หากอยู่ในตะกร้าแล้ว ให้เปลี่ยนสถานะปุ่มทันที
+              btn.disabled = true;
+              btn.classList.remove('btn-success');
+              btn.classList.add('btn-secondary');
+              btn.textContent = 'เพิ่มแล้ว';
+          }
+  
+          btn.addEventListener("click", function() {
+              const btnClicked = this;
+              fetch("{% url 'assets:add_to_cart_ajax' %}", {
+                  method: "POST",
+                  headers: {
+                      "X-CSRFToken": csrfToken,
+                      "Content-Type": "application/x-www-form-urlencoded"
+                  },
+                  body: `asset_id=${assetId}`
+              }).then(res => res.json()).then(data => {
+                  if (data.success) {
+                      alert("เพิ่มครุภัณฑ์ลงตะกร้าเรียบร้อยแล้ว");
+  
+                      // อัปเดตตัวเลขบน badge
+                      if (badge) {
+                          badge.textContent = data.cart_count;
+                      }
+  
+                      // เพิ่มรายการใน modal
+                      const ul = document.querySelector("#cartModal .list-group");
+                      const li = document.createElement("li");
+                      li.className = "list-group-item d-flex justify-content-between align-items-center";
+                      li.dataset.id = data.asset_id;
+                      li.innerHTML = `${data.asset_name} (SP-${data.asset_code}) <a href="javascript:void(0)" class="btn btn-sm btn-danger remove-from-cart-btn" data-id="${data.asset_id}">ลบ</a>`;
+                      ul.appendChild(li);
+  
+                      // เพิ่ม event listener ให้ปุ่ม "ลบ" ใหม่
+                      li.querySelector(".remove-from-cart-btn").addEventListener("click", removeHandler);
+  
+                      // ปิดการใช้งานปุ่ม "เพิ่มในตะกร้า"
+                      btnClicked.disabled = true;
+                      btnClicked.classList.remove('btn-success');
+                      btnClicked.classList.add('btn-secondary');
+                      btnClicked.textContent = 'เพิ่มแล้ว';
+  
+                      // เปิดใช้งานปุ่ม "ยืนยันการยืม" ใน Modal
+                      document.querySelector('#cartModal .modal-footer button[type="submit"]').disabled = false;
+                      
+                  } else {
+                      alert(data.message);
+                  }
+              });
+          });
+      });
+  
+      // ลบออกจากตะกร้า
+      function removeHandler() {
+          const assetId = this.dataset.id;
+          const btn = this;
+          fetch("{% url 'assets:remove_from_cart_ajax' %}", {
+              method: "POST",
+              headers: {
+                  "X-CSRFToken": csrfToken,
+                  "Content-Type": "application/x-www-form-urlencoded"
+              },
+              body: `asset_id=${assetId}`
+          }).then(res => res.json()).then(data => {
+              if (data.success) {
+                  updateBadge(data.cart_count);
+                  btn.closest("li").remove();
+                  
+                  // ค้นหาปุ่ม "เพิ่มในตะกร้า" ที่เกี่ยวข้องและเปิดใช้งานใหม่
+                  const originalBtn = document.querySelector(`.add-to-cart-btn[data-id="${assetId}"]`);
+                  if (originalBtn) {
+                      originalBtn.disabled = false;
+                      originalBtn.classList.remove('btn-secondary');
+                      originalBtn.classList.add('btn-success');
+                      originalBtn.textContent = 'เพิ่มในตะกร้า';
+                  }
+  
+                  // ปิดการใช้งานปุ่ม "ยืนยันการยืม" หากตะกร้าว่าง
+                  if (data.cart_count === 0) {
+                       document.querySelector('#cartModal .modal-footer button[type="submit"]').disabled = true;
+                  }
+              } else {
+                  alert(data.message);
+              }
+          });
+      }
+      
+      // กำหนด event listener สำหรับปุ่มลบที่มีอยู่แล้วใน Modal เมื่อโหลดหน้า
+      document.querySelectorAll(".remove-from-cart-btn").forEach(btn => {
+          btn.addEventListener("click", removeHandler);
+      });
+  
+      // ฟังก์ชันอัปเดตตัวเลขบน badge
+      function updateBadge(count) {
+          if (badge) {
+              badge.textContent = count;
+              if (count > 0) {
+                   badge.style.display = 'block';
+              } else {
+                   badge.style.display = 'none';
+              }
+          }
+      }
+  });
+  </script>
+
+{% endblock %}

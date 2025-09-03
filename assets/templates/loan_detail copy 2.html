@@ -1,0 +1,223 @@
+{% extends "base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+
+
+
+<div class="container mt-4">
+    <div id="print-area" class="card p-4 shadow-sm">
+        <div class="row mb-4 align-items-center">
+            <div class="col-3">
+                <img src="{% static 'app_general/logo.png' %}" alt="Logo" class="img-fluid" style="max-height: 80px;">
+            </div>
+            <div class="col-6 text-center">
+                <h4 class="fw-bold mb-0">ใบขอยืมอุปกรณ์</h4>
+                <p class="mb-0">อุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี</p>
+                <p class="mb-0">(Ubon Ratchathani University Science Park)</p>
+            </div>
+            <div class="col-3 text-end">
+                <p class="mb-0">หมายเลขเอกสาร SP-SPO {{ loan.id }}</p>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    {% comment %} <label class="form-label">ชื่อ นาย / นาง / นางสาว</label> {% endcomment %}
+                    <div class="form-control-plaintext border-bottom">ชื่อ {{ loan.user.first_name }} {{ loan.user.last_name }}</div>
+                </div>
+                <div class="col-md-6">
+                    {% comment %} <label class="form-label">ที่ทำงาน</label> {% endcomment %}
+                    <div class="form-control-plaintext border-bottom">ที่ทำงาน โครงการอุทยานวิทยาศาสตร์</div>
+                </div>
+                <div class="col-12">
+                    {% comment %} <label class="form-label">โครงการ/ธุรกิจ</label> {% endcomment %}
+                    <div class="form-control-plaintext border-bottom">ตำแหน่ง {{ loan.user.profile.position }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <p class="mt-3">ความประสงค์จะขอยืมอุปกรณ์รายการดังต่อไปนี้</p>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center" style="width: 5%;">ลำดับ</th>
+                        <th>รายการ</th>
+                        <th class="text-center" style="width: 15%;">จำนวน</th>
+                        <th style="width: 30%;">หมายเหตุ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in loan.items.all %}
+                    <tr>
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ item.asset.item_name }} ({{ item.asset.asset_code }})</td>
+                        <td class="text-center">1 {{ item.asset.unit }}</td>
+                        <td>{{ item.asset.notes }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">ไม่มีรายการครุภัณฑ์ในใบยืมนี้</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <p class="fw-bold">ต้องการสิ่งของในวันที่:</p>
+                <p class="border-bottom p-2">{{ loan.date_of_use|date:"d M Y"|default:"-" }}</p>
+            </div>
+            <div class="col-md-6">
+                <p class="fw-bold">จะส่งคืนในวันที่:</p>
+                <p class="border-bottom p-2">{{ loan.date_due|date:"d M Y"|default:"-" }}</p>
+            </div>
+        </div>
+
+        <p class="mt-3 text-muted">
+            ในบางกรณีที่สิ่งของที่นำมาใช้คืนเกิดชำรุดเสียหาย หรือใช้การไม่ได้ หรือสูญหาย ข้าพเจ้ายินดีชดใช้ให้คงสภาพเดิม โดยเสียค่าใช้จ่ายของตนเอง หรือชดใช้เป็นเงินสด หรือครุภัณฑ์ ประเภท ชนิด ขนาด ลักษณะและคุณภาพอย่างเดียวกัน หรือชดใช้เป็นเงินตามราคาที่ได้มา
+        </p>
+
+        <div class="row justify-content-end text-center mt-4">
+            <div class="col-md-4">
+                <p class="mb-2">ลงชื่อ {{ loan.user.first_name }} ผู้ยืม</p>
+                <p class="mb-1">( {{ loan.user.first_name }} {{ loan.user.last_name }} )</p>
+                <p>วันที่ {{ loan.date_created|date:"d M Y" }}</p>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="row mt-4">
+            <div class="col-md-6 border-end">
+                <h5 class="mb-3">บันทึกการยืม</h5>
+                <div class="mb-3">
+                    <p class="fw-bold">สำหรับเจ้าหน้าที่</p>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" {% if loan.status == 'approved' or loan.status == 'borrowed' or loan.status == 'returned' or loan.status == 'overdue' %}checked{% endif %} disabled>
+                        <label class="form-check-label">สามารถให้ยืมได้</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" {% if loan.status == 'rejected' %}checked{% endif %} disabled>
+                        <label class="form-check-label">ไม่สามารถให้ยืมได้ เนื่องจาก {{ loan.note }} <span class="border-bottom"></span></label>
+                    </div>
+                </div>
+                <div class="text-center mt-5">
+                    <p class="mb-3">ลงชื่อ {{ loan.get_approver_first_name|default:"-" }} </p>
+                    <p class="mb-1">( {{ loan.approved_by|default:"-" }} )</p>
+                    <p class="mb-1">ตำแหน่ง {{ loan.profile.approver_position|default:"-" }}</p>
+                    <p>วันที่ {{ loan.date_approved|date:"d M Y"|default:"-" }}</p>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h5 class="mb-3">สำหรับผู้ยืม</h5>
+                <p class="fw-bold">ข้าพเจ้าได้รับของตามรายการข้างต้นแล้ว</p>
+                <div class="text-center mt-5">
+                    <p class="mb-3">ลงชื่อ {{ loan.user.first_name|default:"-" }}</p>
+                    <p class="mb-1">( {{ loan.user.first_name|default:"-" }} {{ loan.user.last_name|default:"-" }} )</p>
+                    <p class="mb-1">ตำแหน่ง {{ loan.user.profile.position|default:"-" }}</p>
+                    <p>วันที่ {{ loan.date_approved|date:"d M Y"|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+
+        <div class="row mt-4">
+            <div class="col-md-6 border-end">
+                <h5 class="mb-3">บันทึกการส่งคืน</h5>
+                <div class="mb-3">
+                    <p class="fw-bold">สำหรับเจ้าหน้าที่</p>
+                    <p>ได้รับสิ่งของคืนครบถ้วน</p>
+                    <p class="border-bottom p-2">{{ loan.receiver_note|default:"-" }}</p>
+                </div>
+                <div class="text-center mt-5">
+                    <p class="mb-4">ลงชื่อ.........................................</p>
+                    <p class="mb-1">( {{ loan.received_by|default:"-" }} )</p>
+                    <p class="mb-1">ตำแหน่ง {{ loan.receiver_position|default:"-" }}</p>
+                    <p>วันที่ {{ loan.date_received|date:"d M Y"|default:"-" }}</p>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h5 class="mb-3">บันทึกสถานะการใช้งาน</h5>
+                <p class="fw-bold">รายละเอียดการใช้งาน</p>
+                <p class="border-bottom p-2">{{ loan.note|default:"-" }}</p>
+                <div class="text-center mt-5">
+                    <p class="mb-4">ลงชื่อ.........................................</p>
+                    <p class="mb-1">( {{ loan.returned_by|default:"-" }} )</p>
+                    <p class="mb-1">ตำแหน่ง {{ loan.user.profile.position|default:"-" }}</p>
+                    <p>วันที่ {{ loan.date_returned|date:"d M Y"|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4 d-print-none">
+        <button class="btn btn-primary" onclick="printContent('print-area')">
+            <i class="bi bi-printer-fill"></i> พิมพ์ใบยืม
+        </button>
+        <a href="{% url 'assets:loan_approval_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> กลับ
+        </a>
+    </div>
+</div>
+{% block extra_js %}
+<script>
+function printContent(elementId) {
+    var printContents = document.getElementById(elementId).innerHTML;
+    var printWindow = window.open('', '_blank', 'height=600,width=800');
+
+    printWindow.document.open();
+    printWindow.document.write('<!DOCTYPE html>');
+    printWindow.document.write('<html>');
+    printWindow.document.write('<head>');
+    printWindow.document.write('<title>ใบขอยืมอุปกรณ์</title>');
+    
+    // โหลด Bootstrap CSS จาก CDN
+    printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">');
+    
+    // โหลด Bootstrap Icons จาก CDN
+    printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">');
+
+    // โหลด Font Sarabun จาก Google Fonts
+    printWindow.document.write('<link rel="preconnect" href="https://fonts.googleapis.com">');
+    printWindow.document.write('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
+    printWindow.document.write('<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">');
+    
+    // CSS สำหรับการพิมพ์โดยเฉพาะ
+    printWindow.document.write('<style>');
+    printWindow.document.write('@media print {');
+    printWindow.document.write('    body { margin: 0; padding: 0; font-family: "Sarabun", sans-serif !important; }');
+    printWindow.document.write('    .container { width: 100% !important; max-width: none !important; margin: 0; padding: 0; }');
+    printWindow.document.write('    .card { border: none !important; box-shadow: none !important; padding: 15px !important; }');
+    printWindow.document.write('    .row, .col-3, .col-6, .col-md-6, .col-12 { display: block; width: 100%; flex: none; }');
+    printWindow.document.write('    .col-3 { width: 25% !important; float: left; }');
+    printWindow.document.write('    .col-6 { width: 50% !important; float: left; }');
+    printWindow.document.write('    .col-md-6 { width: 50% !important; float: left; }');
+    printWindow.document.write('    hr { border-color: black !important; -webkit-print-color-adjust: exact; }');
+    printWindow.document.write('    .border-bottom { border-color: black !important; -webkit-print-color-adjust: exact; }');
+    printWindow.document.write('}');
+    printWindow.document.write('</style>');
+
+    printWindow.document.write('</head>');
+    printWindow.document.write('<body>');
+    printWindow.document.write(printContents);
+    printWindow.document.write('</body>');
+    printWindow.document.write('</html>');
+    printWindow.document.close();
+
+    printWindow.onload = function() {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    };
+}
+</script>
+{% endblock %}
+{% endblock %}
+

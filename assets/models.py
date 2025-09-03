@@ -162,7 +162,7 @@ class AssetItem(models.Model):
     # category = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='Subcategory', null=True, blank=True, verbose_name='หมวดหมู่')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='asset_items', null=True, blank=True, verbose_name='หมวดหมู่')
     asset_code = models.ForeignKey(AssetCode, on_delete=models.CASCADE, verbose_name="รหัสครุภัณฑ์")
-    quantity = models.IntegerField(verbose_name="จำนวน")
+    # quantity = models.IntegerField(verbose_name="จำนวน")
     unit = models.CharField(max_length=50, verbose_name="หน่วยนับ")
     purchase_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="ราคาที่ซื้อ")
     date_asset_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มข้อมูล')
@@ -259,10 +259,9 @@ class AssetCheck(models.Model):
         self.year = self.check_date.year
         super().save(*args, **kwargs)
 
-
-# การยืมและคืนครุภัณฑ์
-class AssetLoan(models.Model):
-    STATUS_CHOICES = [
+# ออเดอร์การยืมครุภัณฑ์
+class OrderAssetLoan(models.Model):
+    STATUS_CHOICES_LOAN = [
         ('pending', 'รออนุมัติ'),
         ('approved', 'อนุมัติแล้ว'),
         ('rejected', 'ปฏิเสธ'),
@@ -272,27 +271,154 @@ class AssetLoan(models.Model):
         ('overdue', 'เกินกำหนด'),
     ]
 
-    asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์ที่ยืม")
-    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name="ผู้ยืม")
-    loan_date = models.DateField(auto_now_add=True, verbose_name="วันที่ยืม")
-    date_of_use = models.DateField(blank=True, null=True, verbose_name="วันที่ใช้")
-    date_of_return = models.DateField(blank=True, null=True, verbose_name="วันที่คืน")
-    date_due = models.DateField(verbose_name="กำหนดคืน")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="สถานะ")
-    date_received = models.DateTimeField(blank=True, null=True, verbose_name='วันที่รับ')
-    confirm = models.BooleanField(default=False, verbose_name="ยืนยันรับครุภัณฑ์")
-    remarks = models.TextField(blank=True, null=True, verbose_name="หมายเหตุ")
+    STATUS_CHOICES_RETURN = [
+        ('damaged', 'ชำรุด'),
+        ('not_damaged', 'ไม่มีรายการชำรุด'),
+    ]
+
+    # ข้อมูลทั่วไป
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name='asset_loans', verbose_name='ผู้ยืมครุภัณฑ์')
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่สร้างออเดอร์')
+    date_of_use = models.DateTimeField(blank=True, null=True, verbose_name="วันที่ใช้")
+    date_due = models.DateTimeField(verbose_name="กำหนดคืน")
+    date_of_return = models.DateTimeField(blank=True, null=True, verbose_name="วันที่คืนจริง")
+    date_updated = models.DateTimeField(auto_now=True, verbose_name='อัพเดทล่าสุด')
+
+    # สถานะออเดอร์
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES_LOAN, default='pending', verbose_name="สถานะการยืม")
+    note = models.TextField(blank=True, null=True, verbose_name='หมายเหตุ')
+
+    # ฝั่งเจ้าหน้าที่อนุมัติ
+    approved_by = models.CharField(max_length=100, blank=True, null=True, verbose_name='ชื่อเจ้าหน้าที่อนุมัติ')
+    approver_position = models.CharField(max_length=100, blank=True, null=True, verbose_name='ตำแหน่งเจ้าหน้าที่อนุมัติ')
+    date_approved = models.DateTimeField(blank=True, null=True, verbose_name="วันที่อนุมัติ")
+
+    # ฝั่งผู้ยืมส่งคืน
+    returned_by = models.CharField(max_length=100, blank=True, null=True, verbose_name='ชื่อผู้คืนครุภัณฑ์')
+    date_returned = models.DateTimeField(blank=True, null=True, verbose_name="วันที่คืน")
+
+    # ฝั่งเจ้าหน้าที่รับคืน
+    status_return = models.CharField(max_length=20, choices=STATUS_CHOICES_RETURN, default='not_damaged', verbose_name="สถานะการคืน")
+    received_by = models.CharField(max_length=100, blank=True, null=True, verbose_name='ชื่อเจ้าหน้าที่รับคืน')
+    receiver_position = models.CharField(max_length=100, blank=True, null=True, verbose_name='ตำแหน่งเจ้าหน้าที่รับคืน')
+    confirm_received = models.BooleanField(default=False, verbose_name="ยืนยันการรับคืน")
+    receiver_note = models.TextField(blank=True, null=True, verbose_name='ความคิดเห็นเจ้าหน้าที่รับคืน')
+    date_received = models.DateTimeField(blank=True, null=True, verbose_name="วันที่บันทึกรับคืน")
+
+    # สำหรับสรุปรายเดือน/รายปี
+    month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
+    year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
+
+    class Meta:
+        ordering = ('-id',)
 
     def __str__(self):
-        return f"{self.asset.item_name} - {self.user.username} - {self.status}"
+        return f"Order #{self.id} - {self.user}"
+
+    @property
+    def get_pending_approval_count(self):
+        """นับจำนวนออเดอร์ที่ยังรออนุมัติ"""
+        return OrderAssetLoan.objects.filter(status='pending').count()
+
+    @property
+    def get_total_assets(self):
+        """นับจำนวนครุภัณฑ์ทั้งหมดในออเดอร์"""
+        return self.items.count()
+    
+    @property
+    def get_approver_first_name(self):
+        if self.approved_by:
+            return self.approved_by.split(' ')[1]
+        return None
+
+    @property
+    def get_approver_last_name(self):
+        if self.approved_by and ' ' in self.approved_by:
+            return self.approved_by.split(' ')[2]
+        return None
+    
+    @property
+    def get_received_by_first_name(self):
+        if self.received_by:
+            return self.received_by.split(' ')[1]
+        return None
+
+    @property
+    def get_returned_by_first_name(self):
+        if self.returned_by:
+            return self.returned_by.split(' ')[1]
+        return None
 
     def save(self, *args, **kwargs):
-        # ตรวจสอบว่าวันที่คืนเกินกำหนดหรือไม่
-        if self.date_of_return and self.date_of_return > self.date_due:
-            self.status = 'overdue'
-        elif self.date_of_return:
-            self.status = 'returned'
+        # เซ็ตเดือน/ปีตอนสร้าง
+        if not self.id:
+            now = timezone.now()
+            self.month = now.month
+            self.year = now.year
+
+        # ตรวจสอบสถานะเมื่อมีการคืน
+        if self.date_of_return:
+            if self.date_of_return > self.date_due:
+                self.status = 'overdue'
+            else:
+                self.status = 'returned'
+
         super().save(*args, **kwargs)
+
+
+# รายการครุภัณฑ์ที่ผูกกับออเดอร์
+class IssuingAssetLoan(models.Model):
+    order_asset = models.ForeignKey(OrderAssetLoan, on_delete=models.CASCADE, related_name='items', verbose_name='ออเดอร์')
+    asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, related_name='issued_loans', verbose_name="ครุภัณฑ์ที่ยืม")
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
+    month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
+    year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
+
+    def __str__(self):
+        return f"Issue #{self.id} - {self.asset}"
+
+    def save(self, *args, **kwargs):
+        if not self.id:  # ถ้าเพิ่งสร้างใหม่
+            now = timezone.now()
+            self.month = now.month
+            self.year = now.year
+        super().save(*args, **kwargs)
+
+
+
+
+# # การยืมและคืนครุภัณฑ์
+# class AssetLoan(models.Model):
+#     STATUS_CHOICES = [
+#         ('pending', 'รออนุมัติ'),
+#         ('approved', 'อนุมัติแล้ว'),
+#         ('rejected', 'ปฏิเสธ'),
+#         ('borrowed', 'กำลังยืม'),
+#         ('returned_pending', 'รออนุมัติการคืน'),
+#         ('returned', 'คืนแล้ว'),
+#         ('overdue', 'เกินกำหนด'),
+#     ]
+#     asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์ที่ยืม")
+#     user = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name="ผู้ยืม")
+#     loan_date = models.DateField(auto_now_add=True, verbose_name="วันที่ยืม")
+#     date_of_use = models.DateField(blank=True, null=True, verbose_name="วันที่ใช้")
+#     date_of_return = models.DateField(blank=True, null=True, verbose_name="วันที่คืน")
+#     date_due = models.DateField(verbose_name="กำหนดคืน")
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="สถานะ")
+#     date_received = models.DateTimeField(blank=True, null=True, verbose_name='วันที่รับ')
+#     confirm = models.BooleanField(default=False, verbose_name="ยืนยันรับครุภัณฑ์")
+#     remarks = models.TextField(blank=True, null=True, verbose_name="หมายเหตุ")
+
+#     def __str__(self):
+#         return f"{self.asset.item_name} - {self.user.username} - {self.status}"
+
+#     def save(self, *args, **kwargs):
+#         # ตรวจสอบว่าวันที่คืนเกินกำหนดหรือไม่
+#         if self.date_of_return and self.date_of_return > self.date_due:
+#             self.status = 'overdue'
+#         elif self.date_of_return:
+#             self.status = 'returned'
+#         super().save(*args, **kwargs)
 
 
 

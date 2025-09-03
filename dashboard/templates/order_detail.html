@@ -115,10 +115,10 @@
                 <p class="text-center text-success">วันที่อนุมัติ :&nbsp;&nbsp;วันที่ {{ order.date_approved |date:"d / m / Y" }} </p><br>
                 {% else %}
                 <p class="text-center text-danger"></p>
-            {% endif %}<br>
+            {% endif %}
         </div>
     </div>
-    <div class="text-center" style="margin-top: 20px;">
+    <div class="text-center" >
         {% if order.pay_item == True %}
             <p>ลงชื่อ {{ order.name_pay }} ผู้จ่ายวัสดุ</p>
         {% else %}

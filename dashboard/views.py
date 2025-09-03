@@ -527,34 +527,78 @@ def record_monthly_stock_view(request):
 
 
 @user_passes_test(is_authorized)
+# @login_required
+# # รายงงานจำนวนคงเหลือ ยกมา
+# def monthly_stock_records(request):
+#     now = datetime.now()
+
+#     # # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+#     # month = int(request.GET.get('month', now.month))
+#     # year_buddhist = int(request.GET.get('year', now.year + 543))
+
+#     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
+#     last_month = now.month if now.month > 1 else 12
+#     last_year = now.year if now.month > 1 else now.year - 1
+
+#     # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
+#     month = int(request.GET.get('month', last_month))
+#     year_buddhist = int(request.GET.get('year', last_year + 543))
+
+#     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+#     year_ad = year_buddhist - 543
+
+#     # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี
+#     records = MonthlyStockRecord.objects.filter(month=month, year=year_ad)
+
+#     # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี และเรียงตาม ID ของวัสดุ
+#     records = MonthlyStockRecord.objects.filter(month=month, year=year_ad).order_by('product__id')
+
+
+#     # กำหนดค่าให้กับตัวแปร context
+#     context = {
+#         'title': 'ข้อมูลวัสดุคงเหลือ (ยกมา)',
+#         'records': records,
+#         'selected_month': month,
+#         'selected_year': year_buddhist,
+#         'years': range(2023 + 543, datetime.now().year + 1 + 543),
+#         'months': [
+#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+#         ],
+#         'pending_orders_count': count_pending_orders(),
+#     }
+
+#     previous_month = month if month > 1 else 12
+#     previous_year = year_ad if month > 1 else year_ad - 1
+#     context['previous_month_name'] = thai_month_name(previous_month)
+#     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
+#     return render(request, 'monthly_stock_records.html', context)
+
 @login_required
-# รายงงานจำนวนคงเหลือ ยกมา
+# รายงรายงานจำนวนคงเหลือ ยกมา
 def monthly_stock_records(request):
     now = datetime.now()
 
-    # # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    # month = int(request.GET.get('month', now.month))
-    # year_buddhist = int(request.GET.get('year', now.year + 543))
+    # Determine the default month and year, which is the previous month
+    if now.month == 1:
+        default_month = 12
+        default_year_ad = now.year - 1
+    else:
+        default_month = now.month - 1
+        default_year_ad = now.year
 
-    # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-    last_month = now.month if now.month > 1 else 12
-    last_year = now.year if now.month > 1 else now.year - 1
+    # Get month and year from GET parameters, defaulting to the previous month
+    month = int(request.GET.get('month', default_month))
+    year_buddhist = int(request.GET.get('year', default_year_ad + 543))
 
-    # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-    month = int(request.GET.get('month', last_month))
-    year_buddhist = int(request.GET.get('year', last_year + 543))
-
-    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    # Convert Buddhist year to A.D. for database queries
     year_ad = year_buddhist - 543
 
-    # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี
-    records = MonthlyStockRecord.objects.filter(month=month, year=year_ad)
-
-    # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี และเรียงตาม ID ของวัสดุ
+    # Filter MonthlyStockRecord by the selected month and year, ordered by product ID
     records = MonthlyStockRecord.objects.filter(month=month, year=year_ad).order_by('product__id')
 
-
-    # กำหนดค่าให้กับตัวแปร context
+    # Prepare the context dictionary
     context = {
         'title': 'ข้อมูลวัสดุคงเหลือ (ยกมา)',
         'records': records,
@@ -568,12 +612,13 @@ def monthly_stock_records(request):
         ],
         'pending_orders_count': count_pending_orders(),
     }
-
+    # เพิ่มโค้ดส่วนนี้เข้าไปในฟังก์ชัน monthly_stock_records ที่อยู่ใน views.py
     previous_month = month if month > 1 else 12
-    previous_year = year_ad if month > 1 else year_ad - 1
+    previous_year_ad = year_ad if month > 1 else year_ad - 1
     context['previous_month_name'] = thai_month_name(previous_month)
-    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
+    context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year_ad)
     return render(request, 'monthly_stock_records.html', context)
+
 
 from dateutil.relativedelta import relativedelta
 @user_passes_test(is_authorized)

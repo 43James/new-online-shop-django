@@ -1,0 +1,107 @@
+{% extends "base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container col-4 mt-4">
+    <h3>ตะกร้าครุภัณฑ์</h3>
+    <hr>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <ul id="cart-list" class="list-group list-group-flush">
+                <!-- รายการครุภัณฑ์ในตะกร้าจะถูกโหลดด้วย JS -->
+            </ul>
+            <hr>
+            <h5>รวม <span id="cart-count">0</span> รายการ</h5>
+        </div>
+    </div>
+
+    <div class="card" id="checkout-card" style="display:none;">
+        <div class="card-body">
+            <h5 class="card-title">ยืนยันการยืม</h5>
+            <form id="checkout-form" action="{% url 'assets:confirm_loan' %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3 col-5">
+                    <label for="date_of_use" class="form-label">วันที่ใช้งาน</label>
+                    <input type="datetime-local" name="date_of_use" class="form-control" required>
+                </div>
+                <div class="mb-3 col-5">
+                    <label for="date_due" class="form-label">วันที่กำหนดคืน</label>
+                    <input type="datetime-local" name="date_due" class="form-control" required>
+                </div>
+                <!-- ส่งค่า id ของครุภัณฑ์ทั้งหมดในตะกร้า -->
+                <input type="hidden" name="asset_ids" id="asset-ids">
+                <button type="submit" class="btn btn-primary w-100">ยืนยันการยืม</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'assets:loan_list' %}" class="btn btn-outline-secondary">กลับไปที่รายการครุภัณฑ์</a>
+    </div>
+</div>
+
+<script>
+// ✅ โหลดตะกร้าจาก localStorage
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+// ✅ ข้อมูลครุภัณฑ์ทั้งหมด (ต้องส่งมาจาก view)
+const assetItems = [
+    {% for asset in asset_items %}
+    {
+        id: {{ asset.id }},
+        name: "{{ asset.item_name|escapejs }}",
+        code: "SP-{{ asset.asset_code }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+function renderCart(){
+    const list = document.getElementById('cart-list');
+    const count = document.getElementById('cart-count');
+    const checkoutCard = document.getElementById('checkout-card');
+    const hiddenInput = document.getElementById('asset-ids');
+
+    list.innerHTML = '';
+    let itemsInCart = assetItems.filter(a => cart.includes(a.id));
+
+    if(itemsInCart.length === 0){
+        list.innerHTML = `<li class="list-group-item text-muted text-center">ไม่มีครุภัณฑ์ในตะกร้า</li>`;
+        count.textContent = 0;
+        checkoutCard.style.display = "none";
+        hiddenInput.value = '';
+        return;
+    }
+
+    itemsInCart.forEach(asset => {
+        let li = document.createElement('li');
+        li.className = "list-group-item d-flex justify-content-between align-items-center";
+        li.innerHTML = `${asset.name} (${asset.code})
+            <button class="btn btn-sm btn-danger remove-item" data-id="${asset.id}">ลบ</button>`;
+        list.appendChild(li);
+    });
+
+    count.textContent = itemsInCart.length;
+    checkoutCard.style.display = "block";
+    hiddenInput.value = cart.join(",");
+}
+
+// ✅ ลบจากตะกร้า
+document.addEventListener('click', function(e){
+    if(e.target.classList.contains('remove-item')){
+        const id = parseInt(e.target.dataset.id);
+        cart = cart.filter(i => i !== id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+    }
+});
+
+// ✅ เคลียร์ตะกร้าหลังยืนยันการยืม
+document.getElementById("checkout-form").addEventListener("submit", function(){
+    localStorage.removeItem("cart");  // ล้างตะกร้า
+});
+
+// ✅ เริ่มต้น render
+renderCart();
+</script>
+{% endblock %}

@@ -48,7 +48,7 @@ class MyUser(AbstractUser):
         return self.likes.count()
     
     def get_full_name(self):
-        return f"{self.perfix}{self.first_name} {self.last_name}"
+        return f"{self.perfix} {self.first_name} {self.last_name}"
     
     def get_first_name(self):
         return f"{self.first_name}"

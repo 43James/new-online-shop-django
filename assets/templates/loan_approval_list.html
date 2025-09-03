@@ -11,10 +11,10 @@
         <table class="table table-bordered align-middle">
             <thead class="table-light">
                 <tr>
-                    <th>วันที่ยืม</th>
-                    <th>ครุภัณฑ์</th>
-                    <th>รหัสครุภัณฑ์</th>
                     <th>ผู้ยืม</th>
+                    <th>ID</th>
+                    <th>วันที่ยืม</th>
+                    <th>วันที่ใช้งาน</th>
                     <th>กำหนดคืน</th>
                     <th>สถานะ</th>
                     <th>การทำงาน</th>
@@ -23,10 +23,10 @@
             <tbody>
                 {% for loan in page_obj %}
                 <tr>
-                    <td>{{ loan.loan_date }}</td>
-                    <td>{{ loan.asset.item_name }}</td>
-                    <td>SP-{{ loan.asset.asset_code }}</td>
                     <td>{{ loan.user.username }}</td>
+                    <td>{{ loan.id }}</td>
+                    <td>{{ loan.date_created }}</td>
+                    <td>{{ loan.date_of_use }}</td>
                     <td>{{ loan.date_due }}</td>
                     <td>
                         {% if loan.status == 'pending' %}
@@ -47,12 +47,22 @@
                     </td>
                     <td>
                         {% if loan.status == 'pending' %}
-                            <a href="{% url 'assets:loan_approval' loan.id %}" class="btn btn-sm btn-success">อนุมัติการยืม</a>
+                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approvalModal" 
+                                data-id="{{ loan.id }}" data-action="approved">
+                                อนุมัติการยืม
+                            </button>
+                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#approvalModal" 
+                                data-id="{{ loan.id }}" data-action="rejected">
+                                ปฏิเสธ
+                            </button>
                         {% elif loan.status == 'returned_pending' %}
                             <a href="{% url 'assets:approve_return' loan.id %}" class="btn btn-sm btn-primary">อนุมัติการคืน</a>
                         {% else %}
                             <span class="text-muted">ไม่มี</span>
                         {% endif %}
+                        <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
+                            <i class="bi bi-eye"></i>
+                        </a>
                     </td>
                 </tr>
                 {% empty %}
@@ -71,7 +81,9 @@
                 <a class="page-link" href="?page={{ page_obj.previous_page_number }}">ก่อนหน้า</a>
             </li>
             {% endif %}
-            <li class="page-item disabled"><a class="page-link">หน้า {{ page_obj.number }} จาก {{ page_obj.paginator.num_pages }}</a></li>
+            <li class="page-item disabled">
+                <a class="page-link">หน้า {{ page_obj.number }} จาก {{ page_obj.paginator.num_pages }}</a>
+            </li>
             {% if page_obj.has_next %}
             <li class="page-item">
                 <a class="page-link" href="?page={{ page_obj.next_page_number }}">ถัดไป</a>
@@ -80,4 +92,54 @@
         </ul>
     </nav>
 </div>
+
+
+<!-- Modal อนุมัติ/ปฏิเสธ -->
+<div class="modal fade" id="approvalModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" id="approvalForm">
+        {% csrf_token %}
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">ยืนยันการทำรายการ</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+          </div>
+          <div class="modal-body">
+            <p id="approvalMessage"></p>
+            <!-- ส่งค่า status และ loan_id -->
+            <input type="hidden" name="status" id="approvalStatus">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary">ยืนยัน</button>
+          </div>
+        </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    var approvalModal = document.getElementById('approvalModal');
+    approvalModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var loanId = button.getAttribute('data-id');
+        var action = button.getAttribute('data-action');
+
+        var form = document.getElementById('approvalForm');
+        var statusInput = document.getElementById('approvalStatus');
+        var message = document.getElementById('approvalMessage');
+
+        // set action form url
+        form.action = "{% url 'assets:loan_approval' 0 %}".replace("0", loanId);
+        statusInput.value = action;
+
+        if(action === "approved"){
+            message.textContent = "คุณต้องการอนุมัติการยืมรายการนี้ใช่หรือไม่?";
+        } else {
+            message.textContent = "คุณต้องการปฏิเสธการยืมรายการนี้ใช่หรือไม่?";
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -19,19 +19,32 @@ urlpatterns = [
     # path("asset/check/<int:asset_id>/", views.check_asset, name="check_asset"),
 
     # เพิ่มผู้ครอบครอง
-    path('ownership-create/', views.create_asset_ownership, name='create_asset_ownership'), 
+    # path('ownership-create/', views.create_asset_ownership, name='create_asset_ownership'), 
 
 
     # รายการที่ยืม ยืม อนุมัติยืม ยืนยันรับ แจ้งคืน อนุมันิคืน
-    path("loan-list/", views.loan_list, name="loan_list"), 
-    path('add-to-cart-ajax/', views.add_to_cart_ajax, name='add_to_cart_ajax'),
-    path('remove-from-cart-ajax/', views.remove_from_cart_ajax, name='remove_from_cart_ajax'),
+    # path('api/asset/<int:asset_id>/', views.get_asset_data, name='get_asset_data'),
+    # หน้าแสดงรายการครุภัณฑ์
+    path("loan-list/", views.loan_list, name="loan_list"),
+
+    # หน้าแสดงรายละเอียดครุภัณฑ์
+    path("loan-detail/<int:loan_id>/", views.loan_detail_view, name="loan_detail"),
+
+    # ตะกร้า
+    path("loan-cart/", views.loan_cart, name="loan_cart"),
+
+    # ยืนยันการยืม
     path("confirm-loan/", views.confirm_loan, name="confirm_loan"),
-    path("loan-approval-list/", views.loan_approval_list, name="loan-approval-list"),
-    path("loan-approval/<int:loan_id>/", views.loan_approval, name="loan_approval"),
-    path("confirm-receipt/<int:loan_id>/", views.confirm_receipt, name="confirm_receipt"),
-    path("return/<int:loan_id>/", views.request_return, name="request_return"),
+    
+    # รายการอนุมัติการยืม
+    path("loan-approval-list/", views.loan_approval_list, name="loan_approval_list"),
+    path("loan-approval/<int:pk>/", views.loan_approval, name="loan_approval"),
+    
     path("approve-return/<int:loan_id>/", views.approve_return, name="approve_return"),
+    # path("loan-approval/<int:loan_id>/", views.loan_approval, name="loan_approval"),
+    # path("confirm-receipt/<int:loan_id>/", views.confirm_receipt, name="confirm_receipt"),
+    # path("return/<int:loan_id>/", views.request_return, name="request_return"),
+    # path("approve-return/<int:loan_id>/", views.approve_return, name="approve_return"),
 
     # รายการแจ้งซ่อม
     # path("repair-report/", views.repair_report, name="repair_report"),

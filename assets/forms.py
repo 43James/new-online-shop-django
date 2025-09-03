@@ -1,5 +1,5 @@
 from django import forms
-from .models import AssetCheck, AssetCode, AssetItem, AssetLoan, AssetOwnership, StorageLocation, AssetCategory, Subcategory, StorageLocation
+from .models import AssetCheck, AssetCode, AssetItem, AssetOwnership, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan
 
 
 class AssetCodeForm(forms.ModelForm):
@@ -17,8 +17,7 @@ class AssetItemForm(forms.ModelForm):
     class Meta:
         model = AssetItem
         fields = [
-            "item_name", "subcategory",
-            "quantity", "unit", "purchase_price", "purchase_date", 
+            "item_name", "subcategory", "unit", "purchase_price", "purchase_date", 
             "fiscal_year", "lifetime", "used_years", 
             "responsible_person", "storage_location", 
             "brand_model", "damage_status", "notes", "asset_image",
@@ -27,7 +26,6 @@ class AssetItemForm(forms.ModelForm):
         labels = {
             "item_name": "ชื่อรายการครุภัณฑ์",
             "subcategory": "หมวดหมู่ครุภัณฑ์",
-            "quantity": "จำนวน",
             "unit": "หน่วยนับ",
             "purchase_price": "ราคาที่ซื้อ",
             "purchase_date": "วันที่ซื้อ",
@@ -57,49 +55,6 @@ class AssetItemForm(forms.ModelForm):
         self.fields['subcategory'].empty_label = None
 
 
-
-# class AssetItemForm(forms.ModelForm):
-#     # เพิ่มฟอร์มสำหรับสร้างรหัสครุภัณฑ์
-#     asset_code = forms.ModelChoiceField(
-#         queryset=AssetCode.objects.all(),
-#         required=False,
-#         label="รหัสครุภัณฑ์ (เลือกหรือสร้างใหม่)"
-#     )
-
-#     class Meta:
-#         model = AssetItem
-#         fields = [
-#             "item_name", "category", "asset_code", "quantity", "unit", 
-#             "purchase_price", "purchase_date", "fiscal_year", "lifetime", "used_years", 
-#             "responsible_person", "storage_location", "brand_model", "damage_status", 
-#             "notes", "asset_image"
-#         ]
-#         labels = {
-#             "item_name": "ชื่อรายการครุภัณฑ์",
-#             "category": "หมวดหมู่ครุภัณฑ์",
-#             "quantity": "จำนวน",
-#             "unit": "หน่วยนับ",
-#             "purchase_price": "ราคาที่ซื้อ",
-#             "purchase_date": "วันที่ซื้อ",
-#             "fiscal_year": "ปีที่ใช้งาน",
-#             "lifetime": "อายุการใช้งาน (ปี)",
-#             "used_years": "ใช้มาแล้วกี่ปี",
-#             "responsible_person": "ผู้รับผิดชอบ",
-#             "storage_location": "สถานที่เก็บ",
-#             "brand_model": "ยี่ห้อ/รุ่น",
-#             "damage_status": "สถานะการใช้งาน",
-#             "notes": "หมายเหตุ",
-#             "asset_image": "รูปภาพครุภัณฑ์",
-#         }
-#         widgets = {
-#             "notes": forms.Textarea(attrs={
-#                 "rows": 2,   # ปรับให้สั้นลง
-#                 "cols": 40,  # ปรับความกว้าง
-#                 "class": "form-control"
-#             }),
-#         }
-
-
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = AssetCategory
@@ -117,25 +72,77 @@ class StorageLocationForm(forms.ModelForm):
 
 
 
-# # ฟอร์มบันทึกรายการครุภัณฑ์
-# class AssetItemForm(forms.ModelForm):
-#     class Meta:
-#         model = AssetItem
-#         fields = '__all__'
-#         widgets = {
-#             'purchase_date': forms.DateInput(attrs={'type': 'date'}),
-#             'start_date': forms.DateInput(attrs={'type': 'date'}),
-#         }
-
-# ฟอร์มบันทึกการครอบครอบครุภัณฑ์
-class AssetOwnershipForm(forms.ModelForm):
+# ฟอร์มสำหรับการยืมครุภัณฑ์ (Checkout Form)
+class LoanForm(forms.ModelForm):
     class Meta:
-        model = AssetOwnership
-        fields = '__all__'
+        model = OrderAssetLoan
+        fields = ["date_of_use", "date_due"]
         widgets = {
-            'start_date': forms.DateInput(attrs={'type': 'date'}),
-            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            "date_of_use": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_due": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
         }
+        labels = {
+            "date_of_use": "วันที่ใช้งาน",
+            "date_due": "วันที่กำหนดคืน",
+        }
+
+
+# ฟอร์มสำหรับเจ้าหน้าที่อนุมัติ (ชื่อ + ตำแหน่ง + สถานะ)
+class ApproveLoanForm(forms.ModelForm):
+    class Meta:
+        model = OrderAssetLoan
+        fields = ["approved_by", "approver_position", "status", "date_approved"]
+        widgets = {
+            "approved_by": forms.TextInput(attrs={"class": "form-control", "placeholder": "ชื่อเจ้าหน้าที่อนุมัติ"}),
+            "approver_position": forms.TextInput(attrs={"class": "form-control", "placeholder": "ตำแหน่งเจ้าหน้าที่"}),
+            "status": forms.Select(attrs={"class": "form-select"}, choices=OrderAssetLoan.STATUS_CHOICES_LOAN),
+            "date_approved": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        }
+        labels = {
+            "approved_by": "ชื่อเจ้าหน้าที่อนุมัติ",
+            "approver_position": "ตำแหน่งเจ้าหน้าที่",
+            "status": "สถานะการยืม",
+            "date_approved": "วันที่อนุมัติ",
+        }
+
+
+# ฟอร์มสำหรับผู้ยืมส่งคืน (ต้องกรอกชื่อด้วย)
+class BorrowerReturnForm(forms.ModelForm):
+    class Meta:
+        model = OrderAssetLoan
+        fields = ["returned_by", "date_of_return"]
+        widgets = {
+            "returned_by": forms.TextInput(attrs={"class": "form-control", "placeholder": "ชื่อผู้คืนครุภัณฑ์"}),
+            "date_of_return": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        }
+        labels = {
+            "returned_by": "ชื่อผู้คืนครุภัณฑ์",
+            "date_of_return": "วันที่ส่งคืนจริง",
+        }
+
+
+# ฟอร์มสำหรับเจ้าหน้าที่รับคืน
+class StaffConfirmReturnForm(forms.ModelForm):
+    confirm_received = forms.BooleanField(
+        required=True, label="ยืนยันการรับคืน", widget=forms.CheckboxInput()
+    )
+
+    class Meta:
+        model = OrderAssetLoan
+        fields = ["received_by", "receiver_position", "confirm_received", "receiver_note", "date_received"]
+        widgets = {
+            "received_by": forms.TextInput(attrs={"class": "form-control", "placeholder": "ชื่อเจ้าหน้าที่รับคืน"}),
+            "receiver_position": forms.TextInput(attrs={"class": "form-control", "placeholder": "ตำแหน่งเจ้าหน้าที่"}),
+            "receiver_note": forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "ความคิดเห็น/หมายเหตุ"}),
+            "date_received": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        }
+        labels = {
+            "received_by": "ชื่อเจ้าหน้าที่รับคืน",
+            "receiver_position": "ตำแหน่งเจ้าหน้าที่",
+            "receiver_note": "ความคิดเห็น",
+            "date_received": "วันที่รับคืน",
+        }
+
 
 # ฟอร์มตรวจเช็ครายการครุภัณฑ์
 class AssetCheckForm(forms.ModelForm):
@@ -194,48 +201,48 @@ class AssetCheckForm(forms.ModelForm):
         return instance
     
 
-# การขอยืมครุภัณฑ์
-class AssetLoanForm(forms.ModelForm):
-    class Meta:
-        model = AssetLoan
-        fields = ["asset", "date_due", "remarks"]
-        widgets = {
-            "date_due": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "remarks": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-        }
+# # การขอยืมครุภัณฑ์
+# class AssetLoanForm(forms.ModelForm):
+#     class Meta:
+#         model = AssetLoan
+#         fields = ["asset", "date_due", "remarks"]
+#         widgets = {
+#             "date_due": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+#             "remarks": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+#         }
 
-# อนุมัติหรือปฏิเสธคำขอยืมครุภัณฑ์ 
-class AssetLoanApprovalForm(forms.ModelForm):
-    class Meta:
-        model = AssetLoan
-        fields = ["status"]
-        widgets = {
-            "status": forms.Select(attrs={"class": "form-control"}),
-        }
+# # อนุมัติหรือปฏิเสธคำขอยืมครุภัณฑ์ 
+# class AssetLoanApprovalForm(forms.ModelForm):
+#     class Meta:
+#         model = AssetLoan
+#         fields = ["status"]
+#         widgets = {
+#             "status": forms.Select(attrs={"class": "form-control"}),
+#         }
 
-# ยืนยันรับครุภัณฑ์
-class AssetLoanConfirmForm(forms.ModelForm):
-    class Meta:
-        model = AssetLoan
-        fields = ['confirm']
-        widgets = {
-            'confirm': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
+# # ยืนยันรับครุภัณฑ์
+# class AssetLoanConfirmForm(forms.ModelForm):
+#     class Meta:
+#         model = AssetLoan
+#         fields = ['confirm']
+#         widgets = {
+#             'confirm': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#         }
 
-#  แจ้งคืนครุภัณฑ์
-class AssetReturnForm(forms.ModelForm):
-    class Meta:
-        model = AssetLoan
-        fields = ["remarks"]  # ให้ผู้ยืมสามารถเพิ่มหมายเหตุเกี่ยวกับการคืนได้
-        widgets = {
-            "remarks": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-        }       
+# #  แจ้งคืนครุภัณฑ์
+# class AssetReturnForm(forms.ModelForm):
+#     class Meta:
+#         model = AssetLoan
+#         fields = ["remarks"]  # ให้ผู้ยืมสามารถเพิ่มหมายเหตุเกี่ยวกับการคืนได้
+#         widgets = {
+#             "remarks": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+#         }       
 
-# อนุมัติการคืน
-class ApproveReturnForm(forms.ModelForm):
-    class Meta:
-        model = AssetLoan
-        fields = ["status"]
-        widgets = {
-            "status": forms.Select(attrs={"class": "form-control"}),
-        }
+# # อนุมัติการคืน
+# class ApproveReturnForm(forms.ModelForm):
+#     class Meta:
+#         model = AssetLoan
+#         fields = ["status"]
+#         widgets = {
+#             "status": forms.Select(attrs={"class": "form-control"}),
+#         }
