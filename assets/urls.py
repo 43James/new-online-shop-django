@@ -23,9 +23,11 @@ urlpatterns = [
 
 
     # รายการที่ยืม ยืม อนุมัติยืม ยืนยันรับ แจ้งคืน อนุมันิคืน
-    # path('api/asset/<int:asset_id>/', views.get_asset_data, name='get_asset_data'),
-    # หน้าแสดงรายการครุภัณฑ์
+    path('add-asset-loan/', views.add_asset_item_loan, name='add_asset_item_loan'),
     path("loan-list/", views.loan_list, name="loan_list"),
+    path('loan-list/edit/<int:pk>/', views.edit_asset_item_loan, name='edit_asset_item_loan'),
+    path('loan-list/delete/<int:pk>/', views.delete_asset_item_loan, name='delete_asset_item_loan'),
+    
 
     # หน้าแสดงรายละเอียดครุภัณฑ์
     path("loan-detail/<int:loan_id>/", views.loan_detail_view, name="loan_detail"),
@@ -33,9 +35,9 @@ urlpatterns = [
     # ตะกร้า
     path("loan-cart/", views.loan_cart, name="loan_cart"),
 
-    # ยืนยันการยืม
+    # ยืนยันการยืมและจอง
     path("confirm-loan/", views.confirm_loan, name="confirm_loan"),
-    
+    path('loan-list/reserve/<int:pk>/', views.reserve_asset_item, name='reserve_asset_item'),
     # รายการอนุมัติการยืม
     path("loan-approval-list/", views.loan_approval_list, name="loan_approval_list"),
     path("loan-approval/<int:pk>/", views.loan_approval, name="loan_approval"),

@@ -1,7 +1,6 @@
 {% extends "base_sidebar.html" %}
 {% load static %}
 {% block content %}
-
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3>รายการครุภัณฑ์ที่ยืมได้</h3>
@@ -10,7 +9,10 @@
             <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
         </a>
     </div>
-
+    <div class="btn-group mb-3">
+        <a href="{% url 'assets:add_asset_item_loan' %}" type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle"></i> เพิ่มรายการ</a>
+    </div>
+    
     <form method="get" class="row g-2 mb-4">
         <div class="col-md-4">
             <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อครุภัณฑ์..." value="{{ query }}">
@@ -35,7 +37,7 @@
             <button type="submit" class="btn btn-primary w-100">ค้นหา</button>
         </div>
     </form>
-
+    
     <div class="table-responsive">
         <table class="table table-bordered align-middle">
             <thead class="table-light">
@@ -46,6 +48,7 @@
                     <th>หมวด</th>
                     <th>หมวดย่อย</th>
                     <th>การทำงาน</th>
+                    <th style="width: 10%;">จัดการ</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,58 +62,156 @@
                     <td>
                         {% if asset.status_assetloan %}
                             <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
+                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#reserveModal" data-asset-id="{{ asset.pk }}">จอง</button>
+                            {# วนลูปเพื่อแสดงข้อมูลการจองทั้งหมด (ถ้ามี) #}
+                            {% for reservation in asset.current_reservation %}
+                                <div class="mt-2 text-danger small">
+                                    <strong>จองโดย:</strong> {{ reservation.user.get_full_name }}<br>
+                                    <strong>วันที่:</strong> {{ reservation.reserved_date|date:"d M Y ,H:i น." }} ถึงวันที่ {{ reservation.returning_date|date:"d M Y ,H:i น." }}
+                                </div>
+                            {% endfor %}
                         {% else %}
                             <button class="btn btn-sm btn-success add-to-cart">เพิ่มในตะกร้า</button>
                         {% endif %}
                     </td>
+                    <td>
+                    <div class="btn-group d-flex justify-content-center" role="group">
+                        <a href="{% url 'assets:edit_asset_item_loan' asset.pk %}" class="btn btn-sm btn-warning" title="แก้ไข"><i class="bi bi-pencil"></i></a>
+                        <button type="button" class="btn btn-sm btn-danger" title="ลบ" data-bs-toggle="modal" data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}" data-delete-url="{% url 'assets:delete_asset_item_loan' asset.pk %}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center">ไม่พบข้อมูล</td></tr>
+                <tr><td colspan="7" class="text-center">ไม่พบข้อมูล</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">ยืนยันการลบข้อมูล</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                คุณต้องการลบรายการครุภัณฑ์ "<strong id="asset-name"></strong>" ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <form id="deleteForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reserveModal" tabindex="-1" aria-labelledby="reserveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reserveModalLabel">จองครุภัณฑ์: <span id="asset-name-reserve"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="reserveForm" method="post" action="">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="asset_id" id="reserve-asset-id">
+                    
+                    <div class="mb-3">
+                        <label for="id_reserved_date" class="form-label">วันที่ต้องการยืม</label>
+                        <input type="datetime-local" class="form-control" id="id_reserved_date" name="reserved_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_returning_date" class="form-label">วันที่ต้องการคืน</label>
+                        <input type="datetime-local" class="form-control" id="id_returning_date" name="returning_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_notes" class="form-label">หมายเหตุ</label>
+                        <textarea class="form-control" id="id_notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">ยืนยันการจอง</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-const cartBadge = document.getElementById('cart-badge');
+    // โค้ดสำหรับตะกร้าและ Modal ลบ (โค้ดรวม)
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const cartBadge = document.getElementById('cart-badge');
 
-function updateCartUI() {
-    cartBadge.textContent = cart.length;
+    function updateCartUI() {
+        cartBadge.textContent = cart.length;
+        document.querySelectorAll('.add-to-cart').forEach(btn => {
+            const tr = btn.closest('tr');
+            const assetId = parseInt(tr.dataset.id);
+            if(cart.includes(assetId)){
+                btn.textContent = 'เพิ่มแล้ว';
+                btn.disabled = true;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-secondary');
+            } else {
+                btn.textContent = 'เพิ่มในตะกร้า';
+                btn.disabled = false;
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-success');
+            }
+        });
+    }
 
-    // ปรับปุ่มเพิ่มในตะกร้า
     document.querySelectorAll('.add-to-cart').forEach(btn => {
-        const tr = btn.closest('tr');
-        const assetId = parseInt(tr.dataset.id);
-        if(cart.includes(assetId)){
-            btn.textContent = 'เพิ่มแล้ว';
-            btn.disabled = true;
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-secondary');
-        } else {
-            btn.textContent = 'เพิ่มในตะกร้า';
-            btn.disabled = false;
-            btn.classList.remove('btn-secondary');
-            btn.classList.add('btn-success');
-        }
+        btn.addEventListener('click', function() {
+            const tr = this.closest('tr');
+            const assetId = parseInt(tr.dataset.id);
+            if(!cart.includes(assetId)){
+                cart.push(assetId);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCartUI();
+            }
+        });
     });
-}
 
-// เพิ่มไปตะกร้า
-document.querySelectorAll('.add-to-cart').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const tr = this.closest('tr');
-        const assetId = parseInt(tr.dataset.id);
-        if(!cart.includes(assetId)){
-            cart.push(assetId);
-            localStorage.setItem('cart', JSON.stringify(cart));
-            updateCartUI();
-        }
-    });
-});
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget; 
+            const deleteUrl = button.getAttribute('data-delete-url');
+            const assetName = button.getAttribute('data-asset-name');
+            const deleteForm = deleteModal.querySelector('#deleteForm');
+            const assetNamePlaceholder = deleteModal.querySelector('#asset-name');
+            deleteForm.action = deleteUrl;
+            assetNamePlaceholder.textContent = assetName;
+        });
+    }
+    updateCartUI();
 
-// เริ่มต้น
-updateCartUI();
+    // โค้ดสำหรับ Modal จอง
+    const reserveModal = document.getElementById('reserveModal');
+    if (reserveModal) {
+        reserveModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const assetId = button.getAttribute('data-asset-id');
+            const assetName = button.closest('tr').querySelector('td:nth-child(2)').textContent;
+            
+            const reserveForm = reserveModal.querySelector('#reserveForm');
+            const assetNamePlaceholder = reserveModal.querySelector('#asset-name-reserve');
+            const assetIdInput = reserveModal.querySelector('#reserve-asset-id');
+
+            reserveForm.action = `{% url 'assets:reserve_asset_item' 0 %}`.replace('0', assetId);
+            assetNamePlaceholder.textContent = assetName;
+            assetIdInput.value = assetId;
+        });
+    }
 </script>
 {% endblock %}

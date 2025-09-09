@@ -2,11 +2,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from assets.helpers import get_clean_cart
-from assets.models import AssetCode, AssetItem, AssetCheck, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
-from .forms import ApproveLoanForm, AssetCheckForm, AssetCodeForm, AssetItemForm, CategoryForm, LoanForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
+from assets.models import AssetCode, AssetItem, AssetCheck, AssetItemLoan, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
+from .forms import ApproveLoanForm, AssetCheckForm, AssetCodeForm, AssetItemForm, AssetItemLoanForm, CategoryForm, LoanForm, ReservationForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
 from django.utils import timezone
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 import qrcode
@@ -19,7 +19,6 @@ from django.core.files.base import ContentFile
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 import json # นำเข้าโมดูล json
-
 
 
 def home_assets(request):
@@ -195,7 +194,7 @@ def check_asset(request, asset_id):
             # อัปเดตสถานที่เก็บ
             asset.storage_location_id = request.POST.get("storage_location")
             asset.save()
-            return redirect('asset:asset_list')  # เปลี่ยนไปหน้ารายการครุภัณฑ์หลังบันทึก
+            return redirect('assets:asset_list')  # เปลี่ยนไปหน้ารายการครุภัณฑ์หลังบันทึก
     else:
         form = AssetCheckForm(asset=asset)
 
@@ -204,32 +203,105 @@ def check_asset(request, asset_id):
 # ------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------------
+# หน้าเพิ่มครุภัณฑ์
+# ------------------------------
+def add_asset_item_loan(request):
+    """
+    ฟังก์ชันสำหรับเพิ่มรายการครุภัณฑ์สำหรับยืม
+    """
+    categories = AssetCategory.objects.prefetch_related("subcategories").all()
+
+    if request.method == 'POST':
+        form = AssetItemLoanForm(request.POST, request.FILES)
+        if form.is_valid():
+            asset_item = form.save(commit=False)
+            asset_item.save()
+            # สามารถเพิ่มข้อความแจ้งเตือน (messages) ได้ที่นี่
+            return redirect('assets:loan_list')  # เปลี่ยนเป็น URL ที่ต้องการให้ไปเมื่อบันทึกสำเร็จ
+    else:
+        form = AssetItemLoanForm()
+    
+    return render(request, 'add_asset_item_loan.html', 
+                  {'form': form,
+                  "categories": categories,
+                  })
+
+
+def edit_asset_item_loan(request, pk):
+    """
+    ฟังก์ชันสำหรับแก้ไขรายการครุภัณฑ์สำหรับยืม
+    """
+    asset_item = get_object_or_404(AssetItemLoan, pk=pk)
+    categories = AssetCategory.objects.prefetch_related("subcategories").all()
+
+    if request.method == 'POST':
+        form = AssetItemLoanForm(request.POST, request.FILES, instance=asset_item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'แก้ไขรายการครุภัณฑ์สำหรับยืมสำเร็จแล้ว')
+            return redirect('assets:loan_list')
+    else:
+        form = AssetItemLoanForm(instance=asset_item)
+    
+    context = {
+        'form': form,
+        'asset_item': asset_item,
+        'categories': categories,
+    }
+    return render(request, 'edit_asset_item_loan.html', context)
+
+
+def delete_asset_item_loan(request, pk):
+    """
+    ฟังก์ชันสำหรับลบรายการครุภัณฑ์สำหรับยืม
+    """
+    if request.method == 'POST':
+        asset_item = get_object_or_404(AssetItemLoan, pk=pk)
+        asset_item.delete()
+        messages.success(request, 'ลบรายการครุภัณฑ์สำหรับยืมสำเร็จแล้ว')
+        return redirect('assets:loan_list')
+    # หากผู้ใช้พยายามเข้าถึงด้วย method อื่นที่ไม่ใช่ POST (เช่นพิมพ์ URL ตรงๆ)
+    messages.error(request, 'การดำเนินการไม่ถูกต้อง')
+    return redirect('assets:loan_list')
+
+
+# ------------------------------
 # แสดงรายการครุภัณฑ์
 # ------------------------------
+
 @login_required
 def loan_list(request):
+    # เริ่มต้นด้วยการ query ครุภัณฑ์ทั้งหมด
+    asset_items_query = AssetItemLoan.objects.all()
+
+    # Prefetch ข้อมูลการจองล่าสุด
+    asset_items_query = asset_items_query.prefetch_related(
+        Prefetch('assetreservation_set',
+                 queryset=AssetReservation.objects.order_by('reserved_date'),
+                 to_attr='current_reservation')
+    )
+    
     query = request.GET.get("q", "")
     category_id = request.GET.get("category")
     subcategory_id = request.GET.get("subcategory")
-
-    asset_items = AssetItem.objects.filter(status_borrowing=True)
-
+    
     if query:
-        asset_items = asset_items.filter(
+        asset_items_query = asset_items_query.filter(
             Q(item_name__icontains=query) |
-            Q(asset_code__asset_type__icontains=query) |
-            Q(asset_code__asset_kind__icontains=query)
+            Q(asset_code__icontains=query)
         )
 
     selected_category = None
     if category_id:
         selected_category = get_object_or_404(AssetCategory, id=category_id)
-        asset_items = asset_items.filter(subcategory__category=selected_category)
+        asset_items_query = asset_items_query.filter(subcategory__category=selected_category)
 
     selected_subcategory = None
     if subcategory_id:
         selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
-        asset_items = asset_items.filter(subcategory=selected_subcategory)
+        asset_items_query = asset_items_query.filter(subcategory=selected_subcategory)
+        
+    asset_items = asset_items_query.all()
 
     context = {
         "asset_items": asset_items,
@@ -247,7 +319,7 @@ def loan_list(request):
 # ------------------------------
 @login_required
 def loan_cart(request):
-    asset_items = AssetItem.objects.filter(status_borrowing=True)
+    asset_items = AssetItemLoan.objects.filter(status_borrowing=True)
 
     context = {
         "asset_items": asset_items
@@ -259,14 +331,6 @@ def loan_cart(request):
 # แสดงรายละเอียดครุภัณฑ์
 # ------------------------------
 # @login_required
-# def loan_detail(request, asset_id):
-#     asset = get_object_or_404(AssetItem, id=asset_id)
-
-#     context = {
-#         "asset": asset,
-#     }
-#     return render(request, "loan_detail.html", context)
-
 def loan_detail_view(request, loan_id):
     loan = get_object_or_404(OrderAssetLoan, pk=loan_id)
     context = {
@@ -282,7 +346,7 @@ def confirm_loan(request):
     if request.method == "POST":
         asset_ids_str = request.POST.get("asset_ids", "")
         asset_ids = [int(i) for i in asset_ids_str.split(",") if i.isdigit()]
-        assets_in_cart = AssetItem.objects.filter(id__in=asset_ids)
+        assets_in_cart = AssetItemLoan.objects.filter(id__in=asset_ids)
 
         if not assets_in_cart:
             messages.error(request, "ไม่มีครุภัณฑ์ในตะกร้า")
@@ -305,7 +369,138 @@ def confirm_loan(request):
 
     return redirect("assets:loan_list")
 
+@login_required
+def reserve_asset_item(request, pk):
+    asset_item = get_object_or_404(AssetItemLoan, pk=pk)
+    
+    # ตรวจสอบว่าครุภัณฑ์ถูกยืมอยู่หรือไม่ (ใช้ logic เดิม)
+    if not asset_item.status_assetloan:
+        messages.error(request, "ครุภัณฑ์นี้ไม่ได้ถูกยืมอยู่ ไม่สามารถจองได้")
+        return redirect('assets:loan_list')
+    
+    if request.method == "POST":
+        form = ReservationForm(request.POST)
+        if form.is_valid():
+            reserved_date = form.cleaned_data['reserved_date']
+            returning_date = form.cleaned_data['returning_date']
 
+            # --- โค้ดที่ต้องเพิ่ม: ตรวจสอบการจองซ้ำ ---
+            conflicting_reservations = AssetReservation.objects.filter(
+                asset=asset_item,
+                reserved_date__lte=returning_date,
+                returning_date__gte=reserved_date
+            )
+
+            if conflicting_reservations.exists():
+                messages.error(request, "ไม่สามารถจองได้ เนื่องจากมีผู้อื่นจองครุภัณฑ์นี้ในช่วงเวลาดังกล่าวแล้ว")
+                return redirect('assets:loan_list')
+            # --- จบโค้ดตรวจสอบ ---
+
+            reservation = form.save(commit=False)
+            reservation.asset = asset_item
+            reservation.user = request.user
+            reservation.save()
+            messages.success(request, f"คุณได้ทำการจอง '{asset_item.item_name}' เรียบร้อยแล้ว")
+            return redirect("assets:loan_list")
+    else:
+        form = ReservationForm()
+    
+    context = {
+        'form': form,
+        'asset_item': asset_item,
+    }
+    return render(request, "reserve_modal.html", context)
+
+
+# หน้าสำหรับจองครุภัณฑ์
+# @login_required
+# def reserve_asset_item(request, pk):
+#     asset_item = get_object_or_404(AssetItemLoan, pk=pk)
+    
+#     # ตรวจสอบว่าครุภัณฑ์ถูกยืมอยู่หรือไม่
+#     if not asset_item.status_assetloan:
+#         messages.error(request, "ครุภัณฑ์นี้ไม่ได้ถูกยืมอยู่ ไม่สามารถจองได้")
+#         return redirect('assets:loan_list')
+
+#     # ตรวจสอบว่าผู้ใช้คนนี้เคยจองครุภัณฑ์ชิ้นนี้แล้วหรือไม่
+#     # if AssetReservation.objects.filter(asset=asset_item, user=request.user).exists():
+#     #     messages.warning(request, "คุณได้ทำการจองครุภัณฑ์ชิ้นนี้ไว้แล้ว")
+#     #     return redirect('assets:loan_list')
+    
+#     if request.method == "POST":
+#         form = ReservationForm(request.POST)
+#         if form.is_valid():
+#             reservation = form.save(commit=False)
+#             reservation.asset = asset_item
+#             reservation.user = request.user
+#             reservation.save()
+#             messages.success(request, f"คุณได้ทำการจอง '{asset_item.item_name}' เรียบร้อยแล้ว")
+#             return redirect("assets:loan_list")
+#     else:
+#         form = ReservationForm()
+    
+#     context = {
+#         'form': form,
+#         'asset_item': asset_item,
+#     }
+#     return render(request, "reserve_modal.html", context) # ใช้ modal template
+    
+# @login_required
+# def reserve_asset_item(request, pk):
+#     asset_item = get_object_or_404(AssetItemLoan, pk=pk)
+#     if request.method == "POST":
+#         form = ReservationForm(request.POST)
+#         if form.is_valid():
+#             reservation = form.save(commit=False)
+#             reservation.asset = asset_item
+#             reservation.user = request.user
+#             reservation.save()
+#             messages.success(request, f"คุณได้ทำการจอง '{asset_item.item_name}' เรียบร้อยแล้ว")
+#             return redirect("assets:loan_list")
+#     else:
+#         form = ReservationForm()
+    
+#     context = {
+#         'form': form,
+#         'asset_item': asset_item,
+#     }
+#     return render(request, "reserve_modal.html", context) # ใช้ modal template
+
+# แก้ไขฟังก์ชันคืนครุภัณฑ์ (สมมติว่าคุณมีฟังก์ชันนี้)
+# ตัวอย่างการอัปเดตสถานะและจัดการการจองอัตโนมัติเมื่อคืนครุภัณฑ์แล้ว
+# @login_required
+# def return_asset_loan(request, order_id):
+#     order = get_object_or_404(OrderAssetLoan, pk=order_id)
+#     if request.method == "POST":
+#         # ... (โค้ดการคืนครุภัณฑ์เดิม)
+#         order.status = "returned"
+#         order.save()
+#         for item in order.issuingassetloan_set.all():
+#             asset = item.asset
+#             asset.status_assetloan = False  # ตั้งสถานะเป็นว่าง
+#             asset.save()
+            
+#             # ตรวจสอบว่ามีผู้จองคนต่อไปหรือไม่
+#             next_reservation = AssetReservation.objects.filter(asset=asset).order_by('reserved_date').first()
+#             if next_reservation:
+#                 # สร้างรายการยืมอัตโนมัติ
+#                 auto_loan_order = OrderAssetLoan.objects.create(
+#                     user=next_reservation.user,
+#                     borrowing_date=next_reservation.reserved_date,
+#                     returning_date=F('borrowing_date') + next_reservation.duration_loan, # คำนวณวันที่คืน
+#                     status="auto_pending",
+#                     notes=f"การยืมอัตโนมัติจากการจอง: {next_reservation.notes}"
+#                 )
+#                 IssuingAssetLoan.objects.create(order_asset=auto_loan_order, asset=asset)
+#                 asset.status_assetloan = True # ตั้งสถานะเป็นถูกยืมทันที
+#                 asset.save()
+#                 next_reservation.delete() # ลบรายการจองที่ถูกใช้ไปแล้ว
+#                 messages.success(request, f"ครุภัณฑ์ '{asset.item_name}' ถูกคืนและส่งคำขอยืมอัตโนมัติแล้ว")
+#             else:
+#                 messages.success(request, f"ครุภัณฑ์ '{asset.item_name}' ถูกคืนเรียบร้อยแล้ว")
+        
+#         return redirect("assets:loan_list")
+#     return redirect("assets:loan_list")
 
 @login_required
 def loan_approval_list(request):

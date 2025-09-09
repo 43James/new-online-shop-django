@@ -259,6 +259,34 @@ class AssetCheck(models.Model):
         self.year = self.check_date.year
         super().save(*args, **kwargs)
 
+    
+
+# รายการครุภัณฑ์สำหรับยืม
+class AssetItemLoan(models.Model):
+    DAMAGE_STATUS_CHOICES = [
+        ('ชำรุด', 'ชำรุด'),
+        ('เสื่อม', 'เสื่อม'),
+        ('สูญไป', 'สูญไป'),
+        ('ไม่ใช้', 'ไม่ใช้'),
+        ('ใช้อยู่', 'ใช้อยู่'),
+    ]
+    item_name = models.CharField(max_length=255, verbose_name="ชื่อรายการครุภัณฑ์สำหรับยืม")
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='asset_items_loan', null=True, blank=True, verbose_name='หมวดหมู่')
+    asset_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="รหัสครุภัณฑ์")
+    unit = models.CharField(max_length=50, verbose_name="หน่วยนับ")
+    storage_location = models.ForeignKey(StorageLocation, on_delete=models.CASCADE, verbose_name="สถานที่เก็บ")
+    brand_model = models.CharField(max_length=255, verbose_name="ยี่ห้อ/รุ่น")
+    notes = models.TextField(blank=True, null=True, verbose_name="หมายเหตุ")
+    damage_status = models.CharField(max_length=10, choices=DAMAGE_STATUS_CHOICES, verbose_name="สถานะการใช้งาน")
+    status_assetloan = models.BooleanField(default=False, verbose_name="สถานะการยืม")
+    status_borrowing = models.BooleanField(default=False, verbose_name="ครุภัณฑ์ที่ยืมได้")
+    asset_image = models.ImageField(upload_to="assets_loan/", blank=True, null=True, verbose_name="รูปภาพครุภัณฑ์") # เพิ่มฟิลด์รูปภาพครุภัณฑ์
+
+    class Meta:
+        verbose_name = "ครุภัณฑ์สำหรับยืม"
+        verbose_name_plural = "รายการครุภัณฑ์สำหรับยืม"
+
+
 # ออเดอร์การยืมครุภัณฑ์
 class OrderAssetLoan(models.Model):
     STATUS_CHOICES_LOAN = [
@@ -366,10 +394,27 @@ class OrderAssetLoan(models.Model):
         super().save(*args, **kwargs)
 
 
+class AssetReservation(models.Model):
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name="ผู้จอง")
+    asset = models.ForeignKey('AssetItemLoan', on_delete=models.CASCADE, verbose_name="ครุภัณฑ์")
+    reserved_date = models.DateTimeField(verbose_name="วัน/เวลาที่ต้องการยืม")
+    returning_date = models.DateTimeField(verbose_name="วัน/เวลาที่ต้องการคืน")
+    notes = models.TextField(blank=True, verbose_name="หมายเหตุ")
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="วัน/เวลาที่จอง")
+
+    def __str__(self):
+        return f"การจองของ {self.user.get_full_name()} สำหรับ {self.asset.item_name}"
+
+    class Meta:
+        verbose_name = "การจองครุภัณฑ์"
+        verbose_name_plural = "การจองครุภัณฑ์"
+        ordering = ['reserved_date'] # เรียงตามวันที่จองเพื่อหาคิวต่อไป
+
+
 # รายการครุภัณฑ์ที่ผูกกับออเดอร์
 class IssuingAssetLoan(models.Model):
     order_asset = models.ForeignKey(OrderAssetLoan, on_delete=models.CASCADE, related_name='items', verbose_name='ออเดอร์')
-    asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, related_name='issued_loans', verbose_name="ครุภัณฑ์ที่ยืม")
+    asset = models.ForeignKey(AssetItemLoan, on_delete=models.CASCADE, related_name='issued_loans', verbose_name="ครุภัณฑ์ที่ยืม")
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)

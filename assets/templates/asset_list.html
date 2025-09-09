@@ -40,6 +40,7 @@
                 <th>ผู้รับผิดชอบดูแลกำกับ</th>
                 <th>สถานที่เก็บ</th>
                 <th>สถานะการใช้งาน</th>
+                <th>สถานะการยืม</th>
                 <th>ครุภัณฑ์ที่ยืมได้</th>
                 <th>จัดการ</th>
             </tr>
@@ -58,12 +59,20 @@
                 <td>SP-{{ asset.asset_code }}</td>
                 <td>{{ asset.subcategory.name_sub }}</td>
                 <td>{{ asset.subcategory.category.name_cate }}</td>
-                <!-- <td>{{ asset.unit }}</td> -->
                 <td>{{ asset.fiscal_year }}</td>
                 <td>{{ asset.lifetime }} ปี</td>
                 <td>{{ asset.used_years }} ปี</td>
                 <td>{{ asset.responsible_person }}</td>
                 <td>{{ asset.storage_location }}</td>
+                <td class="text-center">
+                    <span class="badge 
+                        {% if asset.overdue == 'ใช้อยู่' %} bg-success 
+                        {% elif asset.damage_status == 'ชำรุด' %} bg-danger 
+                        {% elif asset.damage_status == 'เสื่อม' %} bg-warning 
+                        {% else %} bg-secondary {% endif %}">
+                        {{ asset.get_damage_status_display }}
+                    </span>
+                </td>
                 <td class="text-center">
                     <span class="badge 
                         {% if asset.damage_status == 'ใช้อยู่' %} bg-success 

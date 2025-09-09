@@ -1,5 +1,5 @@
 from django import forms
-from .models import AssetCheck, AssetCode, AssetItem, AssetOwnership, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan
+from .models import AssetCheck, AssetCode, AssetItem, AssetItemLoan, AssetOwnership, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan
 
 
 class AssetCodeForm(forms.ModelForm):
@@ -55,6 +55,36 @@ class AssetItemForm(forms.ModelForm):
         self.fields['subcategory'].empty_label = None
 
 
+class AssetItemLoanForm(forms.ModelForm):
+    class Meta:
+        model = AssetItemLoan
+        fields = [
+            'item_name', 
+            'subcategory', 
+            'asset_code', 
+            'unit', 
+            'storage_location', 
+            'brand_model', 
+            'notes', 
+            'damage_status', 
+            'status_assetloan',
+            'status_borrowing',
+            'asset_image',
+        ]
+        widgets = {
+            'item_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'subcategory': forms.Select(attrs={'class': 'form-control'}),
+            'asset_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'unit': forms.TextInput(attrs={'class': 'form-control'}),
+            'storage_location': forms.Select(attrs={'class': 'form-control'}),
+            'brand_model': forms.TextInput(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control'}),
+            'damage_status': forms.Select(attrs={'class': 'form-control'}),
+            'status_assetloan': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'status_borrowing': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = AssetCategory
@@ -86,6 +116,16 @@ class LoanForm(forms.ModelForm):
             "date_due": "วันที่กำหนดคืน",
         }
 
+# ฟอร์มสำหรับการจองครุภัณฑ์ (Checkout Form)
+class ReservationForm(forms.ModelForm):
+    class Meta:
+        model = AssetReservation
+        fields = ['reserved_date', 'returning_date', 'notes']
+        widgets = {
+            'reserved_date': forms.DateInput(attrs={'type': 'date'}),
+            'returning_date': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+        }
 
 # ฟอร์มสำหรับเจ้าหน้าที่อนุมัติ (ชื่อ + ตำแหน่ง + สถานะ)
 class ApproveLoanForm(forms.ModelForm):

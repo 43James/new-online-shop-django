@@ -1,0 +1,154 @@
+{% extends "base_sidebar.html" %}
+{% load form_tags %}
+
+{% block content %}
+<div class="container ">
+  <h2 class="mb-3 mt-3">แก้ไขรายการครุภัณฑ์สำหรับยืม</h2>
+  <form method="POST" enctype="multipart/form-data" action="{% url 'assets:edit_asset_item_loan' asset_item.pk %}" novalidate>
+    {% csrf_token %}
+
+    <fieldset class="border p-4 rounded">
+      <legend class="w-auto px-2">ข้อมูลรายการครุภัณฑ์สำหรับยืม</legend>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="id_item_name">ชื่อครุภัณฑ์สำหรับยืม</label>
+          <input type="text" name="item_name" placeholder="ชื่อรายการครุภัณฑ์สำหรับยืม" class="text-primary form-control {% if form.item_name.errors %}is-invalid{% endif %}" id="id_item_name"
+            value="{{ form.item_name.value|default_if_none:'' }}" required>
+          {% for error in form.item_name.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label" for="id_subcategory">หมวดหมู่</label>
+            <select name="subcategory" class="form-select selectpicker {% if form.subcategory.errors %}is-invalid{% endif %}" data-live-search="true" id="id_subcategory" required>
+                <option value="">-- เลือกหมวดหมู่ --</option>
+                {% for category in categories %}
+                    <option value="" disabled>📂 {{ category }}</option>
+                    {% for sub in category.subcategories.all %}
+                        <option value="{{ sub.id }}" {% if form.instance.subcategory and form.instance.subcategory.id == sub.id %}selected{% endif %}>
+                            &nbsp;&nbsp;&nbsp;├ {{ sub.name_sub }}
+                        </option>
+                    {% endfor %}
+                {% endfor %}
+            </select>
+            {% for error in form.subcategory.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label" for="id_asset_code">รหัสครุภัณฑ์</label>
+            <input type="text" name="asset_code" placeholder="รหัสครุภัณฑ์" class="text-primary form-control {% if form.asset_code.errors %}is-invalid{% endif %}" id="id_asset_code"
+                value="{{ form.asset_code.value|default_if_none:'' }}">
+            {% for error in form.asset_code.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label" for="id_unit">หน่วย</label>
+          <input type="text" name="unit" placeholder="ระบุหน่วย" class="text-primary form-control {% if form.unit.errors %}is-invalid{% endif %}" id="id_unit"
+            value="{{ form.unit.value|default_if_none:'' }}" required>
+          {% for error in form.unit.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_brand_model">ยี่ห้อ/รุ่น</label>
+          <input type="text" name="brand_model" placeholder="กรุณาระบุยี่ห้อ" class="text-primary form-control {% if form.brand_model.errors %}is-invalid{% endif %}" id="id_brand_model"
+            value="{{ form.brand_model.value|default_if_none:'' }}" required>
+          {% for error in form.brand_model.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_storage_location">สถานที่จัดเก็บ</label>
+          <select name="storage_location" class="form-select selectpicker {% if form.storage_location.errors %}is-invalid{% endif %}" data-live-search="true" id="id_storage_location" required>
+            <option value="">-- เลือกสถานที่จัดเก็บ --</option>
+            {% for value, label in form.storage_location.field.choices %}
+              {% if value != "" and label != "---------" %}
+                <option value="{{ value }}" {% if form.storage_location.value == value %}selected{% endif %}>{{ label }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          {% for error in form.storage_location.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="id_damage_status">สถานะการใช้งาน</label>
+          <select name="damage_status" class="form-select selectpicker {% if form.damage_status.errors %}is-invalid{% endif %}" data-live-search="true" id="id_damage_status" required>
+            <option value="">-- เลือกสถานะ --</option>
+            {% for value, label in form.damage_status.field.choices %}
+              {% if value != "" and label != "---------" %}
+                <option class="text-primary" value="{{ value }}" {% if form.damage_status.value == value %}selected{% endif %}>{{ label }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          {% for error in form.damage_status.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-2 d-flex flex-column justify-content-end">
+            <div class="form-check">
+                <input class="form-check-input {% if form.status_borrowing.errors %}is-invalid{% endif %}" type="checkbox" name="status_borrowing" id="id_status_borrowing" {% if form.status_borrowing.value %}checked{% endif %}>
+                <label class="form-check-label" for="id_status_borrowing">
+                    ครุภัณฑ์ที่ยืมได้
+                </label>
+            </div>
+            {% for error in form.status_borrowing.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="col-md-2 d-flex flex-column justify-content-end">
+            <div class="form-check">
+                <input class="text-primary form-check-input {% if form.status_assetloan.errors %}is-invalid{% endif %}" type="checkbox" name="status_assetloan" id="id_status_assetloan" {% if form.status_assetloan.value %}checked{% endif %}>
+                <label class="form-check-label" for="id_status_assetloan">
+                    สถานะการยืม
+                </label>
+            </div>
+            {% for error in form.status_assetloan.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label" for="id_asset_image">แนบรูปภาพ</label>
+          <input type="file" name="asset_image" class="form-control {% if form.asset_image.errors %}is-invalid{% endif %}" id="id_asset_image">
+          {% for error in form.asset_image.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+          {% if form.instance.asset_image %}
+          <div class="mt-2">
+            <p>รูปภาพปัจจุบัน:</p>
+            <img src="{{ form.instance.asset_image.url }}" alt="รูปภาพครุภัณฑ์" style="max-width: 200px; height: auto;">
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label" for="id_notes">หมายเหตุ</label>
+          <textarea name="notes" class="text-primary form-control {% if form.notes.errors %}is-invalid{% endif %}" id="id_notes" rows="2"
+            placeholder="ถ้ามี...">{{ form.notes.value|default_if_none:'' }}</textarea>
+          {% for error in form.notes.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mt-4 mb-3 d-flex justify-content-center">
+        <a onclick="history.back()" class="btn btn-secondary">ยกเลิก</a>
+        <button type="submit" class="btn btn-primary ms-2"
+          onclick="this.disabled=true; this.innerHTML='กำลังบันทึกข้อมูล...'; this.form.submit();">💾 บันทึก</button>
+      </div>
+    </fieldset>
+  </form>
+
+</div>
+{% endblock %}
