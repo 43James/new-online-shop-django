@@ -9,9 +9,11 @@
             <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
         </a>
     </div>
+    {% if request.user.is_admin %}
     <div class="btn-group mb-3">
         <a href="{% url 'assets:add_asset_item_loan' %}" type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle"></i> เพิ่มรายการ</a>
     </div>
+    {% endif %}
     
     <form method="get" class="row g-2 mb-4">
         <div class="col-md-4">
@@ -34,7 +36,8 @@
             </select>
         </div>
         <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">ค้นหา</button>
+            <button type="submit" class="btn btn-primary ">ค้นหา</button>
+            <a href="{% url 'assets:loan_list' %}" class="btn btn-secondary">ยกเลิก</a>
         </div>
     </form>
     
@@ -45,43 +48,68 @@
                     <th>รูป</th>
                     <th>ชื่อ</th>
                     <th>รหัส</th>
-                    <th>หมวด</th>
-                    <th>หมวดย่อย</th>
+                    {% comment %} <th>หมวด</th> {% endcomment %}
+                    {% comment %} <th>หมวดย่อย</th> {% endcomment %}
                     <th>การทำงาน</th>
+                    {% if request.user.is_admin %}
                     <th style="width: 10%;">จัดการ</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for asset in asset_items %}
                 <tr data-id="{{ asset.id }}">
-                    <td>{% if asset.asset_image %}<img src="{{ asset.asset_image.url }}" style="width:50px;height:50px;object-fit:cover">{% else %}ไม่มีรูป{% endif %}</td>
+                    <td>{% if asset.asset_image %}<img src="{{ asset.asset_image.url }}" style="width: 100px; height: 100px; object-fit:cover">{% else %}ไม่มีรูป{% endif %}</td>
                     <td>{{ asset.item_name }}</td>
-                    <td>SP-{{ asset.asset_code }}</td>
-                    <td>{% if asset.subcategory and asset.subcategory.category %}{{ asset.subcategory.category.name_cate }}{% endif %}</td>
-                    <td>{% if asset.subcategory %}{{ asset.subcategory.name_sub }}{% endif %}</td>
+                    <td>{{ asset.asset_code }}</td>
+                    {% comment %} <td>{% if asset.subcategory and asset.subcategory.category %}{{ asset.subcategory.category.name_cate }}{% endif %}</td> {% endcomment %}
+                    {% comment %} <td>{% if asset.subcategory %}{{ asset.subcategory.name_sub }}{% endif %}</td> {% endcomment %}
                     <td>
                         {% if asset.status_assetloan %}
-                            <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
-                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#reserveModal" data-asset-id="{{ asset.pk }}">จอง</button>
-                            {# วนลูปเพื่อแสดงข้อมูลการจองทั้งหมด (ถ้ามี) #}
+                            {% if asset.current_loan %}
+                                {% if asset.current_loan.order_asset.status == "pending" %}
+                                    <button class="btn btn-sm btn-warning" disabled>ถูกยืมอยู่ (รออนุมัติการยืม..)</button>
+                                {% elif asset.current_loan.order_asset.status == "approved" or asset.current_loan.order_asset.status == "borrowed" %}
+                                    <button class="btn btn-sm btn-secondary" disabled>กำลังยืมอยู่</button>
+                                    {% elif asset.current_loan.order_asset.status == "returned_pending" %}
+                                    <button class="btn btn-sm btn-warning" disabled>รออนุมัติการคืน..</button>
+                                {% endif %}
+                            {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
+                            {% endif %}
+                                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#reserveModal" data-asset-id="{{ asset.pk }}">จอง</button>
+
+                            {% if asset.current_loan %}
+                                <div class="mt-2 text-primary small">
+                                    <strong>ผู้ยืม:</strong> {{ asset.current_loan.order_asset.user.get_full_name }}<br>
+                                    <strong>วันที่ใช้งาน:</strong> {{ asset.current_loan.order_asset.date_of_use|date:"d M Y, H:i น." }}<br>
+                                    <strong>กำหนดคืน:</strong> {{ asset.current_loan.order_asset.date_due|date:"d M Y, H:i น." }}
+                                </div>
+                            {% endif %}
+
+                            {# วนลูปแสดงข้อมูลการจอง #}
                             {% for reservation in asset.current_reservation %}
                                 <div class="mt-2 text-danger small">
                                     <strong>จองโดย:</strong> {{ reservation.user.get_full_name }}<br>
-                                    <strong>วันที่:</strong> {{ reservation.reserved_date|date:"d M Y ,H:i น." }} ถึงวันที่ {{ reservation.returning_date|date:"d M Y ,H:i น." }}
+                                    <strong>วันที่:</strong> {{ reservation.reserved_date|date:"d M Y, H:i น." }}
+                                    ถึง {{ reservation.returning_date|date:"d M Y, H:i น." }}
                                 </div>
                             {% endfor %}
                         {% else %}
                             <button class="btn btn-sm btn-success add-to-cart">เพิ่มในตะกร้า</button>
                         {% endif %}
+
                     </td>
+                    {% if request.user.is_admin %}
                     <td>
-                    <div class="btn-group d-flex justify-content-center" role="group">
-                        <a href="{% url 'assets:edit_asset_item_loan' asset.pk %}" class="btn btn-sm btn-warning" title="แก้ไข"><i class="bi bi-pencil"></i></a>
-                        <button type="button" class="btn btn-sm btn-danger" title="ลบ" data-bs-toggle="modal" data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}" data-delete-url="{% url 'assets:delete_asset_item_loan' asset.pk %}">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
+                        <div class="btn-group d-flex justify-content-center" role="group">
+                            <a href="{% url 'assets:edit_asset_item_loan' asset.pk %}" class="btn btn-sm btn-warning" title="แก้ไข"><i class="bi bi-pencil"></i></a>
+                            <button type="button" class="btn btn-sm btn-danger" title="ลบ" data-bs-toggle="modal" data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}" data-delete-url="{% url 'assets:delete_asset_item_loan' asset.pk %}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr><td colspan="7" class="text-center">ไม่พบข้อมูล</td></tr>
@@ -90,6 +118,7 @@
         </table>
     </div>
 </div>
+
 
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -215,3 +244,19 @@
     }
 </script>
 {% endblock %}
+
+<td>
+                        {% if asset.status_assetloan %}
+                            <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
+                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#reserveModal" data-asset-id="{{ asset.pk }}">จอง</button>
+                            {# วนลูปเพื่อแสดงข้อมูลการจองทั้งหมด (ถ้ามี) #}
+                            {% for reservation in asset.current_reservation %}
+                                <div class="mt-2 text-danger small">
+                                    <strong>จองโดย:</strong> {{ reservation.user.get_full_name }}<br>
+                                    <strong>วันที่:</strong> {{ reservation.reserved_date|date:"d M Y ,H:i น." }} ถึงวันที่ {{ reservation.returning_date|date:"d M Y ,H:i น." }}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <button class="btn btn-sm btn-success add-to-cart">เพิ่มในตะกร้า</button>
+                        {% endif %}
+                    </td>

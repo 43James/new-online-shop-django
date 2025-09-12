@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from assets.helpers import get_clean_cart
 from assets.models import AssetCode, AssetItem, AssetCheck, AssetItemLoan, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
+from dashboard.views import thai_month_name
 from .forms import ApproveLoanForm, AssetCheckForm, AssetCodeForm, AssetItemForm, AssetItemLoanForm, CategoryForm, LoanForm, ReservationForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
 from django.utils import timezone
 from django.contrib import messages
@@ -21,11 +22,12 @@ from django.http import JsonResponse
 import json # นำเข้าโมดูล json
 
 
+@login_required
 def home_assets(request):
     return render(request, 'home_assets.html')
 
-
 # รายการครุภัณฑ์
+@login_required
 def asset_list(request):
     # ดึงข้อมูลรายการครุภัณฑ์ทั้งหมด
     assets_list = AssetItem.objects.all().order_by('id')
@@ -46,7 +48,7 @@ def asset_list(request):
     # ส่งข้อมูล assets ที่ถูกแบ่งหน้าแล้วไปยัง template
     return render(request, 'asset_list.html', {'assets': assets})
 
-
+@login_required
 def add_asset_item(request):
     categories = AssetCategory.objects.prefetch_related("subcategories").all()
 
@@ -88,6 +90,7 @@ def add_asset_item(request):
 
 
 # รายละเอียดครุภัณฑ์
+@login_required
 def asset_detail(request, pk):
     """ฟังก์ชันสำหรับแสดงรายละเอียดของครุภัณฑ์"""
     asset = get_object_or_404(AssetItem, pk=pk)
@@ -100,6 +103,7 @@ def asset_detail(request, pk):
 
 
 # แก้ไขครุภัณฑ์
+@login_required
 def asset_edit(request, pk):
     """ฟังก์ชันสำหรับแก้ไขข้อมูลครุภัณฑ์"""
     asset = get_object_or_404(AssetItem, pk=pk)
@@ -145,6 +149,7 @@ def asset_edit(request, pk):
     })
 
 # ลบครุภัณฑ์
+@login_required
 def asset_delete(request, pk):
     """
     ฟังก์ชันสำหรับลบข้อมูลครุภัณฑ์
@@ -205,6 +210,7 @@ def check_asset(request, asset_id):
 # ------------------------------
 # หน้าเพิ่มครุภัณฑ์
 # ------------------------------
+@login_required
 def add_asset_item_loan(request):
     """
     ฟังก์ชันสำหรับเพิ่มรายการครุภัณฑ์สำหรับยืม
@@ -226,11 +232,12 @@ def add_asset_item_loan(request):
                   "categories": categories,
                   })
 
-
+# ------------------------------------
+# ฟังก์ชันสำหรับแก้ไขรายการครุภัณฑ์สำหรับยืม
+# ------------------------------------
+@login_required
 def edit_asset_item_loan(request, pk):
-    """
-    ฟังก์ชันสำหรับแก้ไขรายการครุภัณฑ์สำหรับยืม
-    """
+    
     asset_item = get_object_or_404(AssetItemLoan, pk=pk)
     categories = AssetCategory.objects.prefetch_related("subcategories").all()
 
@@ -265,10 +272,92 @@ def delete_asset_item_loan(request, pk):
     return redirect('assets:loan_list')
 
 
-# ------------------------------
-# แสดงรายการครุภัณฑ์
-# ------------------------------
+@login_required
+def calendar_view(request):
+    """หน้าเทมเพลตปฏิทิน"""
+    return render(request, "calendar.html")
 
+
+@login_required
+def calendar_events(request):
+    """ส่งข้อมูลการยืม/จองเป็น JSON ให้ FullCalendar"""
+    events = []
+
+    # 🎨 Mapping สีตามสถานะ
+    status_colors = {
+        "approved": "#ff0000",   # เขียว = อนุมัติ
+        "borrowed": "#28a745",   # เขียว = กำลังยืม
+        "pending":  "#FFA500",   # ส้ม = รออนุมัติ
+    }
+
+    # 🟢 การยืมครุภัณฑ์ (เฉพาะสถานะ approved, borrowed, pending)
+    loans = (
+        OrderAssetLoan.objects
+        .filter(status__in=status_colors.keys())
+        .select_related("user")
+    )
+
+    for loan in loans:
+        issued_assets = loan.items.all()
+        asset_images_urls = []
+        asset_names = []
+        for issued_asset in issued_assets:
+            if issued_asset.asset and issued_asset.asset.asset_image:
+                asset_images_urls.append(request.build_absolute_uri(issued_asset.asset.asset_image.url))
+            if issued_asset.asset:
+                asset_names.append(issued_asset.asset.item_name)
+        
+        start_time_loan = timezone.localtime(loan.date_created) if loan.date_created else None
+        end_time_loan = timezone.localtime(loan.date_due) if loan.date_due else None
+
+        events.append({
+            "title": f"{loan.user.get_first_name()} ยืม : ({', '.join(asset_names)})",
+            "start": start_time_loan.isoformat() if start_time_loan else None,
+            "end": end_time_loan.isoformat() if end_time_loan else None,
+            "color": status_colors.get(loan.status, "#6c757d"),
+            "extendedProps": {
+                "status": loan.get_status_display(),
+                "user": loan.user.get_full_name(),
+                "note": loan.note or "",
+                "total_assets": loan.get_total_assets, # เก็บจำนวนรายการ
+                "asset_names": ", ".join(asset_names),
+                "asset_images": asset_images_urls,
+            }
+        })
+
+    # 🟡 การจองครุภัณฑ์
+    reservations = (
+        AssetReservation.objects
+        .select_related("user", "asset")
+    )
+
+    for r in reservations:
+        asset_image_url = None
+        if r.asset and r.asset.asset_image:
+            asset_image_url = request.build_absolute_uri(r.asset.asset_image.url)
+
+        start_time_res = timezone.localtime(r.reserved_date) if r.reserved_date else None
+        end_time_res = timezone.localtime(r.returning_date) if r.returning_date else None
+
+        events.append({
+            "title": f"{r.user.get_first_name()} จอง : ({r.asset.item_name})",
+            "start": start_time_res.isoformat() if start_time_res else None,
+            "end": end_time_res.isoformat() if end_time_res else None,
+            "color": "#FFD700",
+            "extendedProps": {
+                "status": "การจอง",
+                "user": r.user.get_full_name(),
+                "asset": r.asset.item_name,
+                "notes": r.notes or "",
+                "asset_image": asset_image_url,
+            }
+        })
+
+    return JsonResponse(events, safe=False)
+
+# ------------------------------
+# แสดงรายการครุภัณฑ์ สำหรับยืม
+# ------------------------------
 @login_required
 def loan_list(request):
     # เริ่มต้นด้วยการ query ครุภัณฑ์ทั้งหมด
@@ -330,7 +419,7 @@ def loan_cart(request):
 # ------------------------------
 # แสดงรายละเอียดครุภัณฑ์
 # ------------------------------
-# @login_required
+@login_required
 def loan_detail_view(request, loan_id):
     loan = get_object_or_404(OrderAssetLoan, pk=loan_id)
     context = {
@@ -369,6 +458,9 @@ def confirm_loan(request):
 
     return redirect("assets:loan_list")
 
+# ------------------------------
+# ฟังก์ชันจอง
+# ------------------------------
 @login_required
 def reserve_asset_item(request, pk):
     asset_item = get_object_or_404(AssetItemLoan, pk=pk)
@@ -387,8 +479,8 @@ def reserve_asset_item(request, pk):
             # --- โค้ดที่ต้องเพิ่ม: ตรวจสอบการจองซ้ำ ---
             conflicting_reservations = AssetReservation.objects.filter(
                 asset=asset_item,
-                reserved_date__lte=returning_date,
-                returning_date__gte=reserved_date
+                reserved_date__lt=returning_date,
+                returning_date__gt=reserved_date
             )
 
             if conflicting_reservations.exists():
@@ -412,183 +504,304 @@ def reserve_asset_item(request, pk):
     return render(request, "reserve_modal.html", context)
 
 
-# หน้าสำหรับจองครุภัณฑ์
-# @login_required
-# def reserve_asset_item(request, pk):
-#     asset_item = get_object_or_404(AssetItemLoan, pk=pk)
-    
-#     # ตรวจสอบว่าครุภัณฑ์ถูกยืมอยู่หรือไม่
-#     if not asset_item.status_assetloan:
-#         messages.error(request, "ครุภัณฑ์นี้ไม่ได้ถูกยืมอยู่ ไม่สามารถจองได้")
-#         return redirect('assets:loan_list')
-
-#     # ตรวจสอบว่าผู้ใช้คนนี้เคยจองครุภัณฑ์ชิ้นนี้แล้วหรือไม่
-#     # if AssetReservation.objects.filter(asset=asset_item, user=request.user).exists():
-#     #     messages.warning(request, "คุณได้ทำการจองครุภัณฑ์ชิ้นนี้ไว้แล้ว")
-#     #     return redirect('assets:loan_list')
-    
-#     if request.method == "POST":
-#         form = ReservationForm(request.POST)
-#         if form.is_valid():
-#             reservation = form.save(commit=False)
-#             reservation.asset = asset_item
-#             reservation.user = request.user
-#             reservation.save()
-#             messages.success(request, f"คุณได้ทำการจอง '{asset_item.item_name}' เรียบร้อยแล้ว")
-#             return redirect("assets:loan_list")
-#     else:
-#         form = ReservationForm()
-    
-#     context = {
-#         'form': form,
-#         'asset_item': asset_item,
-#     }
-#     return render(request, "reserve_modal.html", context) # ใช้ modal template
-    
-# @login_required
-# def reserve_asset_item(request, pk):
-#     asset_item = get_object_or_404(AssetItemLoan, pk=pk)
-#     if request.method == "POST":
-#         form = ReservationForm(request.POST)
-#         if form.is_valid():
-#             reservation = form.save(commit=False)
-#             reservation.asset = asset_item
-#             reservation.user = request.user
-#             reservation.save()
-#             messages.success(request, f"คุณได้ทำการจอง '{asset_item.item_name}' เรียบร้อยแล้ว")
-#             return redirect("assets:loan_list")
-#     else:
-#         form = ReservationForm()
-    
-#     context = {
-#         'form': form,
-#         'asset_item': asset_item,
-#     }
-#     return render(request, "reserve_modal.html", context) # ใช้ modal template
-
-# แก้ไขฟังก์ชันคืนครุภัณฑ์ (สมมติว่าคุณมีฟังก์ชันนี้)
-# ตัวอย่างการอัปเดตสถานะและจัดการการจองอัตโนมัติเมื่อคืนครุภัณฑ์แล้ว
-# @login_required
-# def return_asset_loan(request, order_id):
-#     order = get_object_or_404(OrderAssetLoan, pk=order_id)
-#     if request.method == "POST":
-#         # ... (โค้ดการคืนครุภัณฑ์เดิม)
-#         order.status = "returned"
-#         order.save()
-#         for item in order.issuingassetloan_set.all():
-#             asset = item.asset
-#             asset.status_assetloan = False  # ตั้งสถานะเป็นว่าง
-#             asset.save()
-            
-#             # ตรวจสอบว่ามีผู้จองคนต่อไปหรือไม่
-#             next_reservation = AssetReservation.objects.filter(asset=asset).order_by('reserved_date').first()
-#             if next_reservation:
-#                 # สร้างรายการยืมอัตโนมัติ
-#                 auto_loan_order = OrderAssetLoan.objects.create(
-#                     user=next_reservation.user,
-#                     borrowing_date=next_reservation.reserved_date,
-#                     returning_date=F('borrowing_date') + next_reservation.duration_loan, # คำนวณวันที่คืน
-#                     status="auto_pending",
-#                     notes=f"การยืมอัตโนมัติจากการจอง: {next_reservation.notes}"
-#                 )
-#                 IssuingAssetLoan.objects.create(order_asset=auto_loan_order, asset=asset)
-#                 asset.status_assetloan = True # ตั้งสถานะเป็นถูกยืมทันที
-#                 asset.save()
-#                 next_reservation.delete() # ลบรายการจองที่ถูกใช้ไปแล้ว
-#                 messages.success(request, f"ครุภัณฑ์ '{asset.item_name}' ถูกคืนและส่งคำขอยืมอัตโนมัติแล้ว")
-#             else:
-#                 messages.success(request, f"ครุภัณฑ์ '{asset.item_name}' ถูกคืนเรียบร้อยแล้ว")
-        
-#         return redirect("assets:loan_list")
-#     return redirect("assets:loan_list")
-
+# ------------------------------
+# ฟังก์อนุมัติ/ปฏิเสธการยืม อนุมัติคืน หน้าออเดอร์เจ้าหน้าที่
+# ------------------------------
 @login_required
 def loan_approval_list(request):
+    month = request.GET.get('month', timezone.now().month)
+    year = request.GET.get('year', timezone.now().year)
+
+    loans = OrderAssetLoan.objects.filter(month=month, year=year).order_by('-id')
+
+    months = [(1,'มกราคม'),(2,'กุมภาพันธ์'),(3,'มีนาคม'),(4,'เมษายน'),
+              (5,'พฤษภาคม'),(6,'มิถุนายน'),(7,'กรกฎาคม'),(8,'สิงหาคม'),
+              (9,'กันยายน'),(10,'ตุลาคม'),(11,'พฤศจิกายน'),(12,'ธันวาคม')]
+    years = range(2020, timezone.now().year+2)
+
+    if request.method == "POST":
+        # ใช้สำหรับ modal submit
+        loan_id = request.POST.get("loan_id")
+        loan = get_object_or_404(OrderAssetLoan, pk=loan_id)
+
+        # ตรวจสอบสถานะ
+        if loan.status != "returned_pending":
+            messages.warning(request, "ไม่สามารถอนุมัติการคืนได้")
+            return redirect("assets:loan_approval_list")
+
+        status_return = request.POST.get("status_return")
+        receiver_note = request.POST.get("receiver_note")
+
+        loan.status = "returned"
+        loan.status_return = status_return or "not_damaged"
+        loan.received_by = request.user.get_full_name()
+        loan.receiver_position = getattr(request.user.profile, "position", "")
+        loan.confirm_received = True
+        loan.receiver_note = receiver_note
+        loan.date_received = timezone.now()
+        loan.save()
+
+        # คืนสถานะครุภัณฑ์ และสร้างออเดอร์อัตโนมัติถ้ามีการจอง
+        for issuing in loan.items.all():
+            asset = issuing.asset
+            next_reservation = AssetReservation.objects.filter(asset=asset).order_by('reserved_date').first()
+            if next_reservation:
+                auto_loan_order = OrderAssetLoan.objects.create(
+                    user=next_reservation.user,
+                    date_of_use=next_reservation.reserved_date,
+                    date_due=next_reservation.returning_date,
+                    status="pending",
+                    note=f"การยืมอัตโนมัติจากการจอง: {next_reservation.notes}"
+                )
+                IssuingAssetLoan.objects.create(order_asset=auto_loan_order, asset=asset)
+                next_reservation.delete()
+            else:
+                asset.status_assetloan = False
+                asset.save()
+
+        messages.success(request, f"อนุมัติการคืน Order #{loan.id} เรียบร้อยแล้ว")
+        return redirect("assets:loan_approval_list")
+    
+    # Pagination
+    paginator = Paginator(loans, 15)  # แสดง 15 รายการต่อหน้า
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+
+    context = {
+        "page_obj": page_obj,
+        "months": months,
+        "years": years,
+        "selected_month": int(month),
+        "selected_year": int(year),
+        "get_params": request.GET.copy(),  # เก็บ GET params สำหรับ pagination
+
+    }
+    return render(request, "loan_approval_list.html", context)
+
+# ------------------------------
+# ฟังก์บันทึกการคืน หน้าออเดอร์ผู้ใช้งาน 
+# ------------------------------
+@login_required
+def loan_orders_user(request):
     """
     หน้าแสดงรายการคำขออนุมัติการยืมและคืนครุภัณฑ์
     """
-    # กรองคำขอที่รออนุมัติและรออนุมัติการคืน
-    qs = OrderAssetLoan.objects.all()
+    now = datetime.now()
     
-    # pagination (ไม่บังคับ แต่ช่วยให้หน้าไม่ยาวเกินไป)
+    # ดึงค่าเดือนและปีจาก GET parameter หรือใช้ค่าปัจจุบันเป็นค่าเริ่มต้น
+    month = int(request.GET.get('month', now.month))
+    year_buddhist = int(request.GET.get('year', now.year + 543))
+    
+    # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
+    year_ad = year_buddhist - 543
+
+    # ดึงรายการคำขออนุมัติและรออนุมัติการคืนทั้งหมดที่มีสถานะและเดือน/ปีตรงกับที่เลือก
+    # และเรียงลำดับจากใหม่ไปเก่า
+    qs = OrderAssetLoan.objects.filter(
+        user=request.user, # บรรทัดนี้คือส่วนสำคัญที่เพิ่มเข้ามา
+        month=month,
+        year=year_ad
+    ).order_by('-date_created')
+
+    # Pagination
     paginator = Paginator(qs, 15)  # แสดง 15 รายการต่อหน้า
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
         'page_obj': page_obj,
+        'selected_month': month,
+        'selected_year': year_buddhist,
+        'years': range(2020 + 543, datetime.now().year + 1 + 543),
+        'months': [
+            (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
+            (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
+            (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
+        ],
+        # 'month_name' เป็นฟังก์ชันที่ต้องมีใน utils.py
+        'month_name': thai_month_name(month),
     }
-    return render(request, 'loan_approval_list.html', context)
+    return render(request, 'loan_orders_user.html', context)
 
-
-
+# ------------------------------
+# ฟังก์อนุมัติ/ปฏิเสธการยืม 
+# ------------------------------
+@login_required
 def loan_approval(request, pk):
     loan = get_object_or_404(OrderAssetLoan, pk=pk)
 
     if request.method == "POST":
         action = request.POST.get("status")
 
+        # กรณีอนุมัติการยืม
         if action == "approved" and loan.status == "pending":
             loan.status = "approved"
             loan.date_approved = timezone.now()
+
+            # ✅ บันทึกข้อมูลผู้อนุมัติ
+            # loan.approved_by = request.user.get_full_name()
+            # loan.approver_position = getattr(request.user.profile, "position", "")
+            # ✅ เก็บชื่อผู้อนุมัติ และตำแหน่ง
+            loan.approved_by = request.user.get_full_name()
+            if hasattr(request.user, "profile"):
+                loan.approver_position = request.user.profile.position
+            else:
+                loan.approver_position = ""
+
             loan.save()
             messages.success(request, "อนุมัติการยืมเรียบร้อยแล้ว ✅")
 
+        # กรณีปฏิเสธการยืม
         elif action == "rejected" and loan.status == "pending":
             loan.status = "rejected"
             loan.date_updated = timezone.now()
+
+            # ✅ เก็บชื่อผู้อนุมัติ และตำแหน่ง
+            loan.approved_by = request.user.get_full_name()
+            if hasattr(request.user, "profile"):
+                loan.approver_position = request.user.profile.position
+            else:
+                loan.approver_position = ""
+
+            # ✅ รับข้อความหมายเหตุจากฟอร์ม
+            note_text = request.POST.get("note", "")
+            if note_text:
+                loan.note = f"หมายเหตุการปฏิเสธ: {note_text}"
+
             loan.save()
+
+            # ✅ ตรวจสอบการจอง + คืนสถานะครุภัณฑ์
+            for issuing in loan.items.all():
+                asset = issuing.asset
+                # หาการจองถัดไปของ asset
+                next_reservation = AssetReservation.objects.filter(asset=asset).order_by("reserved_date").first()
+
+                if next_reservation:
+                    # ถ้ามีการจอง → สร้างออเดอร์อัตโนมัติ
+                    auto_loan_order = OrderAssetLoan.objects.create(
+                        user=next_reservation.user,
+                        date_of_use=next_reservation.reserved_date,
+                        date_due=next_reservation.returning_date,
+                        status="pending",
+                        note=f"การยืมอัตโนมัติจากการจอง (หลังปฏิเสธ): {next_reservation.notes or ''}"
+                    )
+                    IssuingAssetLoan.objects.create(order_asset=auto_loan_order, asset=asset)
+                    # ลบจองออก
+                    next_reservation.delete()
+                else:
+                    # ถ้าไม่มีการจอง → คืนสถานะ
+                    asset.status_assetloan = False
+                    asset.save()
+
             messages.error(request, "ปฏิเสธการยืมเรียบร้อยแล้ว ❌")
 
         else:
             messages.warning(request, "ไม่สามารถทำรายการนี้ได้")
 
     return redirect("assets:loan_approval_list")
-    
+
+# ------------------------------
+# ฟังก์บันทึกส่งคืน
+# ------------------------------
+@login_required
+def loan_approval_user(request, pk):
+    loan = get_object_or_404(OrderAssetLoan, pk=pk)
+
+    if request.method == "POST":
+        action = request.POST.get("status")
+
+        # ✅ ส่งคืนครุภัณฑ์
+        if action == "returned_pending":
+            loan.status = "returned_pending"
+            loan.returned_by = loan.user.get_full_name()  # หรือ loan.user.username
+            loan.date_returned = timezone.now()
+            loan.save()
+            messages.success(request, f"คุณได้ส่งคืนครุภัณฑ์ Order #{loan.id} เรียบร้อยแล้ว")
+
+        # ✅ ยกเลิกการยืม
+        elif action == "cancel":
+            loan.status = "cancel"
+            loan.save()
+
+            # ตรวจสอบว่ามีรายการจองอยู่หรือไม่
+            issued_items = loan.items.all()
+            for item in issued_items:
+                asset = item.asset
+                next_reservation = AssetReservation.objects.filter(asset=asset).order_by('reserved_date').first()
+                if next_reservation:
+                    # สร้างออเดอร์อัตโนมัติ
+                    auto_loan_order = OrderAssetLoan.objects.create(
+                        user=next_reservation.user,
+                        date_of_use=next_reservation.reserved_date,
+                        date_due=next_reservation.returning_date,
+                        status="pending",  # รออนุมัติ
+                        note=f"การยืมอัตโนมัติจากการจอง: {next_reservation.notes}"
+                    )
+                    IssuingAssetLoan.objects.create(order_asset=auto_loan_order, asset=asset)
+
+                    # ลบการจอง
+                    next_reservation.delete()
+                else:
+                    # ถ้าไม่มีการจองต่อไป ตั้งสถานะ asset เป็นว่าง
+                    asset.status_assetloan = False
+                    asset.save()
+
+            messages.success(request, f"Order #{loan.id} ถูกยกเลิกเรียบร้อยแล้ว และตรวจสอบสถานะการจอง/ครุภัณฑ์แล้ว")
+
+        return redirect("assets:loan_orders_user")
+
+    return redirect("assets:loan_orders_user")
 
 
+# ------------------------------
+# ฟังก์อนุมัติการคืน สำหรับเจ้าหน้าที่
+# ------------------------------
+@login_required
 def approve_return(request, loan_id):
-    loan = get_object_or_404(OrderAssetLoan, loan_id=loan_id)
+    loan = get_object_or_404(OrderAssetLoan, pk=loan_id)
 
-    if loan.status == "returned_pending":
+    if loan.status != "returned_pending":
+        messages.warning(request, "ไม่สามารถอนุมัติการคืนได้")
+        return redirect("assets:loan_approval_list")
+
+    if request.method == "POST":
+        status_return = request.POST.get("status_return")
+        receiver_note = request.POST.get("receiver_note")
+
+        # อัพเดทข้อมูลการคืน
         loan.status = "returned"
-        loan.date_received = timezone.now().date()
-        loan.received_by = request.user.username
+        loan.status_return = status_return or "not_damaged"
+        loan.received_by = request.user.get_full_name()
+        loan.receiver_position = getattr(request.user, "position", "")
         loan.confirm_received = True
+        loan.receiver_note = receiver_note
+        loan.date_received = timezone.now()
         loan.save()
 
-        # คืนสถานะครุภัณฑ์ทุกชิ้น
+        # คืนสถานะครุภัณฑ์
         for issuing in loan.items.all():
             asset = issuing.asset
-            asset.status_assetloan = False  # คืนแล้ว
-            asset.save()
+            next_reservation = AssetReservation.objects.filter(asset=asset).order_by('reserved_date').first()
+            if next_reservation:
+                # สร้างออเดอร์อัตโนมัติ
+                auto_loan_order = OrderAssetLoan.objects.create(
+                    user=next_reservation.user,
+                    date_of_use=next_reservation.reserved_date,
+                    date_due=next_reservation.returning_date,
+                    status="pending",
+                    note=f"การยืมอัตโนมัติจากการจอง: {next_reservation.notes}"
+                )
+                IssuingAssetLoan.objects.create(order_asset=auto_loan_order, asset=asset)
+                next_reservation.delete()
+            else:
+                # ไม่มีการจองต่อไป
+                asset.status_assetloan = False
+                asset.save()
 
-        messages.success(request, "อนุมัติการคืนเรียบร้อยแล้ว")
-    else:
-        messages.warning(request, "ไม่สามารถอนุมัติการคืนได้")
-
+        messages.success(request, f"อนุมัติการคืน Order #{loan.id} เรียบร้อยแล้ว")
+        return redirect("assets:loan_approval_list")
     return redirect("assets:loan_approval_list")
-
-
-# @login_required
-# def approve_return(request, loan_id):
-#     """ผู้ดูแล อนุมัติการคืน"""
-#     loan = get_object_or_404(OrderAssetLoan, id=loan_id)
-#     asset = loan.asset
-
-#     if loan.status == "returned_pending":
-#         loan.date_of_return = timezone.now().date()
-#         loan.status = "returned"
-#         loan.save()
-
-#         asset.status_assetloan = False  # คืนของแล้ว ใช้งานได้อีก
-#         asset.save()
-
-#         messages.success(request, f"อนุมัติการคืนของ {loan.user.username}")
-#     else:
-#         messages.warning(request, "ไม่สามารถอนุมัติการคืนได้")
-
-#     return redirect("assets:loan-approval-list")
 
 
 
@@ -758,20 +971,6 @@ def delete_subcategory_asset(request, pk):
     return redirect('assets:asset_list_subcate')
 
 # --------------------------------------------------------------------------------------------
-
-
-# def add_storage_location(request):
-#     if request.method == 'POST':
-#         form = StorageLocationForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, '✅ เพิ่มสถานที่เก็บเรียบร้อยแล้ว')
-#             return redirect('assets:add_storage_location')
-#         else:
-#             messages.error(request, '❌ ไม่สามารถเพิ่มสถานที่เก็บได้ กรุณาตรวจสอบข้อมูล')
-#     else:
-#         form = StorageLocationForm()
-#     return render(request, 'add_storage_location.html', {'form': form})
 
 
 # รายสถานที่เก็บครุภัณฑ์ และเพิ่มรายการ

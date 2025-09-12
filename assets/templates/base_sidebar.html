@@ -163,42 +163,71 @@
     </a>
     <hr>
     <ul class="nav nav-pills flex-column mb-auto">
-      <li>
-        <a href="#" class="nav-link link-body-emphasis">
-          <p class="bi bi-speedometer" style="position:fixed;"> Dashboard</p><br>
-        </a>
-      </li>
       <li class="nav-item">
-        <a href="{% url 'assets:home_assets' %}" class="nav-link link-body-emphasis {% if '/home/' in request.path %}active text-white{% endif %}">
-          <p class="bi bi-house-door-fill" style="position:fixed;"> หน้าแรก</p><br>
+        <a href="#" class="nav-link d-flex align-items-center {% if '/dashboard/' in request.path %}active text-white bg-primary{% else %}link-body-emphasis{% endif %}">
+          <i class="bi bi-speedometer2 me-2"></i> 
+          Dashboard
         </a>
       </li>
+
       <li>
-        <a href="{% url 'assets:loan_list' %}" class="nav-link link-body-emphasis text-primary {% if '/loan-list/' in request.path %}active text-white btn btn-success{% endif %}">
-          <p class="bi bi-bag-plus-fill" style="position:fixed;"> ยืมครุภัณฑ์</p><br>
+        <a href="{% url 'assets:calendar' %}" 
+          class="nav-link d-flex align-items-center {% if '/calendar/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
+          <i class="bi bi-calendar-date-fill me-2"></i> 
+          ปฏิทินการยืม/จองครุภัณฑ์
         </a>
       </li>
+
       <li>
-        <a href="{% url 'assets:loan_approval_list' %}" class="nav-link link-body-emphasis text-danger {% if '/repair-report/' in request.path %}active text-white btn btn-success{% endif %}">
-          <p class="bi bi-exclamation-triangle-fill" style="position:fixed;">  ออเดอร์ยืมครุภัณฑ์</p><br>
+        <a href="{% url 'assets:loan_list' %}" 
+          class="nav-link d-flex align-items-center {% if '/loan-list/' in request.path %}active text-white bg-success{% else %}text-primary link-body-emphasis{% endif %}">
+          <i class="bi bi-bag-plus-fill me-2"></i> 
+          ยืมครุภัณฑ์
         </a>
       </li>
+
       <li>
-        <a href="{% url 'assets:asset_list' %}" class="nav-link link-body-emphasis {% if '/asset-list/' in request.path %}active text-white btn btn-success{% endif %}">
-          <p class="bi bi-table" style="position:fixed;"> รายการครุภัณฑ์</p><br>
+        <a href="{% url 'assets:loan_orders_user' %}" 
+          class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-success{% else %}text-warning link-body-emphasis{% endif %}">
+          <i class="bi bi-card-list me-2"></i><strong>  
+          รายการยืมครุภัณฑ์ (ผู้ใช้งาน)</strong> 
         </a>
       </li>
+
+      {% if request.user.is_warehouse_manager or request.user.is_admin %}
+      <hr>
+
       <li>
-        <a href="#" class="nav-link link-body-emphasis">
-          <p class="bi bi-person-circle" style="position:fixed;"> การครอบครองครุภัณฑ์</p><br>
+        <a href="{% url 'assets:loan_approval_list' %}" 
+          class="nav-link d-flex align-items-center {% if '/loan-approval-list/' in request.path %}active text-white bg-success{% else %}text-success link-body-emphasis{% endif %}">
+          <i class="bi bi-card-checklist me-2"></i><strong>  
+          รายการยืมครุภัณฑ์ (เจ้าหน้าที่)</strong>
         </a>
       </li>
+
       <li>
-        <a href="#" class="nav-link link-body-emphasis">
-          <p class="bi bi-clipboard2-check-fill" style="position:fixed;"> ตรวจนับครุภัณฑ์</p><br>
+        <a href="{% url 'assets:asset_list' %}" 
+          class="nav-link d-flex align-items-center {% if '/asset-list/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
+          <i class="bi bi-table me-2"></i> 
+          รายการครุภัณฑ์
+        </a>
+      </li>
+
+      <li>
+        <a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
+          <i class="bi bi-person-circle me-2"></i> 
+          การครอบครองครุภัณฑ์
+        </a>
+      </li>
+
+      <li>
+        <a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
+          <i class="bi bi-clipboard2-check-fill me-2"></i> 
+          ตรวจนับครุภัณฑ์
         </a>
       </li>
     </ul>
+
     <hr>
     <ul class="list-unstyled ps-0">
       <li class="mb-1">
@@ -215,6 +244,7 @@
         </div>
       </li>
     </ul>
+    {% endif %}
     <hr>
     <div class="dropdown">
       {% if user.profile.img.url == user.profile.img.url %}

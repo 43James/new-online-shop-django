@@ -107,16 +107,15 @@
                 </div>
             </div>
         </div>
-
         <hr>
-
+        {% if loan.status == 'approved' or loan.status == 'cancel' or loan.status == 'rejected' %}
         <div class="row">
             <div class="col-md-6 border-end">
                 {% comment %} <h5 class="">บันทึกการยืม</h5> {% endcomment %}
                 <p class="fw-bold">บันทึกการยืม (สำหรับเจ้าหน้าที่)</p>
                 <div class="mb-3">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" {% if loan.status == 'approved' or loan.status == 'borrowed' or loan.status == 'returned' or loan.status == 'overdue' %}checked{% endif %} disabled>
+                        <input class="form-check-input" type="checkbox" {% if loan.status == 'approved' or loan.status == 'borrowed' or loan.status == 'returned' or loan.status == 'overdue' or loan.status == 'returned_pending' %}checked{% endif %} disabled>
                         <label class="form-check-label">สามารถให้ยืมได้</label>
                     </div>
                     <div class="form-check">
@@ -144,9 +143,43 @@
                 </div>
             </div>
         </div>
-        
-        <hr>
 
+        {% elif loan.status == 'approved' or loan.status == 'borrowed' or loan.status == 'returned' or loan.status == 'overdue' or loan.status == 'returned_pending' %}
+        <div class="row">
+            <div class="col-md-6 border-end">
+                {% comment %} <h5 class="">บันทึกการยืม</h5> {% endcomment %}
+                <p class="fw-bold">บันทึกการยืม (สำหรับเจ้าหน้าที่)</p>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" {% if loan.status == 'approved' or loan.status == 'borrowed' or loan.status == 'returned' or loan.status == 'overdue' or loan.status == 'returned_pending' %}checked{% endif %} disabled>
+                        <label class="form-check-label">สามารถให้ยืมได้</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" {% if loan.status == 'rejected' %}checked{% endif %} disabled>
+                        <label class="form-check-label">ไม่สามารถให้ยืมได้ เนื่องจาก ___ {{ loan.note }} ___<span class="border-bottom"></span></label>
+                    </div>
+                </div>
+                <div class="text-center mt-2">
+                    <p class="mb-3">ลงชื่อ ____ {{ loan.get_approver_first_name|default:"-" }} _____</p>
+                    <p class="mb-1">( {{ loan.approved_by|default:"-" }} )</p>
+                    <p class="mb-1">ตำแหน่ง {{ loan.approver_position|default:"-" }}</p>
+                    <p>วันที่ {{ loan.date_approved|date:"d M Y"|default:"-" }}</p>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                {% comment %} <h5 class="">บันทึกการยืม</h5> {% endcomment %}
+                <p class="fw-bold">บันทึกการยืม (สำหรับผู้ยืม)</p>
+                <p class="text-center">ข้าพเจ้าได้รับของตามรายการข้างต้นแล้ว</p>
+                <div class="text-center mt-5">
+                    <p class="mb-3">ลงชื่อ ____ {{ loan.user.first_name|default:"-" }} _____</p>
+                    <p class="mb-1">( {{ loan.user.get_full_name }} )</p>
+                    <p class="mb-1">ตำแหน่ง {{ loan.user.profile.position|default:"-" }}</p>
+                    <p>วันที่ {{ loan.date_approved|date:"d M Y"|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+        <hr>
         <div class="row ">
             <div class="col-md-6 border-end">
                 {% comment %} <h5 class="">บันทึกการส่งคืน</h5> {% endcomment %}
@@ -178,18 +211,19 @@
                 <div class="text-center mt-2">
                     <p class="mb-3">ลงชื่อ ____ {{ loan.get_received_by_first_name|default:"-" }} _____</p>
                     <p class="mb-1">( {{ loan.received_by|default:"-" }} )</p>
-                    <p class="mb-1">ตำแหน่ง {{ loan.profile.receiver_position|default:"-" }}</p>
+                    <p class="mb-1">ตำแหน่ง {{ loan.receiver_position|default:"-" }}</p>
                     <p>วันที่ {{ loan.date_received|date:"d M Y"|default:"-" }}</p>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 <div class="text-center mt-4 mb-4 d-print-none">
         <button class="btn btn-primary" onclick="printContent('print-area')">
             <i class="bi bi-printer-fill"></i> พิมพ์ใบยืม
         </button>
-        <a href="{% url 'assets:loan_approval_list' %}" class="btn btn-secondary">
+        <a onclick="history.back()"class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> กลับ
         </a>
     </div>

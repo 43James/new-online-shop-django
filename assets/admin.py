@@ -24,7 +24,7 @@
 from django.contrib import admin
 from .models import (
     AssetCategory, AssetReservation, Subcategory, StorageLocation,
-    AssetCode, AssetItem, OrderAssetLoan, IssuingAssetLoan
+    AssetCode, AssetItem, OrderAssetLoan, IssuingAssetLoan, AssetItemLoan
 )
 
 
@@ -131,6 +131,7 @@ class IssuingAssetLoanAdmin(admin.ModelAdmin):
     search_fields = ("order_asset__id", "asset__item_name")
     list_filter = ("month", "year")
     readonly_fields = ("month", "year", "date_created")
+    
 
 @admin.register(AssetReservation)
 class AssetReservationAdmin(admin.ModelAdmin):
@@ -153,3 +154,35 @@ class AssetReservationAdmin(admin.ModelAdmin):
         'user__last_name',
     )
     raw_id_fields = ('asset', 'user',)
+
+@admin.register(AssetItemLoan)
+class AssetItemLoanAdmin(admin.ModelAdmin):
+    list_display = (
+        'item_name',
+        'subcategory',
+        'asset_code',
+        'storage_location',
+        'damage_status',
+        'status_assetloan',
+        'status_borrowing',
+    )
+    list_filter = (
+        'subcategory',
+        'storage_location',
+        'damage_status',
+        'status_assetloan',
+        'status_borrowing',
+    )
+    search_fields = (
+        'item_name',
+        'asset_code',
+        'brand_model',
+        'notes',
+    )
+    list_editable = (
+        'status_assetloan',
+        'status_borrowing',
+    )
+    readonly_fields = (
+        'current_loan',
+    )

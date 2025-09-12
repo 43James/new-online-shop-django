@@ -1,0 +1,122 @@
+{% extends "base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* CSS สำหรับแถบส่วนหัว (Header Toolbar) */
+    .fc-header-toolbar.fc-toolbar {
+        background-color: #3f51b5; /* สีพื้นหลังของแถบส่วนหัว (สีน้ำเงิน) */
+        border-radius: 10px;
+        padding: 10px;
+        color: white; /* สีตัวอักษรบนแถบ */
+        border: none;
+    }
+
+    /* CSS สำหรับปุ่ม (Buttons) */
+    .fc-button {
+        background-color: #f0f4f8 !important; /* สีพื้นหลังของปุ่ม (สีเทาอ่อน) */
+        color: #3f51b5 !important; /* สีตัวอักษรของปุ่ม (สีน้ำเงิน) */
+        border: none !important;
+        box-shadow: none !important;
+        text-transform: capitalize !important; /* ทำให้ตัวอักษรแรกเป็นตัวพิมพ์ใหญ่ */
+    }
+
+    /* CSS สำหรับปุ่มที่ถูกเลือก (Active/Today) */
+    .fc-button-primary:not(:disabled).fc-button-active,
+    .fc-button-primary:not(:disabled):active {
+        background-color: #7986cb !important; /* สีพื้นหลังเมื่อปุ่มถูกเลือก (สีน้ำเงินอ่อนลง) */
+        color: white !important;
+    }
+    /* เพิ่มโค้ดนี้เพื่อทำให้ปฏิทินโค้งมน */
+    #calendar {
+        border-radius: 15px; /* ปรับค่านี้เพื่อเปลี่ยนความโค้งของขอบ */
+        overflow: hidden; /* ซ่อนส่วนที่เกินขอบเพื่อให้ขอบดูเรียบร้อย */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* เพิ่มเงาเพื่อให้ดูมีมิติ */
+    }
+    /* ลบขีดเส้นใต้ออกจากลิงก์ในปฏิทิน */
+    .fc-daygrid-day-number {
+        text-decoration: none !important;
+    }
+
+    /* ลบขีดเส้นใต้ออกเมื่อเมาส์ชี้ */
+    a {
+        text-decoration: none !important;
+    }
+</style>
+<div class="container mt-4">
+    <h3 class="justify-content-center d-flex mb-4">📅 ปฏิทินการยืม/จองครุภัณฑ์</h3>
+    <div class="mt-4" id="calendar"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var calendarEl = document.getElementById("calendar");
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        locale: "th",
+        timeZone: "Asia/Bangkok",
+        height: "auto",
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay"
+        },
+        displayEventTime: false,  // <--- เพิ่มบรรทัดนี้เพื่อซ่อนเวลา
+        events: "{% url 'assets:calendar_events' %}",
+        eventClick: function(info) {
+            let props = info.event.extendedProps;
+            let imageHtml = '';
+            let assetDetailsHtml = '';
+
+            if (props.asset_image) {
+                imageHtml = `<img src="${props.asset_image}" style="max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;" alt="รูปภาพครุภัณฑ์">`;
+            } else if (props.asset_images && props.asset_images.length > 0) {
+                imageHtml = props.asset_images.map(url => `<img src="${url}" style="max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;" alt="รูปภาพครุภัณฑ์">`).join('');
+            }
+            
+            // แสดงจำนวนรายการและชื่อครุภัณฑ์เป็นบรรทัดใหม่
+            if (props.total_assets) {
+                assetDetailsHtml += `<p><b>จำนวนรายการ:</b> ${props.total_assets} รายการ</p>`;
+            }
+            if (props.asset_names) {
+                assetDetailsHtml += `<p><b>ครุภัณฑ์ที่ยืม:</b> ${props.asset_names}</p>`;
+            }
+            
+            let htmlContent = `
+                <div style="text-align:left;">
+                    <p><b>สถานะ:</b> ${props.status || '-'}</p>
+                    <p><b>ผู้ใช้:</b> ${props.user || '-'}</p>
+                    ${props.asset ? `<p><b>ครุภัณฑ์:</b> ${props.asset}</p>` : ""}
+                    ${assetDetailsHtml}
+                    ${props.note ? `<p><b>หมายเหตุ:</b> ${props.note}</p>` : ""}
+                    ${props.notes ? `<p><b>รายละเอียดการจอง:</b> ${props.notes}</p>` : ""}
+                    <p><b>เริ่ม:</b> ${info.event.start ? info.event.start.toLocaleString("th-TH") : "-"}</p>
+                    <p><b>สิ้นสุด:</b> ${info.event.end ? info.event.end.toLocaleString("th-TH") : "-"}</p>
+                    ${imageHtml}
+                </div>
+            `;
+
+            Swal.fire({
+                title: info.event.title,
+                html: htmlContent,
+                icon: 'info',
+                confirmButtonText: 'ปิด',
+                confirmButtonColor: '#3085d6',
+                width: 500,
+                customClass: {
+                    popup: 'rounded-3 shadow-lg'
+                }
+            });
+        }
+    });
+
+    calendar.render();
+});
+</script>
+{% endblock %}

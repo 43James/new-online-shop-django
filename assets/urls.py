@@ -42,7 +42,15 @@ urlpatterns = [
     path("loan-approval-list/", views.loan_approval_list, name="loan_approval_list"),
     path("loan-approval/<int:pk>/", views.loan_approval, name="loan_approval"),
     
+    path("loan-orders-user/", views.loan_orders_user, name="loan_orders_user"),
+    path("loan-approval-user/<int:pk>/", views.loan_approval_user, name="loan_approval_user"),
+    
     path("approve-return/<int:loan_id>/", views.approve_return, name="approve_return"),
+
+    path("calendar/", views.calendar_view, name="calendar"),
+    path("calendar-events/", views.calendar_events, name="calendar_events"),
+
+
     # path("loan-approval/<int:loan_id>/", views.loan_approval, name="loan_approval"),
     # path("confirm-receipt/<int:loan_id>/", views.confirm_receipt, name="confirm_receipt"),
     # path("return/<int:loan_id>/", views.request_return, name="request_return"),

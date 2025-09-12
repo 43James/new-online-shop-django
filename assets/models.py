@@ -286,7 +286,13 @@ class AssetItemLoan(models.Model):
         verbose_name = "ครุภัณฑ์สำหรับยืม"
         verbose_name_plural = "รายการครุภัณฑ์สำหรับยืม"
 
+    @property
+    def current_loan(self):
+        return self.issued_loans.filter(
+            order_asset__status__in=['pending', 'borrowed', 'approved', 'returned_pending']
+        ).select_related('order_asset__user').last()
 
+        
 # ออเดอร์การยืมครุภัณฑ์
 class OrderAssetLoan(models.Model):
     STATUS_CHOICES_LOAN = [
@@ -297,9 +303,11 @@ class OrderAssetLoan(models.Model):
         ('returned_pending', 'รออนุมัติการคืน'),
         ('returned', 'คืนแล้ว'),
         ('overdue', 'เกินกำหนด'),
+        ('cancel', 'ยกเลิกยืม'),
     ]
 
     STATUS_CHOICES_RETURN = [
+        ('no', 'ยังไม่อนุมัติ'),
         ('damaged', 'ชำรุด'),
         ('not_damaged', 'ไม่มีรายการชำรุด'),
     ]
@@ -326,10 +334,10 @@ class OrderAssetLoan(models.Model):
     date_returned = models.DateTimeField(blank=True, null=True, verbose_name="วันที่คืน")
 
     # ฝั่งเจ้าหน้าที่รับคืน
-    status_return = models.CharField(max_length=20, choices=STATUS_CHOICES_RETURN, default='not_damaged', verbose_name="สถานะการคืน")
+    status_return = models.CharField(max_length=20, choices=STATUS_CHOICES_RETURN, default='no', verbose_name="สถานะการคืน")
     received_by = models.CharField(max_length=100, blank=True, null=True, verbose_name='ชื่อเจ้าหน้าที่รับคืน')
     receiver_position = models.CharField(max_length=100, blank=True, null=True, verbose_name='ตำแหน่งเจ้าหน้าที่รับคืน')
-    confirm_received = models.BooleanField(default=False, verbose_name="ยืนยันการรับคืน")
+    confirm_received = models.BooleanField(default=None, blank=True, null=True, verbose_name="ยืนยันการรับคืน")
     receiver_note = models.TextField(blank=True, null=True, verbose_name='ความคิดเห็นเจ้าหน้าที่รับคืน')
     date_received = models.DateTimeField(blank=True, null=True, verbose_name="วันที่บันทึกรับคืน")
 

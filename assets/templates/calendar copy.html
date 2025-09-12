@@ -1,0 +1,88 @@
+{% extends "base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container  mt-4">
+  <h3 class="justify-content-center d-flex mb-4">📅 ปฏิทินการยืม/จองครุภัณฑ์</h3>
+  <div class="mt-4" id="calendar"></div>
+</div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- FullCalendar -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'th',
+        events: "{% url 'assets:calendar_events' %}",
+        eventClick: function(info) {
+            let props = info.event.extendedProps;
+
+            // สร้างข้อความ HTML สวย ๆ
+            let htmlContent = `
+                <div style="text-align:left;">
+                    <p><b>สถานะ:</b> ${props.status || '-'}</p>
+                    <p><b>ผู้ใช้:</b> ${props.user || '-'}</p>
+                    ${props.asset ? `<p><b>ครุภัณฑ์:</b> ${props.asset}</p>` : ""}
+                    ${props.note ? `<p><b>หมายเหตุ:</b> ${props.note}</p>` : ""}
+                    ${props.notes ? `<p><b>รายละเอียดการจอง:</b> ${props.notes}</p>` : ""}
+                </div>
+            `;
+
+            Swal.fire({
+                title: info.event.title,
+                html: htmlContent,
+                icon: 'info',
+                confirmButtonText: 'ปิด',
+                confirmButtonColor: '#3085d6',
+                width: 500,
+                customClass: {
+                    popup: 'rounded-3 shadow-lg'
+                }
+            });
+        }
+    });
+    calendar.render();
+});
+</script>
+
+<!-- FullCalendar CSS + JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var calendarEl = document.getElementById("calendar");
+
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: "dayGridMonth",
+    locale: "th",   // ใช้ภาษาไทย
+    timeZone: "Asia/Bangkok",
+    height: "auto",
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridMonth,timeGridWeek,timeGridDay"
+    },
+    events: "{% url 'assets:calendar_events' %}", // ดึงจาก Django JSON API
+    eventClick: function(info) {
+      alert(
+        "รายละเอียด:\n" +
+        "ชื่อเรื่อง: " + info.event.title + "\n" +
+        "เริ่ม: " + info.event.start.toLocaleString() + "\n" +
+        "สิ้นสุด: " + (info.event.end ? info.event.end.toLocaleString() : "-") + "\n" +
+        "สถานะ: " + (info.event.extendedProps.status || "-") + "\n" +
+        "ผู้ใช้: " + (info.event.extendedProps.user || "-")
+      );
+    }
+  });
+
+  calendar.render();
+});
+</script>
+{% endblock %}
