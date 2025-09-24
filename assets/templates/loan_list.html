@@ -43,25 +43,27 @@
     
     <div class="table-responsive">
         <table class="table table-bordered align-middle">
-            <thead class="table-light">
+            <thead class="table-light text-center">
                 <tr>
-                    <th>รูป</th>
-                    <th>ชื่อ</th>
-                    <th>รหัส</th>
+                    <th >รูป</th>
+                    <th >ชื่อครุภัณฑ์</th>
+                    <th style="width: 200px;">รหัสครุภัณฑ์</th>
+                    <th>สถานที่เก็บ</th>
                     {% comment %} <th>หมวด</th> {% endcomment %}
                     {% comment %} <th>หมวดย่อย</th> {% endcomment %}
-                    <th>การทำงาน</th>
+                    <th style="width: 350px;">การทำงาน</th>
                     {% if request.user.is_admin %}
                     <th style="width: 10%;">จัดการ</th>
                     {% endif %}
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="text-center">
                 {% for asset in asset_items %}
                 <tr data-id="{{ asset.id }}">
-                    <td>{% if asset.asset_image %}<img src="{{ asset.asset_image.url }}" style="width: 100px; height: 100px; object-fit:cover">{% else %}ไม่มีรูป{% endif %}</td>
+                    <td >{% if asset.asset_image %}<img src="{{ asset.asset_image.url }}" style="width: 300px; object-fit:cover">{% else %}ไม่มีรูป{% endif %}</td>
                     <td>{{ asset.item_name }}</td>
                     <td>{{ asset.asset_code }}</td>
+                    <td>{{ asset.storage_location }}</td>
                     {% comment %} <td>{% if asset.subcategory and asset.subcategory.category %}{{ asset.subcategory.category.name_cate }}{% endif %}</td> {% endcomment %}
                     {% comment %} <td>{% if asset.subcategory %}{{ asset.subcategory.name_sub }}{% endif %}</td> {% endcomment %}
                     <td>
@@ -71,8 +73,10 @@
                                     <button class="btn btn-sm btn-warning" disabled>ถูกยืมอยู่ (รออนุมัติการยืม..)</button>
                                 {% elif asset.current_loan.order_asset.status == "approved" or asset.current_loan.order_asset.status == "borrowed" %}
                                     <button class="btn btn-sm btn-secondary" disabled>กำลังยืมอยู่</button>
-                                    {% elif asset.current_loan.order_asset.status == "returned_pending" %}
+                                {% elif asset.current_loan.order_asset.status == "returned_pending" %}
                                     <button class="btn btn-sm btn-warning" disabled>รออนุมัติการคืน..</button>
+                                {% elif asset.current_loan.order_asset.status == "overdue" %}
+                                    <button class="btn btn-sm btn-danger" disabled>ยืมเกินกำหนด.. กรุณาส่งคืน</button>
                                 {% endif %}
                             {% else %}
                                 <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
@@ -89,7 +93,7 @@
 
                             {# วนลูปแสดงข้อมูลการจอง #}
                             {% for reservation in asset.current_reservation %}
-                                <div class="mt-2 text-danger small">
+                                <div class="mt-2 text-warning small">
                                     <strong>จองโดย:</strong> {{ reservation.user.get_full_name }}<br>
                                     <strong>วันที่:</strong> {{ reservation.reserved_date|date:"d M Y, H:i น." }}
                                     ถึง {{ reservation.returning_date|date:"d M Y, H:i น." }}

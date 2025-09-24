@@ -6,29 +6,32 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3>รายการรออนุมัติการยืม/คืน</h3>
     </div>
-    
-    <div class="container text-end justify-content-center mt-4">
-        <form method="get" action="{% url 'assets:loan_approval_list' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
-            <div class="col-auto">
-                <select name="month" id="month" class="form-select">
-                    {% for m in months %}
-                        <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-auto">
-                <select name="year" id="year" class="form-select">
-                    {% for y in years %}
-                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary">ค้นหา</button>
-                <a href="{% url 'assets:loan_approval_list' %}" class="btn btn-secondary">ยกเลิก</a>
-            </div>
-        </form>
-    </div>
+    <form method="get" class="row g-2 mb-4 align-items-center">
+        <div class="col-md-5">
+            <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อ, ไอดีครุภัณฑ์, หรือชื่อผู้ยืม" value="{{ query }}">
+        </div>
+
+        <div class="col-md-3">
+            <select name="month" id="month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <select name="year" id="year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary me-2">ค้นหา</button>
+            <a href="{% url 'assets:loan_approval_list' %}" class="btn btn-secondary">ยกเลิก</a>
+        </div>
+    </form>
 
     <div class="table-responsive">
         <table class="table table-bordered align-middle">
@@ -271,28 +274,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 {% endblock %}
 
-{% comment %} document.addEventListener("DOMContentLoaded", function () {
-    var approvalModal = document.getElementById('approvalModal');
-    approvalModal.addEventListener('show.bs.modal', function (event) {
-        var button = event.relatedTarget;
-        var action = button.getAttribute('data-action');
-        var url = button.getAttribute('data-url');
 
-        // set form action ให้ยิงไป loan_approval/<pk>/
-        var form = document.getElementById('approvalForm');
-        var statusInput = document.getElementById('approvalStatus');
-        var message = document.getElementById('approvalMessage');
-
-        form.action = url;
-        statusInput.value = action;
-
-        if (action === "approved") {
-            message.textContent = "คุณต้องการอนุมัติการยืมรายการนี้ใช่หรือไม่?";
-        } else {
-            message.textContent = "คุณต้องการปฏิเสธการยืมรายการนี้ใช่หรือไม่?";
-        }
-    });
-}); {% endcomment %}
 
 {% comment %} <script>
 document.addEventListener("DOMContentLoaded", function(){

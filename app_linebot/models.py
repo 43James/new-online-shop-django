@@ -9,3 +9,11 @@ class UserLine(models.Model):
 
     def __str__(self):
         return f"{self.user.username}  : {self.userId} : {self.user.first_name}"
+    
+
+class UserLine_Asset(models.Model):
+    user = models.ForeignKey(MyUser, verbose_name='IDผู้ใช้งาน', on_delete=models.CASCADE)
+    userId = models.CharField(max_length=500)
+
+    def __str__(self):
+        return f"{self.user.username}  : {self.userId} : {self.user.first_name}"

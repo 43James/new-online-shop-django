@@ -87,10 +87,13 @@ document.addEventListener("DOMContentLoaded", function() {
             if (props.asset_names) {
                 assetDetailsHtml += `<p><b>ครุภัณฑ์ที่ยืม:</b> ${props.asset_names}</p>`;
             }
+
+            // สร้าง HTML สำหรับสถานะพร้อมสี
+            let statusHtml = `<p><b>สถานะ:</b> <span style="color: ${props.status_color || '#6c757d'};"><b>${props.status || '-'}</b></span></p>`;
             
             let htmlContent = `
                 <div style="text-align:left;">
-                    <p><b>สถานะ:</b> ${props.status || '-'}</p>
+                    ${statusHtml}
                     <p><b>ผู้ใช้:</b> ${props.user || '-'}</p>
                     ${props.asset ? `<p><b>ครุภัณฑ์:</b> ${props.asset}</p>` : ""}
                     ${assetDetailsHtml}
@@ -120,3 +123,5 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 {% endblock %}
+
+<p><b>สถานะ:</b> ${props.status || '-'}</p>

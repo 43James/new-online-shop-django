@@ -161,7 +161,7 @@
 
     timers.forEach(timer => {
       const addedTime = new Date(timer.getAttribute("data-added-time"));
-      const expireTime = new Date(addedTime.getTime() + 2 * 60000);
+      const expireTime = new Date(addedTime.getTime() + 5 * 60000); // เปลี่ยน 2 เป็น 5
 
       function updateTimer() {
         const now = new Date();

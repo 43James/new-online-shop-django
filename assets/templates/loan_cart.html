@@ -51,7 +51,7 @@ const assetItems = [
     {
         id: {{ asset.id }},
         name: "{{ asset.item_name|escapejs }}",
-        code: "SP-{{ asset.asset_code }}"
+        code: "{{ asset.asset_code }}"
     }{% if not forloop.last %},{% endif %}
     {% endfor %}
 ];

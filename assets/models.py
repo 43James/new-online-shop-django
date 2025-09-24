@@ -289,7 +289,7 @@ class AssetItemLoan(models.Model):
     @property
     def current_loan(self):
         return self.issued_loans.filter(
-            order_asset__status__in=['pending', 'borrowed', 'approved', 'returned_pending']
+            order_asset__status__in=['pending', 'borrowed', 'approved', 'returned_pending', 'overdue']
         ).select_related('order_asset__user').last()
 
         

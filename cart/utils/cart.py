@@ -24,7 +24,7 @@ class Cart:
                 added_time_str = item.get('added_time')
                 if added_time_str:
                     added_time = datetime.fromisoformat(added_time_str)
-                    if datetime.now() - added_time < timedelta(minutes=2):
+                    if datetime.now() - added_time < timedelta(minutes=5):  # เปลี่ยนจาก 2 เป็น 5
                         product_ids.add(int(product_id))
                     else:
                         expired_items.append((int(product_id), item['receiving_id']))
