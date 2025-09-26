@@ -5,13 +5,32 @@
 
 <style>
     th,
-    td {
-        border: 1px solid #000;
-        padding: 8px;
-        text-align: center;
-    }
+        td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
 </style>
-
+<!-- <div class="d-flex justify-content-between align-items-center mb-3">
+    <form method="post" enctype="multipart/form-data" action="{% url 'dashboard:upload_products' %}">
+        {% csrf_token %}
+        <div class="input-group">
+            <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required>
+        </div>
+        <button type="submit" class="btn btn-primary ms-2"><i class="bi bi-upload"></i> นำเข้า Excel</button>
+    </form>
+</div> -->
+<!-- <div class=" mb-3">
+    <form method="post" enctype="multipart/form-data" action="{% url 'dashboard:upload_products' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
+        {% csrf_token %}
+        <div class="col-2">
+            <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary ms-2"><i class="bi bi-upload"></i> นำเข้า Excel</button>
+        </div>
+    </form>
+</div> -->
 <div class="table-responsive">
     <table class="table table-hover">
         <thead class="table table-secondary">
@@ -21,11 +40,14 @@
                 <th scope="col">รูป</th>
                 <th scope="col">หมวดหมู่หลัก</th>
                 <th scope="col">ชื่อรายการ</th>
-                <th scope="col" style="font-size: 15px; width: 2px; background: #ffbb00;">คงเหลือ<br>เดือนก่อน</th>
+                <th scope="col" style="font-size: 15px; width: 2px; background: #5ce600;">คงเหลือ<br>เดือนก่อน</th>
                 <th scope="col" style="font-size: 15px; width: 2px; background: #5ce600;">สต๊อกคงเหลือ<br>เดือนนี้</th>
+                <th scope="col" style="font-size: 15px; width: 2px; background: #5ce600;">สต๊อก<br>ตรวจสอบ</th>
                 <th scope="col">จำนวนเงิน</th>
                 <th scope="col">วันที่เพิ่มวัสดุ</th>
+                <!-- <th scope="col">วันที่อัพเดต</th> -->
                 <th scope="col">ตัวเลือก</th>
+                <!-- <th scope="col"></th> -->
             </tr>
         </thead>
         {% for product in products %}
@@ -35,32 +57,36 @@
                 <td><a class="text-decoration-none" href="{{ product.get_absolute_url }}">{{ product.product_id}}</a>
                 </td>
                 <td scope="row">{{ product.img }}</td>
+                <!-- <td><a class="text-decoration-none" href="{% url 'shop:product_detail' product.id %}">{{ product.code }}</a></td> -->
                 <td>{{ product.category.category }}</td>
                 <td>{{ product.product_name }}</td>
-                
+                <!-- <td>{{ product.unitprice }} ฿ / {{ product.unit}}</td> -->
+                <!-- <td>{{ product.total_quantity_received|default:0 }} &nbsp;{{ product.unit}}</td> -->
                 <td class="bg-warning">{{ product.end_of_month_balance|default:"-"|intcomma }}</td>
 
-                {% if product.total_current_stock|default:0 == 0 or product.total_current_stock is None %}
-                <th class="bg-danger">หมด</th>
-                {% elif product.total_current_stock|default:0 <= 5 %}
-                <th style="background-color: rgb(255, 115, 0);">{{ product.total_current_stock|default:0|intcomma }} &nbsp;{{ product.unit}} (เหลือน้อย)</th>
-                {% else %}
-                <th style="background-color: aquamarine;">{{ product.total_current_stock|default:0|intcomma }} &nbsp;{{ product.unit}}</th>
-                {% endif %}
-
+        {% if product.total_quantity_received|default:0 == 0 %}
+        <th class="bg-danger">หมด</td>
+        {% elif product.total_quantity_received|default:0 <= 5 %}
+        <th style="background-color: rgb(255, 115, 0);">{{ product.total_quantity_received|default:0|intcomma }} &nbsp;{{ product.unit}} (เหลือน้อย)</td>
+        {% else %}
+        <th style="background-color: aquamarine;">{{ product.total_quantity_received|default:0|intcomma }} &nbsp;{{ product.unit}}</td>
+        {% endif %}
+                <td class="bg-info">{{ product.quantityinstock|default:"-"|intcomma }}</td>
                 <td>{{ product.total_remaining_value|default:"-"|intcomma }}</td>
 
                 <td>{{ product.date_created|date:"d M Y" }}</td>
+                <!-- <td>{{ product.date_updated|date:"d M Y" }}</td> -->
 
                 <td>
                     <a class="text-info text-decoration-none" href="{% url 'dashboard:edit_product' product.id %}"><i
                             class="bi bi-pencil-square">&nbsp; </i></a>&nbsp;&nbsp;
-                    {% if request.user.is_admin %} 
+                    {% if request.user.is_admin %}        
                     <a class="text-danger text-decoration-none" data-bs-toggle="modal"
                         data-bs-target="#exampleModal{{product.id}}"><i class="bi bi-trash-fill"></i></a>
                     {% else %}
                     {% endif %}
 
+                    <!-- Modal -->
                     <div class="modal fade" id="exampleModal{{product.id}}" tabindex="-1" aria-labelledby="exampleModalLabel"
                         aria-hidden="true">
                         <div class="modal-dialog">
@@ -93,7 +119,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="10" class="text-center">ไม่มีข้อมูล</td>
+                <td colspan="12" class="text-center">ไม่มีข้อมูล</td>
             </tr>
         </tbody>
         {% endfor %}

@@ -103,8 +103,8 @@ class Cart:
                         'added_time': datetime.now().isoformat(),
                     })
 
-                product.quantityinstock -= receiving_used
-                product.save()
+                # product.quantityinstock -= receiving_used
+                # product.save()
                 receiving.save()
 
             self.save()
@@ -126,8 +126,8 @@ class Cart:
                         receiving = Receiving.objects.get(id=receiving_id)
                         receiving.quantity += quantity
                         receiving.save()
-                        product.quantityinstock += quantity
-                        product.save()
+                        # product.quantityinstock += quantity
+                        # product.save()
                     return item
         return None
 
@@ -149,9 +149,11 @@ class Cart:
         for product_id, items in self.cart.items():
             for item in items:
                 receiving = Receiving.objects.get(id=item['receiving_id'])
-                product = receiving.product
-                product.quantityinstock += item['quantity']
-                product.save()
+                # product = receiving.product
+
+                # product.quantityinstock += item['quantity']
+                # product.save()
+
                 receiving.quantity += item['quantity']
                 receiving.save()
 

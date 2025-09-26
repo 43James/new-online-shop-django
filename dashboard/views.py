@@ -527,54 +527,6 @@ def record_monthly_stock_view(request):
 
 
 @user_passes_test(is_authorized)
-# @login_required
-# # รายงงานจำนวนคงเหลือ ยกมา
-# def monthly_stock_records(request):
-#     now = datetime.now()
-
-#     # # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-#     # month = int(request.GET.get('month', now.month))
-#     # year_buddhist = int(request.GET.get('year', now.year + 543))
-
-#     # ใช้เดือนและปีปัจจุบันหากไม่ได้ระบุในพารามิเตอร์ GET
-#     last_month = now.month if now.month > 1 else 12
-#     last_year = now.year if now.month > 1 else now.year - 1
-
-#     # ตรวจสอบว่ามีการระบุเดือนและปีในพารามิเตอร์ GET หรือไม่ ถ้าไม่มีใช้เดือนและปีของเดือนที่แล้ว
-#     month = int(request.GET.get('month', last_month))
-#     year_buddhist = int(request.GET.get('year', last_year + 543))
-
-#     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
-#     year_ad = year_buddhist - 543
-
-#     # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี
-#     records = MonthlyStockRecord.objects.filter(month=month, year=year_ad)
-
-#     # กรองข้อมูล MonthlyStockRecord ตามเดือนและปี และเรียงตาม ID ของวัสดุ
-#     records = MonthlyStockRecord.objects.filter(month=month, year=year_ad).order_by('product__id')
-
-
-#     # กำหนดค่าให้กับตัวแปร context
-#     context = {
-#         'title': 'ข้อมูลวัสดุคงเหลือ (ยกมา)',
-#         'records': records,
-#         'selected_month': month,
-#         'selected_year': year_buddhist,
-#         'years': range(2023 + 543, datetime.now().year + 1 + 543),
-#         'months': [
-#             (1, 'มกราคม'), (2, 'กุมภาพันธ์'), (3, 'มีนาคม'), (4, 'เมษายน'),
-#             (5, 'พฤษภาคม'), (6, 'มิถุนายน'), (7, 'กรกฎาคม'), (8, 'สิงหาคม'),
-#             (9, 'กันยายน'), (10, 'ตุลาคม'), (11, 'พฤศจิกายน'), (12, 'ธันวาคม')
-#         ],
-#         'pending_orders_count': count_pending_orders(),
-#     }
-
-#     previous_month = month if month > 1 else 12
-#     previous_year = year_ad if month > 1 else year_ad - 1
-#     context['previous_month_name'] = thai_month_name(previous_month)
-#     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
-#     return render(request, 'monthly_stock_records.html', context)
-
 @login_required
 # รายงรายงานจำนวนคงเหลือ ยกมา
 def monthly_stock_records(request):
@@ -1814,42 +1766,6 @@ def issuing_report(request):
 
 @user_passes_test(is_authorized)
 @login_required
-# export to excel product
-# def export_products_to_excel(request):
-#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-#     response['Content-Disposition'] = 'attachment; filename="products.xlsx"'
-
-#     # Create Excel workbook
-#     wb = Workbook()
-#     ws = wb.active
-#     ws.title = "Products"
-
-#     # Define headers
-#     headers = ['หมวดหมู่หลัก', 'หมวดหมู่ย่อย', 'รหัสพัสดุ', 'ชื่อรายการ', 'คำอธิบาย', 'หน่วย','คงเหลือเดือนก่อน', 'สต๊อกคงเหลือเดือนนี้', 'วันที่เพิ่มรายการ', ]
-#     ws.append(headers)
-
-#     # Query data
-#     products = Product.objects.all().select_related('category__category')  # ใช้ select_related เพื่อดึงข้อมูลแบบ prefetch จากแบบจำลอง Category และ Subcategory
-
-#     # Add data rows
-#     for product in products:
-#         row = [
-#             product.category.category.name_cate if product.category else '',  # หมวดหมู่หลัก
-#             product.category.name_sub if product.category else '',  # หมวดหมู่ย่อย
-#             product.product_id,
-#             product.product_name,
-#             product.description,
-#             product.unit,
-#             product.total_quantity_received,  # คงเหลือเดือนก่อน
-#             product.total_quantity_issued,    # สต๊อกคงเหลือเดือนนี้
-#             product.date_created.strftime('%Y-%m-%d %H:%M:%S'),  # แปลง datetime เป็น string ก่อนนำไปใช้
-#         ]
-#         ws.append(row)
-
-#     # Save workbook to response
-#     wb.save(response)
-#     return response
-
 def export_products_to_excel(request):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="products.xlsx"'
@@ -1899,54 +1815,108 @@ def export_products_to_excel(request):
     return response
 
 
+@login_required
+def products(request):
+    query = request.GET.get('q')
+    filter_stock = request.GET.get('filter_stock', 'all')
+    products = Product.objects.all()
+
+    if query is not None:
+        lookups = Q(product_id__icontains=query) | Q(product_name__icontains=query)
+        products = products.filter(lookups)
+        
+    # ดึง end_of_month_balance จาก MonthlyStockRecord ของเดือนล่าสุด
+    # ⚠️ โค้ดนี้จะทำงานได้ต่อเมื่อคุณมีโมเดล MonthlyStockRecord ที่ถูกต้อง
+    latest_balance_subquery = MonthlyStockRecord.objects.filter(
+        product=OuterRef('pk')
+    ).order_by('-year', '-month').values('end_of_month_balance')[:1]
+
+    # ใช้ annotate เพื่อคำนวณสต็อกคงเหลือปัจจุบันและข้อมูลอื่น ๆ
+    products = products.annotate(
+        # ✅ คำนวณสต็อกคงเหลือปัจจุบัน (Current Stock) จาก Receiving.quantity
+        total_current_stock=Sum('Receiving__quantity'), 
+        
+        # คำนวณอื่น ๆ
+        # Note: ถ้า Receiving__quantity คือยอดคงเหลือ, total_quantity_received จะไม่ถูกต้อง 
+        # ให้สมมติว่าโค้ดนี้ต้องการใช้ total_current_stock เป็นยอดคงเหลือหลัก
+        total_quantity_received=Sum('Receiving__quantity'), # คงไว้ตามโค้ดต้นฉบับ
+        latest_receiving_date=Max('Receiving__date_created'),
+        total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField()),
+        end_of_month_balance=Subquery(latest_balance_subquery)
+    )
+
+    # กรองวัสดุตามตัวเลือกจากปุ่ม โดยใช้ total_current_stock
+    if filter_stock == 'in_stock':
+        # ✅ กรอง: สต็อกมากกว่า 0
+        products = products.filter(total_current_stock__gt=0)
+        # ✅ เรียง: ตามสต็อกคงเหลือ
+        products = products.order_by('total_current_stock') 
+    elif filter_stock == 'out_of_stock':
+        # ✅ กรอง: สต็อกเท่ากับ 0 หรือ NULL (ใช้ Q object เพื่อรวม NULL เข้าไปด้วย)
+        products = products.filter(Q(total_current_stock=0) | Q(total_current_stock__isnull=True))
+    else:
+        # ✅ เรียง: ตาม ID หรือ total_current_stock
+        products = products.order_by('id') # เปลี่ยนจาก total_current_stock เพื่อให้แสดงรายการทั้งหมดตาม ID
+
+    # เรียงลำดับสุดท้าย (หากต้องการ)
+    # products = products.order_by('total_quantity_received')
+
+    # pagination
+    page = request.GET.get('page')
+    p = Paginator(products, 20)
+    try:
+        products = p.page(page)
+    except Exception:
+        products = p.page(1)
+
+    context = {
+        'title': 'รายการวัสดุทั้งหมด',
+        'products': products,
+        'pending_orders_count': count_pending_orders(),
+        # ✅ แก้ไข: ใช้ total_current_stock สำหรับการคำนวณยอดรวมที่แสดงในหน้า
+        'total_quantity': sum(product.total_current_stock or 0 for product in products), 
+        'filter_stock': filter_stock
+    }
+    return render(request, 'products.html', context)
+
+
 @user_passes_test(is_authorized_manager)
-# @login_required
+@login_required
 # def products(request):
 #     query = request.GET.get('q')
-#     products = Product.objects.all()
-
-#     if query is not None:
-#         lookups = Q(product_id__icontains=query) | Q(product_name__icontains=query)
-#         products = Product.objects.filter(lookups)
-
-#     # ใช้ annotate เพื่อคำนวณจำนวนรวมและวันที่รับเข้าล่าสุด
-#     products = products.annotate(
-#         total_quantity_received=Sum('Receiving__quantity'),
-#         latest_receiving_date=Max('Receiving__id'),
-#         total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField())
-#     ).order_by('-product_id')
-
-#     page = request.GET.get('page')
-
-#     p = Paginator(products, 20)
-#     try:
-#         products = p.page(page)
-#     except:
-#         products = p.page(1)
-
-#     context = {
-#         'title':'รายการวัสดุทั้งหมด' ,
-#         'products':products,
-#         'pending_orders_count': count_pending_orders(),
-# 		'total_quantity':total_quantity
-#         }
-#     return render(request, 'products.html', context)
-
-# @login_required
-# def products(request):
-#     query = request.GET.get('q')
+#     filter_stock = request.GET.get('filter_stock', 'all')  # รับค่าจากปุ่มกรอง
 #     products = Product.objects.all()
 
 #     if query is not None:
 #         lookups = Q(product_id__icontains=query) | Q(product_name__icontains=query)
 #         products = products.filter(lookups)
 
-#     # เรียงตามจำนวนสต็อก โดยวัสดุที่หมดสต็อก (quantityinstock = 0) จะอยู่ท้ายสุด
+#     # กรองวัสดุตามตัวเลือกจากปุ่ม
+#     if filter_stock == 'in_stock':
+#         products = products.filter(quantityinstock__gt=0)  # แสดงเฉพาะวัสดุที่ยังมีในสต๊อก
+#         products = products.order_by('quantityinstock')  # เรียงจากน้อยไปมาก
+#     elif filter_stock == 'out_of_stock':
+#         products = products.filter(quantityinstock=0)  # แสดงเฉพาะวัสดุที่หมดสต๊อก
+#     else:
+#         products = products.order_by('id')  # เรียงตามสต็อกทั้งหมด
+
+#      # ดึง end_of_month_balance จาก MonthlyStockRecord ของเดือนล่าสุด
+#     latest_balance_subquery = MonthlyStockRecord.objects.filter(
+#         product=OuterRef('pk')
+#     ).order_by('-year', '-month').values('end_of_month_balance')[:1]
+
+#     # ใช้ annotate เพื่อคำนวณจำนวนรวมและวันที่รับเข้าล่าสุด
 #     products = products.annotate(
 #         total_quantity_received=Sum('Receiving__quantity'),
 #         latest_receiving_date=Max('Receiving__id'),
-#         total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField())
-#     ).order_by('-quantityinstock', 'product_name')  # เรียงจากมากไปน้อย, 0 อยู่ท้ายสุด
+#         total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField()),
+#         end_of_month_balance=Subquery(latest_balance_subquery)  # ดึงจำนวนคงเหลือเดือนล่าสุด
+#     )
+
+#     # เพิ่มการเรียงลำดับที่แน่นอนหลังการ annotate
+#     # products = products.order_by('id')
+#     # เรียงลำดับจากน้อยไปมากตาม total_quantity_received
+#     products = products.order_by('total_quantity_received')
 
 #     # pagination
 #     page = request.GET.get('page')
@@ -1960,63 +1930,10 @@ def export_products_to_excel(request):
 #         'title': 'รายการวัสดุทั้งหมด',
 #         'products': products,
 #         'pending_orders_count': count_pending_orders(),
-#         'total_quantity': sum(product.quantityinstock for product in products)  # แสดงจำนวนที่เหลือ
+#         'total_quantity': sum(product.quantityinstock for product in products),
+#         'filter_stock': filter_stock  # เก็บค่าตัวเลือกการกรองไว้ใน context
 #     }
 #     return render(request, 'products.html', context)
-
-@login_required
-def products(request):
-    query = request.GET.get('q')
-    filter_stock = request.GET.get('filter_stock', 'all')  # รับค่าจากปุ่มกรอง
-    products = Product.objects.all()
-
-    if query is not None:
-        lookups = Q(product_id__icontains=query) | Q(product_name__icontains=query)
-        products = products.filter(lookups)
-
-    # กรองวัสดุตามตัวเลือกจากปุ่ม
-    if filter_stock == 'in_stock':
-        products = products.filter(quantityinstock__gt=0)  # แสดงเฉพาะวัสดุที่ยังมีในสต๊อก
-        products = products.order_by('quantityinstock')  # เรียงจากน้อยไปมาก
-    elif filter_stock == 'out_of_stock':
-        products = products.filter(quantityinstock=0)  # แสดงเฉพาะวัสดุที่หมดสต๊อก
-    else:
-        products = products.order_by('id')  # เรียงตามสต็อกทั้งหมด
-
-     # ดึง end_of_month_balance จาก MonthlyStockRecord ของเดือนล่าสุด
-    latest_balance_subquery = MonthlyStockRecord.objects.filter(
-        product=OuterRef('pk')
-    ).order_by('-year', '-month').values('end_of_month_balance')[:1]
-
-    # ใช้ annotate เพื่อคำนวณจำนวนรวมและวันที่รับเข้าล่าสุด
-    products = products.annotate(
-        total_quantity_received=Sum('Receiving__quantity'),
-        latest_receiving_date=Max('Receiving__id'),
-        total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField()),
-        end_of_month_balance=Subquery(latest_balance_subquery)  # ดึงจำนวนคงเหลือเดือนล่าสุด
-    )
-
-    # เพิ่มการเรียงลำดับที่แน่นอนหลังการ annotate
-    # products = products.order_by('id')
-    # เรียงลำดับจากน้อยไปมากตาม total_quantity_received
-    products = products.order_by('total_quantity_received')
-
-    # pagination
-    page = request.GET.get('page')
-    p = Paginator(products, 20)
-    try:
-        products = p.page(page)
-    except:
-        products = p.page(1)
-
-    context = {
-        'title': 'รายการวัสดุทั้งหมด',
-        'products': products,
-        'pending_orders_count': count_pending_orders(),
-        'total_quantity': sum(product.quantityinstock for product in products),
-        'filter_stock': filter_stock  # เก็บค่าตัวเลือกการกรองไว้ใน context
-    }
-    return render(request, 'products.html', context)
 
 
 @user_passes_test(is_authorized_manager)
@@ -2334,7 +2251,7 @@ def receive_product(request):
             total.save()
 
             # อัปเดตจำนวนสินค้าในตาราง Product
-            Product.objects.filter(id=product.id).update(quantityinstock=F('quantityinstock') + received_product.quantity)
+            # Product.objects.filter(id=product.id).update(quantityinstock=F('quantityinstock') + received_product.quantity)
 
             messages.success(request, 'เพิ่มข้อมูลสำเร็จ')
             return redirect('dashboard:receive_list')  # หรือไปยังหน้าที่ต้องการ
@@ -2365,7 +2282,7 @@ def update_received_product(request, id):
             updated_received_product.save()
 
             # อัพเดทจำนวนสินค้าในสต็อก
-            product = updated_received_product.product
+            # product = updated_received_product.product
             # stock, created = Stock.objects.get_or_create(product=product)
             # stock.quantity -= received_product.quantityreceived  # ลบจำนวนเดิม
             # stock.quantity += updated_received_product.quantity  # เพิ่มจำนวนใหม่
@@ -2378,7 +2295,7 @@ def update_received_product(request, id):
             # total.save()
 
             # อัปเดตจำนวนสินค้าในตาราง Product
-            Product.objects.filter(id=product.id).update(quantityinstock=F('quantityinstock') + received_product.quantity)
+            # Product.objects.filter(id=product.id).update(quantityinstock=F('quantityinstock') + received_product.quantity)
 
             messages.success(request, 'อัพเดทข้อมูลสำเร็จ')
             return redirect('dashboard:receive_list')  # หรือไปยังหน้าที่ต้องการ
@@ -2792,14 +2709,15 @@ def approve_orders(request, order_id):
         if form.is_valid():
             old_status = ap.status  # เก็บสถานะเดิมก่อนการเปลี่ยนแปลง
             new_status = form.cleaned_data.get('status')
+
             if new_status == False:
                 print("คำสั่งซื้อถูกปฏิเสธ กำลังกู้คืนสต็อก......")
                 # คืนจำนวนสินค้ากลับไปยังสต๊อก
                 for item in ap.items.all():
-                    product = item.product
-                    product.quantityinstock += item.quantity
-                    product.save()
-                    print(f"Restored {item.quantity} of {product.product_name} to stock.")
+                    # product = item.product
+                    # product.quantityinstock += item.quantity
+                    # product.save()
+                    # print(f"Restored {item.quantity} of {product.product_name} to stock.")
 
                     # คืนจำนวนสินค้าที่รับเข้าใน Receiving
                     receiving = item.receiving
@@ -2892,35 +2810,6 @@ def notification(request):
     return render(request, 'notification.html', context)
 
 
-
-# @login_required
-# @staff_member_required
-# def acknowledge_notification(request, notification_id):
-#     notification = get_object_or_404(OutOfStockNotification, id=notification_id)
-
-#     if not notification.acknowledged:
-#         notification.acknowledged = True
-#         notification.save()
-#         messages.success(request, f"รับทราบการแจ้งเตือนสำหรับวัสดุ '{notification.product.product_name}' เรียบร้อยแล้ว!")
-#     else:
-#         messages.warning(request, f"การแจ้งเตือนนี้ได้รับการรับทราบแล้วก่อนหน้านี้!")
-
-#     return redirect('dashboard:notification')  # URL ที่คุณต้องการแสดงรายการแจ้งเตือน
-
-
-# @login_required
-# @staff_member_required
-# def restock_notification(request, notification_id):
-#     notification = get_object_or_404(OutOfStockNotification, id=notification_id)
-
-#     if not notification.restocked:
-#         notification.restocked = True
-#         notification.save()
-#         messages.success(request, f"ยืนยันการเติมสต๊อกวัสดุ '{notification.product.product_name}' สำเร็จแล้ว!")
-#     else:
-#         messages.warning(request, f"การเติมสต๊อกสำหรับวัสดุ '{notification.product.product_name}' ได้ดำเนินการแล้วก่อนหน้านี้!")
-
-#     return redirect('dashboard:notification')  # URL ที่คุณต้องการแสดงรายการแจ้งเตือน
 
 from django.views.decorators.csrf import csrf_exempt
 

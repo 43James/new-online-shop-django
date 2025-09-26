@@ -78,32 +78,6 @@ def count_unconfirmed_orders(user):
 # ในกรณีใช้กับตาราง Product
 @user_passes_test(is_general)
 @login_required
-# def home_page(request):
-#     products = Product.objects.all()
-    
-#     # คำนวณ total_quantity สำหรับแต่ละสินค้า
-#     for product in products:
-#         product.total_quantity = Receiving.total_quantity_by_product(product.id)
-    
-#     context = {'products': paginat(request, products),}
-#     return render(request, 'home_page.html', context)
-
-# @login_required
-# def home_page(request):
-#     # ดึงเฉพาะสินค้าที่มีในสต็อก (total_quantity > 0)
-#     products = Product.objects.all()
-
-#     # คำนวณ total_quantity สำหรับแต่ละสินค้า
-#     available_products = []
-#     for product in products:
-#         product.total_quantity = Receiving.total_quantity_by_product(product.id)
-#         if product.total_quantity > 0:
-#             available_products.append(product)
-
-#     context = {'products': paginat(request, available_products)}
-#     return render(request, 'home_page.html', context)
-
-@login_required
 def home_page(request):
     # ดึงข้อมูลสินค้าทั้งหมด
     products = Product.objects.all().order_by('product_name')
@@ -153,28 +127,8 @@ def home_page(request):
 
 
 
-
 @user_passes_test(is_general)
 @login_required
-# def product_detail(request, slug):
-# 	form = QuantityForm()
-# 	product = get_object_or_404(Product, slug=slug)
-# 	related_products = Product.objects.filter(category=product.category).all()[:5]
-# 	total_quantity = Receiving.total_quantity_by_product(product.id)
-# 	context = {
-# 		'product_name':product.product_name,
-# 		'product':product,
-# 		'form':form,
-# 		'favorites':'favorites',
-# 		'related_products':related_products,
-# 		'stock': Stock.objects.all(),
-# 		'total_quantity':total_quantity
-# 	}
-# 	if request.user.likes.filter(id=product.id).first():
-# 		context['favorites'] = 'remove'
-# 	return render(request, 'product_detail.html', context)
-
-
 def product_detail(request, product_id):
     form = QuantityForm()
     product = get_object_or_404(Product, product_id=product_id)
