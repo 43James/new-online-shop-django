@@ -2,51 +2,43 @@
 {% load static %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6 mt-4">
+<div class="container col-4 mt-4">
+    <h3>ตะกร้าครุภัณฑ์</h3>
+    <hr>
 
-            <h3>ตะกร้าครุภัณฑ์</h3>
+    <div class="card mb-4">
+        <div class="card-body">
+            <ul id="cart-list" class="list-group list-group-flush">
+                <!-- รายการครุภัณฑ์ในตะกร้าจะถูกโหลดด้วย JS -->
+            </ul>
             <hr>
-
-            <div class="card mb-4">
-                <div class="card-body">
-                    <ul id="cart-list" class="list-group list-group-flush">
-                        </ul>
-                    <hr>
-                    <h5>รวม <span id="cart-count">0</span> รายการ</h5>
-                </div>
-            </div>
-
-            <div class="card" id="checkout-card" style="display:none;">
-                <div class="card-body">
-                    <h5 class="card-title">ยืนยันการยืม</h5>
-                    <form id="checkout-form" action="{% url 'assets:confirm_loan' %}" method="post" novalidate>
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="date_of_use" class="form-label">วันที่ใช้งาน</label>
-                            <input type="datetime-local" name="date_of_use" class="form-control" id="date_of_use" required> 
-                            <div class="invalid-feedback">
-                                กรุณาระบุวันที่และเวลาที่ต้องการใช้งาน
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="date_due" class="form-label">วันที่กำหนดคืน</label>
-                            <input type="datetime-local" name="date_due" class="form-control" id="date_due" required> 
-                            <div class="invalid-feedback">
-                                กรุณาระบุวันที่และเวลาที่กำหนดคืน
-                            </div>
-                        </div>
-                        <input type="hidden" name="asset_ids" id="asset-ids">
-                        <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#confirmLoanModal">ยืมครุภัณฑ์</button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="mt-4">
-                <a href="{% url 'assets:loan_list' %}" class="btn btn-outline-secondary w-100">กลับไปที่รายการครุภัณฑ์</a>
-            </div>
+            <h5>รวม <span id="cart-count">0</span> รายการ</h5>
         </div>
+    </div>
+
+    <div class="card" id="checkout-card" style="display:none;">
+        <div class="card-body">
+            <h5 class="card-title">ยืนยันการยืม</h5>
+            <form id="checkout-form" action="{% url 'assets:confirm_loan' %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3 col-5">
+                    <label for="date_of_use" class="form-label">วันที่ใช้งาน</label>
+                    <input type="datetime-local" name="date_of_use" class="form-control" required>
+                </div>
+                <div class="mb-3 col-5">
+                    <label for="date_due" class="form-label">วันที่กำหนดคืน</label>
+                    <input type="datetime-local" name="date_due" class="form-control" required>
+                </div>
+                <!-- ส่งค่า id ของครุภัณฑ์ทั้งหมดในตะกร้า -->
+                <input type="hidden" name="asset_ids" id="asset-ids">
+                <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#confirmLoanModal">ยืมครุภัณฑ์</button>
+                <!-- <button type="submit" class="btn btn-primary w-100" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล'; this.form.submit();">ยืมครุภัณฑ์</button> -->
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'assets:loan_list' %}" class="btn btn-outline-secondary">กลับไปที่รายการครุภัณฑ์</a>
     </div>
 </div>
 
@@ -70,7 +62,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                <button type="button" class="btn btn-primary" id="confirm-submit-btn">ยืนยันการยืม</button> 
+                <button type="button" class="btn btn-primary" id="confirm-submit-btn" onclick="this.disabled=true; this.innerHTML='กำลังบันทึกข้อมูล...'; this.form.submit();">ยืนยันการยืม</button>
             </div>
         </div>
     </div>
@@ -99,8 +91,6 @@ const hiddenInput = document.getElementById('asset-ids');
 const confirmLoanModal = document.getElementById('confirmLoanModal');
 const confirmSubmitBtn = document.getElementById('confirm-submit-btn');
 const checkoutForm = document.getElementById('checkout-form');
-const dateOfUseInput = document.getElementById('date_of_use'); // อ้างอิง Input Field
-const dateDueInput = document.getElementById('date_due');     // อ้างอิง Input Field
 
 
 function renderCart(){
@@ -116,12 +106,10 @@ function renderCart(){
     }
 
     itemsInCart.forEach(asset => {
-        // ใช้ d-block w-100 ในปุ่มบนมือถือหากจำเป็น (แต่ w-100 ไม่จำเป็นใน d-flex)
         let li = document.createElement('li');
         li.className = "list-group-item d-flex justify-content-between align-items-center";
-        li.innerHTML = `
-            <div>${asset.name} (${asset.code})</div>
-            <button class="btn btn-sm btn-danger remove-item ms-3" data-id="${asset.id}">ลบ</button>`; // เพิ่ม ms-3 เพื่อเว้นระยะห่าง
+        li.innerHTML = `${asset.name} (${asset.code})
+            <button class="btn btn-sm btn-danger remove-item" data-id="${asset.id}">ลบ</button>`;
         list.appendChild(li);
     });
 
@@ -149,7 +137,6 @@ document.addEventListener('click', function(e){
 function formatDateTime(datetimeLocal) {
     if (!datetimeLocal) return "—";
     const date = new Date(datetimeLocal);
-    // ใช้ toLocaleString เพื่อให้แสดงวันที่และเวลาตาม locale (th-TH)
     return date.toLocaleDateString('th-TH', { 
         year: 'numeric', 
         month: 'long', 
@@ -162,7 +149,7 @@ function formatDateTime(datetimeLocal) {
 // 1. เมื่อ Modal จะแสดง (เพื่อดึงข้อมูลจาก Form มาแสดงใน Modal)
 confirmLoanModal.addEventListener('show.bs.modal', function (event) {
     
-    // ตรวจสอบ Form Validation ก่อนแสดง Modal
+    // ต้องตรวจสอบ Form Validation ก่อนแสดง Modal
     if (!checkoutForm.checkValidity()) {
         event.preventDefault(); // ป้องกัน Modal เปิด
         event.stopPropagation();
@@ -174,12 +161,12 @@ confirmLoanModal.addEventListener('show.bs.modal', function (event) {
     confirmSubmitBtn.disabled = false;
     confirmSubmitBtn.innerHTML = 'ยืนยันการยืม';
 
-    // ดึงค่าจาก DOM ที่อัปเดตแล้ว โดยใช้ตัวแปรที่อ้างอิง Input Field โดยตรง
-    const dateOfUse = dateOfUseInput.value;
-    const dateDue = dateDueInput.value;
+    // ดึงค่าจาก DOM ที่อัปเดตแล้ว
+    const dateOfUse = document.getElementById('date_of_use').value;
+    const dateDue = document.getElementById('date_due').value;
     
-    // ดึงจำนวนรายการจาก cart-count
-    const itemCount = count.textContent; 
+    // *** การแก้ไขปัญหา: ดึงค่าจาก element ที่ถูกอัปเดตใน renderCart() แล้ว ***
+    const itemCount = document.getElementById('cart-count').textContent; 
 
     document.getElementById('modal-item-count').textContent = itemCount;
     document.getElementById('modal-date-use').textContent = formatDateTime(dateOfUse);
@@ -209,4 +196,68 @@ confirmSubmitBtn.addEventListener('click', function() {
 // ✅ เริ่มต้น render เพื่อโหลดข้อมูลจาก localStorage เมื่อหน้าเว็บโหลด
 renderCart();
 </script>
+
+<!-- <script>
+// ✅ โหลดตะกร้าจาก localStorage
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+// ✅ ข้อมูลครุภัณฑ์ทั้งหมด (ต้องส่งมาจาก view)
+const assetItems = [
+    {% for asset in asset_items %}
+    {
+        id: {{ asset.id }},
+        name: "{{ asset.item_name|escapejs }}",
+        code: "{{ asset.asset_code }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+function renderCart(){
+    const list = document.getElementById('cart-list');
+    const count = document.getElementById('cart-count');
+    const checkoutCard = document.getElementById('checkout-card');
+    const hiddenInput = document.getElementById('asset-ids');
+
+    list.innerHTML = '';
+    let itemsInCart = assetItems.filter(a => cart.includes(a.id));
+
+    if(itemsInCart.length === 0){
+        list.innerHTML = `<li class="list-group-item text-muted text-center">ไม่มีครุภัณฑ์ในตะกร้า</li>`;
+        count.textContent = 0;
+        checkoutCard.style.display = "none";
+        hiddenInput.value = '';
+        return;
+    }
+
+    itemsInCart.forEach(asset => {
+        let li = document.createElement('li');
+        li.className = "list-group-item d-flex justify-content-between align-items-center";
+        li.innerHTML = `${asset.name} (${asset.code})
+            <button class="btn btn-sm btn-danger remove-item" data-id="${asset.id}">ลบ</button>`;
+        list.appendChild(li);
+    });
+
+    count.textContent = itemsInCart.length;
+    checkoutCard.style.display = "block";
+    hiddenInput.value = cart.join(",");
+}
+
+// ✅ ลบจากตะกร้า
+document.addEventListener('click', function(e){
+    if(e.target.classList.contains('remove-item')){
+        const id = parseInt(e.target.dataset.id);
+        cart = cart.filter(i => i !== id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+    }
+});
+
+// ✅ เคลียร์ตะกร้าหลังยืนยันการยืม
+document.getElementById("checkout-form").addEventListener("submit", function(){
+    localStorage.removeItem("cart");  // ล้างตะกร้า
+});
+
+// ✅ เริ่มต้น render
+renderCart();
+</script> -->
 {% endblock %}

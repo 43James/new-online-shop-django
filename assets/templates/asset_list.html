@@ -164,7 +164,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
                     <form id="deleteForm" method="post" action="">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+                        <button type="submit" class="btn btn-danger" onclick="this.disabled=true; this.innerHTML='กำลังลบ..'; this.form.submit();">ยืนยันการลบ</button>
                     </form>
                 </div>
             </div>

@@ -2,517 +2,659 @@
 <html lang="th" data-bs-theme="auto">
 
 <head>
-  {% load static %}
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="">
-  <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
-  <meta name="generator" content="Hugo 0.118.2">
-  <!-- <title>sidebar_v2</title> -->
-  <title>{% if title %} {{ title }} {% else %} ระบบจัดการครุภัฑณ์ {% endif %}</title>
+	{% load static %}
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="">
+	<meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+	<meta name="generator" content="Hugo 0.118.2">
+	<title>{% if title %} {{ title }} {% else %} ระบบจัดการครุภัฑณ์ {% endif %}</title>
 
-  <!-- Script para el tema oscuro -->
-  <script src="color-modes.js"></script>
+	<script src="color-modes.js"></script>
 
-  <!-- Bootstrao 5.3.2 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
-     <!-- โหลด CSS จากโฟลเดอร์ sidebar -->
-  <link rel="stylesheet" href="{% static 'sidebar/style.css' %}">
+	<link rel="stylesheet" href="{% static 'sidebar/style.css' %}">
 
-  <!-- Iconos de bootstrap -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-  <!-- Estilos Basicos -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
 
-  <!-- Jquery -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="style.css">
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+		integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="style.css">
 
-  <!-- โหลด JavaScript จากโฟลเดอร์ sidebar -->
-  <script src="{% static 'sidebar/color-modes.js' %}"></script>
-  <script src="{% static 'sidebar/dashboard.js' %}"></script>
-  
-  <!-- Bootstrap CSS (ต้องมีอยู่แล้ว) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+	<script src="{% static 'sidebar/color-modes.js' %}"></script>
+	<script src="{% static 'sidebar/dashboard.js' %}"></script>
 
-  <!-- Bootstrap-Select CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css">
+	<link rel="stylesheet"
+		href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css">
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/js/bootstrap-select.min.js"></script>
 
-  <!-- jQuery (ต้องโหลดก่อน bootstrap-select.js) -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script>
+		$(function () {
+			$('.selectpicker').selectpicker();
+		});
+	</script>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function () {
+			window.setTimeout(function () {
+				$(".alert").fadeTo(1000, 0).slideUp(1000, function () {
+					$(this).remove();
+				});
+			}, 5500);
+		});
+	</script>
 
-  <!-- Bootstrap-Select JS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/js/bootstrap-select.min.js"></script>
+	<style>
+		/* Base styles for desktop/larger screens */
+		body {
+			height: 100%;
+		}
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  
-  <script>
-    $(function(){
-      $('.selectpicker').selectpicker();
-    });
-  </script>
-  
-  <script type="text/javascript">
-    $(document).ready(function () {
+		/* Sidebar (Desktop/Tablet) */
+		aside {
+			position: fixed;
+			overflow: auto;
+			height: calc(100vh - 12px);
+			justify-content: flex-start;
+			align-self: flex-start;
+			width: 16.666667%;
+			/* col-sm-2 width */
+			z-index: 1050;
+		}
 
-        window.setTimeout(function () {
-            $(".alert").fadeTo(1000, 0).slideUp(1000, function () {
-                $(this).remove();
-            });
-        }, 1500);
+		/* Main Content (Desktop/Tablet) */
+		main {
+			position: relative;
+			overflow: visible;
+			margin-left: auto;
+			width: 83.333333%;
+			/* col-sm-10 width */
+		}
 
-    });
-  </script>
+		nav {
+			position: sticky;
+		}
 
-  <style>
-    body {
-      height: 100%;
-    }
+		/* Mobile Styles (max-width: 575px) */
+		@media screen and (max-width: 575px) {
 
-    aside {
-      /* border: 1px yellow solid; */
-      position: fixed;
-      overflow: auto;
-      height: calc(100vh - 12px);
-      justify-content: flex-start;
-      align-self: flex-start;
+			/* Hide desktop toggle button */
+			#sidebartoggle {
+				display: none;
+			}
 
-    }
-    nav{
-      position:sticky;
-    }
-    main {
-      position: relative;
-      overflow: visible;
-      margin-left: auto;
-      justify-content: flex-end;
-      align-self: flex-end;
-    }
+			/* Show offcanvas toggle button */
+			#sidebarshow {
+				display: inline;
+			}
 
-    #sidebarshow {
-      display: none;
+			/* Hide the default desktop sidebar (aside) on small screens */
+			aside {
+				display: none !important;
+			}
 
-    }
+			/* Main content takes full width on mobile */
+			main {
+				width: 100%;
+				margin-left: 0;
+			}
 
-    @media screen and (max-width: 575px) {
-      #sidebarshow {
-        display: inline;
-      }
-
-      #sidebartoggle {
-        display: none;
-      }
-    }
-
-  </style>
-
-  <!-- Custom styles for this template -->
+			/* Center the navbar-brand on mobile only */
+			.navbar-brand.mobile-center {
+				flex-grow: 1;
+				/* Allows it to take up available space */
+				text-align: center;
+				margin: 0 auto;
+			}
+		}
+	</style>
 
 </head>
 
-<body class="bg-body-tertiary" >
+<body class="bg-body-tertiary">
 
-  <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-    <symbol id="check2" viewBox="0 0 16 16">
-      <path
-        d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
-    </symbol>
-    <symbol id="circle-half" viewBox="0 0 16 16">
-      <path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z" />
-    </symbol>
-    <symbol id="moon-stars-fill" viewBox="0 0 16 16">
-      <path
-        d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z" />
-      <path
-        d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z" />
-    </symbol>
-    <symbol id="sun-fill" viewBox="0 0 16 16">
-      <path
-        d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z" />
-    </symbol>
-  </svg>
+	<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+		<symbol id="check2" viewBox="0 0 16 16">
+			<path
+				d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
+		</symbol>
+		<symbol id="circle-half" viewBox="0 0 16 16">
+			<path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z" />
+		</symbol>
+		<symbol id="moon-stars-fill" viewBox="0 0 16 16">
+			<path
+				d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z" />
+			<path
+				d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z" />
+		</symbol>
+		<symbol id="sun-fill" viewBox="0 0 16 16">
+			<path
+				d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z" />
+		</symbol>
+	</svg>
 
-  <!-- <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-    <symbol id="bootstrap" viewBox="0 0 118 94">
-      <title>Bootstrap</title>
-      <path fill-rule="evenodd" clip-rule="evenodd"
-        d="M24.509 0c-6.733 0-11.715 5.893-11.492 12.284.214 6.14-.064 14.092-2.066 20.577C8.943 39.365 5.547 43.485 0 44.014v5.972c5.547.529 8.943 4.649 10.951 11.153 2.002 6.485 2.28 14.437 2.066 20.577C12.794 88.106 17.776 94 24.51 94H93.5c6.733 0 11.714-5.893 11.491-12.284-.214-6.14.064-14.092 2.066-20.577 2.009-6.504 5.396-10.624 10.943-11.153v-5.972c-5.547-.529-8.934-4.649-10.943-11.153-2.002-6.484-2.28-14.437-2.066-20.577C105.214 5.894 100.233 0 93.5 0H24.508zM80 57.863C80 66.663 73.436 72 62.543 72H44a2 2 0 01-2-2V24a2 2 0 012-2h18.437c9.083 0 15.044 4.92 15.044 12.474 0 5.302-4.01 10.049-9.119 10.88v.277C75.317 46.394 80 51.21 80 57.863zM60.521 28.34H49.948v14.934h8.905c6.884 0 10.68-2.772 10.68-7.727 0-4.643-3.264-7.207-9.012-7.207zM49.948 49.2v16.458H60.91c7.167 0 10.964-2.876 10.964-8.281 0-5.406-3.903-8.178-11.425-8.178H49.948z">
-      </path>
-    </symbol>
-  </svg> -->
-  <!-- <button class="btn btn-outline-secondary" id="sidebarToggle"><i class="bi bi-arrows-expand-vertical"></i></button> -->
+	<div class="offcanvas offcanvas-start bg-body-tertiary" tabindex="-1" id="offcanvasExample"
+		aria-labelledby="offcanvasExampleLabel">
+		<div class="offcanvas-header border-bottom">
+			<a href="" class="d-flex align-items-center me-md-auto link-body-emphasis text-decoration-none">
+				<img id="logo-img-offcanvas" src="{% static 'sidebar/logo-ubu-spark-011.png' %}" alt="Your Logo"
+					width="150">
+			</a>
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+		</div>
+		<div class="offcanvas-body d-flex flex-column justify-content-between p-3">
+			<div class="flex-grow-1 overflow-auto">
+				<ul class="nav nav-pills flex-column mb-auto">
+					<li class="nav-item">
+						<a href="#"
+							class="nav-link d-flex align-items-center {% if '/dashboard/' in request.path %}active text-white bg-primary{% else %}link-body-emphasis{% endif %}">
+							<i class="bi bi-speedometer2 me-2"></i>
+							Dashboard
+						</a>
+					</li>
+					<li>
+						<a href="{% url 'assets:calendar' %}"
+							class="nav-link d-flex align-items-center {% if '/calendar/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
+							<i class="bi bi-calendar-date-fill me-2"></i>
+							ปฏิทินการยืม/จองครุภัณฑ์
+						</a>
+					</li>
+					<li>
+						<a href="{% url 'assets:loan_list' %}"
+							class="nav-link d-flex align-items-center {% if '/loan-list/' in request.path %}active text-white bg-success{% else %}text-primary link-body-emphasis{% endif %}">
+							<i class="bi bi-bag-plus-fill me-2"></i>
+							ยืมครุภัณฑ์
+						</a>
+					</li>
+					<li>
+						<a href="{% url 'assets:loan_orders_user' %}"
+							class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-success{% else %}text-success link-body-emphasis{% endif %}">
+							<i class="bi bi-card-list me-2"></i><strong>
+								รายการยืมครุภัณฑ์ของคุณ</strong>
+						</a>
+					</li>
 
+					{% if request.user.is_warehouse_manager or request.user.is_admin %}
+					<hr>
 
+					<li>
+						<a href="{% url 'assets:loan_approval_list' %}"
+							class="nav-link d-flex align-items-center justify-content-between {% if '/loan-approval-list/' in request.path %}active text-white bg-warning{% else %}text-warning link-body-emphasis{% endif %}">
+							<span class="d-flex align-items-center">
+								<i class="bi bi-card-checklist me-2"></i>
+								<strong>รายการยืมรออนุมัติ...</strong>
+							</span>
+							{% if loan_pending_count > 0 %}
+							<span class="badge rounded-pill bg-danger">
+								{{ loan_pending_count }}
+							</span>
+							{% endif %}
+						</a>
+					</li>
+					{% endif %}
 
+					{% if request.user.is_admin %}
+					<li>
+						<a href="{% url 'assets:asset_list' %}"
+							class="nav-link d-flex align-items-center {% if '/asset-list/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
+							<i class="bi bi-table me-2"></i>
+							รายการครุภัณฑ์
+						</a>
+					</li>
+					<li>
+						<a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
+							<i class="bi bi-person-circle me-2"></i>
+							การครอบครองครุภัณฑ์
+						</a>
+					</li>
+					<li>
+						<a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
+							<i class="bi bi-clipboard2-check-fill me-2"></i>
+							ตรวจนับครุภัณฑ์
+						</a>
+					</li>
+				</ul>
+				{% endif %}
 
-  <aside class="collapse show collapse-horizontal col-sm-2 p-3 border-end bg-body-tertiary" id="collapseWidthExample">
-    <a href="" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
-      <svg class="bi pe-none me-2" width="40" height="32">
-        <use xlink:href="#bootstrap" />
-      </svg>
-      <!-- <img src="{% static 'sidebar/logo-ubu-spark-011.png' %}" alt="Your Logo" width="150"> -->
-      <img id="logo-img" src="{% static 'sidebar/logo-ubu-spark-011.png' %}" alt="Your Logo" width="150">
-      <!-- <span class="d-print-block">Sidebar</span> -->
-    </a>
-    <hr>
-    <ul class="nav nav-pills flex-column mb-auto">
-      <li class="nav-item">
-        <a href="#" class="nav-link d-flex align-items-center {% if '/dashboard/' in request.path %}active text-white bg-primary{% else %}link-body-emphasis{% endif %}">
-          <i class="bi bi-speedometer2 me-2"></i> 
-          Dashboard
-        </a>
-      </li>
+				{% if request.user.is_warehouse_manager or request.user.is_admin %}
+				<hr>
+				<ul class="list-unstyled ps-0">
+					<li class="mb-1">
+						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+							data-bs-toggle="collapse" data-bs-target="#home-collapse-offcanvas" aria-expanded="false">
+							อื่นๆ
+						</button>
+						<div class="collapse" id="home-collapse-offcanvas">
+							<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+								<li><a href="{% url 'assets:asset_list_cate' %}"
+										class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการหมวดหมู่หลัก</a>
+								</li>
+								<li><a href="{% url 'assets:asset_list_subcate' %}"
+										class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการหมวดหมู่ย่อย</a>
+								</li>
+								<li><a href="{% url 'assets:asset_list_storage_location' %}"
+										class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการสถานที่เก็บครุภัณฑ์</a>
+								</li>
+							</ul>
+						</div>
+					</li>
+				</ul>
+				{% endif %}
+			</div>
 
-      <li>
-        <a href="{% url 'assets:calendar' %}" 
-          class="nav-link d-flex align-items-center {% if '/calendar/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
-          <i class="bi bi-calendar-date-fill me-2"></i> 
-          ปฏิทินการยืม/จองครุภัณฑ์
-        </a>
-      </li>
+			<hr class="mt-2 mb-2">
+			<div class="dropdown">
+				<a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle"
+					data-bs-toggle="dropdown" aria-expanded="false">
+					<img src="{% if user.profile.img %}{{ user.profile.img.url }}{% else %}{% static 'path/to/default_image.jpg' %}{% endif %}"
+						alt="Profile Picture" width="60" height="60"
+						class="rounded-circle me-2 border border-secondary border-2">
+					<span class="d-sm-inline me-1 text-muted small">สวัสดี</span>
+					<strong class="text-dark">{{ user.username }}</strong>
+				</a>
+				<ul class="dropdown-menu dropdown-menu-end text-small shadow">
+					<li>
+						<div class="dropdown-item-text text-center border-bottom pb-2">
+							<p class="mb-0 fw-bold">{{ user.get_full_name|default:user.username }}</p>
+							<p class="text-muted small mb-0">{{ user.email|default:"ไม่มีอีเมล" }}</p>
+						</div>
+					</li>
+					<li>
+						<hr class="dropdown-divider">
+					</li>
+					<li>
+						<a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}">
+							<i class="bi bi-person-circle me-2 text-info"></i> โปรไฟล์
+						</a>
+					</li>
+					<li>
+						<a class="dropdown-item" href="{% url 'shop:home_page' %}">
+							<i class="bi bi-shop me-2 text-success"></i> กลับไปหน้าเบิกวัสดุ
+						</a>
+					</li>
+					<li>
+						<hr class="dropdown-divider">
+					</li>
+					<li>
+						<a class="dropdown-item text-danger" href="#">
+							<i class="bi bi-box-arrow-right me-2"></i> ออกจากระบบ
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+	<aside class="collapse show collapse-horizontal col-sm-2 p-3 border-end bg-body-tertiary" id="collapseWidthExample">
+		<a href="" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
+			<svg class="bi pe-none me-2" width="40" height="32">
+				<use xlink:href="#bootstrap" />
+			</svg>
+			<img id="logo-img" src="{% static 'sidebar/logo-ubu-spark-011.png' %}" alt="Your Logo" width="150">
+		</a>
+		<hr>
+		<ul class="nav nav-pills flex-column mb-auto">
+			<li class="nav-item">
+				<a href="#"
+					class="nav-link d-flex align-items-center {% if '/dashboard/' in request.path %}active text-white bg-primary{% else %}link-body-emphasis{% endif %}">
+					<i class="bi bi-speedometer2 me-2"></i>
+					Dashboard
+				</a>
+			</li>
 
-      <li>
-        <a href="{% url 'assets:loan_list' %}" 
-          class="nav-link d-flex align-items-center {% if '/loan-list/' in request.path %}active text-white bg-success{% else %}text-primary link-body-emphasis{% endif %}">
-          <i class="bi bi-bag-plus-fill me-2"></i> 
-          ยืมครุภัณฑ์
-        </a>
-      </li>
+			<li>
+				<a href="{% url 'assets:calendar' %}"
+					class="nav-link d-flex align-items-center {% if '/calendar/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
+					<i class="bi bi-calendar-date-fill me-2"></i>
+					ปฏิทินการยืม/จองครุภัณฑ์
+				</a>
+			</li>
 
-      <li>
-        <a href="{% url 'assets:loan_orders_user' %}" 
-          class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-success{% else %}text-warning link-body-emphasis{% endif %}">
-          <i class="bi bi-card-list me-2"></i><strong>  
-          รายการยืมครุภัณฑ์ (ผู้ใช้งาน)</strong> 
-        </a>
-      </li>
+			<li>
+				<a href="{% url 'assets:loan_list' %}"
+					class="nav-link d-flex align-items-center {% if '/loan-list/' in request.path %}active text-white bg-success{% else %}text-primary link-body-emphasis{% endif %}">
+					<i class="bi bi-bag-plus-fill me-2"></i>
+					ยืมครุภัณฑ์
+				</a>
+			</li>
 
-      {% if request.user.is_warehouse_manager or request.user.is_admin %}
-      <hr>
+			<li>
+				<a href="{% url 'assets:loan_orders_user' %}"
+					class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-success{% else %}text-success link-body-emphasis{% endif %}">
+					<i class="bi bi-card-list me-2"></i><strong>
+						รายการยืมครุภัณฑ์ของคุณ</strong>
+				</a>
+			</li>
 
-      <li>
-        <a href="{% url 'assets:loan_approval_list' %}" 
-          class="nav-link d-flex align-items-center {% if '/loan-approval-list/' in request.path %}active text-white bg-success{% else %}text-success link-body-emphasis{% endif %}">
-          <i class="bi bi-card-checklist me-2"></i><strong>  
-          รายการยืมครุภัณฑ์ (เจ้าหน้าที่)</strong>
-        </a>
-      </li>
+			{% if request.user.is_warehouse_manager or request.user.is_admin %}
+			<hr>
 
-      <li>
-        <a href="{% url 'assets:asset_list' %}" 
-          class="nav-link d-flex align-items-center {% if '/asset-list/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
-          <i class="bi bi-table me-2"></i> 
-          รายการครุภัณฑ์
-        </a>
-      </li>
+			<li>
+				<a href="{% url 'assets:loan_approval_list' %}"
+					class="nav-link d-flex align-items-center justify-content-between {% if '/loan-approval-list/' in request.path %}active text-white bg-warning{% else %}text-warning link-body-emphasis{% endif %}">
+					<span class="d-flex align-items-center">
+						<i class="bi bi-card-checklist me-2"></i>
+						<strong>รายการยืมรออนุมัติ...</strong>
+					</span>
 
-      <li>
-        <a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
-          <i class="bi bi-person-circle me-2"></i> 
-          การครอบครองครุภัณฑ์
-        </a>
-      </li>
+					{% if loan_pending_count > 0 %}
+					<span class="badge rounded-pill bg-danger">
+						{{ loan_pending_count }}
+					</span>
+					{% endif %}
+				</a>
+			</li>
+			{% endif %}
+			{% if request.user.is_admin %}
+			<li>
+				<a href="{% url 'assets:asset_list' %}"
+					class="nav-link d-flex align-items-center {% if '/asset-list/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
+					<i class="bi bi-table me-2"></i>
+					รายการครุภัณฑ์
+				</a>
+			</li>
 
-      <li>
-        <a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
-          <i class="bi bi-clipboard2-check-fill me-2"></i> 
-          ตรวจนับครุภัณฑ์
-        </a>
-      </li>
-    </ul>
+			<li>
+				<a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
+					<i class="bi bi-person-circle me-2"></i>
+					การครอบครองครุภัณฑ์
+				</a>
+			</li>
 
-    <hr>
-    <ul class="list-unstyled ps-0">
-      <li class="mb-1">
-        <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
-          data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="false">
-          อื่นๆ
-        </button>
-        <div class="collapse" id="home-collapse">
-          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-            <li><a href="{% url 'assets:asset_list_cate' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการหมวดหมู่หลัก</a></li>
-            <li><a href="{% url 'assets:asset_list_subcate' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการหมวดหมู่ย่อย</a></li>
-            <li><a href="{% url 'assets:asset_list_storage_location' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการสถานที่เก็บครุภัณฑ์</a></li>
-          </ul>
-        </div>
-      </li>
-    </ul>
-    {% endif %}
-    <hr>
-    <div class="dropdown">
-      {% if user.profile.img.url == user.profile.img.url %}
-      <a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle"
-        data-bs-toggle="dropdown" aria-expanded="true">
-        <img src="{{ user.profile.img.url }}" alt="" width="80" height="80" class="rounded-circle me-2">
-        <span class="d-print-block"><strong>{{user.username}}</strong></span>
-      </a>
-      {% else %}
-      <a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle"
-        data-bs-toggle="dropdown" aria-expanded="true">
-        <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg" alt="" width="80" height="80" class="rounded-circle me-2">
-        <span class="d-print-block"><strong>{{user.username}}</strong></span>
-      </a>
-      {% endif %}
+			<li>
+				<a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
+					<i class="bi bi-clipboard2-check-fill me-2"></i>
+					ตรวจนับครุภัณฑ์
+				</a>
+			</li>
+		</ul>
+		{% endif %}
 
-      <ul class="dropdown-menu text-small shadow">
-        <!-- <li><a class="dropdown-item" href="#">New project...</a></li> -->
-        <!-- <li><a class="dropdown-item" href="#">Settings</a></li> -->
-        <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}">Profile</a></li>
-        <li>
-          <hr class="dropdown-divider">
-        </li>
-        <li><a class="dropdown-item" href="#">Sign out</a></li>
-      </ul>
-    </div>
-  </aside>
+		{% if request.user.is_warehouse_manager or request.user.is_admin %}
+		<hr>
+		<ul class="list-unstyled ps-0">
+			<li class="mb-1">
+				<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+					data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="false">
+					อื่นๆ
+				</button>
+				<div class="collapse" id="home-collapse">
+					<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+						<li><a href="{% url 'assets:asset_list_cate' %}"
+								class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการหมวดหมู่หลัก</a>
+						</li>
+						<li><a href="{% url 'assets:asset_list_subcate' %}"
+								class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการหมวดหมู่ย่อย</a>
+						</li>
+						<li><a href="{% url 'assets:asset_list_storage_location' %}"
+								class="link-body-emphasis d-inline-flex text-decoration-none rounded">รายการสถานที่เก็บครุภัณฑ์</a>
+						</li>
+					</ul>
+				</div>
+			</li>
+		</ul>
+		{% endif %}
+		<hr>
+		<div class="dropdown">
+			<a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle"
+				data-bs-toggle="dropdown" aria-expanded="false">
 
-  <main class="col-sm-10 bg-body-tertiary" id="main">
-    <!-- NavBar -->
-    <nav class="navbar sticky-top navbar-expand-lg border-bottom bg-body-tertiary">
-      <div class="container-fluid">
-        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
-          data-bs-target="#collapseWidthExample" aria-expanded="true" aria-controls="collapseWidthExample"
-          style="margin-right: 10px; padding: 0px 5px 0px 5px;" id="sidebartoggle" onclick="changeclass()"> <i
-            class="bi bi-arrows-expand-vertical"></i>
-        </button>
-        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas"
-          data-bs-target="#offcanvasExample" aria-controls="offcanvasExample"
-          style="margin-right: 10px; padding: 2px 6px 2px 6px;" id="sidebarshow">
-          <i class="bi bi-arrow-bar-right"></i>
-        </button>
-        <a class="navbar-brand justify-content-center d-flex container" href="#"><strong>ระบบจัดการครุภัณฑ์ อุทยานวิทยาศาสตร์</strong></a>
-  
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-          aria-controls="navbarSupportedContent" aria-expanded="true" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+				<img src="{% if user.profile.img %}{{ user.profile.img.url }}{% else %}{% static 'path/to/default_image.jpg' %}{% endif %}"
+					alt="Profile Picture" width="60" height="60"
+					class="rounded-circle me-2 border border-secondary border-2">
 
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav me-auto mb-lg-0">
-            <!-- <li class="nav-item">
-              <a class="nav-link active" aria-current="page" href="#">Home</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">Link</a>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="true">
-                Dropdown
-              </a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Action</a></li>
-                <li><a class="dropdown-item" href="#">Another action</a></li>
-                <li>
-                  <hr class="dropdown-divider">
-                </li>
-                <li><a class="dropdown-item" href="#">Something else here</a></li>
-              </ul>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link disabled" aria-disabled="true">Disabled</a>
-            </li> -->
-          </ul>
+				<span class="d-none d-sm-inline me-1 text-muted small">สวัสดี</span>
+				<strong class="text-dark">{{ user.username }}</strong>
+			</a>
 
-          <!-- <form class="d-flex" role="search">
-            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success" type="submit">Search</button>
-          </form> -->
-         
-          <!-- Cambair Tema -->
-          <div class="dropdown-center" style="padding-left: 10px;">
-            <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button"
-              aria-expanded="false" data-bs-toggle="dropdown" aria-label="Toggle theme (auto)">
-              <svg class="bi my-1 theme-icon-active" width="1em" height="1em">
-                <use href="#circle-half"></use>
-              </svg>
-              <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
-              <li>
-                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light"
-                  aria-pressed="false">
-                  <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
-                    <use href="#sun-fill"></use>
-                  </svg>
-                  Light
-                  <svg class="bi ms-auto d-none" width="1em" height="1em">
-                    <use href="#check2"></use>
-                  </svg>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark"
-                  aria-pressed="false">
-                  <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
-                    <use href="#moon-stars-fill"></use>
-                  </svg>
-                  Dark
-                  <svg class="bi ms-auto d-none" width="1em" height="1em">
-                    <use href="#check2"></use>
-                  </svg>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="auto"
-                  aria-pressed="true">
-                  <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
-                    <use href="#circle-half"></use>
-                  </svg>
-                  Auto
-                  <svg class="bi ms-auto d-none" width="1em" height="1em">
-                    <use href="#check2"></use>
-                  </svg>
-                </button>
-              </li>
-            </ul>
-          </div>
-          <!-- Cambair Tema -->
-        </div>
-      </div>
-    </nav>
-    <!-- NavBar Fin -->
+			<ul class="dropdown-menu dropdown-menu-end text-small shadow">
 
-    <div class="container-fluid">
-        <!-- messages -->
-        {% if messages %}
-        <div class="messages container col-5 d-flex justify-content-center mt-3">
-            {% for message in messages %}
-            {% if 'error' in message.tags %} <ul class="alert alert-danger text-center">
-                <h6>{{ message }}</h6>
-            </ul> {% endif %}
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% if messages %}
-        <div class="messages container col-5 d-flex justify-content-center mt-3">
-            {% for message in messages %}
-            {% if 'success' in message.tags %} <ul class="alert alert-success text-center">
-                <h6>{{ message }}</h6>
-            </ul> {% endif %}
-            {% endfor %}
-        </div>
-        {% endif %}
-        
-        <!-- content -->
-        {% block content %}{% endblock %}
-    </div>
+				<li>
+					<div class="dropdown-item-text text-center border-bottom pb-2">
+						<p class="mb-0 fw-bold">{{ user.get_full_name|default:user.username }}</p>
+						<p class="text-muted small mb-0">{{ user.email|default:"ไม่มีอีเมล" }}</p>
+					</div>
+				</li>
+				<li>
+					<hr class="dropdown-divider">
+				</li>
 
-      <!-- <div class="row">
-        <footer class="pt-5 d-flex justify-content-between">
-          <span>Copyright © 2019-2020 <a href="https://themesberg.com">Themesberg</a></span>
-          <ul class="nav m-0">
-            <li class="nav-item">
-              <a class="nav-link text-secondary" aria-current="page" href="#">Privacy Policy</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-secondary" href="#">Terms and conditions</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-secondary" href="#">Contact</a>
-            </li>
-          </ul>
-        </footer>
-      </div> -->
+				<li>
+					<a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}">
+						<i class="bi bi-person-circle me-2 text-info"></i> โปรไฟล์
+					</a>
+				</li>
+				<li>
+					<a class="dropdown-item" href="{% url 'shop:home_page' %}">
+						<i class="bi bi-shop me-2 text-success"></i> กลับไปหน้าเบิกวัสดุ
+					</a>
+				</li>
 
-  </main>
+				<li>
+					<hr class="dropdown-divider">
+				</li>
+
+				<li>
+					<a class="dropdown-item text-danger" href="#">
+						<i class="bi bi-box-arrow-right me-2"></i> ออกจากระบบ
+					</a>
+				</li>
+			</ul>
+		</div>
+	</aside>
+
+	<main class="col-sm-10 bg-body-tertiary" id="main">
+		<nav class="navbar sticky-top navbar-expand-lg border-bottom bg-body-tertiary">
+			<div class="container-fluid">
+				<button class="btn btn-outline-secondary d-none d-sm-inline" type="button" data-bs-toggle="collapse"
+					data-bs-target="#collapseWidthExample" aria-expanded="true" aria-controls="collapseWidthExample"
+					style="margin-right: 10px; padding: 0px 5px 0px 5px;" id="sidebartoggle" onclick="changeclass()">
+					<i class="bi bi-arrows-expand-vertical"></i>
+				</button>
+
+				<button class="btn btn-outline-secondary d-inline d-sm-none" type="button" data-bs-toggle="offcanvas"
+					data-bs-target="#offcanvasExample" aria-controls="offcanvasExample"
+					style="margin-right: 10px; padding: 2px 6px 2px 6px;" id="sidebarshow">
+					<i class="bi bi-arrow-bar-right"></i>
+				</button>
+
+				<a class="navbar-brand d-flex align-items-center flex-grow-1 justify-content-center mobile-center"
+					href="#">
+					<strong>ระบบจัดการครุภัณฑ์ อุทยานวิทยาศาสตร์</strong>
+				</a>
+
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+					data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+					aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+			</div>
+			<div class="collapse navbar-collapse" id="navbarSupportedContent">
+				<ul class="navbar-nav me-auto mb-lg-0"></ul>
+				<div class="dropdown-center" style="padding-left: 10px;">
+					<button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center" id="bd-theme"
+						type="button" aria-expanded="false" data-bs-toggle="dropdown" aria-label="Toggle theme (auto)">
+						<svg class="bi my-1 theme-icon-active" width="1em" height="1em">
+							<use href="#circle-half"></use>
+						</svg>
+						<span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
+					</button>
+					<ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
+						<li>
+							<button type="button" class="dropdown-item d-flex align-items-center"
+								data-bs-theme-value="light" aria-pressed="false">
+								<svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
+									<use href="#sun-fill"></use>
+								</svg>
+								Light
+								<svg class="bi ms-auto d-none" width="1em" height="1em">
+									<use href="#check2"></use>
+								</svg>
+							</button>
+						</li>
+						<li>
+							<button type="button" class="dropdown-item d-flex align-items-center"
+								data-bs-theme-value="dark" aria-pressed="false">
+								<svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
+									<use href="#moon-stars-fill"></use>
+								</svg>
+								Dark
+								<svg class="bi ms-auto d-none" width="1em" height="1em">
+									<use href="#check2"></use>
+								</svg>
+							</button>
+						</li>
+						<li>
+							<button type="button" class="dropdown-item d-flex align-items-center active"
+								data-bs-theme-value="auto" aria-pressed="true">
+								<svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
+									<use href="#circle-half"></use>
+								</svg>
+								Auto
+								<svg class="bi ms-auto d-none" width="1em" height="1em">
+									<use href="#check2"></use>
+								</svg>
+							</button>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		<div class="container-fluid">
+			{% if messages %}
+			<div class="messages container col-12 col-sm-8 col-md-5 d-flex justify-content-center mt-3">
+				{% for message in messages %}
+				{% if 'error' in message.tags %} <ul class="alert alert-danger text-center">
+					<h6>{{ message }}</h6>
+				</ul> {% endif %}
+				{% endfor %}
+			</div>
+			{% endif %}
+			{% if messages %}
+			<div class="messages container col-12 col-sm-8 col-md-5 d-flex justify-content-center mt-3">
+				{% for message in messages %}
+				{% if 'success' in message.tags %} <ul class="alert alert-success text-center">
+					<h6>{{ message }}</h6>
+				</ul> {% endif %}
+				{% endfor %}
+			</div>
+			{% endif %}
+
+			{% block content %}{% endblock %}
+		</div>
+	</main>
 </body>
-<!-- jQuery -->
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-        crossorigin="anonymous"></script>
-
-<!-- Popper.js (สำหรับ Bootstrap tooltip, dropdown) -->
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous"></script>
-
-<!-- Bootstrap 5.3.2 Bundle (รวม Popper ในตัวแล้ว) -->
+	integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-        crossorigin="anonymous"></script>
+	integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+	crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/js/bootstrap-select.min.js"></script>
 
-<!-- Chartist.js -->
 <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.2/dist/chart.umd.js"
-        integrity="sha384-eI7PSr3L1XLISH8JdDII5YN/njoSsxfbrkCTnJrzXt+ENP5MOVBxD+l6sEG4zoLp"
-        crossorigin="anonymous"></script>
-
-<!-- GitHub buttons -->
+	integrity="sha384-eI7PSr3L1XLISH8JdDII5YN/njoSsxfbrkCTnJrzXt+ENP5MOVBxD+l6sEG4zoLp"
+	crossorigin="anonymous"></script>
 <script async defer src="https://buttons.github.io/buttons.js"></script>
-
-<!-- สคริปต์ของคุณ -->
 <script src="dashboard.js"></script>
 
-<!-- Chartist Line Chart -->
 <script>
-  new Chartist.Line('#traffic-chart', {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-    series: [
-      [23000, 25000, 19000, 34000, 56000, 64000]
-    ]
-  }, {
-    low: 0,
-    showArea: true
-  });
+	new Chartist.Line('#traffic-chart', {
+		labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+		series: [
+			[23000, 25000, 19000, 34000, 56000, 64000]
+		]
+	}, {
+		low: 0,
+		showArea: true
+	});
 </script>
 
-<!-- Toggle Class -->
 <script>
-  function changeclass() {
-    $("#main").toggleClass('col-sm-10 col-sm-12');
-  }
+	function changeclass() {
+		// This function controls the desktop/tablet sidebar toggle (collapse/expand)
+		$("#main").toggleClass('col-sm-10 col-sm-12');
+	}
 </script>
 
-<!-- เปลี่ยนธีม -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const themeToggleBtns = document.querySelectorAll("[data-bs-theme-value]");
-    const htmlElement = document.documentElement;
-    const logoImg = document.querySelector("#logo-img");
+	document.addEventListener("DOMContentLoaded", function () {
+		const themeToggleBtns = document.querySelectorAll("[data-bs-theme-value]");
+		const htmlElement = document.documentElement;
+		// Select both logo images (desktop and offcanvas)
+		const logoImgDesktop = document.querySelector("#logo-img");
+		const logoImgOffcanvas = document.querySelector("#logo-img-offcanvas");
 
-    // โหลดธีมจาก LocalStorage
-    const savedTheme = localStorage.getItem("theme") || "auto";
-    applyTheme(savedTheme);
+		// โหลดธีมจาก LocalStorage
+		const savedTheme = localStorage.getItem("theme") || "auto";
+		applyTheme(savedTheme);
 
-    themeToggleBtns.forEach((btn) => {
-      btn.addEventListener("click", function () {
-        const selectedTheme = this.getAttribute("data-bs-theme-value");
-        localStorage.setItem("theme", selectedTheme);
-        applyTheme(selectedTheme);
-      });
-    });
+		themeToggleBtns.forEach((btn) => {
+			btn.addEventListener("click", function () {
+				const selectedTheme = this.getAttribute("data-bs-theme-value");
+				localStorage.setItem("theme", selectedTheme);
+				applyTheme(selectedTheme);
+			});
+		});
 
-    function applyTheme(theme) {
-      if (theme === "auto") {
-        theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      }
-      htmlElement.setAttribute("data-bs-theme", theme);
+		function applyTheme(theme) {
+			let actualTheme = theme;
+			if (theme === "auto") {
+				actualTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+			}
+			htmlElement.setAttribute("data-bs-theme", actualTheme);
 
-      themeToggleBtns.forEach((btn) => {
-        btn.classList.remove("active");
-        btn.setAttribute("aria-pressed", "false");
-      });
+			themeToggleBtns.forEach((btn) => {
+				btn.classList.remove("active");
+				btn.setAttribute("aria-pressed", "false");
+			});
 
-      document.querySelector(`[data-bs-theme-value="${theme}"]`)?.classList.add("active");
-      document.querySelector(`[data-bs-theme-value="${theme}"]`)?.setAttribute("aria-pressed", "true");
+			// Find the correct theme button in the dropdown and mark it as active
+			document.querySelector(`[data-bs-theme-value="${theme}"]`)?.classList.add("active");
+			document.querySelector(`[data-bs-theme-value="${theme}"]`)?.setAttribute("aria-pressed", "true");
 
-      // เปลี่ยนโลโก้
-      if (theme === "dark") {
-        logoImg.src = "{% static 'sidebar/logo-ubu-spark-011w.png' %}";
-      } else {
-        logoImg.src = "{% static 'sidebar/logo-ubu-spark-011.png' %}";
-      }
-    }
-  });
+			// เปลี่ยนโลโก้
+			const darkLogo = "{% static 'sidebar/logo-ubu-spark-011w.png' %}";
+			const lightLogo = "{% static 'sidebar/logo-ubu-spark-011.png' %}";
+			const newLogoSrc = actualTheme === "dark" ? darkLogo : lightLogo;
+
+			if (logoImgDesktop) {
+				logoImgDesktop.src = newLogoSrc;
+			}
+			if (logoImgOffcanvas) {
+				logoImgOffcanvas.src = newLogoSrc;
+			}
+		}
+	});
 </script>
 
 </html>
+
+<!-- /* Tablet/Small Desktop (min-width: 576px) Styles */
+        @media screen and (min-width: 576px) {
+            /* Ensure the desktop sidebar is visible */
+            aside.collapse-horizontal {
+                display: block !important;
+            }
+            /* Adjust main content margins based on sidebar state */
+            main.col-sm-10 {
+                margin-left: 16.666667%; 
+            }
+            main.col-sm-12 {
+                width: 100%;
+                margin-left: 0;
+            }
+            /* Hide the mobile toggle button */
+            #sidebarshow {
+                display: none;
+            }
+            /* Show the desktop toggle button */
+            #sidebartoggle {
+                display: inline;
+            }
+        } -->

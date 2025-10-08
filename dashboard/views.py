@@ -1814,7 +1814,7 @@ def export_products_to_excel(request):
     wb.save(response)
     return response
 
-
+@user_passes_test(is_authorized_manager)
 @login_required
 def products(request):
     query = request.GET.get('q')
@@ -2027,7 +2027,6 @@ def suppliers(request):
     if query is not None:
         lookups = Q(supname__icontains=query) | Q(contactname__icontains=query)
         suppliers = Suppliers.objects.filter(lookups)
-
 
     page = request.GET.get('page')
 

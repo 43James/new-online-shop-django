@@ -63,7 +63,7 @@
                     <!-- ปุ่มแจ้งคืน -->
                     <form method="post" action="{% url 'request_return' loan.id %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-warning btn-sm">แจ้งคืน</button>
+                        <button type="submit" class="btn btn-warning btn-sm" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล'; this.form.submit();">แจ้งคืน</button>
                     </form>
                     {% endif %}
                 </td>

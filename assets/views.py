@@ -2,7 +2,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from accounts.models import MyUser
-from app_linebot.models import UserLine
+from app_linebot.models import UserLine, UserLine_Asset
 from app_linebot.views import notify_admin_assetloan, notify_admin_on_auto_loan, notify_admin_on_return, notify_borrower
 from assets.models import AssetCode, AssetItem, AssetCheck, AssetItemLoan, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
 from dashboard.views import thai_month_name
@@ -283,6 +283,86 @@ def calendar_view(request):
     return render(request, "calendar.html")
 
 
+# @login_required
+# def calendar_events(request):
+#     """ส่งข้อมูลการยืม/จองเป็น JSON ให้ FullCalendar"""
+#     events = []
+
+#     # 🎨 Mapping สีตามสถานะ
+#     status_colors = {
+#         "approved": "#28a745",   # เขียว = อนุมัติ
+#         "borrowed": "#28a745",   # เขียว = กำลังยืม
+#         "pending":  "#FFA500",   # ส้ม = รออนุมัติ
+#         "overdue":  "#FF0000",   # ส้ม = รออนุมัติ
+#     }
+
+#     # 🟢 การยืมครุภัณฑ์ (เฉพาะสถานะ approved, borrowed, pending)
+#     loans = (
+#         OrderAssetLoan.objects
+#         .filter(status__in=status_colors.keys())
+#         .select_related("user")
+#     )
+
+#     for loan in loans:
+#         issued_assets = loan.items.all()
+#         asset_images_urls = []
+#         asset_names = []
+#         for issued_asset in issued_assets:
+#             if issued_asset.asset and issued_asset.asset.asset_image:
+#                 asset_images_urls.append(request.build_absolute_uri(issued_asset.asset.asset_image.url))
+#             if issued_asset.asset:
+#                 asset_names.append(issued_asset.asset.item_name)
+        
+#         start_time_loan = timezone.localtime(loan.date_created) if loan.date_created else None
+#         end_time_loan = timezone.localtime(loan.date_due) if loan.date_due else None
+
+#         events.append({
+#             "title": f"{loan.user.get_first_name()} ยืม : ({', '.join(asset_names)}) {loan.get_status_display()}",
+#             "start": start_time_loan.isoformat() if start_time_loan else None,
+#             "end": end_time_loan.isoformat() if end_time_loan else None,
+#             "color": status_colors.get(loan.status, "#6c757d"),
+#             "extendedProps": {
+#                 "status": loan.get_status_display(),
+#                 "status_color": status_colors.get(loan.status, "#6c757d"), # เพิ่มค่าสีใน extendedProps
+#                 "user": loan.user.get_full_name(),
+#                 "note": loan.note or "",
+#                 "total_assets": loan.get_total_assets, # เก็บจำนวนรายการ
+#                 "asset_names": ", ".join(asset_names),
+#                 "asset_images": asset_images_urls,
+#             }
+#         })
+
+#     # 🟡 การจองครุภัณฑ์
+#     reservations = (
+#         AssetReservation.objects
+#         .select_related("user", "asset")
+#     )
+
+#     for r in reservations:
+#         asset_image_url = None
+#         if r.asset and r.asset.asset_image:
+#             asset_image_url = request.build_absolute_uri(r.asset.asset_image.url)
+
+#         start_time_res = timezone.localtime(r.reserved_date) if r.reserved_date else None
+#         end_time_res = timezone.localtime(r.returning_date) if r.returning_date else None
+
+#         events.append({
+#             "title": f"{r.user.get_first_name()} จอง : ({r.asset.item_name})",
+#             "start": start_time_res.isoformat() if start_time_res else None,
+#             "end": end_time_res.isoformat() if end_time_res else None,
+#             "color": "#FFD700",
+#             "extendedProps": {
+#                 "status": "จองแล้ว",
+#                 "status_color": "#FFD700", # เพิ่มค่าสีสำหรับสถานะจอง
+#                 "user": r.user.get_full_name(),
+#                 "asset": r.asset.item_name,
+#                 "notes": r.notes or "",
+#                 "asset_image": asset_image_url,
+#             }
+#         })
+
+#     return JsonResponse(events, safe=False)
+
 @login_required
 def calendar_events(request):
     """ส่งข้อมูลการยืม/จองเป็น JSON ให้ FullCalendar"""
@@ -290,13 +370,14 @@ def calendar_events(request):
 
     # 🎨 Mapping สีตามสถานะ
     status_colors = {
-        "approved": "#09ff00",   # เขียว = อนุมัติ
+        "approved": "#28a745",   # เขียว = อนุมัติ
         "borrowed": "#28a745",   # เขียว = กำลังยืม
-        "pending":  "#FFA500",   # ส้ม = รออนุมัติ
-        "overdue":  "#FF0000",   # ส้ม = รออนุมัติ
+        "pending":  "#FF6600",   # ส้ม = รออนุมัติ
+        "overdue":  "#FF0000",   # แดง = เกินกำหนด
     }
 
-    # 🟢 การยืมครุภัณฑ์ (เฉพาะสถานะ approved, borrowed, pending)
+    # 🟢 การยืมครุภัณฑ์
+    # ให้แน่ใจว่า OrderAssetLoan.objects และ AssetReservation.objects มีอยู่จริงใน scope นี้
     loans = (
         OrderAssetLoan.objects
         .filter(status__in=status_colors.keys())
@@ -309,24 +390,30 @@ def calendar_events(request):
         asset_names = []
         for issued_asset in issued_assets:
             if issued_asset.asset and issued_asset.asset.asset_image:
+                # ใช้ request.build_absolute_uri เพื่อสร้าง URL แบบเต็ม
                 asset_images_urls.append(request.build_absolute_uri(issued_asset.asset.asset_image.url))
             if issued_asset.asset:
                 asset_names.append(issued_asset.asset.item_name)
         
-        start_time_loan = timezone.localtime(loan.date_created) if loan.date_created else None
-        end_time_loan = timezone.localtime(loan.date_due) if loan.date_due else None
+        # *** การแก้ไข Timezone: ใช้เวลาจากฐานข้อมูลโดยตรง (ซึ่งเป็น Timezone-aware UTC) ***
+        start_time_loan = loan.date_of_use 
+        end_time_loan = loan.date_due 
+        
+        # ตรวจสอบว่ามีการดึงข้อมูลวัน/เวลามาหรือไม่ ก่อนเรียก .isoformat()
+        start_iso = start_time_loan.isoformat() if start_time_loan else None
+        end_iso = end_time_loan.isoformat() if end_time_loan else None
 
         events.append({
             "title": f"{loan.user.get_first_name()} ยืม : ({', '.join(asset_names)}) {loan.get_status_display()}",
-            "start": start_time_loan.isoformat() if start_time_loan else None,
-            "end": end_time_loan.isoformat() if end_time_loan else None,
+            "start": start_iso,
+            "end": end_iso,
             "color": status_colors.get(loan.status, "#6c757d"),
             "extendedProps": {
                 "status": loan.get_status_display(),
-                "status_color": status_colors.get(loan.status, "#6c757d"), # เพิ่มค่าสีใน extendedProps
+                "status_color": status_colors.get(loan.status, "#6c757d"),
                 "user": loan.user.get_full_name(),
                 "note": loan.note or "",
-                "total_assets": loan.get_total_assets, # เก็บจำนวนรายการ
+                "total_assets": loan.get_total_assets,
                 "asset_names": ", ".join(asset_names),
                 "asset_images": asset_images_urls,
             }
@@ -343,17 +430,22 @@ def calendar_events(request):
         if r.asset and r.asset.asset_image:
             asset_image_url = request.build_absolute_uri(r.asset.asset_image.url)
 
-        start_time_res = timezone.localtime(r.reserved_date) if r.reserved_date else None
-        end_time_res = timezone.localtime(r.returning_date) if r.returning_date else None
+        # *** การแก้ไข Timezone: ใช้เวลาจากฐานข้อมูลโดยตรง ***
+        start_time_res = r.reserved_date 
+        end_time_res = r.returning_date 
+        
+        start_iso = start_time_res.isoformat() if start_time_res else None
+        end_iso = end_time_res.isoformat() if end_time_res else None
+
 
         events.append({
             "title": f"{r.user.get_first_name()} จอง : ({r.asset.item_name})",
-            "start": start_time_res.isoformat() if start_time_res else None,
-            "end": end_time_res.isoformat() if end_time_res else None,
+            "start": start_iso,
+            "end": end_iso,
             "color": "#FFD700",
             "extendedProps": {
                 "status": "จองแล้ว",
-                "status_color": "#FFD700", # เพิ่มค่าสีสำหรับสถานะจอง
+                "status_color": "#FFD700", 
                 "user": r.user.get_full_name(),
                 "asset": r.asset.item_name,
                 "notes": r.notes or "",
@@ -363,8 +455,6 @@ def calendar_events(request):
 
     return JsonResponse(events, safe=False)
 
-
-
 # ------------------------------
 # แสดงรายการครุภัณฑ์ สำหรับยืม
 # ------------------------------
@@ -372,6 +462,17 @@ def calendar_events(request):
 def loan_list(request):
     # เริ่มต้นด้วยการ query ครุภัณฑ์ทั้งหมด
     asset_items_query = AssetItemLoan.objects.all()
+    
+    has_line_account = False
+    if request.user.is_authenticated:
+        # UserLine_Asset.objects.filter(user=request.user).exists()
+        # หรือใช้ try: request.user.userline_asset
+        
+        # สมมติว่าคุณต้องการให้แต่ละ MyUser มี UserLine_Asset ได้หลายรายการ
+        # ถ้าต้องการแค่รายการเดียว (ควรใช้ OneToOneField แทน) สามารถใช้ try-except ได้
+        
+        # วิธีที่แนะนำสำหรับ ForeignKey:
+        has_line_account = UserLine_Asset.objects.filter(user=request.user).exists()
 
     # Prefetch ข้อมูลการจองล่าสุด
     asset_items_query = asset_items_query.prefetch_related(
@@ -409,6 +510,7 @@ def loan_list(request):
         "selected_category": selected_category,
         "selected_subcategory": selected_subcategory,
         "query": query,
+        'has_line_account': has_line_account,
     }
     return render(request, "loan_list.html", context)
 
@@ -531,6 +633,18 @@ def reserve_asset_item(request, pk):
     }
     return render(request, "reserve_modal.html", context)
 
+# ------------------------------
+# ฟังก์ชันแยกที่คำนวณจำนวนรายการที่รออนุมัติ
+# ------------------------------
+def count_pending_asset_loans():
+    """
+    นับจำนวนออเดอร์ยืมครุภัณฑ์ที่รอการอนุมัติ (รวมรออนุมัติยืมและรออนุมัติคืน)
+    """
+    
+    # ใช้ Q object ตามที่คุณกำหนด
+    return OrderAssetLoan.objects.filter(
+        Q(status='pending') | Q(status='returned_pending')
+    ).count()
 
 # ------------------------------
 # ฟังก์อนุมัติคืน หน้าออเดอร์เจ้าหน้าที่
@@ -628,6 +742,7 @@ def loan_approval_list(request):
         "selected_year": int(year),
         "get_params": request.GET.copy(),  # เก็บ GET params สำหรับ pagination
         "query": query,
+        "loan_pending_count": count_pending_asset_loans(), 
 
     }
     return render(request, "loan_approval_list.html", context)

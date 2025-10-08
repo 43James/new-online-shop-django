@@ -162,6 +162,7 @@
                 defer="defer"></script>
             </a></li>
           <li><a href="#" class="nav-link px-2 text-dark">ID : @339uiekk</a></li>
+          <!-- <li><a href="#" class="btn btn-warning nav-link px-2 text-dark">ยืมครุภัณฑ์</a></li> -->
         </ul>
 
         <!-- search form -->
@@ -175,17 +176,15 @@
           <input class="form-control me-2" type="search" placeholder="ค้นหาวัสดุ" aria-label="Search" name="q" value="{{ query }}" onkeyup="searchProduct()">
           <!-- <button class="btn btn-outline-primary" type="submit">ค้นหา</button> -->
         </form>
+        <!-- <a href="#" class="btn btn-warning nav-link px-2 text-dark">ยืมครุภัณฑ์</a> -->
 
         <!-- user profile dropdown -->
-        <div class="dropdown text-end">
+        <!-- <div class="dropdown text-end">
           <a href="#" class="btn btn-primary text-white me-4 d-block link-dark text-decoration-none dropdown-toggle"
             id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">เมนู</a>
 
           <ul class="dropdown-menu" aria-labelledby="dropdownUser1">
-            <!-- <li><a href="{% url 'cart:show_cart' %}" class="dropdown-item"><i class="bi bi-cart-fill"></i> รถเข็น <b
-                  class="text-primary">{{ cart_count }}</b></a></li> -->
-            <!-- <li><a href="{% url 'shop:favorites' %}" class="dropdown-item"><i class="bi bi-heart-fill"></i> รายการโปรด
-                <b class="text-primary">{{ request.user.get_likes_count }}</b></a></li> -->
+            <li class="btn btn-success"><a href="{% url 'shop:favorites' %}" class="dropdown-item"><i class="bi bi-boombox-fill"></i> ยืมครุภัณฑ์</a></li>
 
             <li><a href="{% url 'orders:user_orders' %}" class="dropdown-item"><i class="bi bi-card-list text-warning"></i>
               รายการเบิก <b class="text-warning">{{ count_unconfirmed_orders }}</b></a></li>
@@ -199,9 +198,6 @@
             <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}"><i
                   class="bi bi-person-lines-fill text-primary"></i> ดูโปรไฟล์</a></li>
 
-            <!-- <li><a class="dropdown-item" href="{% url 'accounts:edit_profile' %}"><i class="bi bi-person-fill-gear"></i>
-                แก้ไขโปรไฟล์</a></li> -->
-
             <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key-fill text-info"></i>
                 เปลี่ยนรหัสผ่าน</a></li>
 
@@ -213,7 +209,43 @@
             <li><a class="dropdown-item text-danger" href="{% url 'accounts:user_logout' %}"><i
                   class="bi bi-box-arrow-right"></i> Log out</a></li>
           </ul>
+        </div> -->
+        <div class="dropdown text-end">
+            <a href="#" class="btn btn-primary text-white me-4 d-block link-dark text-decoration-none dropdown-toggle"
+                id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">เมนู</a>
+
+            <ul class="dropdown-menu" aria-labelledby="dropdownUser1">
+                <li>
+                    <a href="{% url 'assets:loan_list' %}" class="dropdown-item bg-success text-white fw-bold py-3">
+                <i class="bi bi-boombox-fill"></i> ยืมครุภัณฑ์
+            </a>
+                </li>
+                <li><a href="{% url 'orders:user_orders' %}" class="dropdown-item"><i class="bi bi-card-list text-warning"></i>
+                    รายการเบิก <b class="text-warning">{{ count_unconfirmed_orders }}</b></a></li>
+
+                <li><a href="{% url 'orders:out_of_stock_notification' %}" class="dropdown-item"><i class="bi bi-bell-fill text-danger"></i>
+                    แจ้งวัสดุหมด <b class="text-warning"></b></a></li>
+
+                <li><a href="{% url 'orders:monthly_totals_view' %}" class="dropdown-item"><i class="bi bi-cash-coin text-success"></i>
+                    ยอดที่เบิกวัสดุ</a></li>
+
+                <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}"><i
+                        class="bi bi-person-lines-fill text-primary"></i> ดูโปรไฟล์</a></li>
+
+                <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key-fill text-info"></i>
+                    เปลี่ยนรหัสผ่าน</a></li>
+
+                {% if user.is_manager or user.is_warehouse_manager or user.is_admin or user.is_executive%}
+                <li><a class="dropdown-item text-primary" href="{% url 'dashboard:orders' %}"><i
+                        class="bi bi-person-check"> Dashboard</i></a></li>
+                {% endif %}
+                
+                <li><a class="dropdown-item text-danger" href="{% url 'accounts:user_logout' %}"><i
+                        class="bi bi-box-arrow-right"></i> Log out</a></li>
+            </ul>
         </div>
+
+         <!-- <a href="#" class="btn btn-warning me-4 d-block">ยืมครุภัณฑ์</a> -->
         <div class="row"
           style="box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px; 
           font-size: 14px; background:rgb(58, 82, 114); padding: 0.5em; border-radius: 8px; font-weight:bold; color:rgb(255, 255, 255);">

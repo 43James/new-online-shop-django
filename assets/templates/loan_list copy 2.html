@@ -2,19 +2,18 @@
 {% load static %}
 {% block content %}
 <style>
-    /* ************************************ */
-    /* CSS สำหรับ Floating Cart (ปรับให้เหมาะกับมือถือ) */
-    /* ************************************ */
+    /* CSS สำหรับ Floating Cart */
     #floating-cart-wrapper {
-        position: fixed;
-        bottom: 20px;
-        right: 50px;
-        z-index: 1050;
-        background-color: #fff;
+        position: fixed; /* ทำให้ลอย */
+        bottom: 20px;    /* ห่างจากด้านล่าง 20px */
+        right: 50px;     /* ห่างจากด้านขวา 20px */
+        z-index: 1050;   /* ให้อยู่เหนือ Modal/Navbar */
+        background-color: #fff; /* ใส่พื้นหลังสีขาว */
         border: 1px solid #ddd;
-        border-radius: 50%;
-        padding: 5px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); 
+        border-radius: 50%; /* ทำให้เป็นวงกลม */
+        padding: 5px; /* เพิ่ม padding เล็กน้อย */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* เพิ่มเงา */
+        /* กำหนดขนาดตายตัวให้กล่อง เพื่อให้ดูเป็นระเบียบ */
         width: 55px;
         height: 55px;
         display: flex;
@@ -22,92 +21,46 @@
         align-items: center;
     }
     
-    #floating-cart-wrapper .nav-link {
-        padding: 0 !important;
-    }
-
+    /* ปรับขนาดและสีของไอคอนตะกร้าให้โดดเด่น */
     #floating-cart-wrapper .bi-cart3 {
-        color: #0d6efd !important;
-        font-size: 1.7rem !important; 
-        line-height: 1;
+        color: #0d6efd !important; /* สีน้ำเงินหลักของ Bootstrap */
+        font-size: 2.5rem !important; /* ขนาดใหญ่กว่าเดิม */
     }
     
+    /* ปรับตำแหน่ง badge ให้ตรงกลางมากขึ้น */
     #floating-cart-wrapper #cart-badge {
-        font-size: 0.9rem !important;
-        padding: 0.25em 0.5em;
-        top: -5px; 
+        font-size: 0.85rem !important;
+        /* ปรับตำแหน่งเพื่อชดเชยขนาดที่ใหญ่ขึ้น */
+        top: 0px;
         left: 100%;
-        transform: translate(-20%, -80%) !important; 
-    }
-
-    /* ************************************ */
-    /* CSS สำหรับตาราง (ปรับปรุงการแสดงผลบนมือถือ) */
-    /* ************************************ */
-    @media (max-width: 767.98px) {
-        /* *** การซ่อนคอลัมน์: ลบคอลัมน์รูปภาพออก และซ่อนเฉพาะที่ไม่จำเป็น (รหัสครุภัณฑ์ และ สถานที่เก็บ) *** */
-        /* ซ่อน รหัสครุภัณฑ์ (3) */
-        .table-responsive table tr > td:nth-child(3),
-        .table-responsive table tr > th:nth-child(3),
-        /* ซ่อน สถานที่เก็บ (4) */
-        .table-responsive table tr > td:nth-child(4),
-        .table-responsive table tr > th:nth-child(4) {
-            display: none;
-        }
-        
-        /* *** บังคับลดขนาดรูปภาพให้เล็กมากบนมือถือ *** */
-        .table-responsive table img {
-            width: 40px !important; 
-            height: 40px; 
-            object-fit: cover;
-            border-radius: 4px; 
-        }
-
-        /* *** ปรับความกว้างคอลัมน์ที่เหลือสำหรับมือถือ *** */
-        .table-responsive table tr > th:nth-child(1) { width: 10% !important; } /* รูปภาพ */
-        .table-responsive table tr > th:nth-child(2) { width: 30% !important; } /* ชื่อครุภัณฑ์ */
-        .table-responsive table tr > th:nth-child(5) { width: 50% !important; } /* การทำงาน */
-        .table-responsive table tr > th:nth-child(6) { width: 10% !important; } /* จัดการ */
-
-
-        /* ปรับขนาดตัวอักษรในตารางให้เล็กลง */
-        .table-responsive table {
-            font-size: 0.85rem;
-        }
-
-        /* ปรับฟอร์มค้นหาให้เต็มความกว้าง */
-        .row.g-2 > div {
-            flex: 0 0 100%;
-            max-width: 100%;
-        }
-        
-        .row.g-2 .col-md-2 {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .row.g-2 .col-md-2 .btn {
-            flex: 1;
-        }
+        transform: translate(-10%, -10%) !important; 
     }
 </style>
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3>รายการครุภัณฑ์ที่ยืมได้</h3>
+        <!-- <a href="{% url 'assets:loan_cart' %}" class="nav-link position-relative">
+            <i class="bi bi-cart3 fs-4"></i>
+            <span id="cart-badge"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+        </a> -->
         <div class="d-flex align-items-center">
             <button type="button" class="btn btn-sm btn-outline-info me-2" data-bs-toggle="modal" data-bs-target="#helpModal">
                 <i class="bi bi-question-circle"></i> วิธีใช้
             </button>
+            <!-- <a href="{% url 'assets:loan_cart' %}" class="nav-link position-relative">
+                <i class="bi bi-cart3 fs-4"></i>
+                <span id="cart-badge"
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+            </a> -->
         </div>
-    </div>
-    
-    <div id="floating-cart-wrapper">
-        <a href="{% url 'assets:loan_cart' %}" class="nav-link position-relative">
-            <i class="bi bi-cart3 text-primary"></i> 
-            <span id="cart-badge"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+        <div id="floating-cart-wrapper">
+        <a href="{% url 'assets:loan_cart' %}" class="nav-link position-relative p-2">
+            <i class="bi bi-cart3 fs-1 text-primary"></i> <span id="cart-badge"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger fs-6">0</span>
         </a>
     </div>
-    
+    </div>
     {% if request.user.is_admin or request.user.is_warehouse_manager %}
     <div class="btn-group mb-3">
         <a href="{% url 'assets:add_asset_item_loan' %}" type="button" class="btn btn-outline-success"><i
@@ -116,10 +69,10 @@
     {% endif %}
 
     <form method="get" class="row g-2 mb-4">
-        <div class="col-12 col-md-4">
+        <div class="col-md-4">
             <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อครุภัณฑ์..." value="{{ query }}">
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-md-3">
             <select name="category" class="form-select">
                 <option value="">-- เลือกหมวดหลัก --</option>
                 {% for category in categories %}
@@ -127,7 +80,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-md-3">
             <select name="subcategory" class="form-select">
                 <option value="">-- เลือกหมวดย่อย --</option>
                 {% for subcategory in subcategories %}
@@ -135,9 +88,9 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-12 col-md-2 d-flex">
-            <button type="submit" class="btn btn-primary me-2 flex-grow-1">ค้นหา</button>
-            <a href="{% url 'assets:loan_list' %}" class="btn btn-secondary flex-grow-1">ยกเลิก</a>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary ">ค้นหา</button>
+            <a href="{% url 'assets:loan_list' %}" class="btn btn-secondary">ยกเลิก</a>
         </div>
     </form>
 
@@ -363,16 +316,43 @@
 
 <script>
     // **********************************
-    // โค้ดสำหรับแสดง LINE Notify Modal
+    // โค้ดสำหรับแสดง LINE Notify Modal เมื่อโหลดหน้า (แสดงทุกครั้งและปิดอัตโนมัติ)
     // **********************************
+    //   document.addEventListener('DOMContentLoaded', (event) => {
+    //       const lineNotifyModalElement = document.getElementById('lineNotifyModal');
+    //       const lineNotifyModal = new bootstrap.Modal(lineNotifyModalElement);
+
+    // 1. แสดง Modal ทันที
+    //       lineNotifyModal.show();
+
+    // 2. ตั้งเวลาให้ Modal ปิดตัวเองหลังจาก 10 วินาที (10000 มิลลิวินาที)
+    //       setTimeout(() => {
+    //           lineNotifyModal.hide();
+    //       }, 10000); // 10 วินาที
+    //    });
+
+    // **********************************
+    // โค้ดสำหรับแสดง LINE Notify Modal เมื่อโหลดหน้า (เช็คสถานะการผูกบัญชี)
+    // **********************************
+    
+    // ดึงค่าสถานะการผูกบัญชี LINE จาก Django context
+    // ใช้ 'false' เป็นค่า default เผื่อกรณีที่ request.user.is_anonymous หรือไม่ได้ส่งค่ามา
     const hasLineAccount = {{ has_line_account|yesno:"true,false" }}; 
 
     document.addEventListener('DOMContentLoaded', (event) => {
+        // เช็คว่าผู้ใช้ล็อกอินอยู่และยังไม่ได้ผูกบัญชี LINE
+        // request.user.is_authenticated จะเป็นจริงเสมอในหน้านี้ถ้าใช้ @login_required 
+        // แต่การเช็ค '{{ request.user.is_authenticated }}' ใน template อาจมีความซับซ้อน 
+        // เราจะเน้นไปที่การเช็ค 'hasLineAccount' ที่มาจาก view แล้ว
+        
         if ({{ request.user.is_authenticated|lower }} === true && hasLineAccount === false) {
             const lineNotifyModalElement = document.getElementById('lineNotifyModal');
             const lineNotifyModal = new bootstrap.Modal(lineNotifyModalElement);
+            
+            // 1. แสดง Modal ทันที
             lineNotifyModal.show();
             
+            // 2. ตั้งเวลาให้ Modal ปิดตัวเองหลังจาก 10 วินาที (10000 มิลลิวินาที)
             setTimeout(() => {
                 lineNotifyModal.hide();
             }, 10000); // 10 วินาที
@@ -381,7 +361,7 @@
 
 
     // **********************************
-    // โค้ดสำหรับตะกร้าและ Modal ลบ
+    // โค้ดสำหรับตะกร้าและ Modal ลบ (โค้ดรวม) - เหมือนเดิม
     // **********************************
     let cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const cartBadge = document.getElementById('cart-badge');
@@ -431,7 +411,7 @@
     }
     updateCartUI();
 
-    // โค้ดสำหรับ Modal จอง 
+    // โค้ดสำหรับ Modal จอง - เหมือนเดิม
     const reserveModal = document.getElementById('reserveModal');
     if (reserveModal) {
         reserveModal.addEventListener('show.bs.modal', function (event) {

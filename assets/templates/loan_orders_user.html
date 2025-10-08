@@ -192,7 +192,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
-                    <button type="submit" id="confirmBtn" class="btn">ยืนยัน</button>
+                    <button type="submit" id="confirmBtn" class="btn" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล'; this.form.submit();">ยืนยัน</button>
                 </div>
             </div>
         </form>

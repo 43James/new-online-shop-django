@@ -73,7 +73,7 @@
             </select>
         </div>
 
-        <button type="submit" class="btn btn-primary">บันทึกการตรวจเช็ค</button>
+        <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='กำลังบันทึกการตรวจเช็ค'; this.form.submit();">บันทึกการตรวจเช็ค</button>
         <a href="{% url 'assets:asset_list' %}" class="btn btn-secondary">ยกเลิก</a>
     </form>
 </div>

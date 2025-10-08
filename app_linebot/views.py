@@ -719,8 +719,9 @@ def send_restock_notification(notification):
 
 
 # Line_assets
-line_bot_api = LineBotApi("73ckpzhX0833x8i4m/jDhe2lYuGwaTijoooW7dEHndJbl7KUL/6fv4wfa+KXPf3IgSG+8gJ9t8yg2rrCgaAzlg8BtHAiUFVta5BlOGpUz3yuNhaab2KioEspYgX4j5UuapN7WFYGtRfcJqq5SeqzbAdB04t89/1O/w1cDnyilFU=")
+line_bot_api_asset = LineBotApi("73ckpzhX0833x8i4m/jDhe2lYuGwaTijoooW7dEHndJbl7KUL/6fv4wfa+KXPf3IgSG+8gJ9t8yg2rrCgaAzlg8BtHAiUFVta5BlOGpUz3yuNhaab2KioEspYgX4j5UuapN7WFYGtRfcJqq5SeqzbAdB04t89/1O/w1cDnyilFU=")
 
+# ผูกบัญชี
 @csrf_exempt
 def linebot(request):
     if request.method != 'POST':
@@ -747,7 +748,7 @@ def linebot(request):
 
             if len(parts) != 2:
                 # แจ้งเตือนถ้าพิมพ์ไม่ถูกต้อง
-                line_bot_api.push_message(
+                line_bot_api_asset.push_message(
                     userId,
                     TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nกรุณาพิมพ์: ผูกบัญชี [Username]')
                 )
@@ -758,7 +759,7 @@ def linebot(request):
 
             if not user:
                 # Username ไม่ถูกต้อง
-                line_bot_api.push_message(
+                line_bot_api_asset.push_message(
                     userId,
                     TextSendMessage(text='❌ ไม่พบบัญชีผู้ใช้\nกรุณาตรวจสอบ Username อีกครั้ง')
                 )
@@ -770,7 +771,7 @@ def linebot(request):
             if not line:
                 # ยังไม่มี -> สร้างใหม่
                 UserLine_Asset.objects.create(user=user, userId=userId)
-                line_bot_api.push_message(
+                line_bot_api_asset.push_message(
                     userId,
                     TextSendMessage(text=f'✅ ผูกบัญชีสำเร็จ\nสวัสดี {user.get_full_name() or user.username}')
                 )
@@ -778,7 +779,7 @@ def linebot(request):
                 # มีแล้ว -> อัปเดต userId
                 line.userId = userId
                 line.save()
-                line_bot_api.push_message(
+                line_bot_api_asset.push_message(
                     userId,
                     TextSendMessage(text=f'🔄 อัปเดตการผูกบัญชีเรียบร้อย\nสวัสดี {user.get_full_name() or user.username}')
                 )
@@ -787,7 +788,7 @@ def linebot(request):
             # ถ้า user ยังไม่ได้ผูกบัญชี
             linked = UserLine_Asset.objects.filter(userId=userId).first()
             if not linked:
-                line_bot_api.push_message(
+                line_bot_api_asset.push_message(
                     userId,
                     TextSendMessage(text='⚠ กรุณาผูกบัญชีก่อนใช้งาน\nพิมพ์: ผูกบัญชี [Username]')
                 )
@@ -806,7 +807,7 @@ DAY_MAP = {
     "Saturday": "วันเสาร์",
     "Sunday": "วันอาทิตย์",
 }
-
+# ส่งแจ้งเตือนไปยังแอดมินเมื่อมีผู้ยืม
 def notify_admin_assetloan(request, order_id):
     try:
         order = OrderAssetLoan.objects.get(id=order_id)
@@ -815,7 +816,7 @@ def notify_admin_assetloan(request, order_id):
         return
 
     # ดึงผู้ใช้งานที่เป็น manager หรือ admin
-    users_to_notify = MyUser.objects.filter(is_manager=True) | MyUser.objects.filter(is_admin=True)
+    users_to_notify = MyUser.objects.filter(is_warehouse_manager=True) | MyUser.objects.filter(is_admin=True)
 
     # หา Line User IDs
     admin_user_ids = []
@@ -870,7 +871,7 @@ def notify_admin_assetloan(request, order_id):
     # ส่งข้อความ LINE ทีละคน + debug
     try:
         for uid in admin_user_ids:
-            line_bot_api.push_message(uid, TextSendMessage(text=message))
+            line_bot_api_asset.push_message(uid, TextSendMessage(text=message))
         print("✅ ส่งแจ้งเตือน LINE เรียบร้อย:", admin_user_ids)
     except Exception as e:
         import traceback
@@ -931,7 +932,7 @@ def notify_borrower(loan, action_type="approved"):
 
     # ส่งข้อความ
     try:
-        line_bot_api.push_message(user_id, TextSendMessage(text=text))
+        line_bot_api_asset.push_message(user_id, TextSendMessage(text=text))
         print(f"✅ ส่ง LINE ไปยังผู้ยืม: {loan.user.username}")
     except Exception as e:
         import traceback
@@ -948,7 +949,7 @@ def notify_admin_on_return(loan):
     """
     try:
         # ดึงผู้ใช้งานที่เป็น manager หรือ admin
-        users_to_notify = MyUser.objects.filter(is_manager=True) | MyUser.objects.filter(is_admin=True)
+        users_to_notify = MyUser.objects.filter(is_warehouse_manager=True) | MyUser.objects.filter(is_admin=True)
 
         # หา Line User IDs
         admin_user_ids = []
@@ -981,7 +982,7 @@ def notify_admin_on_return(loan):
 
         # ส่งข้อความ LINE ทีละคน
         for uid in admin_user_ids:
-            line_bot_api.push_message(uid, TextSendMessage(text=message))
+            line_bot_api_asset.push_message(uid, TextSendMessage(text=message))
         print("✅ ส่งแจ้งเตือน LINE ไปยังผู้ดูแลระบบเรียบร้อย")
 
     except Exception as e:
@@ -1007,7 +1008,7 @@ def notify_admin_on_auto_loan(loan):
     ส่งข้อความแจ้งเตือนผู้ดูแลระบบเมื่อมีการสร้างออเดอร์การยืมอัตโนมัติ
     """
     try:
-        users_to_notify = MyUser.objects.filter(is_manager=True) | MyUser.objects.filter(is_admin=True)
+        users_to_notify = MyUser.objects.filter(is_warehouse_manager=True) | MyUser.objects.filter(is_admin=True)
         admin_user_ids = []
         for user in users_to_notify:
             try:
@@ -1054,7 +1055,7 @@ def notify_admin_on_auto_loan(loan):
         )
         
         for uid in admin_user_ids:
-            line_bot_api.push_message(uid, TextSendMessage(text=message))
+            line_bot_api_asset.push_message(uid, TextSendMessage(text=message))
         print("✅ ส่งแจ้งเตือน LINE ไปยังผู้ดูแลระบบ (ยืมอัตโนมัติ) เรียบร้อยแล้ว")
     except Exception as e:
         print(f"❌ LINE API Error (notify_admin_on_auto_loan): {e}")

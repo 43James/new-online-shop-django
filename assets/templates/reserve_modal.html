@@ -37,7 +37,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                <button type="submit" class="btn btn-primary">ยืนยันการจอง</button>
+                <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล'; this.form.submit();">ยืนยันการจอง</button>
             </div>
         </form>
     </div>
