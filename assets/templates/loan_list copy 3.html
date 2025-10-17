@@ -163,45 +163,46 @@
                     <td>{{ asset.item_name }}</td>
                     <td>{{ asset.asset_code }}</td>
                     <td>{{ asset.storage_location }}</td>
-                    {# ***** โค้ดส่วนที่แก้ไขเพื่อแสดง Active Loans ทั้งหมด ***** #}
                     <td>
-                        
-                        {% with active_loan_found=asset.active_loan_list|length %}
-                        
-                            {# วนลูปแสดงรายการยืมที่ Active ทั้งหมด #}
-                            {% for issue in asset.active_loan_list %}
-                                
-                                {# แสดงปุ่มสถานะของรายการยืมนั้นๆ โดยใช้ Order ID #}
-                                {% if issue.order_asset.status == "pending" %}
-                                <button class="btn btn-sm btn-warning mb-2" disabled>ออเดอร์ #{{ issue.order_asset.id }} (รออนุมัติ..)</button>
-                                {% elif issue.order_asset.status == "approved" or issue.order_asset.status == "borrowed" %}
-                                <button class="btn btn-sm btn-secondary mb-2" disabled>ออเดอร์ #{{ issue.order_asset.id }} (กำลังยืมอยู่)</button>
-                                {% elif issue.order_asset.status == "returned_pending" %}
-                                <button class="btn btn-sm btn-warning mb-2" disabled>ออเดอร์ #{{ issue.order_asset.id }} (รออนุมัติการคืน..)</button>
-                                {% elif issue.order_asset.status == "overdue" %}
-                                <button class="btn btn-sm btn-danger mb-2" disabled>ออเดอร์ #{{ issue.order_asset.id }} (ยืมเกินกำหนด)</button>
-                                {% endif %}
-                                
-                                {# แสดงข้อมูลผู้ยืมสำหรับรายการยืมนั้นๆ #}
-                                <div class="mt-2 text-primary small mb-3 border-bottom pb-2">
-                                    <strong>ผู้ยืม:</strong> {{ issue.order_asset.user.get_full_name }}<br>
-                                    <strong>วันที่ใช้งาน:</strong> {{ issue.order_asset.date_of_use|date:"d M Y, H:i น." }}<br>
-                                    <strong>กำหนดคืน:</strong> {{ issue.order_asset.date_due|date:"d M Y, H:i น." }}
-                                </div>
+                        {% if asset.status_assetloan %}
+                        {% if asset.current_loan %}
+                        {% if asset.current_loan.order_asset.status == "pending" %}
+                        <button class="btn btn-sm btn-warning" disabled>ถูกยืมอยู่ (รออนุมัติการยืม..)</button>
+                        {% elif asset.current_loan.order_asset.status == "approved" or asset.current_loan.order_asset.status == "borrowed" %}
+                        <button class="btn btn-sm btn-secondary" disabled>กำลังยืมอยู่</button>
+                        {% elif asset.current_loan.order_asset.status == "returned_pending" %}
+                        <button class="btn btn-sm btn-warning" disabled>รออนุมัติการคืน..</button>
+                        {% elif asset.current_loan.order_asset.status == "overdue" %}
+                        <button class="btn btn-sm btn-danger" disabled>ยืมเกินกำหนด.. กรุณาส่งคืน</button>
+                        {% endif %}
+                        {% else %}
+                        <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
+                        {% endif %}
+                        <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#reserveModal"
+                            data-asset-id="{{ asset.pk }}">จอง</button>
 
-                            {% empty %}
-                                {# ถ้าไม่พบรายการยืมที่กำลังมีผลเลย (ครุภัณฑ์ว่าง) #}
-                                <button class="btn btn-sm btn-success add-to-cart">เพิ่มในตะกร้า</button>
-                            {% endfor %}
+                        {% if asset.current_loan %}
+                        <button class="btn btn-sm btn-success add-to-cart">เพิ่มในตะกร้า</button>
+                    
+                        <div class="mt-2 text-primary small">
+                            <strong>ผู้ยืม:</strong> {{ asset.current_loan.order_asset.user.get_full_name }}<br>
+                            <strong>วันที่ใช้งาน:</strong> {{ asset.current_loan.order_asset.date_of_use|date:"d M Y, H:i น." }}<br>
+                            <strong>กำหนดคืน:</strong> {{ asset.current_loan.order_asset.date_due|date:"d M Y, H:i น." }}
+                        </div>
+                        {% endif %}
 
-                            {# ถ้ามีรายการที่กำลังมีผลอยู่ ให้แสดงปุ่มเพิ่มในตะกร้า (เพื่อยืมต่อ) #}
-                            {% if active_loan_found > 0 %}
-                                <button class="btn btn-sm btn-success add-to-cart">เพิ่มในตะกร้า</button>
-                            {% endif %}
-                            
-                        {% endwith %}
+                        {# วนลูปแสดงข้อมูลการจอง #}
+                        {% for reservation in asset.current_reservation %}
+                        <div class="mt-2 text-warning small">
+                            <strong>จองโดย:</strong> {{ reservation.user.get_full_name }}<br>
+                            <strong>วันที่:</strong> {{ reservation.reserved_date|date:"d M Y, H:i น." }} ถึง {{ reservation.returning_date|date:"d M Y, H:i น." }}
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <button class="btn btn-sm btn-success add-to-cart">เพิ่มในตะกร้า</button>
+                        {% endif %}
+
                     </td>
-                    {# ***** จบโค้ดส่วนที่แก้ไข ***** #}
                     {% if request.user.is_admin or request.user.is_warehouse_manager %}
                     <td>
                         <div class="btn-group d-flex justify-content-center" role="group">
@@ -234,7 +235,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <h4>การยืมครุภัณฑ์</h4>
+                <h4>การยืมครุภัณฑ์ (สถานะ "ว่าง")</h4>
                 <ol>
                     <li>เลือกครุภัณฑ์ที่ต้องการยืมที่มีปุ่ม **<kbd class="bg-success">เพิ่มในตะกร้า</kbd>**</li>
                     <li>กดปุ่ม **<kbd class="bg-success">เพิ่มในตะกร้า</kbd>** ครุภัณฑ์จะถูกเพิ่มไปยังตะกร้า</li>
@@ -243,7 +244,7 @@
                     <li>รอผู้ดูแลอนุมัติ (หากผูกบัญชี LINE Notify ไว้ จะได้รับการแจ้งเตือน)</li>
                 </ol>
                 <hr>
-                <!-- <h4>การจองครุภัณฑ์ (สถานะ "ถูกยืมอยู่" หรือ "กำลังยืมอยู่")</h4>
+                <h4>การจองครุภัณฑ์ (สถานะ "ถูกยืมอยู่" หรือ "กำลังยืมอยู่")</h4>
                 <p>กรณีที่ครุภัณฑ์ถูกยืมไปแล้ว คุณสามารถทำการจองเพื่อใช้งานต่อจากผู้ใช้คนปัจจุบันได้</p>
                 <ol>
                     <li>เลือกครุภัณฑ์ที่ถูกยืมอยู่ ซึ่งมีปุ่ม **<kbd class="bg-info">จอง</kbd>**</li>
@@ -253,10 +254,10 @@
                     <li>รอผู้ดูแลอนุมัติคำขอจอง</li>
                     <li>เมื่อการจองได้รับการอนุมัติ และผู้ยืมคนปัจจุบันส่งคืนครุภัณฑ์แล้ว สถานะของครุภัณฑ์จะเปลี่ยนเป็น **รอผู้จองมารับ**</li>
                 </ol>
-                <hr> -->
+                <hr>
                 <h4>สถานะการทำงาน</h4>
                 <ul class="list-unstyled">
-                    <li><span class="badge bg-success">เพิ่มในตะกร้า</span>: สามารถเพิ่มในตะกร้าเพื่อทำการยืมได้</li>
+                    <li><span class="badge bg-success">ว่าง หรือ เพิ่มในตะกร้า</span>: สามารถเพิ่มในตะกร้าเพื่อทำการยืมได้</li>
                     <li><span class="badge bg-secondary">กำลังยืมอยู่</span>: ถูกยืมและได้รับอนุมัติแล้ว หรืออยู่ระหว่างการใช้งาน</li>
                     <li><span class="badge bg-warning">ถูกยืมอยู่ (รออนุมัติการยืม..)</span>: อยู่ระหว่างรอผู้ดูแลอนุมัติคำขอยืม</li>
                     <li><span class="badge bg-warning">รออนุมัติการคืน..</span>: ผู้ยืมแจ้งคืนแล้ว อยู่ระหว่างรอผู้ดูแลตรวจสอบและรับคืน</li>

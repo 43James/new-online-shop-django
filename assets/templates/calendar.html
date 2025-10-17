@@ -3,48 +3,99 @@
 
 {% block content %}
 <style>
-    /* CSS สำหรับแถบส่วนหัว (Header Toolbar) */
+    /* CSS สำหรับแถบส่วนหัว (Header Toolbar) - คงเดิม */
     .fc-header-toolbar.fc-toolbar {
         background-color: #3f51b5; /* สีพื้นหลังของแถบส่วนหัว (สีน้ำเงิน) */
         border-radius: 10px;
         padding: 10px;
         color: white; /* สีตัวอักษรบนแถบ */
         border: none;
+        margin-bottom: 10px;
     }
 
-    /* CSS สำหรับปุ่ม (Buttons) */
+    /* CSS สำหรับปุ่ม (Buttons) - คงเดิม */
     .fc-button {
-        background-color: #f0f4f8 !important; /* สีพื้นหลังของปุ่ม (สีเทาอ่อน) */
-        color: #3f51b5 !important; /* สีตัวอักษรของปุ่ม (สีน้ำเงิน) */
+        background-color: #f0f4f8 !important; 
+        color: #3f51b5 !important;
         border: none !important;
         box-shadow: none !important;
-        text-transform: capitalize !important; /* ทำให้ตัวอักษรแรกเป็นตัวพิมพ์ใหญ่ */
+        text-transform: capitalize !important;
     }
 
-    /* CSS สำหรับปุ่มที่ถูกเลือก (Active/Today) */
+    /* CSS สำหรับปุ่มที่ถูกเลือก (Active/Today) - คงเดิม */
     .fc-button-primary:not(:disabled).fc-button-active,
     .fc-button-primary:not(:disabled):active {
-        background-color: #7986cb !important; /* สีพื้นหลังเมื่อปุ่มถูกเลือก (สีน้ำเงินอ่อนลง) */
+        background-color: #7986cb !important; 
         color: white !important;
     }
-    /* เพิ่มโค้ดนี้เพื่อทำให้ปฏิทินโค้งมน */
+
+    /* ทำให้ปฏิทินโค้งมน - คงเดิม */
     #calendar {
-        border-radius: 15px; /* ปรับค่านี้เพื่อเปลี่ยนความโค้งของขอบ */
-        overflow: hidden; /* ซ่อนส่วนที่เกินขอบเพื่อให้ขอบดูเรียบร้อย */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* เพิ่มเงาเพื่อให้ดูมีมิติ */
+        border-radius: 15px; 
+        overflow: hidden; 
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        padding: 0;
     }
-    /* ลบขีดเส้นใต้ออกจากลิงก์ในปฏิทิน */
+    
+    /* ลบขีดเส้นใต้ออกจากลิงก์ในปฏิทิน - คงเดิม */
     .fc-daygrid-day-number {
         text-decoration: none !important;
     }
 
-    /* ลบขีดเส้นใต้ออกเมื่อเมาส์ชี้ */
+    /* ลบขีดเส้นใต้ออกเมื่อเมาส์ชี้ - คงเดิม */
     a {
         text-decoration: none !important;
     }
+    
+    /* ************************************************** */
+    /* *** CSS เพิ่มเติมเพื่อควบคุมขนาดรูปใน SweetAlert *** */
+    /* ************************************************** */
+    .swal2-popup img.asset-img-small {
+        max-width: 250px; /* จำกัดความกว้างสูงสุดของรูปภาพใน pop-up */
+        max-height: 250px; /* จำกัดความสูงสูงสุด */
+        object-fit: contain; /* ปรับให้รูปภาพอยู่ในขอบเขตโดยไม่ถูกตัด */
+    }
+    /* ************************************************** */
+
+    /* MEDIA QUERY สำหรับปรับปรุงการแสดงผลบนมือถือโดยเฉพาะ - คงเดิม */
+    @media (max-width: 768px) {
+        /* ลดขนาดตัวอักษรของ title ใน header toolbar */
+        .fc-toolbar-title {
+            font-size: 1.1rem;
+        }
+
+        /* จัดให้ปุ่มมุมซ้ายและขวาอยู่คนละบรรทัดสำหรับ FullCalendar เพื่อไม่ให้แน่นเกินไป */
+        .fc-toolbar.fc-header-toolbar {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .fc-toolbar-chunk:nth-child(1) { /* prev,next today */
+            order: 2; 
+            margin-top: 10px;
+        }
+        
+        .fc-toolbar-chunk:nth-child(2) { /* title */
+            order: 1; 
+            margin-bottom: 10px;
+        }
+
+        .fc-toolbar-chunk:nth-child(3) { /* dayGridMonth,timeGridWeek,timeGridDay */
+            order: 3; 
+            margin-top: 55px;
+        }
+
+        /* ปรับขนาดปุ่มมุมมอง */
+        .fc-toolbar-chunk:nth-child(3) .fc-button-group {
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center;
+        }
+    }
+
 </style>
-<div class="container mt-4">
-    <h3 class="justify-content-center d-flex mb-4">📅 ปฏิทินการยืม/จองครุภัณฑ์</h3>
+<div class="container mt-4 mb-4 px-3 px-md-4">
+    <h3 class="justify-content-center d-flex mb-4 text-center">📅 ปฏิทินการยืม/จองครุภัณฑ์</h3>
     <div class="mt-4" id="calendar"></div>
 </div>
 
@@ -63,45 +114,54 @@ document.addEventListener("DOMContentLoaded", function() {
         timeZone: "Asia/Bangkok",
         height: "auto",
         headerToolbar: {
-            left: "prev,next today",
+            left: "prev,next today", 
             center: "title",
             right: "dayGridMonth,timeGridWeek,timeGridDay"
         },
-        displayEventTime: false,  // <--- เพิ่มบรรทัดนี้เพื่อซ่อนเวลา
+        displayEventTime: false,  // ซ่อนเวลา
         events: "{% url 'assets:calendar_events' %}",
         eventClick: function(info) {
             let props = info.event.extendedProps;
             let imageHtml = '';
             let assetDetailsHtml = '';
 
+            // ใช้ Bootstrap class 'img-fluid' และ 'rounded' สำหรับรูปภาพ
+            // **การเปลี่ยนแปลง 1: ลบการกำหนด max-width ออกจาก style inline**
+            const baseImageStyle = "height: auto; margin-top: 10px; border-radius: 5px;";
+            // **การเปลี่ยนแปลง 2: เพิ่ม class 'asset-img-small' เพื่อใช้ CSS ที่กำหนดไว้ด้านบน**
+            const imageClasses = "img-fluid rounded asset-img-small"; 
+
             if (props.asset_image) {
-                imageHtml = `<img src="${props.asset_image}" style="max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;" alt="รูปภาพครุภัณฑ์">`;
+                imageHtml = `<img src="${props.asset_image}" style="${baseImageStyle}" class="${imageClasses}" alt="รูปภาพครุภัณฑ์">`;
             } else if (props.asset_images && props.asset_images.length > 0) {
-                imageHtml = props.asset_images.map(url => `<img src="${url}" style="max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;" alt="รูปภาพครุภัณฑ์">`).join('');
+                // สำหรับหลายรูปภาพ
+                imageHtml = props.asset_images.map(url => `<img src="${url}" style="${baseImageStyle}" class="${imageClasses} mb-2" alt="รูปภาพครุภัณฑ์">`).join('');
             }
             
-            // แสดงจำนวนรายการและชื่อครุภัณฑ์เป็นบรรทัดใหม่
+            // แสดงจำนวนรายการและชื่อครุภัณฑ์
             if (props.total_assets) {
-                assetDetailsHtml += `<p><b>จำนวนรายการ:</b> ${props.total_assets} รายการ</p>`;
+                assetDetailsHtml += `<p class="mb-1"><b>จำนวนรายการ:</b> <span class="text-break">${props.total_assets} รายการ</span></p>`;
             }
             if (props.asset_names) {
-                assetDetailsHtml += `<p><b>ครุภัณฑ์ที่ยืม:</b> ${props.asset_names}</p>`;
+                assetDetailsHtml += `<p class="mb-1"><b>ครุภัณฑ์ที่ยืม:</b> <span class="text-break">${props.asset_names}</span></p>`;
             }
 
             // สร้าง HTML สำหรับสถานะพร้อมสี
-            let statusHtml = `<p><b>สถานะ:</b> <span style="color: ${props.status_color || '#6c757d'};"><b>${props.status || '-'}</b></span></p>`;
+            let statusHtml = `<p class="mb-1"><b>สถานะ:</b> <span style="color: ${props.status_color || '#6c757d'};"><b>${props.status || '-'}</b></span></p>`;
             
+            // สร้าง HTML Content
             let htmlContent = `
                 <div style="text-align:left;">
                     ${statusHtml}
-                    <p><b>ผู้ใช้:</b> ${props.user || '-'}</p>
-                    ${props.asset ? `<p><b>ครุภัณฑ์:</b> ${props.asset}</p>` : ""}
+                    <p class="mb-1"><b>ผู้ใช้:</b> <span class="text-break">${props.user || '-'}</span></p>
+                    ${props.asset ? `<p class="mb-1"><b>ครุภัณฑ์:</b> <span class="text-break">${props.asset}</span></p>` : ""}
                     ${assetDetailsHtml}
-                    ${props.note ? `<p><b>หมายเหตุ:</b> ${props.note}</p>` : ""}
-                    ${props.notes ? `<p><b>รายละเอียดการจอง:</b> ${props.notes}</p>` : ""}
-                    <p><b>วันที่ใช้:</b> ${info.event.start ? info.event.start.toLocaleString("th-TH") : "-"}</p>
-                    <p><b>สิ้นสุด:</b> ${info.event.end ? info.event.end.toLocaleString("th-TH") : "-"}</p>
-                    ${imageHtml}
+                    ${props.note ? `<p class="mb-1"><b>หมายเหตุ:</b> <span class="text-break">${props.note}</span></p>` : ""}
+                    ${props.notes ? `<p class="mb-1"><b>รายละเอียดการจอง:</b> <span class="text-break">${props.notes}</span></p>` : ""}
+                    <p class="mb-1"><b>วันที่ใช้:</b> <span class="text-break">${info.event.start ? info.event.start.toLocaleString("th-TH") : "-"}</span></p>
+                    <p class="mb-1"><b>สิ้นสุด:</b> <span class="text-break">${info.event.end ? info.event.end.toLocaleString("th-TH") : "-"}</span></p>
+                    <div class="mt-3 text-center"> ${imageHtml}
+                    </div>
                 </div>
             `;
 
@@ -111,9 +171,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 icon: 'info',
                 confirmButtonText: 'ปิด',
                 confirmButtonColor: '#3085d6',
-                width: 500,
+                // ความกว้างยังคงเป็น 90% ของหน้าจอ (responsive)
+                
+                height: '90%', 
                 customClass: {
-                    popup: 'rounded-3 shadow-lg'
+                    popup: 'rounded-3 shadow-lg p-3 m-2' 
                 }
             });
         }
@@ -123,5 +185,3 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 {% endblock %}
-
-<p><b>สถานะ:</b> ${props.status || '-'}</p>

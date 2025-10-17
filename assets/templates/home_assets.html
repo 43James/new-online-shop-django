@@ -1,43 +1,174 @@
 {% extends "base_sidebar.html" %}
 {% block content %}
 
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
-        id="title">
-        <h1 class="h2">หน้าแรก</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-          <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
-          </div>
-          <button type="button"
-            class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom"
+     id="title">
+    <h1 class="h2 text-primary fw-bold">หน้าแรก - ระบบจัดการครุภัณฑ์<h1 class="h2 text-danger fw-bold">(หน้านี้ อยู่ในระหว่างการเขียนฟังก์ชัน)</h1></h1>
+    
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-share"></i> Share
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-download"></i> Export
+            </button>
+        </div>
+        <button type="button"
+            class="btn btn-sm btn-primary dropdown-toggle d-flex align-items-center gap-1">
             <i class="bi bi-calendar3"></i>
             This week
-          </button>
-        </div>
-    </div>
-
-<div class="container mt-4">
-    <h2>ระบบจัดการครุภัณฑ์</h2>
-
-    <div class="btn-group mt-3">
-        <!-- ปุ่มเพิ่มรายการครุภัณฑ์ -->
-        <a href="{% url 'assets:add_asset_item' %}" class="btn btn-primary">
-            <i class="fas fa-plus-circle"></i> เพิ่มรายการครุภัณฑ์
-        </a>
-
-        <!-- ปุ่มเพิ่มการครอบครองครุภัณฑ์ -->
-        <a href="" class="btn btn-success">
-            <i class="fas fa-user-plus"></i> เพิ่มการครอบครองครุภัณฑ์
-        </a>
-
-        <!-- ปุ่มตรวจเช็คครุภัณฑ์ -->
-        <a href="{% url 'assets:check_asset' %}" class="btn btn-info">
-            <i class="fas fa-search"></i> ตรวจเช็คครุภัณฑ์
-        </a>
+        </button>
     </div>
 </div>
 
-<!-- ใส่ Font Awesome สำหรับไอคอน -->
-<script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+<div class="container-fluid">
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4 mb-4">
+        
+        <div class="col">
+            <div class="card shadow-sm border-start border-primary border-5 h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-uppercase text-primary fw-bold mb-1">
+                                ครุภัณฑ์ทั้งหมด
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">1,250 รายการ</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-boxes fa-2x text-primary-emphasis opacity-75" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card shadow-sm border-start border-success border-5 h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-uppercase text-success fw-bold mb-1">
+                                พร้อมใช้งาน
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">1,100 รายการ</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-check-circle-fill fa-2x text-success-emphasis opacity-75" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col">
+            <div class="card shadow-sm border-start border-warning border-5 h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-uppercase text-warning fw-bold mb-1">
+                                กำลังซ่อม
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">120 รายการ</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-tools fa-2x text-warning-emphasis opacity-75" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card shadow-sm border-start border-danger border-5 h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-uppercase text-danger fw-bold mb-1">
+                                ชำรุด/รอจำหน่าย
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">30 รายการ</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-x-octagon-fill fa-2x text-danger-emphasis opacity-75" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <div class="col-lg-8">
+            <div class="card shadow mb-4 h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-light">
+                    <h6 class="m-0 fw-bold text-primary">สถิติครุภัณฑ์ตามหมวดหมู่ (สมมติว่าเป็นกราฟ)</h6>
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-5 border rounded" style="min-height: 300px;">
+                        **พื้นที่แสดงกราฟ (เช่น กราฟแท่งแสดงจำนวนครุภัณฑ์แยกตามประเภท)**
+                        <br>
+                        <small class="text-muted">ต้องมีการรวมไลบรารีกราฟ (เช่น Chart.js) เพิ่มเติม</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4 h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-light">
+                    <h6 class="m-0 fw-bold text-primary">การเคลื่อนไหวล่าสุด 5 รายการ</h6>
+                    <i class="bi bi-list-columns"></i>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>รหัส</th>
+                                    <th>ชื่อครุภัณฑ์</th>
+                                    <th>สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>EQ0015</td>
+                                    <td>โน๊ตบุ๊ค Dell</td>
+                                    <td><span class="badge text-bg-warning">กำลังซ่อม</span></td>
+                                </tr>
+                                <tr>
+                                    <td>EQ0014</td>
+                                    <td>เครื่องพิมพ์ HP</td>
+                                    <td><span class="badge text-bg-success">พร้อมใช้งาน</span></td>
+                                </tr>
+                                <tr>
+                                    <td>EQ0013</td>
+                                    <td>โปรเจคเตอร์</td>
+                                    <td><span class="badge text-bg-success">พร้อมใช้งาน</span></td>
+                                </tr>
+                                <tr>
+                                    <td>EQ0012</td>
+                                    <td>โต๊ะทำงาน</td>
+                                    <td><span class="badge text-bg-danger">ชำรุด</span></td>
+                                </tr>
+                                <tr>
+                                    <td>EQ0011</td>
+                                    <td>เก้าอี้สำนักงาน</td>
+                                    <td><span class="badge text-bg-success">พร้อมใช้งาน</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer text-center bg-white border-top-0">
+                         <a href="#" class="text-decoration-none">ดูรายการทั้งหมด <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

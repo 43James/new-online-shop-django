@@ -113,7 +113,8 @@ class AssetCategory(models.Model):
     name_cate = models.CharField(max_length=100, verbose_name='หมวดหมู่หลัก')
 
     class Meta:
-        ordering = ('id',)
+        verbose_name = "หมวดหมู่หลักครุภัณฑ์"
+        ordering = ('-id',)
 
     def __str__(self):
         return self.name_cate
@@ -123,8 +124,9 @@ class Subcategory(models.Model):
     name_sub = models.CharField(max_length=100, verbose_name='หมวดหมู่ย่อย')
     category = models.ForeignKey(AssetCategory, on_delete=models.CASCADE, related_name='subcategories', verbose_name='หมวดหมู่หลัก')
 
-    class Meta: 
-        ordering = ('id',)
+    class Meta:
+        verbose_name = "หมวดหมู่ย่อยครุภัณฑ์"
+        ordering = ('-id',)
 
     def __str__(self):
         return self.name_sub
@@ -132,6 +134,10 @@ class Subcategory(models.Model):
 # สถานที่เก็บครุภัณฑ์
 class StorageLocation(models.Model):
     name = models.CharField(max_length=255, verbose_name="สถานที่เก็บ")
+
+    class Meta:
+        verbose_name = "สถานที่เก็บรหัสครุภัณฑ์"
+        ordering = ('-id',)
 
     def __str__(self):
         return self.name
@@ -142,6 +148,10 @@ class AssetCode(models.Model):
     asset_kind = models.CharField(max_length=5, verbose_name="ชนิด")
     asset_character = models.CharField(max_length=5, verbose_name="ลักษณะ")
     serial_year = models.CharField(max_length=10, verbose_name="ลำดับ/ปี", unique=True) # เพิ่ม unique=True ที่นี่
+
+    class Meta:
+        verbose_name = "รหัสครุภัณฑ์"
+        ordering = ('-id',)
 
     # class Meta:
     #     unique_together = ('asset_type', 'asset_kind', 'asset_character', 'serial_year')
@@ -233,6 +243,10 @@ class AssetOwnership(models.Model):
     start_date = models.DateField(blank=True, null=True, verbose_name="วันที่เริ่มครอบครอง")
     end_date = models.DateField(blank=True, null=True, verbose_name="วันที่สิ้นสุดการครอบครอง")
 
+    class Meta:
+        verbose_name = "ตารางการครอบครองครุภัณฑ์"
+        ordering = ('-id',)
+
     def __str__(self):
         return f"{self.user.username} - {self.asset.item_name}"
 
@@ -246,6 +260,10 @@ class AssetCheck(models.Model):
     remarks = models.TextField(blank=True, null=True, verbose_name="หมายเหตุเพิ่มเติม")
     month = models.PositiveIntegerField(verbose_name="เดือนที่บันทึก", editable=False)
     year = models.PositiveIntegerField(verbose_name="ปีงบประมาณ", editable=False)
+
+    class Meta:
+        verbose_name = "ตารางตรวจเช็คครุภัณฑ์"
+        ordering = ('-id',)
 
     def __str__(self):
         return f"{self.asset.item_name} - {'ตรวจแล้ว' if self.status else 'ยังไม่ตรวจ'}"
@@ -346,6 +364,7 @@ class OrderAssetLoan(models.Model):
     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
 
     class Meta:
+        verbose_name = "ออเดอร์การยืมทั้งหมด"
         ordering = ('-id',)
 
     def __str__(self):
@@ -426,6 +445,10 @@ class IssuingAssetLoan(models.Model):
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
+
+    class Meta:
+        verbose_name = "รายการในออเดอร์ที่ยืม"
+        ordering = ('-id',)
 
     def __str__(self):
         return f"Issue #{self.id} - {self.asset}"

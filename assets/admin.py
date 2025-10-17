@@ -115,11 +115,36 @@ class IssuingAssetLoanInline(admin.TabularInline):
 
 @admin.register(OrderAssetLoan)
 class OrderAssetLoanAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "status", "date_created", "date_due", "status_return", "date_of_return", "month", "year")
+    # 🚨 list_display ถูกแก้ไขเรื่องไวยากรณ์แล้ว
+    list_display = (
+        "id", 
+        "user", 
+        "user_first_name",  # 🚨 ตอนนี้ Django จะมองหา Method ชื่อนี้
+        "status", 
+        "date_created", 
+        "date_of_use", 
+        "date_due", 
+        "status_return", 
+        "date_of_return", 
+        "month", 
+        "year"
+    )
     search_fields = ("user__username", "user__first_name", "user__last_name")
     list_filter = ("status", "month", "year")
-    inlines = [IssuingAssetLoanInline]
+    inlines = [IssuingAssetLoanInline] # สมมติว่า IssuingAssetLoanInline ถูกกำหนดไว้
     readonly_fields = ("month", "year", "date_created", "date_updated")
+
+    # ----------------------------------------------------
+    # ✅ เพิ่ม Method 'user_first_name' เข้าไปในคลาส Admin
+    # ----------------------------------------------------
+    def user_first_name(self, obj):
+        """ส่งกลับชื่อต้นของผู้ยืม"""
+        # obj คือ OrderAssetLoan instance
+        return obj.user.first_name if obj.user and obj.user.first_name else "-"
+        
+    user_first_name.short_description = "ชื่อผู้ยืม"
+    # อนุญาตให้จัดเรียงตามชื่อต้นของผู้ยืมในโมเดล User
+    user_first_name.admin_order_field = 'user__first_name' 
 
 
 # ==========================

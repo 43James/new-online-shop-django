@@ -1,12 +1,57 @@
 {% extends "base_sidebar.html" %}
+{% load static %}
+
 {% block content %}
+<style>
+    /* CSS สำหรับการจัดการตารางบนมือถือ */
+    @media (max-width: 768px) {
+        /* ซ่อนคอลัมน์ที่ไม่จำเป็นต้องแสดงทั้งหมดบนมือถือ เพื่อให้ตารางแคบลง */
+        .table-responsive table th:nth-child(4), /* หมวดหมู่ */
+        .table-responsive table td:nth-child(4),
+        .table-responsive table th:nth-child(6), /* ปีที่ใช้งาน */
+        .table-responsive table td:nth-child(6),
+        .table-responsive table th:nth-child(7), /* อายุการใช้งาน */
+        .table-responsive table td:nth-child(7),
+        .table-responsive table th:nth-child(9), /* ผู้รับผิดชอบดูแลกำกับ */
+        .table-responsive table td:nth-child(9),
+        .table-responsive table th:nth-child(10), /* สถานที่เก็บ */
+        .table-responsive table td:nth-child(10)
+        {
+            display: none;
+        }
 
-<div class="container-fluid">
+        /* ปรับขนาดรูปภาพให้เล็กลงบนมือถือ */
+        .table-responsive table td img {
+            width: 30px !important;
+            height: 30px !important;
+        }
 
+        /* ปรับขนาดตัวอักษรของตารางบนมือถือให้เล็กลงอีกนิด */
+        .table {
+            font-size: 0.8rem;
+        }
+
+        /* ปรับขนาดของกลุ่มปุ่มจัดการ */
+        .btn-group .btn-sm {
+            padding: .25rem .35rem; /* ลดขนาดปุ่ม */
+            font-size: .75rem; /* ลดขนาดไอคอน/ตัวอักษรในปุ่ม */
+        }
+
+        /* ปรับส่วนหัวให้จัดกึ่งกลางบนมือถือ */
+        #title {
+            flex-direction: column;
+            align-items: flex-start !important; /* จัดชิดซ้าย */
+        }
+        #title .btn-toolbar {
+            margin-top: 10px;
+        }
+    }
+</style>
+
+<div class="container-fluid px-2 px-md-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom" id="title">
-        <h1 class="h2">รายการครุภัณฑ์</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <div class="btn-group me-2">
+        <h1 class="h3 mb-2 mb-md-0">รายการครุภัณฑ์</h1> <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2 d-none d-md-block"> 
                 <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
             </div>
@@ -26,103 +71,73 @@
         <a href="{% url 'assets:add_asset_item' %}" type="button" class="btn btn-outline-success"><i class="bi bi-plus-circle"></i> เพิ่มรายการ</a>
     </div>
 
-    <table class="table table-bordered table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>รูปภาพ</th>
-                <th>ชื่อครุภัณฑ์</th>
-                <th>รหัสครุภัณฑ์</th>
-                <th>หมวดหมู่</th>
-                <th>หมวดหมู่ย่อย</th>
-                <th>ปีที่ใช้งาน</th>
-                <th>อายุการใช้งาน (ปี)</th>
-                <th>ใช้มาแล้วกี่ปี</th>
-                <th>ผู้รับผิดชอบดูแลกำกับ</th>
-                <th>สถานที่เก็บ</th>
-                <th>สถานะการใช้งาน</th>
-                <th>สถานะการยืม</th>
-                <th>ครุภัณฑ์ที่ยืมได้</th>
-                <th>จัดการ</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for asset in assets %}
-            <tr>
-                <td>
-                    {% if asset.asset_image %}
-                    <img src="{{ asset.asset_image.url }}" alt="{{ asset.item_name }}" style="width: 50px; height: 50px; object-fit: cover;">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>รูปภาพ</th>
+                    <th>ชื่อครุภัณฑ์</th>
+                    <th>รหัส</th> <th class="d-none d-sm-table-cell">หมวดหมู่</th> <th>หมวดย่อย</th> <th class="d-none d-md-table-cell">ปีที่ใช้งาน</th> <th class="d-none d-md-table-cell">อายุการใช้งาน (ปี)</th> <th>ใช้มาแล้ว</th> <th class="d-none d-md-table-cell">ผู้รับผิดชอบดูแลกำกับ</th> <th class="d-none d-md-table-cell">สถานที่เก็บ</th> <th>สถานะการใช้งาน</th>
+                    <th>สถานะการยืม</th> <th>ยืมได้</th> <th>จัดการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asset in assets %}
+                <tr>
+                    <td>
+                        {% if asset.asset_image %}
+                        <img src="{{ asset.asset_image.url }}" alt="{{ asset.item_name }}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px;">
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td class="text-nowrap">{{ asset.item_name }}</td>
+                    <td class="text-nowrap">SP-{{ asset.asset_code }}</td>
+                    <td class="d-none d-sm-table-cell">{{ asset.subcategory.name_sub }}</td> 
+                    <td>{{ asset.subcategory.category.name_cate }}</td>
+                    <td class="d-none d-md-table-cell">{{ asset.fiscal_year }}</td>
+                    <td class="d-none d-md-table-cell">{{ asset.lifetime }} ปี</td>
+                    <td>{{ asset.used_years }} ปี</td>
+                    <td class="d-none d-md-table-cell">{{ asset.responsible_person }}</td>
+                    <td class="d-none d-md-table-cell">{{ asset.storage_location }}</td>
+                    <td class="text-center">
+                        <span class="badge 
+                            {% if asset.damage_status == 'ใช้อยู่' %} bg-success 
+                            {% elif asset.damage_status == 'ชำรุด' %} bg-danger 
+                            {% elif asset.damage_status == 'เสื่อม' %} bg-warning 
+                            {% else %} bg-secondary {% endif %}">
+                            {{ asset.get_damage_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <input class="form-check-input" type="checkbox" {% if asset.status_assetloan == True %}checked{% endif %} disabled>
+                    </td>
+                    {% if asset.status_borrowing %}
+                        <td class="text-center"><span class="badge bg-success"> ยืมได้ </span></td>
                     {% else %}
-                    ไม่มีรูป
+                        <td class="text-center"><span class="badge bg-danger"> ยืมไม่ได้ </span></td>
                     {% endif %}
-                </td>
-                <td>{{ asset.item_name }}</td>
-                <td>SP-{{ asset.asset_code }}</td>
-                <td>{{ asset.subcategory.name_sub }}</td>
-                <td>{{ asset.subcategory.category.name_cate }}</td>
-                <td>{{ asset.fiscal_year }}</td>
-                <td>{{ asset.lifetime }} ปี</td>
-                <td>{{ asset.used_years }} ปี</td>
-                <td>{{ asset.responsible_person }}</td>
-                <td>{{ asset.storage_location }}</td>
-                <td class="text-center">
-                    <span class="badge 
-                        {% if asset.damage_status == 'ใช้อยู่' %} bg-success 
-                        {% elif asset.damage_status == 'ชำรุด' %} bg-danger 
-                        {% elif asset.damage_status == 'เสื่อม' %} bg-warning 
-                        {% else %} bg-secondary {% endif %}">
-                        {{ asset.get_damage_status_display }}
-                    </span>
-                </td>
-                <td class="text-center">
-                    <input class="form-check-input" type="checkbox" {% if asset.status_assetloan == True %}checked{% endif %} disabled>
-                </td>
-                {% if asset.status_borrowing %}
-                    <td class="text-center"><span class="badge bg-success"> ยืมได้ </span></td>
-                {% else %}
-                    <td class="text-center"><span class="badge bg-danger"> ยืมไม่ได้ </span></td>
-                {% endif %}
 
-                <td>
-                    <div class="btn-group" role="group">
-                        <a href="{% url 'assets:asset_detail' asset.pk %}" class="btn btn-sm btn-info" title="ดูรายละเอียด"><i class="bi bi-eye"></i></a>
-                        <a href="{% url 'assets:asset_edit' asset.pk %}" class="btn btn-sm btn-warning" title="แก้ไข"><i class="bi bi-pencil"></i></a>
-                        <button type="button" class="btn btn-sm btn-danger" title="ลบ" data-bs-toggle="modal" data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}" data-delete-url="{% url 'assets:asset_delete' asset.pk %}">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="12" class="text-center">ไม่มีรายการครุภัณฑ์</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+                    <td class="text-center text-nowrap">
+                        <div class="btn-group btn-group-sm" role="group"> <a href="{% url 'assets:asset_detail' asset.pk %}" class="btn btn-info" title="ดูรายละเอียด"><i class="bi bi-eye"></i></a>
+                            <a href="{% url 'assets:asset_edit' asset.pk %}" class="btn btn-warning" title="แก้ไข"><i class="bi bi-pencil"></i></a>
+                            <button type="button" class="btn btn-danger" title="ลบ" data-bs-toggle="modal" data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}" data-delete-url="{% url 'assets:asset_delete' asset.pk %}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="13" class="text-center">ไม่มีรายการครุภัณฑ์</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% if assets.has_other_pages %}
     <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center mt-2 mb-2">
-            {% if assets.has_previous %}
-            <li class="page-item"><a class="page-link" href="?page={{ assets.previous_page_number }}">ก่อนหน้า</a></li>
-            {% endif %}
-
-            {% for i in assets.paginator.page_range %}
-                {% if assets.number == i %}
-                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                {% elif i > assets.number|add:'-2' and i < assets.number|add:'2' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
-                {% endif %}
-            {% endfor %}
-
-            {% if assets.has_next %}
-            <li class="page-item"><a class="page-link" href="?page={{ assets.next_page_number }}">ถัดไป</a></li>
-            {% endif %}
-        </ul>
-    </nav>
-    <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center mt-2 mb-2">
-            {% if assets.has_previous %}
+        <ul class="pagination justify-content-center mt-2 mb-4 pagination-sm"> {% if assets.has_previous %}
             <li class="page-item">
                 <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}">หน้าแรก</a>
             </li>
@@ -130,7 +145,7 @@
                 <a class="page-link" href="?page={{ assets.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">ก่อนหน้า</a>
             </li>
             {% endif %}
-      
+    
             {% for i in assets.paginator.page_range %}
                 {% if assets.number == i %}
                     <li class="page-item active"><span class="page-link">{{ i }}</span></li>
@@ -138,7 +153,7 @@
                     <li class="page-item"><a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a></li>
                 {% endif %}
             {% endfor %}
-      
+    
             {% if assets.has_next %}
             <li class="page-item">
                 <a class="page-link" href="?page={{ assets.next_page_number }}{% if query %}&q={{ query }}{% endif %}">ถัดไป</a>
@@ -150,6 +165,7 @@
         </ul>
       </nav>
     {% endif %}
+    
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

@@ -1,0 +1,351 @@
+{% extends "base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>รายการรออนุมัติการยืม/คืน</h3>
+    </div>
+    <!-- <form method="get" class="row g-2 mb-4 align-items-center">
+        <div class="col-md-5">
+            <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อ, ไอดีครุภัณฑ์, หรือชื่อผู้ยืม" value="{{ query }}">
+        </div>
+
+        <div class="col-md-3">
+            <select name="month" id="month" class="form-select">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <select name="year" id="year" class="form-select">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary me-2">ค้นหา</button>
+            <a href="{% url 'assets:loan_approval_list' %}" class="btn btn-secondary">ยกเลิก</a>
+        </div>
+    </form> -->
+
+    <form method="get" class="row g-2 mb-4 align-items-center">
+    <div class="col-md-4">
+        <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อ, ไอดีครุภัณฑ์, หรือชื่อผู้ยืม" value="{{ query }}">
+    </div>
+
+    <div class="col-md-2">
+        <select name="month" id="month" class="form-select">
+            {% for m in months %}
+                <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <select name="year" id="year" class="form-select">
+            {% for y in years %}
+                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="col-auto">
+        <div class="form-check form-switch">
+            <input type="checkbox" class="form-check-input" id="showRejected" name="show_rejected" {% if show_rejected %}checked{% endif %}>
+            <label class="form-check-label" for="showRejected">แสดงรายการที่ถูกปฏิเสธ/ยกเลิก</label>
+        </div>
+    </div>
+
+    <div class="col-auto ms-auto"> <button type="submit" class="btn btn-primary me-2">ค้นหา</button>
+        <a href="{% url 'assets:loan_approval_list' %}" class="btn btn-secondary">ยกเลิก</a>
+    </div>
+</form>
+
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ลำดับ</th>
+                    <th>ผู้ยืม</th>
+                    <th>ID</th>
+                    <th>วันที่ยืม</th>
+                    <th>วันที่ใช้งาน</th>
+                    <th>กำหนดคืน</th>
+                    <th>สถานะ</th>
+                    <th>การทำงาน</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in page_obj %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{ loan.user.get_full_name }}</td>
+                    <td>{{ loan.id }}</td>
+                    <td>{{ loan.date_created|date:"d M Y , H:i น." }}</td>
+                    <td>{{ loan.date_of_use|date:"d M Y , H:i น." }}</td>
+                    <td>{{ loan.date_due|date:"d M Y , H:i น." }}</td>
+                    <td>
+                        {% if loan.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">รออนุมัติ..</span>
+                        {% elif loan.status == 'approved' %}
+                            <span class="badge bg-success">อนุมัติแล้ว</span>
+                            <span class="badge bg-success">กำลังยืม</span>
+                        {% elif loan.status == 'borrowed' %}
+                            <span class="badge bg-primary">กำลังยืม</span>
+                        {% elif loan.status == 'returned_pending' %}
+                            <span class="badge bg-warning text-dark">รออนุมัติการคืน..</span>
+                        {% elif loan.status == 'returned' %}
+                            <span class="badge bg-secondary">คืนแล้ว</span>
+                        {% elif loan.status == 'rejected' %}
+                            <span class="badge bg-danger">ปฏิเสธ</span>
+                        {% elif loan.status == 'overdue' %}
+                            <span class="badge bg-danger">เกินกำหนด</span>
+                        {% elif loan.status == 'cancel' %}
+                            <span class="badge bg-danger">ผู้ยืมยกเลิก</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if loan.status == 'pending' %}
+                            <button class="btn btn-success btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#approvalModal" 
+                                    data-id="{{ loan.id }}" 
+                                    data-action="approved" 
+                                    data-url="{% url 'assets:loan_approval' loan.id %}">
+                                อนุมัติ
+                            </button>
+
+                            <button class="btn btn-danger btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#approvalModal" 
+                                    data-id="{{ loan.id }}" 
+                                    data-action="rejected" 
+                                    data-url="{% url 'assets:loan_approval' loan.id %}">
+                                ปฏิเสธ
+                            </button>
+
+                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        {% elif loan.status == 'returned_pending' %}
+                            {% comment %} <a href="{% url 'assets:approve_return' loan.id %}" class="btn btn-sm btn-primary">อนุมัติการคืน</a> {% endcomment %}
+                             <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#returnModal"
+                                    data-loan-id="{{ loan.id }}" data-loan-user="{{ loan.user.get_full_name }}">
+                                อนุมัติการคืน
+                            </button>
+                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        {% elif loan.status == 'approved' %}
+                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        {% elif loan.status == 'returned' %}
+                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        {% elif loan.status == 'rejected' %}
+                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        {% elif loan.status == 'overdue' %}
+                            {% comment %} <button class="btn btn-sm btn-danger" ... data-bs-target="#confirmNotifyModal" ...>แจ้งเตือน</button> {% endcomment %}
+
+                            <form method="POST" 
+                                  action="{% url 'assets:loan_notify_overdue' loan.id %}" 
+                                  style="display:inline" 
+                                  onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerHTML='<span class=\'spinner-border spinner-border-sm\'></span> กำลังส่ง'; return confirm('คุณต้องการส่งแจ้งเตือนเกินกำหนดสำหรับ Order #{{ loan.id }} ใช่หรือไม่?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm" title="ส่งแจ้งเตือนเกินกำหนด (Line)">
+                                    <i class="bi bi-bell-fill"></i> แจ้งเตือน
+                                </button>
+                            </form>
+                            
+                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        {% else %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">ไม่มีรายการที่ต้องอนุมัติ</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+        <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?{% for key, value in get_params.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">ก่อนหน้า</a>
+            </li>
+            {% endif %}
+            <li class="page-item disabled">
+                <a class="page-link">หน้า {{ page_obj.number }} จาก {{ page_obj.paginator.num_pages }}</a>
+            </li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?{% for key, value in get_params.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">ถัดไป</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+</div>
+
+<!-- Modal อนุมัติการคืน -->
+<div class="modal fade" id="returnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="loan_id" id="modalLoanId">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">อนุมัติการคืน</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>เจ้าหน้าที่รับคืน</label>
+                        <input type="text" class="form-control text-primary" value="{{ request.user.get_full_name }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label>ตำแหน่งเจ้าหน้าที่รับคืน</label>
+                        <input type="text" class="form-control text-primary" value="{{ request.user.profile.position }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label>สถานะการคืน</label>
+                        <select name="status_return" class="form-select text-primary">
+                            <option value="not_damaged">ไม่มีรายการชำรุด</option>
+                            <option value="damaged">ชำรุด</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>หมายเหตุเจ้าหน้าที่</label>
+                        <textarea name="receiver_note" class="form-control text-primary" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">ยืนยันการคืน</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div class="modal fade" id="approvalModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" id="approvalForm">
+      {% csrf_token %}
+      <input type="hidden" name="status" id="approvalStatus">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">ยืนยันการทำรายการ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+        </div>
+        <div class="modal-body">
+          <p id="approvalMessage"></p>
+
+          <!-- textarea หมายเหตุ (แสดงเฉพาะกรณี rejected) -->
+          <div class="mb-3 d-none" id="rejectionNoteWrapper">
+            <label for="rejectionNote" class="form-label">หมายเหตุ (กรณีปฏิเสธ)</label>
+            <textarea name="note" id="rejectionNote" class="form-control text-primary" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล'; this.form.submit();">ยืนยัน</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // สำหรับอนุมัติ/ปฏิเสธการยืม
+    var approvalModal = document.getElementById('approvalModal');
+    approvalModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var action = button.getAttribute('data-action');
+        var url = button.getAttribute('data-url');
+
+        var form = document.getElementById('approvalForm');
+        var statusInput = document.getElementById('approvalStatus');
+        var message = document.getElementById('approvalMessage');
+        var noteWrapper = document.getElementById('rejectionNoteWrapper');
+
+        form.action = url;
+        statusInput.value = action;
+
+       // if (action === "approved") {
+       //     message.textContent = "คุณต้องการอนุมัติการยืมรายการนี้ใช่หรือไม่?";
+       // } else {
+       //     message.textContent = "คุณต้องการปฏิเสธการยืมรายการนี้ใช่หรือไม่?";
+       // }
+       if (action === "approved") {
+            message.textContent = "คุณต้องการอนุมัติการยืมรายการนี้ใช่หรือไม่?";
+            noteWrapper.classList.add("d-none");
+        } else {
+            message.textContent = "คุณต้องการปฏิเสธการยืมรายการนี้ใช่หรือไม่?";
+            noteWrapper.classList.remove("d-none");
+        }
+    });
+
+    // สำหรับอนุมัติการคืน
+    var returnModal = document.getElementById('returnModal');
+    returnModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var loanId = button.getAttribute('data-loan-id');
+        var loanUser = button.getAttribute('data-loan-user');
+
+        // ใส่ค่า loan_id ลง hidden input
+        document.getElementById('modalLoanId').value = loanId;
+
+        // ปรับ title ให้ user-friendly
+        returnModal.querySelector('.modal-title').textContent =
+            "อนุมัติการคืน #" + loanId + " (" + loanUser + ")";
+    });
+});
+</script>
+{% endblock %}
+
+
+
+{% comment %} <script>
+document.addEventListener("DOMContentLoaded", function(){
+    var approvalModal = document.getElementById('approvalModal');
+    approvalModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var loanId = button.getAttribute('data-id');
+        var action = button.getAttribute('data-action');
+
+        var form = document.getElementById('approvalForm');
+        var statusInput = document.getElementById('approvalStatus');
+        var message = document.getElementById('approvalMessage');
+
+        // set action form url
+        form.action = "{% url 'assets:loan_approval' 0 %}".replace("0", loanId);
+        statusInput.value = action;
+
+        if(action === "approved"){
+            message.textContent = "คุณต้องการอนุมัติการยืมรายการนี้ใช่หรือไม่?";
+        } else {
+            message.textContent = "คุณต้องการปฏิเสธการยืมรายการนี้ใช่หรือไม่?";
+        }
+    });
+});
+</script> {% endcomment %}

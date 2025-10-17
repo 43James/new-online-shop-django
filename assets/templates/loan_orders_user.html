@@ -2,166 +2,133 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>รายการรออนุมัติการยืม/คืน</h3>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 text-primary fw-bold"><i class="bi bi-list-columns-reverse me-2"></i> รายการยืม/คืนของฉัน</h1>
+    <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#howToUseModal">
+        <i class="bi bi-question-circle"></i> วิธีใช้งาน
+    </button>
+</div>
+
+<form method="get" class="row g-3 mb-4 p-3 bg-light rounded shadow-sm align-items-center">
+    
+    <div class="col-md-5">
+        <label for="q" class="form-label visually-hidden">ค้นหา</label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อ, ID ครุภัณฑ์, หรือชื่อผู้ยืม" value="{{ query }}">
+        </div>
     </div>
 
-    <form method="get" class="row g-2 mb-4 align-items-center">
-        <div class="col-md-5">
-            <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อ, ไอดีครุภัณฑ์, หรือชื่อผู้ยืม" value="{{ query }}">
-        </div>
+    <div class="col-md-3">
+        <label for="month" class="form-label visually-hidden">เดือน</label>
+        <select name="month" id="month" class="form-select">
+            <option value="">-- เดือนทั้งหมด --</option>
+            {% for m in months %}
+                <option value="{{ m.0 }}" {% if m.0|stringformat:"s" == selected_month|stringformat:"s" %}selected{% endif %}>{{ m.1 }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-        <div class="col-md-3">
-            <select name="month" id="month" class="form-select">
-                {% for m in months %}
-                    <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <div class="col-md-2">
+        <label for="year" class="form-label visually-hidden">ปี</label>
+        <select name="year" id="year" class="form-select">
+            {% for y in years %}
+                <option value="{{ y }}" {% if y|stringformat:"s" == selected_year|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="col-md-2 d-flex justify-content-end"> 
+        <button type="submit" class="btn btn-primary me-2"><i class="bi bi-funnel"></i> กรอง</button>
+        <a href="{% url 'assets:loan_orders_user' %}" class="btn btn-secondary" title="รีเซ็ตตัวกรอง"><i class="bi bi-arrow-counterclockwise"></i></a>
+    </div>
+</form>
 
-        <div class="col-md-2">
-            <select name="year" id="year" class="form-select">
-                {% for y in years %}
-                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="col-md-2 d-flex justify-content-end">
-            <button type="submit" class="btn btn-primary me-2">ค้นหา</button>
-            <a href="{% url 'assets:loan_orders_user' %}" class="btn btn-secondary">ยกเลิก</a>
-        </div>
-    </form>
-
-    <div class="table-responsive">
-        <table class="table table-bordered align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>ลำดับ</th>
-                    <th>ผู้ยืม</th>
-                    <th>ID</th>
-                    <th>วันที่ยืม</th>
-                    <th>วันที่ใช้งาน</th>
-                    <th>กำหนดคืน</th>
-                    <th>สถานะ</th>
-                    <th>การทำงาน</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for loan in page_obj %}
-                <tr>
-                    <th scope="row">{{ forloop.counter }}</th>
-                    <td>{{ loan.user.get_full_name }}</td>
-                    <td>{{ loan.id }}</td>
-                    <td>{{ loan.date_created|date:"d M Y , H:i น." }}</td>
-                    <td>{{ loan.date_of_use|date:"d M Y , H:i น." }}</td>
-                    <td>{{ loan.date_due|date:"d M Y , H:i น." }}</td>
-                    <td>
-                        {% if loan.status == 'pending' %}
-                            <span class="badge bg-warning text-dark">รออนุมัติ..</span>
-                        {% elif loan.status == 'approved' %}
-                            <span class="badge bg-success">อนุมัติแล้ว</span>
-                        {% elif loan.status == 'borrowed' %}
-                            <span class="badge bg-primary">กำลังยืม</span>
-                        {% elif loan.status == 'returned_pending' %}
-                            <span class="badge bg-warning text-dark">รออนุมัติการคืน..</span>
-                        {% elif loan.status == 'returned' %}
-                            <span class="badge bg-secondary">คืนแล้ว</span>
-                        {% elif loan.status == 'rejected' %}
-                            <span class="badge bg-danger">เจ้าหน้าที่ปฏิเสธ</span>
-                        {% elif loan.status == 'overdue' %}
-                            <span class="badge bg-danger">เกินกำหนด</span>
-                        {% elif loan.status == 'cancel' %}
-                            <span class="badge bg-danger">ยกเลิกการยืม</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if loan.status == 'approved' %}
-                            <!-- กำลังยืม → กดส่งคืนได้ -->
-                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approvalModal"
-                                data-id="{{ loan.id }}" data-action="returned_pending">
-                                ส่งคืนครุภัณฑ์
-                            </button>
-                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        {% elif loan.status == 'overdue' %}
-                            <!-- กำลังยืม → กดส่งคืนได้ -->
-                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approvalModal"
-                                data-id="{{ loan.id }}" data-action="returned_pending">
-                                ส่งคืนครุภัณฑ์
-                            </button>
-                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        {% elif loan.status == 'pending' %}
-                            <!-- ยังไม่อนุมัติ → กดยกเลิกได้ -->
-                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#approvalModal"
-                                data-id="{{ loan.id }}" data-action="cancel">
-                                ยกเลิกยืม
-                            </button>
-                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
-                                <i class="bi bi-eye"></i>
-                            </a>
+<div class="card shadow">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-primary">
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 15%;">ผู้ยืม</th>
+                        <th style="width: 8%;">ID</th>
+                        <th style="width: 15%;">วันที่สร้างรายการ</th>
+                        <th style="width: 15%;">วันที่ใช้งาน</th>
+                        <th style="width: 15%;">กำหนดคืน</th>
+                        <th style="width: 15%;">สถานะ</th>
+                        <th style="width: 12%;">การทำงาน</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in page_obj %}
+                    <tr class="
+                        {% if loan.status == 'pending' %}table-warning{% endif %}
+                        {% if loan.status == 'returned_pending' %}table-info{% endif %}
+                        {% if loan.status == 'overdue' %}table-danger{% endif %}
+                        {% if loan.status == 'cancel' or loan.status == 'rejected' %}table-light text-muted{% endif %}
+                    ">
+                        <th scope="row">{{ forloop.counter0|add:page_obj.start_index }}</th>
+                        <td>{{ loan.user.get_full_name }}</td>
+                        <td class="fw-bold">{{ loan.id }}</td>
+                        <td>{{ loan.date_created|date:"d/m/Y , H:i น." }}</td>
+                        <td>{{ loan.date_of_use|date:"d/m/Y , H:i น." }}</td>
+                        <td>{{ loan.date_due|date:"d/m/Y , H:i น." }}</td>
+                        <td>
+                            {% if loan.status == 'pending' %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> รออนุมัติ</span>
+                            {% elif loan.status == 'approved' or loan.status == 'borrowed' %}
+                                <span class="badge bg-primary"><i class="bi bi-handbag"></i> กำลังยืม</span>
+                            {% elif loan.status == 'returned_pending' %}
+                                <span class="badge bg-info text-dark"><i class="bi bi-arrow-return-left"></i> รออนุมัติคืน</span>
+                            {% elif loan.status == 'returned' %}
+                                <span class="badge bg-secondary"><i class="bi bi-check2-all"></i> คืนแล้ว</span>
+                            {% elif loan.status == 'rejected' %}
+                                <span class="badge bg-danger"><i class="bi bi-slash-circle"></i> เจ้าหน้าที่ปฏิเสธ</span>
+                            {% elif loan.status == 'overdue' %}
+                                <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> เกินกำหนด</span>
+                            {% elif loan.status == 'cancel' %}
+                                <span class="badge bg-danger"><i class="bi bi-x-circle"></i> ยกเลิกการยืม</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if loan.status == 'approved' or loan.status == 'borrowed' or loan.status == 'overdue' %}
+                                <button class="btn btn-sm btn-success me-1" data-bs-toggle="modal" data-bs-target="#approvalModal"
+                                    data-id="{{ loan.id }}" data-action="returned_pending" title="แจ้งเจ้าหน้าที่เพื่อคืนครุภัณฑ์">
+                                    <i class="bi bi-arrow-return-left"></i> ส่งคืน
+                                </button>
+                            {% endif %}
                             
-                        {% elif loan.status == 'returned_pending' %}
-                            <!-- ยกเลิกการยืมแล้ว → ไม่ต้องมีปุ่ม -->
-                             <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        {% elif loan.status == 'rejected' %}
-                            <!-- ยกเลิกการยืมแล้ว → ไม่ต้องมีปุ่ม -->
-                             <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        {% elif loan.status == 'returned' %}
-                            <!-- ยกเลิกการยืมแล้ว → ไม่ต้องมีปุ่ม -->
-                             <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        {% elif loan.status == 'cancel' %}
-                            <!-- ยกเลิกการยืมแล้ว → ไม่ต้องมีปุ่ม -->
-                        {% endif %}
+                            {% if loan.status == 'pending' %}
+                                <button class="btn btn-sm btn-danger me-1" data-bs-toggle="modal" data-bs-target="#approvalModal"
+                                    data-id="{{ loan.id }}" data-action="cancel" title="ยกเลิกรายการยืมที่ยังไม่ถูกอนุมัติ">
+                                    <i class="bi bi-x-circle"></i> ยกเลิก
+                                </button>
+                            {% endif %}
 
-                        <!-- ปุ่มดูรายละเอียด ใช้ได้ทุกสถานะ -->
-                        {% comment %} <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
-                            <i class="bi bi-eye"></i>
-                        </a> {% endcomment %}
-                    </td>
-
-                    {% comment %} <td>
-                        {% if loan.status == 'borrowed' or 'approved' %}
-                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approvalModal" 
-                                data-id="{{ loan.id }}" data-action="returned_pending">
-                                ส่งคืนครุภัณฑ์
-                            </button>
-                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#approvalModal" 
-                                data-id="{{ loan.id }}" data-action="cancel">
-                                ยกเลิกยืม
-                            </button>
-                        {% else %}
-                            <span class="text-muted">ไม่มี</span>
-                        {% endif %}
-                        <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                    </td> {% endcomment %}
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center">ไม่มีรายการที่ต้องอนุมัติ</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                            <a href="{% url 'assets:loan_detail' loan.id %}" class="btn btn-sm btn-info" title="ดูรายละเอียด"><i class="bi bi-eye"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center p-4 text-muted">
+                            <i class="bi bi-folder-open fs-5 me-2"></i> ไม่พบรายการยืม/คืนในเงื่อนไขนี้
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
+</div>
 
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% with get_params=request.GET.urlencode %}
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&month={{ selected_month }}&year={{ selected_year }}">ก่อนหน้า</a>
+                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">ก่อนหน้า</a>
             </li>
             {% endif %}
             <li class="page-item disabled">
@@ -169,33 +136,76 @@
             </li>
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}&month={{ selected_month }}&year={{ selected_year }}">ถัดไป</a>
+                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">ถัดไป</a>
             </li>
             {% endif %}
-        </ul>
-    </nav>
-</div>
-
+        {% endwith %}
+    </ul>
+</nav>
 
 <div class="modal fade" id="approvalModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form method="post" id="approvalForm">
             {% csrf_token %}
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">ยืนยันการทำรายการ</h5>
+                <div class="modal-header" id="approvalModalHeader">
+                    <h5 class="modal-title"><i class="bi bi-question-diamond me-2"></i> ยืนยันการทำรายการ</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
                 </div>
                 <div class="modal-body">
-                    <p id="approvalMessage"></p>
+                    <p id="approvalMessage" class="fw-bold"></p>
                     <input type="hidden" name="status" id="approvalStatus">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
-                    <button type="submit" id="confirmBtn" class="btn" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล'; this.form.submit();">ยืนยัน</button>
+                    <button type="submit" id="confirmBtn" class="btn" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm\'></span> กำลังประมวลผล'; this.form.submit();">ยืนยัน</button>
                 </div>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="modal fade" id="howToUseModal" tabindex="-1" aria-labelledby="howToUseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="howToUseModalLabel"><i class="bi bi-lightbulb-fill me-2"></i> วิธีใช้งาน: การจัดการรายการยืม/คืน</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h4>การทำรายการของผู้ยืม</h4>
+                <p>ตารางนี้แสดงสถานะปัจจุบันของคำขอทั้งหมดที่คุณเป็นผู้ยื่นคำขอ:</p>
+                
+                <hr>
+                
+                <h5>1. การส่งคืนครุภัณฑ์ (<span class="badge bg-success"><i class="bi bi-arrow-return-left"></i> ส่งคืน</span>)</h5>
+                <p>ใช้สำหรับแจ้งเจ้าหน้าที่ว่าคุณต้องการคืนครุภัณฑ์ที่ **กำลังยืม** อยู่ (สถานะ <span class="badge bg-primary">กำลังยืม</span> หรือ <span class="badge bg-danger">เกินกำหนด</span>)</p>
+                <ol>
+                    <li>คลิกปุ่ม <span class="badge bg-success"><i class="bi bi-arrow-return-left"></i> ส่งคืน</span> ในแถวของรายการที่ต้องการคืน</li>
+                    <li>หน้าต่าง **ยืนยันการทำรายการ** จะปรากฏขึ้น ตรวจสอบข้อความ แล้วคลิก **ยืนยัน**</li>
+                    <li>สถานะจะเปลี่ยนเป็น <span class="badge bg-info text-dark">รออนุมัติการคืน..</span></li>
+                    <li>**หมายเหตุ:** คุณต้องนำครุภัณฑ์ไปคืนกับเจ้าหน้าที่ เมื่อเจ้าหน้าที่ตรวจสอบและกดอนุมัติการคืน สถานะจะเปลี่ยนเป็น <span class="badge bg-secondary">คืนแล้ว</span></li>
+                </ol>
+
+                <hr>
+
+                <h5>2. การยกเลิกการยืม (<span class="badge bg-danger"><i class="bi bi-x-circle"></i> ยกเลิก</span>)</h5>
+                <p>ใช้สำหรับยกเลิกคำขอที่ **ยังไม่ได้รับการอนุมัติ** จากเจ้าหน้าที่ (สถานะ <span class="badge bg-warning text-dark">รออนุมัติ..</span>)</p>
+                <ol>
+                    <li>คลิกปุ่ม <span class="badge bg-danger"><i class="bi bi-x-circle"></i> ยกเลิก</span> ในแถวของรายการที่ต้องการยกเลิก</li>
+                    <li>หน้าต่าง **ยืนยันการทำรายการ** จะปรากฏขึ้น ตรวจสอบข้อความ แล้วคลิก **ยืนยัน**</li>
+                    <li>สถานะจะเปลี่ยนเป็น <span class="badge bg-danger">ยกเลิกการยืม</span></li>
+                </ol>
+
+                <hr>
+
+                <h5>3. การดูรายละเอียด (<span class="badge bg-info"><i class="bi bi-eye"></i></span>)</h5>
+                <p>ใช้สำหรับดูรายละเอียดทั้งหมดของรายการยืม รวมถึงรายการครุภัณฑ์และประวัติการดำเนินการ (สามารถกดได้ทุกสถานะ)</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -206,87 +216,41 @@ document.addEventListener("DOMContentLoaded", function () {
     const approvalMessage = document.getElementById("approvalMessage");
     const confirmBtn = document.getElementById("confirmBtn");
     const hiddenInput = document.getElementById("approvalStatus");
+    const modalHeader = document.getElementById("approvalModalHeader");
 
     approvalModal.addEventListener("show.bs.modal", function (event) {
         const button = event.relatedTarget;
         const loanId = button.getAttribute("data-id");
         const action = button.getAttribute("data-action");
 
-        // ตั้งค่า action ของ form
-        approvalForm.action = `/assets/loan-approval-user/${loanId}/`;
+        // 1. ตั้งค่า Form Action และ Hidden Input
+        // URL Path ที่ถูกต้องควรเป็น `/assets/loan-approval-user/123/`
+        approvalForm.action = `/assets/loan-approval-user/${loanId}/`; 
         hiddenInput.value = action;
 
-        // เปลี่ยนข้อความและสีปุ่มตาม action
+        // 2. ปรับข้อความ, สีปุ่ม, และ Header ตาม Action
         if (action === "returned_pending") {
-            approvalMessage.textContent = "คุณต้องการส่งคืนครุภัณฑ์รายการนี้ใช่หรือไม่?";
+            approvalMessage.textContent = "คุณต้องการแจ้งส่งคืนครุภัณฑ์รายการนี้ใช่หรือไม่? หลังจากนี้ต้องส่งคืนให้เจ้าหน้าที่เพื่ออนุมัติการคืน";
+            
+            // สไตล์สำหรับ 'ส่งคืน' (สีเขียว)
+            modalHeader.className = 'modal-header bg-success text-white';
             confirmBtn.className = "btn btn-success";
+            modalHeader.querySelector('.modal-title').innerHTML = '<i class="bi bi-arrow-return-left me-2"></i> แจ้งส่งคืนครุภัณฑ์';
+
         } else if (action === "cancel") {
-            approvalMessage.textContent = "คุณต้องการยกเลิกการยืมรายการนี้ใช่หรือไม่?";
+            approvalMessage.textContent = "คุณต้องการยกเลิกการยืมรายการนี้ใช่หรือไม่? รายการที่ถูกยกเลิกแล้วจะไม่สามารถกู้คืนได้";
+            
+            // สไตล์สำหรับ 'ยกเลิก' (สีแดง)
+            modalHeader.className = 'modal-header bg-danger text-white';
             confirmBtn.className = "btn btn-danger";
+            modalHeader.querySelector('.modal-title').innerHTML = '<i class="bi bi-x-circle me-2"></i> ยืนยันการยกเลิก';
         }
+        
+        // 3. รีเซ็ตปุ่มก่อนเปิด Modal
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = 'ยืนยัน';
     });
 });
 </script>
 
-{% comment %} <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const approvalModal = document.getElementById("approvalModal");
-    const approvalForm = document.getElementById("approvalForm");
-    const approvalMessage = document.getElementById("approvalMessage");
-    const confirmBtn = document.getElementById("confirmBtn");
-
-    approvalModal.addEventListener("show.bs.modal", function (event) {
-        const button = event.relatedTarget;
-        const loanId = button.getAttribute("data-id");
-        const action = button.getAttribute("data-action");
-
-        approvalForm.action = `/assets/loan-approval-user/${loanId}/`;  
-
-        // input hidden
-        let hiddenInput = approvalForm.querySelector("input[name='status']");
-        if (!hiddenInput) {
-            hiddenInput = document.createElement("input");
-            hiddenInput.type = "hidden";
-            hiddenInput.name = "status";
-            approvalForm.appendChild(hiddenInput);
-        }
-        hiddenInput.value = action;
-
-        // set ข้อความ + ปุ่มสี
-        if (action === "returned_pending") {
-            approvalMessage.textContent = "คุณต้องการส่งคืนครุภัณฑ์รายการนี้ใช่หรือไม่?";
-            confirmBtn.className = "btn btn-success";
-        } else if (action === "cancel") {
-            approvalMessage.textContent = "คุณต้องการยกเลิกการยืมรายการนี้ใช่หรือไม่?";
-            confirmBtn.className = "btn btn-danger";
-        }
-    });
-});
-</script> {% endcomment %}
-
-
-{% comment %} <script>
-document.addEventListener("DOMContentLoaded", function(){
-    var approvalModal = document.getElementById('approvalModal');
-    approvalModal.addEventListener('show.bs.modal', function (event) {
-        var button = event.relatedTarget;
-        var loanId = button.getAttribute('data-id');
-        var action = button.getAttribute('data-action');
-
-        var form = document.getElementById('approvalForm');
-        var statusInput = document.getElementById('approvalStatus');
-        var message = document.getElementById('approvalMessage');
-
-        // set action form url
-        form.action = "{% url 'assets:loan_approval_user' 0 %}".replace("0", loanId);
-        statusInput.value = action;
-
-        if(action === "returned_pending"){
-            message.textContent = "คุณต้องการส่งคืนครุภัณฑ์รายการนี้ใช่หรือไม่?";
-        } else if(action === "cancel"){
-            message.textContent = "คุณต้องการยกเลิกการยืมรายการนี้ใช่หรือไม่?";
-        }
-    });
-});
-</script> {% endcomment %}
 {% endblock %}

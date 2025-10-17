@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from accounts.models import MyUser
 from app_linebot.models import UserLine, UserLine_Asset
-from app_linebot.views import notify_admin_assetloan, notify_admin_on_auto_loan, notify_admin_on_return, notify_borrower
+from app_linebot.views import notify_admin_assetloan, notify_admin_on_auto_loan, notify_admin_on_return, notify_borrower, notify_overdue_asset_loan
 from assets.models import AssetCode, AssetItem, AssetCheck, AssetItemLoan, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
 from dashboard.views import thai_month_name
 from .forms import ApproveLoanForm, AssetCheckForm, AssetCodeForm, AssetItemForm, AssetItemLoanForm, CategoryForm, LoanForm, ReservationForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
@@ -91,6 +91,7 @@ def add_asset_item(request):
         "asset_code_form": asset_code_form,
         "asset_item_form": asset_item_form,
         "categories": categories,
+        "loan_pending_count": count_pending_asset_loans(), 
     })
 
 
@@ -151,6 +152,7 @@ def asset_edit(request, pk):
         'asset_code_form': asset_code_form,
         'asset': asset,
         'categories': categories,
+        "loan_pending_count": count_pending_asset_loans(),
     })
 
 # ลบครุภัณฑ์
@@ -259,6 +261,7 @@ def edit_asset_item_loan(request, pk):
         'form': form,
         'asset_item': asset_item,
         'categories': categories,
+        "loan_pending_count": count_pending_asset_loans(),
     }
     return render(request, 'edit_asset_item_loan.html', context)
 
@@ -450,6 +453,7 @@ def calendar_events(request):
                 "asset": r.asset.item_name,
                 "notes": r.notes or "",
                 "asset_image": asset_image_url,
+                "loan_pending_count": count_pending_asset_loans(),
             }
         })
 
@@ -458,29 +462,92 @@ def calendar_events(request):
 # ------------------------------
 # แสดงรายการครุภัณฑ์ สำหรับยืม
 # ------------------------------
+# @login_required
+# def loan_list(request):
+#     # เริ่มต้นด้วยการ query ครุภัณฑ์ทั้งหมด
+#     asset_items_query = AssetItemLoan.objects.all()
+    
+#     has_line_account = False
+#     if request.user.is_authenticated:
+#         # UserLine_Asset.objects.filter(user=request.user).exists()
+#         # หรือใช้ try: request.user.userline_asset
+        
+#         # สมมติว่าคุณต้องการให้แต่ละ MyUser มี UserLine_Asset ได้หลายรายการ
+#         # ถ้าต้องการแค่รายการเดียว (ควรใช้ OneToOneField แทน) สามารถใช้ try-except ได้
+        
+#         # วิธีที่แนะนำสำหรับ ForeignKey:
+#         has_line_account = UserLine_Asset.objects.filter(user=request.user).exists()
+
+#     # Prefetch ข้อมูลการจองล่าสุด
+#     asset_items_query = asset_items_query.prefetch_related(
+#         Prefetch('assetreservation_set',
+#                  queryset=AssetReservation.objects.order_by('reserved_date'),
+#                  to_attr='current_reservation')
+#     )
+    
+#     query = request.GET.get("q", "")
+#     category_id = request.GET.get("category")
+#     subcategory_id = request.GET.get("subcategory")
+    
+#     if query:
+#         asset_items_query = asset_items_query.filter(
+#             Q(item_name__icontains=query) |
+#             Q(asset_code__icontains=query)
+#         )
+
+#     selected_category = None
+#     if category_id:
+#         selected_category = get_object_or_404(AssetCategory, id=category_id)
+#         asset_items_query = asset_items_query.filter(subcategory__category=selected_category)
+
+#     selected_subcategory = None
+#     if subcategory_id:
+#         selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
+#         asset_items_query = asset_items_query.filter(subcategory=selected_subcategory)
+        
+#     asset_items = asset_items_query.all()
+
+#     context = {
+#         "asset_items": asset_items,
+#         "categories": AssetCategory.objects.all(),
+#         "subcategories": Subcategory.objects.all(),
+#         "selected_category": selected_category,
+#         "selected_subcategory": selected_subcategory,
+#         "query": query,
+#         'has_line_account': has_line_account,
+#         "loan_pending_count": count_pending_asset_loans(),
+#     }
+#     return render(request, "loan_list.html", context)
+
+
 @login_required
 def loan_list(request):
-    # เริ่มต้นด้วยการ query ครุภัณฑ์ทั้งหมด
+    # สถานะที่ถือว่าเป็นการยืมที่มีผลอยู่ (Active Loans)
+    ACTIVE_LOAN_STATUS = ['pending', 'approved', 'overdue', 'returned_pending']
+    
+    # 1. เริ่มต้นด้วยการ query ครุภัณฑ์ทั้งหมด
     asset_items_query = AssetItemLoan.objects.all()
     
     has_line_account = False
     if request.user.is_authenticated:
-        # UserLine_Asset.objects.filter(user=request.user).exists()
-        # หรือใช้ try: request.user.userline_asset
-        
-        # สมมติว่าคุณต้องการให้แต่ละ MyUser มี UserLine_Asset ได้หลายรายการ
-        # ถ้าต้องการแค่รายการเดียว (ควรใช้ OneToOneField แทน) สามารถใช้ try-except ได้
-        
-        # วิธีที่แนะนำสำหรับ ForeignKey:
+        # ตรวจสอบว่าผู้ใช้มีบัญชี LINE ที่ผูกไว้หรือไม่
         has_line_account = UserLine_Asset.objects.filter(user=request.user).exists()
 
-    # Prefetch ข้อมูลการจองล่าสุด
-    asset_items_query = asset_items_query.prefetch_related(
-        Prefetch('assetreservation_set',
-                 queryset=AssetReservation.objects.order_by('reserved_date'),
-                 to_attr='current_reservation')
-    )
+    # 2. **Prefetch ข้อมูลรายการยืมที่กำลังมีผล (Active Loans) และตัดการ Prefetch การจองออก**
     
+    # สร้าง Prefetch Object สำหรับ Active Loans
+    active_loans_prefetch = Prefetch(
+        'issued_loans', # ใช้ related_name จาก IssuingAssetLoan.order_asset
+        queryset=IssuingAssetLoan.objects.filter(
+            order_asset__status__in=ACTIVE_LOAN_STATUS
+        ).select_related('order_asset', 'order_asset__user')
+         .order_by('order_asset__date_due'), # เรียงตามกำหนดคืน
+        to_attr='active_loan_list' # ชื่อฟิลด์ใหม่สำหรับเก็บ QuerySet ที่ Active
+    )
+    asset_items_query = asset_items_query.prefetch_related(active_loans_prefetch)
+    
+    
+    # 3. การกรองและค้นหา (Logic เดิม)
     query = request.GET.get("q", "")
     category_id = request.GET.get("category")
     subcategory_id = request.GET.get("subcategory")
@@ -511,6 +578,7 @@ def loan_list(request):
         "selected_subcategory": selected_subcategory,
         "query": query,
         'has_line_account': has_line_account,
+        "loan_pending_count": count_pending_asset_loans(),
     }
     return render(request, "loan_list.html", context)
 
@@ -523,7 +591,8 @@ def loan_cart(request):
     asset_items = AssetItemLoan.objects.filter(status_borrowing=True)
 
     context = {
-        "asset_items": asset_items
+        "asset_items": asset_items,
+        "loan_pending_count": count_pending_asset_loans(),
     }
     return render(request, "loan_cart.html", context)
 
@@ -536,14 +605,59 @@ def loan_detail_view(request, loan_id):
     loan = get_object_or_404(OrderAssetLoan, pk=loan_id)
     context = {
         'loan': loan,
+        "loan_pending_count": count_pending_asset_loans(),
     }
     return render(request, 'loan_detail.html', context)
 
 
 
 # ------------------------------
-# ยืนยันการยืม
+# ฟังก์ยืมครุภัณฑ์
 # ------------------------------
+# @login_required
+# def confirm_loan(request):
+#     if request.method == "POST":
+#         # ✅ ดึง asset_ids จาก form (กัน error ถ้าไม่มีค่า)
+#         asset_ids_str = request.POST.get("asset_ids", "").strip()
+#         asset_ids = [int(i) for i in asset_ids_str.split(",") if i.isdigit()]
+
+#         # ✅ ดึง assets ที่เลือกมา
+#         assets_in_cart = AssetItemLoan.objects.filter(id__in=asset_ids)
+
+#         if not assets_in_cart.exists():
+#             messages.error(request, "ไม่มีครุภัณฑ์ในตะกร้า")
+#             return redirect("assets:loan_list")
+
+#         # ✅ ใช้ฟอร์มตรวจสอบข้อมูล
+#         form = LoanForm(request.POST)
+#         if form.is_valid():
+#             order = form.save(commit=False)
+#             order.user = request.user
+#             order.status = "pending"
+#             order.save()
+
+#             # ✅ สร้างความสัมพันธ์กับครุภัณฑ์
+#             for asset in assets_in_cart:
+#                 IssuingAssetLoan.objects.create(order_asset=order, asset=asset)
+#                 asset.status_assetloan = True
+#                 asset.save(update_fields=["status_assetloan"])  # save เฉพาะ field ที่เปลี่ยน
+
+#             # 🔔 แจ้งเตือนผ่าน LINE
+#             try:
+#                 notify_admin_assetloan(request, order.id)
+#             except Exception as e:
+#                 messages.warning(request, f"บันทึกสำเร็จ แต่ส่ง LINE ไม่ได้: {e}")
+
+#             messages.success(request, "ส่งคำขอยืมครุภัณฑ์เรียบร้อย")
+#             return redirect("assets:loan_list")
+#         else:
+#             # ✅ Debug form errors (กันงง)
+#             messages.error(request, f"ฟอร์มไม่ถูกต้อง: {form.errors.as_json()}")
+
+#     # ถ้าไม่ใช่ POST กลับหน้าเดิม
+#     return redirect("assets:loan_list")
+
+
 @login_required
 def confirm_loan(request):
     if request.method == "POST":
@@ -561,6 +675,33 @@ def confirm_loan(request):
         # ✅ ใช้ฟอร์มตรวจสอบข้อมูล
         form = LoanForm(request.POST)
         if form.is_valid():
+            # --- โค้ดที่ต้องเพิ่ม: ตรวจสอบการยืมซ้ำซ้อน ---
+            date_of_use = form.cleaned_data['date_of_use'] # วันที่ใช้ (เริ่มยืม)
+            date_due = form.cleaned_data['date_due']       # กำหนดคืน (สิ้นสุดการยืม)
+            
+            # สถานะที่ 'ยัง' ถือว่าเป็นการยืมหรือกำลังจะยืม (ไม่รวมสถานะยกเลิก, ปฏิเสธ, คืนแล้ว)
+            ACTIVE_LOAN_STATUS = ['pending', 'approved', 'borrowed', 'overdue', 'returned_pending']
+
+            # ตรวจสอบว่าครุภัณฑ์ที่เลือกมีการถูกยืมในช่วงเวลาซ้ำซ้อนหรือไม่
+            conflicting_issues = IssuingAssetLoan.objects.filter(
+                asset__in=assets_in_cart, # ครุภัณฑ์ที่อยู่ในตะกร้า
+                order_asset__status__in=ACTIVE_LOAN_STATUS, # สถานะที่ถือว่ากำลังถูกยืม
+                
+                # ตรวจสอบช่วงเวลาซ้ำซ้อน (Overlap check)
+                order_asset__date_of_use__lt=date_due,
+                order_asset__date_due__gt=date_of_use
+            ).select_related('asset', 'order_asset').first() # .first() เพื่อเอาแค่รายการแรกที่ชน
+
+            if conflicting_issues:
+                asset_name = conflicting_issues.asset.item_name
+                order_id = conflicting_issues.order_asset.id
+                messages.error(
+                    request, 
+                    f"ไม่สามารถยืมได้: ครุภัณฑ์ **'{asset_name}'** ถูกจอง/ยืมในออเดอร์ #{order_id} ในช่วงเวลาที่เลือกแล้ว"
+                )
+                return redirect("assets:loan_list")
+            # --- จบโค้ดตรวจสอบการยืมซ้ำซ้อน ---
+
             order = form.save(commit=False)
             order.user = request.user
             order.status = "pending"
@@ -570,7 +711,7 @@ def confirm_loan(request):
             for asset in assets_in_cart:
                 IssuingAssetLoan.objects.create(order_asset=order, asset=asset)
                 asset.status_assetloan = True
-                asset.save(update_fields=["status_assetloan"])  # save เฉพาะ field ที่เปลี่ยน
+                asset.save(update_fields=["status_assetloan"]) # save เฉพาะ field ที่เปลี่ยน
 
             # 🔔 แจ้งเตือนผ่าน LINE
             try:
@@ -586,7 +727,6 @@ def confirm_loan(request):
 
     # ถ้าไม่ใช่ POST กลับหน้าเดิม
     return redirect("assets:loan_list")
-
 
 # ------------------------------
 # ฟังก์ชันจอง
@@ -630,6 +770,7 @@ def reserve_asset_item(request, pk):
     context = {
         'form': form,
         'asset_item': asset_item,
+        "loan_pending_count": count_pending_asset_loans(),
     }
     return render(request, "reserve_modal.html", context)
 
@@ -657,8 +798,12 @@ def loan_approval_list(request):
     # เพิ่มการรับค่าการค้นหา 'q'
     query = request.GET.get('q', '')
 
-    # loans = OrderAssetLoan.objects.filter(month=month, year=year)
-    loans = OrderAssetLoan.objects.filter(month=month, year=year).order_by('-id')
+    # รับค่าจาก checkbox 'show_rejected' (จะส่งค่า 'on' ถ้าถูกเลือก)
+    # ถ้าไม่มีค่าใน GET จะถือว่าเป็น False (ซ่อนรายการที่ปฏิเสธ/ยกเลิก)
+    show_rejected = request.GET.get('show_rejected')
+
+    # เริ่มต้น QuerySet
+    loans = OrderAssetLoan.objects.filter(month=month, year=year)
 
     # เพิ่มเงื่อนไขการค้นหา
     if query:
@@ -669,6 +814,13 @@ def loan_approval_list(request):
             Q(items__asset__item_name__icontains=query)
             # Q(items__asset__asset_code__icontains=query)
         ).distinct()
+
+    # ************************************************
+    # เพิ่มเงื่อนไขการกรองรายการที่ถูกปฏิเสธ/ยกเลิก
+    if not show_rejected:
+        # ถ้า show_rejected เป็น None (ไม่ได้เลือก Checkbox) ให้ซ่อนรายการเหล่านี้
+        loans = loans.exclude(status__in=['rejected', 'cancel'])
+    # ************************************************
 
     loans = loans.order_by('-id')
 
@@ -743,10 +895,38 @@ def loan_approval_list(request):
         "get_params": request.GET.copy(),  # เก็บ GET params สำหรับ pagination
         "query": query,
         "loan_pending_count": count_pending_asset_loans(), 
+        "show_rejected": show_rejected is not None, # ส่งค่า Boolean ไปยัง Template
 
     }
     return render(request, "loan_approval_list.html", context)
 
+# ส่งการแจ้งเตือนเมื่อยืมเกินกำหนด
+@login_required
+def loan_send_overdue_notification(request, loan_id):
+    """
+    View สำหรับส่งแจ้งเตือนสถานะเกินกำหนดด้วยตนเอง
+    """
+    # ตรวจสอบว่าเป็นการ POST เท่านั้น
+    if request.method != 'POST':
+        return redirect("assets:loan_approval_list")
+
+    try:
+        # 🚨 ลองดึง OrderAssetLoan
+        loan = OrderAssetLoan.objects.get(pk=loan_id)
+    except OrderAssetLoan.DoesNotExist:
+        # 🚨 ถ้าหาไม่พบ แทนที่จะโยน 404 ให้ดักจับและแสดงข้อความเตือน
+        messages.error(request, f"❌ ไม่พบรายการยืม Order #{loan_id} ในฐานข้อมูล")
+        return redirect("assets:loan_approval_list")
+        
+    if loan.status != 'overdue':
+        messages.warning(request, f"Order #{loan.id} มีสถานะเป็น '{loan.get_status_display()}' ไม่ใช่ 'เกินกำหนด' จึงไม่สามารถส่งแจ้งเตือนได้")
+        return redirect("assets:loan_approval_list")
+        
+    # เรียกฟังก์ชันแจ้งเตือนที่ปรับปรุงแล้ว
+    notify_borrower(loan, action_type="overdue")
+    
+    messages.success(request, f"ส่งแจ้งเตือนเกินกำหนดสำหรับ Order #{loan.id} ไปยังผู้ยืม ({loan.user.get_full_name()}) แล้ว")
+    return redirect("assets:loan_approval_list")
 # ------------------------------
 # ฟังก์บันทึกการคืน หน้าออเดอร์ผู้ใช้งาน 
 # ------------------------------
@@ -802,6 +982,7 @@ def loan_orders_user(request):
         ],
         # 'month_name' เป็นฟังก์ชันที่ต้องมีใน utils.py
         'month_name': thai_month_name(month),
+        "loan_pending_count": count_pending_asset_loans(),
     }
     return render(request, 'loan_orders_user.html', context)
 
@@ -878,6 +1059,33 @@ def loan_approval(request, pk):
 
     return redirect("assets:loan_approval_list")
 
+# ส่งแจ้งเตือนสถานะเกินกำหนดด้วยตนเอง
+@login_required
+def loan_send_overdue_notification(request, loan_id):
+    """
+    View สำหรับส่งแจ้งเตือนสถานะเกินกำหนดด้วยตนเอง
+    (รับ POST โดยตรงจากปุ่ม)
+    """
+    if request.method != 'POST':
+        messages.warning(request, "ไม่ได้รับคำขอ POST ที่ถูกต้อง")
+        return redirect("assets:loan_approval_list")
+
+    try:
+        # ตรวจสอบ ID และสถานะ
+        loan = get_object_or_404(OrderAssetLoan, pk=loan_id)
+    except Exception:
+        messages.error(request, f"❌ ไม่พบรายการยืม Order #{loan_id} ในฐานข้อมูล")
+        return redirect("assets:loan_approval_list")
+        
+    if loan.status != 'overdue':
+        messages.warning(request, f"Order #{loan.id} มีสถานะเป็น '{loan.get_status_display()}' ไม่ใช่ 'เกินกำหนด' จึงไม่สามารถส่งแจ้งเตือนได้")
+        return redirect("assets:loan_approval_list")
+        
+    # เรียกฟังก์ชันแจ้งเตือน (ฟังก์ชันนี้ไม่ควรมี return redirect)
+    notify_overdue_asset_loan(loan)
+    
+    messages.success(request, f"ส่งแจ้งเตือนเกินกำหนดสำหรับ Order #{loan.id} ไปยังผู้ยืม ({loan.user.get_full_name()}) แล้ว")
+    return redirect("assets:loan_approval_list")
 
 
 # ------------------------------
@@ -1035,6 +1243,7 @@ def asset_list_cate(request):
         'categories': categories,
         'form': form,
         'query': query,  # ส่งค่าการค้นหาไปยัง template เพื่อแสดงผล
+        "loan_pending_count": count_pending_asset_loans(),
     })
 
 # เพิ่มหมวดหมู่
@@ -1122,6 +1331,7 @@ def asset_list_subcate(request):
         'categories': categories,
         'form': form,
         'query': query,
+        "loan_pending_count": count_pending_asset_loans(),
     })
 
 # เพิ่มหมวดหมู่ย่อย
@@ -1191,6 +1401,7 @@ def asset_list_storage_location(request):
         'storagelocations': storagelocations,
         'form': form,
         'query': query,  # ส่งค่าการค้นหาไปยัง template เพื่อแสดงผล
+        "loan_pending_count": count_pending_asset_loans(),
     })
 
 

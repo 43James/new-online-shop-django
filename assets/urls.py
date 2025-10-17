@@ -46,6 +46,7 @@ urlpatterns = [
     path("loan-approval-user/<int:pk>/", views.loan_approval_user, name="loan_approval_user"),
     
     path("approve-return/<int:loan_id>/", views.approve_return, name="approve_return"),
+    path('notify/overdue/<int:loan_id>/', views.loan_send_overdue_notification, name='loan_notify_overdue'),
 
     path("calendar/", views.calendar_view, name="calendar"),
     path("calendar-events/", views.calendar_events, name="calendar_events"),

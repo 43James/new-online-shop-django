@@ -151,29 +151,32 @@
 			<div class="flex-grow-1 overflow-auto">
 				<ul class="nav nav-pills flex-column mb-auto">
 					<li class="nav-item">
-						<a href="#"
-							class="nav-link d-flex align-items-center {% if '/dashboard/' in request.path %}active text-white bg-primary{% else %}link-body-emphasis{% endif %}">
+						<a href="{% url 'assets:home_assets' %}"
+							class="nav-link d-flex align-items-center {% if '/home/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
 							<i class="bi bi-speedometer2 me-2"></i>
 							Dashboard
 						</a>
 					</li>
+
 					<li>
 						<a href="{% url 'assets:calendar' %}"
-							class="nav-link d-flex align-items-center {% if '/calendar/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
+							class="nav-link d-flex align-items-center {% if '/calendar/' in request.path %}active text-white bg-warning{% else %}text-warning link-body-emphasis{% endif %}">
 							<i class="bi bi-calendar-date-fill me-2"></i>
-							ปฏิทินการยืม/จองครุภัณฑ์
+							ปฏิทินการยืมครุภัณฑ์
 						</a>
 					</li>
+
 					<li>
 						<a href="{% url 'assets:loan_list' %}"
-							class="nav-link d-flex align-items-center {% if '/loan-list/' in request.path %}active text-white bg-success{% else %}text-primary link-body-emphasis{% endif %}">
+							class="nav-link d-flex align-items-center {% if '/loan-list/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
 							<i class="bi bi-bag-plus-fill me-2"></i>
 							ยืมครุภัณฑ์
 						</a>
 					</li>
+
 					<li>
 						<a href="{% url 'assets:loan_orders_user' %}"
-							class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-success{% else %}text-success link-body-emphasis{% endif %}">
+							class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
 							<i class="bi bi-card-list me-2"></i><strong>
 								รายการยืมครุภัณฑ์ของคุณ</strong>
 						</a>
@@ -251,7 +254,7 @@
 			<div class="dropdown">
 				<a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle"
 					data-bs-toggle="dropdown" aria-expanded="false">
-					<img src="{% if user.profile.img %}{{ user.profile.img.url }}{% else %}{% static 'path/to/default_image.jpg' %}{% endif %}"
+					<img src="{% if user.profile.img %}{{ user.profile.img.url }}{% else %}{% static 'app_general/default_profile.png' %}{% endif %}"
 						alt="Profile Picture" width="60" height="60"
 						class="rounded-circle me-2 border border-secondary border-2">
 					<span class="d-sm-inline me-1 text-muted small">สวัสดี</span>
@@ -299,8 +302,8 @@
 		<hr>
 		<ul class="nav nav-pills flex-column mb-auto">
 			<li class="nav-item">
-				<a href="#"
-					class="nav-link d-flex align-items-center {% if '/dashboard/' in request.path %}active text-white bg-primary{% else %}link-body-emphasis{% endif %}">
+				<a href="{% url 'assets:home_assets' %}"
+					class="nav-link d-flex align-items-center {% if '/home/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
 					<i class="bi bi-speedometer2 me-2"></i>
 					Dashboard
 				</a>
@@ -308,15 +311,15 @@
 
 			<li>
 				<a href="{% url 'assets:calendar' %}"
-					class="nav-link d-flex align-items-center {% if '/calendar/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
+					class="nav-link d-flex align-items-center {% if '/calendar/' in request.path %}active text-white bg-warning{% else %}text-warning link-body-emphasis{% endif %}">
 					<i class="bi bi-calendar-date-fill me-2"></i>
-					ปฏิทินการยืม/จองครุภัณฑ์
+					ปฏิทินการยืมครุภัณฑ์
 				</a>
 			</li>
 
 			<li>
 				<a href="{% url 'assets:loan_list' %}"
-					class="nav-link d-flex align-items-center {% if '/loan-list/' in request.path %}active text-white bg-success{% else %}text-primary link-body-emphasis{% endif %}">
+					class="nav-link d-flex align-items-center {% if '/loan-list/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
 					<i class="bi bi-bag-plus-fill me-2"></i>
 					ยืมครุภัณฑ์
 				</a>
@@ -324,7 +327,7 @@
 
 			<li>
 				<a href="{% url 'assets:loan_orders_user' %}"
-					class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-success{% else %}text-success link-body-emphasis{% endif %}">
+					class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
 					<i class="bi bi-card-list me-2"></i><strong>
 						รายการยืมครุภัณฑ์ของคุณ</strong>
 				</a>

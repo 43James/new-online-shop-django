@@ -881,6 +881,55 @@ def notify_admin_assetloan(request, order_id):
 
 
 
+# ส่งแจ้งเตือนเมื่อเกินกำหนด
+def notify_overdue_asset_loan(loan):
+    """
+    ส่งข้อความแจ้งเตือนผู้ยืมครุภัณฑ์ที่มีสถานะเกินกำหนด (Overdue)
+    รับ OrderAssetLoan object เป็น input
+    """
+    try:
+        # 1. ดึง Line ID ของผู้ยืม
+        user_line = UserLine_Asset.objects.get(user=loan.user) 
+        user_id = user_line.userId
+    except UserLine_Asset.DoesNotExist:
+        print(f"❌ ไม่มี Line ID ของผู้ยืม {loan.user.username} ไม่สามารถส่งแจ้งเตือนเกินกำหนดได้")
+        return
+
+    # 2. ดึงรายการครุภัณฑ์
+    items = loan.items.select_related("asset").all()
+    items_list = "\n".join([
+        f"- {item.asset.item_name} ({item.asset.asset_code})"
+        for item in items
+    ])
+
+    # 3. เตรียมข้อมูลวันที่
+    bangkok_tz = pytz.timezone('Asia/Bangkok')
+    due_str = "ไม่ระบุ"
+    if loan.date_due:
+        date_due_local = loan.date_due.astimezone(bangkok_tz)
+        due_str = date_due_local.strftime('%d/%m/%Y %H:%M')
+
+    # 4. สร้างข้อความ Overdue โดยเฉพาะ
+    text = (
+        f"🚨 แจ้งเตือน: ครุภัณฑ์เกินกำหนดคืน!\n"
+        f"เลขที่ออเดอร์: {loan.id}\n"
+        f"ผู้ยืม: {loan.user.get_full_name()}\n\n"
+        f"รายการที่ยืม:\n{items_list}\n\n"
+        f"วันที่กำหนดคืน: {due_str} น.\n"
+        f"🙏 กรุณาดำเนินการคืนโดยเร็วที่สุด"
+    )
+
+    # 5. ส่งข้อความ
+    try:
+        line_bot_api_asset.push_message(user_id, TextSendMessage(text=text))
+        print(f"✅ ส่ง LINE เกินกำหนด ไปยังผู้ยืม: {loan.user.username}")
+    except LineBotApiError as e:
+        print(f"❌ LINE API Error (Overdue Notification): {e}")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดทั่วไปในการส่ง LINE: {str(e)}")
+    return redirect('assets:loan_approval_list')
+
+
 # ------------------------------
 # ฟังก์ชันส่งแจ้งเตือนผู้ยืม
 # ------------------------------
@@ -938,6 +987,7 @@ def notify_borrower(loan, action_type="approved"):
         import traceback
         print(f"❌ LINE API Error: {e}")
         print(traceback.format_exc())
+
 
 
 # ----------------------------------------------------

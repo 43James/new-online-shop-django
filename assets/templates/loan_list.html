@@ -1,22 +1,23 @@
 {% extends "base_sidebar.html" %}
 {% load static %}
+
 {% block content %}
 <style>
     /* ************************************ */
-    /* CSS สำหรับ Floating Cart (ปรับให้เหมาะกับมือถือ) */
+    /* CSS สำหรับ Floating Cart */
     /* ************************************ */
     #floating-cart-wrapper {
         position: fixed;
         bottom: 20px;
-        right: 50px;
+        right: 40px; 
         z-index: 1050;
         background-color: #fff;
         border: 1px solid #ddd;
         border-radius: 50%;
         padding: 5px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); 
-        width: 55px;
-        height: 55px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25); 
+        width: 60px; 
+        height: 60px; 
         display: flex;
         justify-content: center;
         align-items: center;
@@ -28,21 +29,38 @@
 
     #floating-cart-wrapper .bi-cart3 {
         color: #0d6efd !important;
-        font-size: 1.7rem !important; 
+        font-size: 1.9rem !important;
         line-height: 1;
     }
     
     #floating-cart-wrapper #cart-badge {
-        font-size: 0.9rem !important;
-        padding: 0.25em 0.5em;
-        top: -5px; 
+        font-size: 0.8rem !important;
+        padding: 0.3em 0.5em;
+        top: -2px; 
         left: 100%;
-        transform: translate(-20%, -80%) !important; 
+        transform: translate(-30%, -60%) !important; 
     }
 
     /* ************************************ */
-    /* CSS สำหรับตาราง (ปรับปรุงการแสดงผลบนมือถือ) */
+    /* CSS สำหรับตาราง และปรับขนาดรูปภาพ */
     /* ************************************ */
+    /* รูปภาพครุภัณฑ์บน Desktop/Tablet */
+    .table-responsive table img {
+        width: 300px; 
+        /* height: 100px;  */
+        object-fit: cover;
+        border-radius: 4px;
+        transition: transform 0.2s;
+    }
+    .table-responsive table img:hover {
+        transform: scale(1.05);
+    }
+    
+    /* ปรับปรุงความกว้างคอลัมน์บน Desktop */
+    .table-responsive table tr > th:nth-child(1) { width: 110px; } /* รูป */
+    .table-responsive table tr > th:nth-child(3) { width: 180px; } /* รหัสครุภัณฑ์ */
+    .table-responsive table tr > th:nth-child(4) { width: 150px; } /* สถานที่เก็บ */
+
     @media (max-width: 767.98px) {
         /* *** การซ่อนคอลัมน์: ลบคอลัมน์รูปภาพออก และซ่อนเฉพาะที่ไม่จำเป็น (รหัสครุภัณฑ์ และ สถานที่เก็บ) *** */
         /* ซ่อน รหัสครุภัณฑ์ (3) */
@@ -54,20 +72,20 @@
             display: none;
         }
         
-        /* *** บังคับลดขนาดรูปภาพให้เล็กมากบนมือถือ *** */
+        /* *** บังคับลดขนาดรูปภาพบนมือถือ *** */
         .table-responsive table img {
-            width: 40px !important; 
-            height: 40px; 
+            width: 60px !important; 
+            height: 60px !important; 
             object-fit: cover;
             border-radius: 4px; 
         }
 
         /* *** ปรับความกว้างคอลัมน์ที่เหลือสำหรับมือถือ *** */
-        .table-responsive table tr > th:nth-child(1) { width: 10% !important; } /* รูปภาพ */
-        .table-responsive table tr > th:nth-child(2) { width: 30% !important; } /* ชื่อครุภัณฑ์ */
-        .table-responsive table tr > th:nth-child(5) { width: 50% !important; } /* การทำงาน */
-        .table-responsive table tr > th:nth-child(6) { width: 10% !important; } /* จัดการ */
-
+        .table-responsive table tr > th:nth-child(1) { width: 15% !important; } /* รูปภาพ */
+        .table-responsive table tr > th:nth-child(2) { width: 35% !important; } /* ชื่อครุภัณฑ์ */
+        /* คอลัมน์ที่ 3 และ 4 ถูกซ่อน */
+        .table-responsive table tr > th:nth-child(5) { width: 40% !important; } /* การทำงาน */
+        /* คอลัมน์ที่ 6 (จัดการ) ถูกปรับปรุงตามเงื่อนไขของโค้ดเดิม */
 
         /* ปรับขนาดตัวอักษรในตารางให้เล็กลง */
         .table-responsive table {
@@ -89,141 +107,196 @@
             flex: 1;
         }
     }
+    /* สไตล์สำหรับตารางให้สถานะยืมซ้อนกัน */
+    .loan-status-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
 </style>
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>รายการครุภัณฑ์ที่ยืมได้</h3>
-        <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-sm btn-outline-info me-2" data-bs-toggle="modal" data-bs-target="#helpModal">
-                <i class="bi bi-question-circle"></i> วิธีใช้
-            </button>
-        </div>
-    </div>
-    
-    <div id="floating-cart-wrapper">
-        <a href="{% url 'assets:loan_cart' %}" class="nav-link position-relative">
-            <i class="bi bi-cart3 text-primary"></i> 
-            <span id="cart-badge"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 text-primary fw-bold"><i class="bi bi-box-seam me-2"></i> รายการครุภัณฑ์ที่ยืมได้</h1>
+    <div class="d-flex align-items-center">
+        {% if request.user.is_admin or request.user.is_warehouse_manager %}
+        <a href="{% url 'assets:add_asset_item_loan' %}" type="button" class="btn btn-sm btn-outline-success me-3 shadow-sm">
+            <i class="bi bi-plus-circle"></i> เพิ่มครุภัณฑ์ใหม่
         </a>
-    </div>
-    
-    {% if request.user.is_admin or request.user.is_warehouse_manager %}
-    <div class="btn-group mb-3">
-        <a href="{% url 'assets:add_asset_item_loan' %}" type="button" class="btn btn-outline-success"><i
-                class="bi bi-plus-circle"></i> เพิ่มรายการ</a>
-    </div>
-    {% endif %}
-
-    <form method="get" class="row g-2 mb-4">
-        <div class="col-12 col-md-4">
-            <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อครุภัณฑ์..." value="{{ query }}">
-        </div>
-        <div class="col-12 col-md-3">
-            <select name="category" class="form-select">
-                <option value="">-- เลือกหมวดหลัก --</option>
-                {% for category in categories %}
-                <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %} selected {% endif %}>{{ category.name_cate }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-12 col-md-3">
-            <select name="subcategory" class="form-select">
-                <option value="">-- เลือกหมวดย่อย --</option>
-                {% for subcategory in subcategories %}
-                <option value="{{ subcategory.id }}" {% if selected_subcategory and selected_subcategory.id == subcategory.id %}selected{% endif %}>{{ subcategory.name_sub }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-12 col-md-2 d-flex">
-            <button type="submit" class="btn btn-primary me-2 flex-grow-1">ค้นหา</button>
-            <a href="{% url 'assets:loan_list' %}" class="btn btn-secondary flex-grow-1">ยกเลิก</a>
-        </div>
-    </form>
-
-    <div class="table-responsive">
-        <table class="table table-bordered align-middle">
-            <thead class="table-light text-center">
-                <tr>
-                    <th>รูป</th>
-                    <th>ชื่อครุภัณฑ์</th>
-                    <th style="width: 200px;">รหัสครุภัณฑ์</th>
-                    <th>สถานที่เก็บ</th>
-                    <th style="width: 350px;">การทำงาน</th>
-                    {% if request.user.is_admin or request.user.is_warehouse_manager %}
-                    <th style="width: 10%;">จัดการ</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody class="text-center">
-                {% for asset in asset_items %}
-                <tr data-id="{{ asset.id }}">
-                    <td>{% if asset.asset_image %}<img src="{{ asset.asset_image.url }}"
-                            style="width: 300px; object-fit:cover">{% else %} ไม่มีรูป {% endif %}</td>
-                    <td>{{ asset.item_name }}</td>
-                    <td>{{ asset.asset_code }}</td>
-                    <td>{{ asset.storage_location }}</td>
-                    <td>
-                        {% if asset.status_assetloan %}
-                        {% if asset.current_loan %}
-                        {% if asset.current_loan.order_asset.status == "pending" %}
-                        <button class="btn btn-sm btn-warning" disabled>ถูกยืมอยู่ (รออนุมัติการยืม..)</button>
-                        {% elif asset.current_loan.order_asset.status == "approved" or asset.current_loan.order_asset.status == "borrowed" %}
-                        <button class="btn btn-sm btn-secondary" disabled>กำลังยืมอยู่</button>
-                        {% elif asset.current_loan.order_asset.status == "returned_pending" %}
-                        <button class="btn btn-sm btn-warning" disabled>รออนุมัติการคืน..</button>
-                        {% elif asset.current_loan.order_asset.status == "overdue" %}
-                        <button class="btn btn-sm btn-danger" disabled>ยืมเกินกำหนด.. กรุณาส่งคืน</button>
-                        {% endif %}
-                        {% else %}
-                        <button class="btn btn-sm btn-secondary" disabled>ถูกยืมอยู่</button>
-                        {% endif %}
-                        <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#reserveModal"
-                            data-asset-id="{{ asset.pk }}">จอง</button>
-
-                        {% if asset.current_loan %}
-                        <div class="mt-2 text-primary small">
-                            <strong>ผู้ยืม:</strong> {{ asset.current_loan.order_asset.user.get_full_name }}<br>
-                            <strong>วันที่ใช้งาน:</strong> {{ asset.current_loan.order_asset.date_of_use|date:"d M Y, H:i น." }}<br>
-                            <strong>กำหนดคืน:</strong> {{ asset.current_loan.order_asset.date_due|date:"d M Y, H:i น." }}
-                        </div>
-                        {% endif %}
-
-                        {# วนลูปแสดงข้อมูลการจอง #}
-                        {% for reservation in asset.current_reservation %}
-                        <div class="mt-2 text-warning small">
-                            <strong>จองโดย:</strong> {{ reservation.user.get_full_name }}<br>
-                            <strong>วันที่:</strong> {{ reservation.reserved_date|date:"d M Y, H:i น." }} ถึง {{ reservation.returning_date|date:"d M Y, H:i น." }}
-                        </div>
-                        {% endfor %}
-                        {% else %}
-                        <button class="btn btn-sm btn-success add-to-cart">เพิ่มในตะกร้า</button>
-                        {% endif %}
-
-                    </td>
-                    {% if request.user.is_admin or request.user.is_warehouse_manager %}
-                    <td>
-                        <div class="btn-group d-flex justify-content-center" role="group">
-                            <a href="{% url 'assets:edit_asset_item_loan' asset.pk %}" class="btn btn-sm btn-warning"
-                                title="แก้ไข"><i class="bi bi-pencil"></i></a>
-                            <button type="button" class="btn btn-sm btn-danger" title="ลบ" data-bs-toggle="modal"
-                                data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}"
-                                data-delete-url="{% url 'assets:delete_asset_item_loan' asset.pk %}">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center">ไม่พบข้อมูล</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% endif %}
+        <button type="button" class="btn btn-sm btn-outline-info shadow-sm" data-bs-toggle="modal" data-bs-target="#helpModal">
+            <i class="bi bi-question-circle"></i> วิธีใช้
+        </button>
     </div>
 </div>
+
+<div id="floating-cart-wrapper">
+    <a href="{% url 'assets:loan_cart' %}" class="nav-link position-relative" title="ตะกร้าสินทรัพย์">
+        <i class="bi bi-cart3 text-primary"></i> 
+        <span id="cart-badge"
+            class="position-absolute translate-middle badge rounded-pill bg-danger">0</span>
+    </a>
+</div>
+
+<form method="get" class="row g-2 mb-4 p-3 bg-light rounded shadow-sm">
+    <div class="col-12 col-md-4">
+        <label for="q" class="form-label visually-hidden">ค้นหา</label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อ, รหัสครุภัณฑ์..." value="{{ query }}">
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <label for="category" class="form-label visually-hidden">หมวดหลัก</label>
+        <select name="category" id="category" class="form-select">
+            <option value="">-- เลือกหมวดหลักทั้งหมด --</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %} selected {% endif %}>{{ category.name_cate }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12 col-md-3">
+        <label for="subcategory" class="form-label visually-hidden">หมวดย่อย</label>
+        <select name="subcategory" id="subcategory" class="form-select">
+            <option value="">-- เลือกหมวดย่อยทั้งหมด --</option>
+            {% for subcategory in subcategories %}
+            <option value="{{ subcategory.id }}" {% if selected_subcategory and selected_subcategory.id == subcategory.id %}selected{% endif %}>{{ subcategory.name_sub }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12 col-md-2 d-flex">
+        <button type="submit" class="btn btn-primary me-2 flex-grow-1"><i class="bi bi-funnel"></i> กรอง</button>
+        <a href="{% url 'assets:loan_list' %}" class="btn btn-secondary flex-grow-1"><i class="bi bi-arrow-counterclockwise"></i> ยกเลิก</a>
+    </div>
+</form>
+
+<div class="card shadow col-md-11 justify-content-center d-flex container mb-5">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th class="text-nowrap">รูป</th>
+                        <th class="text-start" style="width: 150px;">ชื่อครุภัณฑ์</th>
+                        <th class="text-nowrap" style="width: 200px;">รหัสครุภัณฑ์</th>
+                        <th class="text-nowrap">สถานที่เก็บ</th>
+                        <th style="width: 350px;">สถานะการยืม</th>
+                        {% if request.user.is_admin or request.user.is_warehouse_manager %}
+                        <th style="width: 10%;">จัดการ</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody class="text-center">
+                    {% for asset in asset_items %}
+                    <tr data-id="{{ asset.id }}">
+                        <td>
+                            {% if asset.asset_image %}
+                            <img src="{{ asset.asset_image.url }}" alt="{{ asset.item_name }}" title="{{ asset.item_name }}">
+                            {% else %} 
+                            <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                            {% endif %}
+                        </td>
+                        <td class="text-start fw-bold">{{ asset.item_name }}</td>
+                        <td class="small text-muted">{{ asset.asset_code }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ asset.storage_location }}</span></td>
+                        
+                        <td class="text-start">
+                            {% with active_loan_found=asset.active_loan_list|length %}
+                            
+                                <div class="loan-status-stack">
+                                {% for issue in asset.active_loan_list %}
+                                    <div class="border rounded p-2 w-100 
+                                        {% if issue.order_asset.status == "overdue" %} border-danger bg-danger-subtle {% endif %}
+                                        {% if issue.order_asset.status == "pending" %} border-warning bg-warning-subtle {% endif %}
+                                        {% if issue.order_asset.status == "returned_pending" %} border-info bg-info-subtle {% endif %}
+                                        {% if issue.order_asset.status == "approved" or issue.order_asset.status == "borrowed" %} border-secondary bg-light {% endif %}
+                                        ">
+                                        <span class="badge 
+                                            {% if issue.order_asset.status == "overdue" %} bg-danger {% elif issue.order_asset.status == "pending" or issue.order_asset.status == "returned_pending" %} bg-warning text-dark {% else %} bg-secondary {% endif %}
+                                            fw-bold me-2">
+                                            {% if issue.order_asset.status == "overdue" %}
+                                                <i class="bi bi-exclamation-circle"></i> เกินกำหนด
+                                            {% elif issue.order_asset.status == "pending" %}
+                                                <i class="bi bi-hourglass-split"></i> รออนุมัติ
+                                            {% elif issue.order_asset.status == "returned_pending" %}
+                                                <i class="bi bi-arrow-return-left"></i> รอคืน
+                                            {% else %}
+                                                <i class="bi bi-person-fill"></i> กำลังยืม
+                                            {% endif %}
+                                            #{{ issue.order_asset.id }}
+                                        </span>
+                                        <div class="small mt-1">
+                                            <strong>ผู้ยืม:</strong> {{ issue.order_asset.user.get_full_name }} <br>
+                                            <strong>วันที่ใช้งาน:</strong> {{ issue.order_asset.date_of_use|date:"d M Y, H:i น." }}<br>
+                                            <strong>กำหนดคืน:</strong> <span class="fw-bold">{{ issue.order_asset.date_due|date:"d M Y, H:i น." }}</span>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <button class="btn btn-success btn-sm add-to-cart w-100" title="ครุภัณฑ์ว่าง สามารถยืมได้ทันที"><i class="bi bi-cart-plus"></i> เพิ่มในตะกร้า</button>
+                                {% endfor %}
+
+                                {# ลบส่วนจองออกแล้ว - ถ้ามีรายการยืม active_loan_found > 0 จะแสดงแค่เพิ่มในตะกร้าเท่านั้น #}
+                                {% if active_loan_found > 0 %}
+                                    <button class="btn btn-info btn-sm add-to-cart w-100 mt-2" 
+                                            data-is-reserve="true" 
+                                            title="ยืมต่อจากผู้ใช้คนปัจจุบัน (เพิ่มลงตะกร้า)"><i class="bi bi-arrow-repeat"></i> ยืมต่อ</button>
+                                {% endif %}
+                                </div>
+                            {% endwith %}
+                        </td>
+                        {% if request.user.is_admin or request.user.is_warehouse_manager %}
+                        <td>
+                            <div class="btn-group d-flex justify-content-center" role="group">
+                                <a href="{% url 'assets:edit_asset_item_loan' asset.pk %}" class="btn btn-sm btn-warning"
+                                    title="แก้ไข"><i class="bi bi-pencil"></i></a>
+                                <button type="button" class="btn btn-sm btn-danger" title="ลบ" data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}"
+                                    data-delete-url="{% url 'assets:delete_asset_item_loan' asset.pk %}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center p-4 text-muted">
+                            <i class="bi bi-exclamation-circle fs-5 me-2"></i> ไม่พบรายการครุภัณฑ์ที่สามารถให้ยืมได้ในเงื่อนไขนี้
+                        </td>
+                        {% if request.user.is_admin or request.user.is_warehouse_manager %}
+                            {% if not asset_items %}
+                                <td class="d-none"></td>
+                            {% endif %}
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% if asset_items.paginator.num_pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if asset_items.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ asset_items.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">ก่อนหน้า</a>
+        </li>
+        {% endif %}
+        <li class="page-item disabled">
+            <a class="page-link">หน้า {{ asset_items.number }} จาก {{ asset_items.paginator.num_pages }}</a>
+        </li>
+        {% if asset_items.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ asset_items.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">ถัดไป</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
 
 <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -233,33 +306,23 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <h4>การยืมครุภัณฑ์ (สถานะ "ว่าง")</h4>
+                <h4>การยืมครุภัณฑ์</h4>
                 <ol>
                     <li>เลือกครุภัณฑ์ที่ต้องการยืมที่มีปุ่ม **<kbd class="bg-success">เพิ่มในตะกร้า</kbd>**</li>
                     <li>กดปุ่ม **<kbd class="bg-success">เพิ่มในตะกร้า</kbd>** ครุภัณฑ์จะถูกเพิ่มไปยังตะกร้า</li>
-                    <li>กดที่ไอคอน **<i class="bi bi-cart3"></i> ตะกร้า** เพื่อไปยังหน้ารายการยืม</li>
-                    <li>กรอกรายละเอียดการยืม **วัน-เวลาที่ต้องการยืม** และ **วัน-เวลาที่ต้องการคืน** ส่งคำขอ</li>
+                    <li>กดที่ไอคอน **<i class="bi bi-cart3"></i> ตะกร้า** (ด้านขวาล่าง) เพื่อไปยังหน้ารายการยืม</li>
+                    <li>กรอกรายละเอียดการยืม **วัน-เวลาที่ต้องการยืม** และ **วัน-เวลาที่ต้องการคืน** แล้วส่งคำขอ</li>
                     <li>รอผู้ดูแลอนุมัติ (หากผูกบัญชี LINE Notify ไว้ จะได้รับการแจ้งเตือน)</li>
-                </ol>
-                <hr>
-                <h4>การจองครุภัณฑ์ (สถานะ "ถูกยืมอยู่" หรือ "กำลังยืมอยู่")</h4>
-                <p>กรณีที่ครุภัณฑ์ถูกยืมไปแล้ว คุณสามารถทำการจองเพื่อใช้งานต่อจากผู้ใช้คนปัจจุบันได้</p>
-                <ol>
-                    <li>เลือกครุภัณฑ์ที่ถูกยืมอยู่ ซึ่งมีปุ่ม **<kbd class="bg-info">จอง</kbd>**</li>
-                    <li>กดปุ่ม **<kbd class="bg-info">จอง</kbd>** เพื่อเปิดหน้าต่าง Modal สำหรับกรอกรายละเอียดการจอง</li>
-                    <li>ระบุ **วัน-เวลาที่ต้องการยืม** และ **วัน-เวลาที่ต้องการคืน** (ต้องเป็นช่วงเวลาหลังจากที่ผู้ยืมคนปัจจุบันกำหนดคืนแล้ว)</li>
-                    <li>กดยืนยันการจอง</li>
-                    <li>รอผู้ดูแลอนุมัติคำขอจอง</li>
-                    <li>เมื่อการจองได้รับการอนุมัติ และผู้ยืมคนปัจจุบันส่งคืนครุภัณฑ์แล้ว สถานะของครุภัณฑ์จะเปลี่ยนเป็น **รอผู้จองมารับ**</li>
                 </ol>
                 <hr>
                 <h4>สถานะการทำงาน</h4>
                 <ul class="list-unstyled">
-                    <li><span class="badge bg-success">ว่าง หรือ เพิ่มในตะกร้า</span>: สามารถเพิ่มในตะกร้าเพื่อทำการยืมได้</li>
+                    <li><span class="badge bg-success">เพิ่มในตะกร้า</span>: ครุภัณฑ์ว่าง สามารถยืมได้ทันที</li>
+                    <li><span class="badge bg-info">เพิ่มในตะกร้า</span>: ครุภัณฑ์มีการยืมอยู่แต่สามารถยืมได้ โดยจะยืมไม่ได้ในช่วงเวลาเดียวกัน</li>
                     <li><span class="badge bg-secondary">กำลังยืมอยู่</span>: ถูกยืมและได้รับอนุมัติแล้ว หรืออยู่ระหว่างการใช้งาน</li>
-                    <li><span class="badge bg-warning">ถูกยืมอยู่ (รออนุมัติการยืม..)</span>: อยู่ระหว่างรอผู้ดูแลอนุมัติคำขอยืม</li>
-                    <li><span class="badge bg-warning">รออนุมัติการคืน..</span>: ผู้ยืมแจ้งคืนแล้ว อยู่ระหว่างรอผู้ดูแลตรวจสอบและรับคืน</li>
-                    <li><span class="badge bg-danger">ยืมเกินกำหนด.. กรุณาส่งคืน</span>: ยืมเกินวันที่กำหนดคืนแล้ว</li>
+                    <li><span class="badge bg-warning text-dark">รออนุมัติ</span>: อยู่ระหว่างรอผู้ดูแลอนุมัติคำขอยืม (ไม่สามารถยืมซ้ำได้ในช่วงเวลาเดียวกัน)</li>
+                    <li><span class="badge bg-warning text-dark">รอคืน</span>: ผู้ยืมแจ้งคืนแล้ว อยู่ระหว่างรอผู้ดูแลตรวจสอบและรับคืน</li>
+                    <li><span class="badge bg-danger">เกินกำหนด</span>: ยืมเกินวันที่กำหนดคืนแล้ว</li>
                 </ul>
             </div>
             <div class="modal-footer">
@@ -268,6 +331,29 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel"><i class="bi bi-trash"></i> ยืนยันการลบข้อมูล</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger fw-bold">การกระทำนี้ไม่สามารถย้อนกลับได้!</p>
+                คุณต้องการลบรายการครุภัณฑ์ "<strong id="asset-name"></strong>" ใช่หรือไม่?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <form id="deleteForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" onclick="this.disabled=true; this.innerHTML='กำลังลบ...';">ยืนยันการลบ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="lineNotifyModal" tabindex="-1" aria-labelledby="lineNotifyModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -283,7 +369,6 @@
                     <strong>กรุณาแอดไลน์และผูกบัญชีเพื่อรับการแจ้งเตือน</strong>
                 </p>
 
-                {# เปลี่ยน 'images/line_qrcode.png' เป็นตำแหน่งไฟล์จริงของคุณ #}
                 <img src="{% static 'app_general/line_qrcode_asset.png' %}" alt="LINE QR Code"
                     class="img-fluid mb-3 border p-2" style="max-width: 200px;">
 
@@ -303,70 +388,13 @@
     </div>
 </div>
 
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">ยืนยันการลบข้อมูล</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                คุณต้องการลบรายการครุภัณฑ์ "<strong id="asset-name"></strong>" ใช่หรือไม่?
-                การกระทำนี้ไม่สามารถย้อนกลับได้
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                <form id="deleteForm" method="post" action="">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="reserveModal" tabindex="-1" aria-labelledby="reserveModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="reserveModalLabel">จองครุภัณฑ์: <span id="asset-name-reserve"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="reserveForm" method="post" action="">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <input type="hidden" name="asset_id" id="reserve-asset-id">
-
-                    <div class="mb-3">
-                        <label for="id_reserved_date" class="form-label">วันที่ต้องการยืม</label>
-                        <input type="datetime-local" class="form-control" id="id_reserved_date" name="reserved_date"
-                            required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="id_returning_date" class="form-label">วันที่ต้องการคืน</label>
-                        <input type="datetime-local" class="form-control" id="id_returning_date" name="returning_date"
-                            required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="id_notes" class="form-label">หมายเหตุ</label>
-                        <textarea class="form-control" id="id_notes" name="notes" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล'; this.form.submit();">ยืนยันการจอง</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script>
     // **********************************
-    // โค้ดสำหรับแสดง LINE Notify Modal
+    // โค้ดสำหรับแสดง LINE Notify Modal (เดิม)
     // **********************************
     const hasLineAccount = {{ has_line_account|yesno:"true,false" }}; 
-
+    
     document.addEventListener('DOMContentLoaded', (event) => {
         if ({{ request.user.is_authenticated|lower }} === true && hasLineAccount === false) {
             const lineNotifyModalElement = document.getElementById('lineNotifyModal');
@@ -380,8 +408,26 @@
     });
 
 
+    // document.addEventListener('DOMContentLoaded', (event) => {
+    //     if ({{ request.user.is_authenticated|lower }} === true && hasLineAccount === false) {
+    //         const lineNotifyModalElement = document.getElementById('lineNotifyModal');
+    //         // เช็คว่า Modal ถูกแสดงมาก่อนหรือไม่ (ใช้ LocalStorage เพื่อควบคุมการแสดงผลบนหน้าเดียวกัน)
+    //         if (!localStorage.getItem('lineNotifyShown')) {
+    //             const lineNotifyModal = new bootstrap.Modal(lineNotifyModalElement);
+    //             lineNotifyModal.show();
+    //             localStorage.setItem('lineNotifyShown', 'true');
+                
+    //             // ซ่อนเองหลังจาก 10 วินาที
+    //             setTimeout(() => {
+    //                 lineNotifyModal.hide();
+    //             }, 10000); 
+    //         }
+    //     }
+    // });
+    
+
     // **********************************
-    // โค้ดสำหรับตะกร้าและ Modal ลบ
+    // โค้ดสำหรับตะกร้าและ Modal ต่างๆ (ปรับปรุง)
     // **********************************
     let cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const cartBadge = document.getElementById('cart-badge');
@@ -417,6 +463,7 @@
         });
     });
 
+    // Modal Delete Logic
     const deleteModal = document.getElementById('deleteModal');
     if (deleteModal) {
         deleteModal.addEventListener('show.bs.modal', function (event) {
@@ -429,24 +476,9 @@
             assetNamePlaceholder.textContent = assetName;
         });
     }
+    
+    // โค้ด Modal Reserve ถูกลบออกจาก JavaScript แล้ว 
+    
     updateCartUI();
-
-    // โค้ดสำหรับ Modal จอง 
-    const reserveModal = document.getElementById('reserveModal');
-    if (reserveModal) {
-        reserveModal.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const assetId = button.getAttribute('data-asset-id');
-            const assetName = button.closest('tr').querySelector('td:nth-child(2)').textContent;
-
-            const reserveForm = reserveModal.querySelector('#reserveForm');
-            const assetNamePlaceholder = reserveModal.querySelector('#asset-name-reserve');
-            const assetIdInput = reserveModal.querySelector('#reserve-asset-id');
-
-            reserveForm.action = `{% url 'assets:reserve_asset_item' 0 %}`.replace('0', assetId);
-            assetNamePlaceholder.textContent = assetName;
-            assetIdInput.value = assetId;
-        });
-    }
 </script>
 {% endblock %}
