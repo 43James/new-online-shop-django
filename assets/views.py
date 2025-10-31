@@ -1,7 +1,7 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from accounts.models import MyUser
+from accounts.models import MyUser, Profile
 from app_linebot.models import UserLine, UserLine_Asset
 from app_linebot.views import notify_admin_assetloan, notify_admin_on_auto_loan, notify_admin_on_return, notify_borrower, notify_overdue_asset_loan
 from assets.models import AssetCode, AssetItem, AssetCheck, AssetItemLoan, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
@@ -927,6 +927,8 @@ def loan_send_overdue_notification(request, loan_id):
     
     messages.success(request, f"ส่งแจ้งเตือนเกินกำหนดสำหรับ Order #{loan.id} ไปยังผู้ยืม ({loan.user.get_full_name()}) แล้ว")
     return redirect("assets:loan_approval_list")
+
+
 # ------------------------------
 # ฟังก์บันทึกการคืน หน้าออเดอร์ผู้ใช้งาน 
 # ------------------------------
@@ -1164,11 +1166,21 @@ def approve_return(request, loan_id):
         status_return = request.POST.get("status_return")
         receiver_note = request.POST.get("receiver_note")
 
+        # --- ส่วนที่แก้ไข ---
+        receiver_position = "" # กำหนดค่าเริ่มต้นเป็นค่าว่าง
+        try:
+            # ลองเข้าถึง profile และดึงค่า position
+            receiver_position = request.user.profile.position
+        except Profile.DoesNotExist:
+            # ถ้าไม่มี profile ก็จะใช้ค่าว่างที่กำหนดไว้
+            pass
+
         # อัพเดทข้อมูลการคืน
         loan.status = "returned"
         loan.status_return = status_return or "not_damaged"
         loan.received_by = request.user.get_full_name()
-        loan.receiver_position = getattr(request.user, "position", "")
+        # loan.receiver_position = getattr(request.user, "position", "")
+        loan.receiver_position = receiver_position # ใช้ตัวแปรที่ดึงค่ามา
         loan.confirm_received = True
         loan.receiver_note = receiver_note
         loan.date_received = timezone.now()

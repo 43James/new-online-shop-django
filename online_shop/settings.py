@@ -68,25 +68,51 @@ CART_SESSION_ID = 'cart'
 STATIC_DIR = BASE_DIR / 'static'
 # Application definition
 
+# INSTALLED_APPS = [
+#     'shop.apps.ShopConfig',
+#     'django.contrib.admin',
+#     'django.contrib.auth',
+#     'django.contrib.contenttypes',
+#     'django.contrib.sessions',
+#     'django.contrib.messages',
+#     'django.contrib.staticfiles',
+    
+#     'crispy_forms',
+#     'app_linebot.apps.AppLinebotConfig',
+#     'cart.apps.CartConfig',
+#     'orders.apps.OrdersConfig',
+#     'dashboard.apps.DashboardConfig',
+#     'accounts.apps.AccountsConfig',
+#     'assets.apps.AssetsConfig',
+#     'django_filters',
+#     'django.contrib.humanize',
+    
+# ]
+
 INSTALLED_APPS = [
-    'shop.apps.ShopConfig',
+    # 1. Django Core Apps (แอปที่มากับ Django)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    'crispy_forms',
-    'app_linebot.apps.AppLinebotConfig',
-    'cart.apps.CartConfig',
-    'orders.apps.OrdersConfig',
-    'dashboard.apps.DashboardConfig',
-    'accounts.apps.AccountsConfig',
-    'assets.apps.AssetsConfig',
-    'django_filters',
     'django.contrib.humanize',
+
+    # 2. Third-Party Apps (แอปที่เราติดตั้งเพิ่ม)
+    'crispy_forms',
+    'django_filters',
     
+    # 3. My Local Apps (แอปที่เราสร้างเอง)
+    #    (แอปหลักที่แอปอื่นต้องอ้างอิงถึง ควรอยู่บนสุด)
+    
+    'accounts.apps.AccountsConfig', # <-- ✅ ย้ายมาไว้เกือบแรก
+    'shop.apps.ShopConfig',
+    'cart.apps.CartConfig',
+    'orders.apps.OrdersConfig',     # <-- ✅ ตอนนี้อยู่หลัง accounts แล้ว
+    'assets.apps.AssetsConfig',
+    'dashboard.apps.DashboardConfig',
+    'app_linebot.apps.AppLinebotConfig',
 ]
 
 

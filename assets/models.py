@@ -106,6 +106,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 from django.conf import settings
 from accounts.models import MyUser
+from django.db.models import Max
 
 
 # หมวดหมู่หลัก
@@ -330,6 +331,24 @@ class OrderAssetLoan(models.Model):
         ('not_damaged', 'ไม่มีรายการชำรุด'),
     ]
 
+    # ... (ฟิลด์เดิมของคุณ) ...
+    # vvvv เพิ่ม 2 ฟิลด์นี้ vvvv
+    order_code = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True, 
+        unique=True,  # การันตีว่าไม่ซ้ำกันในระบบ
+        verbose_name="รหัสออเดอร์", 
+        editable=False # ไม่ต้องแก้ไขได้ในฟอร์ม
+    )
+    running_number = models.PositiveIntegerField(
+        editable=False, 
+        null=True, 
+        blank=True,
+        verbose_name="เลขลำดับ"
+    )
+    # ^^^^ สิ้นสุดส่วนที่เพิ่ม ^^^^
+
     # ข้อมูลทั่วไป
     user = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name='asset_loans', verbose_name='ผู้ยืมครุภัณฑ์')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่สร้างออเดอร์')
@@ -404,14 +423,45 @@ class OrderAssetLoan(models.Model):
             return self.returned_by.split(' ')[1]
         return None
 
+    # def save(self, *args, **kwargs):
+    #     # เซ็ตเดือน/ปีตอนสร้าง
+    #     if not self.id:
+    #         now = timezone.now()
+    #         self.month = now.month
+    #         self.year = now.year
+
+    #     # ตรวจสอบสถานะเมื่อมีการคืน
+    #     if self.date_of_return:
+    #         if self.date_of_return > self.date_due:
+    #             self.status = 'overdue'
+    #         else:
+    #             self.status = 'returned'
+
+    #     super().save(*args, **kwargs)
+    # vvvv แก้ไขเมธอด save() vvvv
     def save(self, *args, **kwargs):
-        # เซ็ตเดือน/ปีตอนสร้าง
-        if not self.id:
+        # เซ็ตเดือน/ปี และรหัสออเดอร์ (เฉพาะตอนสร้างใหม่)
+        if not self.id: 
             now = timezone.now()
+            current_year = now.year
+
+            # 1. เซ็ตเดือน/ปี (จากโค้ดเดิมของคุณ)
             self.month = now.month
             self.year = now.year
 
-        # ตรวจสอบสถานะเมื่อมีการคืน
+            # 2. สร้างรหัสออเดอร์ใหม่
+            # ค้นหา running_number สูงสุดของปีนี้
+            # เราใช้ aggregate(Max(...)) เพื่อประสิทธิภาพที่ดีที่สุด
+            last_order = OrderAssetLoan.objects.filter(year=current_year).aggregate(max_num=Max('running_number'))
+            
+            # ถ้า 'max_num' เป็น None (ยังไม่มีออเดอร์ในปีนี้) ให้ (None or 0) + 1 = 1
+            # ถ้า 'max_num' เป็น 5 ให้ (5 or 0) + 1 = 6
+            new_num = (last_order['max_num'] or 0) + 1
+                
+            self.running_number = new_num
+            self.order_code = f"{new_num}/{current_year}" # เช่น "1/2025"
+
+        # ตรวจสอบสถานะเมื่อมีการคืน (จากโค้ดเดิมของคุณ)
         if self.date_of_return:
             if self.date_of_return > self.date_due:
                 self.status = 'overdue'
@@ -419,6 +469,7 @@ class OrderAssetLoan(models.Model):
                 self.status = 'returned'
 
         super().save(*args, **kwargs)
+    # ^^^^ สิ้นสุดการแก้ไข ^^^^
 
 
 class AssetReservation(models.Model):

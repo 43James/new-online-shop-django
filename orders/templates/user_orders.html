@@ -105,7 +105,7 @@
 <div class="col-md-10 mb-2 p-4 justify-content-center container mt-3" style="background-color: white; border-radius: 20px;">
     <!-- order id on right -->
     
-        <b class="text-end element order-id" style="float: right;">เลขที่เบิก : {{ order.id }}</b>
+        <b class="text-end element order-id" style="float: right;">เลขที่เบิก : {{ order.order_code }}</b>
 
     <!-- order payment status -->
     <div class="row">
@@ -202,7 +202,7 @@
       <div class="modal-dialog">
         <div class="modal-content mt-5" style="width: 20rem;">
           <div class="modal-header">
-            <h5 class="modal-title text-center container" id="exampleModalLabel">ยืนยันการรับวัสดุ ID {{ order.id }}</h5>
+            <h5 class="modal-title text-center container" id="exampleModalLabel">ยืนยันการรับวัสดุ ID {{ order.order_code }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           

@@ -601,6 +601,11 @@
                         <li class="rounded list-group-item bg-danger mt-2 text-center text-white">Logout</li>
                     </a>
                 </div>
+                <div class="col-6">
+                    <a class="text-decoration-none" href="{% url 'assets:calendar' %}">
+                        <li class="rounded list-group-item bg-warning mt-2 text-center text-white">ยืมครุภัณฑ์</li>
+                    </a>
+                </div>
                 {% else %}
                 <div class="col-6 container justify-content-center">
                     <a class="text-decoration-none" href="{% url 'accounts:user_logout' %}">

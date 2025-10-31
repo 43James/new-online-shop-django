@@ -60,7 +60,7 @@
                     <tr>
                         <th style="width: 5%;">#</th>
                         <th style="width: 15%;">ผู้ยืม</th>
-                        <th style="width: 8%;">ID</th>
+                        <th style="width: 8%;">รหัสรายการ</th>
                         <th style="width: 15%;">วันที่สร้างรายการ</th>
                         <th style="width: 15%;">วันที่ใช้งาน</th>
                         <th style="width: 15%;">กำหนดคืน</th>
@@ -77,7 +77,7 @@
                     ">
                         <th scope="row">{{ forloop.counter0|add:page_obj.start_index }}</th>
                         <td>{{ loan.user.get_full_name }}</td>
-                        <td class="fw-bold">{{ loan.id }}</td>
+                        <td class="fw-bold">{{ loan.order_code }}</td>
                         <td>{{ loan.date_created|date:"d/m/Y , H:i น." }}</td>
                         <td>{{ loan.date_of_use|date:"d/m/Y , H:i น." }}</td>
                         <td>{{ loan.date_due|date:"d/m/Y , H:i น." }}</td>
@@ -193,6 +193,10 @@
                         <input type="text" class="form-control text-primary" value="{{ request.user.get_full_name }}" readonly>
                     </div>
                     <div class="mb-3">
+                        <label>ตำแหน่งเจ้าหน้าที่รับคืน</label>
+                        <input type="text" class="form-control text-primary" value="{{ request.user.profile.position }}" readonly>
+                    </div>
+                    <div class="mb-3">
                         <label for="statusReturn" class="form-label">สถานะการคืนครุภัณฑ์ (หลังตรวจสอบ):</label>
                         <select name="status_return" id="statusReturn" class="form-select border-primary">
                             <option value="not_damaged" selected>ไม่มีรายการชำรุด (ส่งคืนเข้าคลัง)</option>
@@ -206,7 +210,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm\'></span> กำลังยืนยัน';">ยืนยันการคืน</button>
+                    <button type="submit" class="btn btn-primary"  onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm\'></span> กำลังยืนยัน'; this.form.submit();">ยืนยันการคืน</button>
                 </div>
             </div>
         </form>

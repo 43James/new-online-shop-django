@@ -55,7 +55,7 @@
         <tr>
           <th scope="row">{{ forloop.counter }}</th>
           <td scope="row">{{ order.user.get_full_name }}</td>
-          <td scope="row">ID {{ order.id }}</td>
+          <td scope="row">ID {{ order.order_code}}</td>
           <td scope="row">{{ order.items.count }} รายการ</td>
           <td scope="row">{{ order.get_total_price|intcomma }} บาท</td>
           <td scope="row" style="font-size: 15px; width: 2px;">{{ order.date_created| date:"d M Y H:i" }} น.</td>
@@ -88,7 +88,7 @@
               <div class="modal-dialog">
                 <div class="modal-content" style="width: 20rem;">
                   <div class="modal-header">
-                    <h5 class="modal-title text-center container" id="exampleModalLabel">ดำเนินการ ID {{ order.id }}
+                    <h5 class="modal-title text-center container" id="exampleModalLabel">ดำเนินการ ID {{ order.order_code}}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
@@ -162,7 +162,7 @@
               <div class="modal-dialog">
                 <div class="modal-content" style="width: 20rem;">
                   <div class="modal-header">
-                    <h5 class="modal-title text-center container" id="exampleModalLabel">ดำเนินการ ID {{ order.id }}
+                    <h5 class="modal-title text-center container" id="exampleModalLabel">ดำเนินการ ID {{ order.order_code }}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>

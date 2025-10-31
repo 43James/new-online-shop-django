@@ -277,9 +277,16 @@
 					</li>
 					<li>
 						<a class="dropdown-item" href="{% url 'shop:home_page' %}">
-							<i class="bi bi-shop me-2 text-success"></i> กลับไปหน้าเบิกวัสดุ
+							<i class="bi bi-shop-window me-2 text-success"></i> กลับไปหน้าเบิกวัสดุ
 						</a>
 					</li>
+					{% if user.is_manager or user.is_warehouse_manager or user.is_admin or user.is_executive%}
+					<li>
+						<a class="dropdown-item" href="{% url 'dashboard:orders' %}">
+							<i class="bi bi-shop me-2 text-warning"></i> หลังบ้านเบิกพัสดุ
+						</a>
+					</li>
+					{% endif %}
 					<li>
 						<hr class="dropdown-divider">
 					</li>
@@ -433,10 +440,16 @@
 				</li>
 				<li>
 					<a class="dropdown-item" href="{% url 'shop:home_page' %}">
-						<i class="bi bi-shop me-2 text-success"></i> กลับไปหน้าเบิกวัสดุ
+						<i class="bi bi-shop-window me-2 text-success"></i> กลับไปหน้าเบิกวัสดุ
 					</a>
 				</li>
-
+				{% if user.is_manager or user.is_warehouse_manager or user.is_admin or user.is_executive%}
+					<li>
+						<a class="dropdown-item" href="{% url 'dashboard:orders' %}">
+							<i class="bi bi-shop me-2 text-warning"></i> หลังบ้านเบิกพัสดุ
+						</a>
+					</li>
+				{% endif %}
 				<li>
 					<hr class="dropdown-divider">
 				</li>

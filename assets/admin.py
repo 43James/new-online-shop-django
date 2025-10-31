@@ -117,7 +117,9 @@ class IssuingAssetLoanInline(admin.TabularInline):
 class OrderAssetLoanAdmin(admin.ModelAdmin):
     # 🚨 list_display ถูกแก้ไขเรื่องไวยากรณ์แล้ว
     list_display = (
-        "id", 
+        "id",
+        "order_code",
+        "running_number",
         "user", 
         "user_first_name",  # 🚨 ตอนนี้ Django จะมองหา Method ชื่อนี้
         "status", 
@@ -129,7 +131,7 @@ class OrderAssetLoanAdmin(admin.ModelAdmin):
         "month", 
         "year"
     )
-    search_fields = ("user__username", "user__first_name", "user__last_name")
+    search_fields = ("order_code","user__username", "user__first_name", "user__last_name")
     list_filter = ("status", "month", "year")
     inlines = [IssuingAssetLoanInline] # สมมติว่า IssuingAssetLoanInline ถูกกำหนดไว้
     readonly_fields = ("month", "year", "date_created", "date_updated")

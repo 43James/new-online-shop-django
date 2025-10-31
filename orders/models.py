@@ -4,10 +4,27 @@ from django.db import models
 from accounts.models import MyUser
 from shop.models import Product, Receiving
 from django.core.validators import MinValueValidator
+from django.db.models import Max  # <-- 1. เพิ่ม IMPORT นี้
 
 
 class Order(models.Model):
     user = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name='orders', verbose_name='ผู้ใช้ID')
+    # vvvv 2. เพิ่ม 2 ฟิลด์นี้ vvvv
+    order_code = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True, 
+        unique=True, 
+        verbose_name="รหัสออเดอร์", 
+        editable=False
+    )
+    running_number = models.PositiveIntegerField(
+        editable=False, 
+        null=True, 
+        blank=True,
+        verbose_name="เลขลำดับ"
+    )
+    # ^^^^ สิ้นสุดส่วนที่เพิ่ม ^^^^
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดทออเดอร์')
     status = models.BooleanField(blank=True, null=True,verbose_name="สถานะออเดอร์")
@@ -28,7 +45,7 @@ class Order(models.Model):
         ordering = ('-id',)
     
     def __str__(self):
-        return str(self.id)
+        return str(self.order_code)
 
     @property
     def get_approval_count(self):
@@ -44,12 +61,32 @@ class Order(models.Model):
         total = sum(item.get_total() for item in self.items.all())
         return total
     
+    # vvvv 3. แก้ไขเมธอด save() vvvv
     def save(self, *args, **kwargs):
         if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
             now = timezone.now()
+            current_year = now.year
+
+            # 1. เซ็ตเดือน/ปี (จากโค้ดเดิมของคุณ)
             self.month = now.month
             self.year = now.year
+
+            # 2. สร้างรหัสออเดอร์ใหม่
+            last_order = Order.objects.filter(year=current_year).aggregate(max_num=Max('running_number'))
+            new_num = (last_order['max_num'] or 0) + 1
+                
+            self.running_number = new_num
+            self.order_code = f"{new_num}/{current_year}" # เช่น "1/2025"
+
         super().save(*args, **kwargs)
+    # ^^^^ สิ้นสุดการแก้ไข ^^^^
+    
+    # def save(self, *args, **kwargs):
+    #     if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+    #         now = timezone.now()
+    #         self.month = now.month
+    #         self.year = now.year
+    #     super().save(*args, **kwargs)
 
     
 class Issuing(models.Model):
