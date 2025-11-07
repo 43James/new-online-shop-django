@@ -66,6 +66,7 @@ class OrderAdmin(admin.ModelAdmin):
     # ✅ list_display: ฟิลด์ที่จะแสดงในหน้า List
     # - เอา 'other' ออกเพราะมันยาว, เอา 'id' ออกเพราะเราใช้ 'order_code'
     list_display = (
+        'id', 
         'order_code', 
         'user_full_name', 
         'status', 
@@ -91,7 +92,7 @@ class OrderAdmin(admin.ModelAdmin):
         'user__email', 
         'user__username', 
         'other',
-        'items__product__name' # ค้นหาจากชื่อสินค้าที่อยู่ในออเดอร์นี้
+        'items__product__product_name' # ค้นหาจากชื่อสินค้าที่อยู่ในออเดอร์นี้
     )
     
     # ✅ list_editable: ทำให้แก้ไขสถานะจากหน้า List ได้เลย (สะดวกมาก)

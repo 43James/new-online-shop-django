@@ -20,9 +20,546 @@ from django.utils import timezone
 from linebot.exceptions import LineBotApiError
 import locale
 import pytz
-
+from django.db.models import Q, Prefetch
 
 line_bot_api = LineBotApi('p/7wo/1oBrhYYteqvWuGQQJz5AADd3pnSiyTJByIju6L6rT5fWsifmzRiD8YOoPHYZkSQHNMIcnAyjMq9ad3zjL4LHn4+C5PubjxDeGXrcXO5XIYd65jHw2slPVxQ7akCkzj0ZC+8MRIJ3oIBRpHLAdB04t89/1O/w1cDnyilFU=')
+
+# @csrf_exempt
+# def linebot(request):
+#     print(request.method)
+
+#     if request.method == 'POST':
+#         try:
+#             body = request.body.decode('utf-8')
+#             body = json.loads(body)
+#             events = body.get('events', [])
+
+#             if events:
+#                 event = events[0]
+#                 userId = event.get('source', {}).get('userId', '')
+#                 text = event.get('message', {}).get('text', '')
+
+#                 # ตรวจสอบการผูกบัญชี
+#                 line = UserLine.objects.filter(userId=userId).first()
+
+#                 # ผูกบัญชี
+#                 if text.startswith('ผูกบัญชี'):
+#                     a = text.split()
+#                     if len(a) == 2:
+#                         username = a[1]
+#                         user = MyUser.objects.filter(username=username).first()
+
+#                         if user:
+#                             line = UserLine.objects.filter(user=user).first()
+#                             userId = event.get('source', {}).get('userId', '')
+#                             print(user)
+#                             print(userId)
+
+#                             if not line:
+#                                 line = UserLine(user=user, userId=userId)
+#                                 line.save()
+#                                 # ส่งข้อความแจ้งเตือนผู้ใช้
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='ผูกบัญชีสำเร็จ✅'))
+
+#                             else:
+#                                 line.userId = userId
+#                                 line.save()
+#                                 # ส่งข้อความแจ้งเตือนผู้ใช้ (กรณีอัพเดตการผูกบัญชี)
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='อัพเดตการผูกบัญชีสำเร็จ✅'))
+#                         else:
+#                             # ส่งข้อความแจ้งเตือนถ้า username ไม่ถูกต้อง
+#                             userId = event.get('source', {}).get('userId', '')
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ Username ไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
+#                     else:
+#                         # ส่งข้อความแจ้งเตือนถ้ามีการป้อนข้อมูลไม่ครบ
+#                         userId = event.get('source', {}).get('userId', '')
+#                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำว่า \n"ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
+
+#                 # แจ้งเตือนผู้ใช้ถ้ายังไม่ผูกบัญชี
+#                 elif not line:
+#                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาผูกบัญชีของคุณก่อนใช้งาน\nใช้คำสั่ง "ผูกบัญชี [Username]"'))
+#                     # return HttpResponse(status=200)
+
+                
+#                 # ยืนยันรับวัสดุ
+#                 elif text.startswith('รับวัสดุแล้วID'):
+#                     command_parts = text.split()
+                    
+#                     print(f"Command Parts: {command_parts}")  # ดีบักเพื่อดูคำสั่งที่แยกออก
+#                     if len(command_parts) >= 2:  # ต้องมี ID ของคำร้องเท่านั้น
+#                         order_id = command_parts[1]  # ใช้ ID เป็นคำที่ 1
+
+#                         try:
+#                             # กำหนดวันที่และเวลาปัจจุบัน
+#                             date_time_received = timezone.now()
+#                             print(f"Current Date and Time: {date_time_received}")  # ดีบักเพื่อดูวันที่และเวลาปัจจุบัน
+
+#                             # ดึงข้อมูลออเดอร์
+#                             order = Order.objects.filter(id=order_id).first()
+
+#                             if order:
+#                                 if not order.confirm:  # ตรวจสอบว่าออเดอร์ยังไม่ได้รับการยืนยัน
+#                                     order.confirm = True  # ตั้งค่าสถานะการยืนยันรับวัสดุ
+
+#                                     # ใช้ชื่อผู้ใช้งานจากข้อมูลออเดอร์ (first_name)
+#                                     name_sign = order.user.get_first_name()
+#                                     order.name_sign = name_sign  # บันทึกชื่อผู้รับวัสดุ
+#                                     order.date_received = date_time_received  # บันทึกวันที่และเวลารับวัสดุ
+
+#                                     # ดีบักก่อนบันทึก
+#                                     print(f"Saving Order ID: {order.id}, Name Sign: {name_sign}, Date Received: {date_time_received}")
+                                    
+#                                     order.save()
+
+#                                     # ตรวจสอบว่าอัปเดตสำเร็จหรือไม่
+#                                     if order.date_received:
+#                                         print(f"Date Received successfully saved: {order.date_received}")
+                                    
+#                                     # ส่งการแจ้งเตือนให้ผู้ใช้งาน
+#                                     line_bot_api.push_message(userId, TextSendMessage(text=f'ยืนยันรับวัสดุคำร้อง ID {order_id} สำเร็จ✅'))
+
+#                                     # ส่งการแจ้งเตือนให้แอดมิน
+#                                     notify_admin_receive_confirmation(order.id)
+
+#                                 else:
+#                                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ได้รับการยืนยันแล้ว'))
+#                             else:
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+
+#                         except Exception as e:
+#                             print(f"Error: {e}")
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'))
+#                     else:
+#                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"รับวัสดุแล้วID [เลขที่คำร้อง]"'))
+
+
+
+#                 # เช็คสถานะ
+#                 elif text.startswith('เช็คสถานะID'):
+#                     command_parts = text.split()
+
+#                     if len(command_parts) == 2:
+#                         order_id = command_parts[1]
+#                         order = Order.objects.filter(id=order_id).first()
+
+#                         if order:
+#                             # ดึงข้อมูลผู้เบิกวัสดุ
+#                             user_name = order.user.get_full_name() if order.user else "ไม่พบข้อมูลผู้เบิก"
+                            
+#                             # ดึงรายการวัสดุที่เบิกจากตาราง Issuing
+#                             issuing_items = Issuing.objects.filter(order=order)
+#                             product_list = '\n'.join([f"สินค้า: {item.product.product_name}, จำนวน: {item.quantity}, ราคา: {item.price} บาท" for item in issuing_items])
+
+#                             # เตรียมข้อความเพื่อแสดงข้อมูลคำร้อง
+#                             status_message = f"คำร้อง ID: {order_id}\n"
+#                             status_message += f"ชื่อผู้เบิก: {user_name}\n\n"
+#                             status_message += f"รายการวัสดุที่เบิก:\n{product_list}\n\n"
+#                             # สถานะออเดอร์
+#                             if order.status is None:
+#                                 status_message += "สถานะออเดอร์: ยังไม่ได้รับการยืนยัน\n\n"
+#                             elif order.status is False:
+#                                 status_message += "สถานะออเดอร์: ถูกปฏิเสธ❌\n\n"
+#                             else:  # order.status is True
+#                                 status_message += "สถานะออเดอร์: อนุมัติแล้ว✅\n\n"
+#                             status_message += f"วันที่นัดรับพัสดุ: {order.date_receive.strftime('%d-%m-%Y') if order.date_receive else 'ยังไม่มีการระบุ'}\n"
+#                             status_message += f"วันที่รับพัสดุ: {order.date_received.strftime('%d-%m-%Y') if order.date_received else 'ยังไม่มีการระบุ'}\n\n"
+#                             status_message += f"สถานะการจ่ายวัสดุ: {'จ่ายแล้ว' if order.pay_item else 'ยังไม่ได้ยืนยันจ่ายวัสดุ'}\n"
+#                             status_message += f"สถานะการรับวัสดุ: {'ยืนยันแล้ว✅' if order.confirm else 'ยังไม่ได้ยืนยันรับวัสดุ'}\n"
+#                             status_message += f"ชื่อผู้รับวัสดุ: {order.name_sign if order.name_sign else 'ยังไม่มีการระบุ'}\n\n"
+#                             status_message += f"หมายเหตุ: {order.other if order.other else 'ไม่มีหมายเหตุ'}\n"
+
+#                             # ส่งข้อมูลสถานะกลับไปยังผู้ใช้งาน
+#                             line_bot_api.push_message(userId, TextSendMessage(text=status_message))
+#                         else:
+#                             # ส่งข้อความแจ้งเตือนถ้าไม่พบคำร้อง
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+#                     else:
+#                         # ส่งข้อความแจ้งเตือนถ้าพิมพ์คำสั่งไม่ถูกต้อง
+#                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"เช็คสถานะID [เลขที่คำร้อง]"'))
+
+
+#                 # ตรวจสอบสิทธิ์ว่าผู้ใช้มีสิทธิ์เป็น is_manager หรือ is_admin
+#                 user = line.user  # ดึงข้อมูลผู้ใช้จากการผูกบัญชี
+#                 if user.is_manager or user.is_admin:
+#                     # อนุมัติคำร้อง
+#                     if text.startswith('อนุมัติคำร้อง'):
+#                         command_parts = text.split()
+
+#                         if len(command_parts) >= 3:
+#                             order_id = command_parts[1]
+#                             date_receive = command_parts[2]
+
+#                             # ตรวจสอบว่ามีการระบุเวลา (HH:MM) หรือไม่
+#                             if len(command_parts) >= 4 and ":" in command_parts[3]:
+#                                 time_receive = command_parts[3]
+#                                 other = ' '.join(command_parts[4:]) if len(command_parts) > 4 else None
+#                             else:
+#                                 time_receive = None
+#                                 other = ' '.join(command_parts[3:]) if len(command_parts) > 3 else None
+
+#                             order = Order.objects.filter(id=order_id).first()
+
+#                             if order:
+#                                 if order.status:  # ตรวจสอบสถานะก่อนอนุมัติ
+#                                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ได้รับการอนุมัติแล้ว'))
+
+#                                 else:  # ตรวจสอบสถานะก่อนอนุมัติ
+#                                     try:
+#                                         # แปลงวันที่
+#                                         parsed_date = datetime.strptime(date_receive, '%d-%m-%Y')
+
+#                                         # ถ้ามีการระบุเวลา ให้บันทึกเวลา
+#                                         if time_receive:
+#                                             parsed_time = datetime.strptime(time_receive, '%H:%M').time()
+#                                             order.date_receive = datetime.combine(parsed_date, parsed_time)
+#                                         else:
+#                                             order.date_receive = datetime.combine(parsed_date, datetime.min.time())  # ถ้าไม่มีเวลาจะใช้เวลาเริ่มต้น
+
+#                                         order.status = True  # อนุมัติ
+#                                         order.other = other  # บันทึกหมายเหตุ (ถ้ามี)
+#                                         order.save()
+
+#                                         # ส่งการแจ้งเตือนกลับไปยังผู้อนุมัติ
+#                                         line_bot_api.push_message(userId, TextSendMessage(text=f'อนุมัติคำร้อง ID {order_id} สำเร็จ ✅'))
+
+#                                         # ส่งการแจ้งเตือนไปยังผู้ใช้งานที่ทำคำร้อง
+#                                         notify_user_approved(order.id)  # เรียกใช้ฟังก์ชันเพื่อแจ้งเตือน
+#                                         notify_admin_order_status(order.id)
+
+#                                     except ValueError:
+#                                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ รูปแบบวันที่หรือเวลาไม่ถูกต้อง โปรดใช้รูปแบบ วัน-เดือน-ปี หรือ วัน-เดือน-ปี HH:MM'))
+                                
+#                             else:
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+#                         else:
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"อนุมัติคำร้อง [เลขที่คำร้อง] [วันที่รับวัสดุ] [เวลา] [หมายเหตุ]"'))
+
+
+#                     # ปฏิเสธคำร้อง
+#                     elif text.startswith('ปฏิเสธคำร้อง'):
+#                         command_parts = text.split()
+#                         if len(command_parts) >= 2:
+#                             order_id = command_parts[1]
+#                             other = ' '.join(command_parts[2:]) if len(command_parts) > 2 else None
+
+#                             order = Order.objects.filter(id=order_id).first()
+
+#                             if order:
+#                                 if order.status == False:  # ตรวจสอบว่าคำร้องนี้ถูกปฏิเสธแล้วหรือไม่
+#                                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ถูกปฏิเสธแล้ว'))
+#                                 else:
+#                                     order.status = False  # ปฏิเสธ
+#                                     order.other = other
+#                                     order.save()
+
+#                                     # ส่งการแจ้งเตือนให้แอดมิน
+#                                     line_bot_api.push_message(userId, TextSendMessage(text=f'ปฏิเสธคำร้อง ID {order_id} สำเร็จ ❌'))
+
+#                                     # คืนจำนวนสินค้ากลับไปยังสต๊อก
+#                                     for item in order.items.all():  # assuming `items` is a related name for Issuing
+#                                         product = item.product
+#                                         product.quantityinstock += item.quantity  # เพิ่มจำนวนวัสดุกลับไปในสต๊อก
+#                                         product.save()
+#                                         print(f"Restored {item.quantity} of {product.product_name} to stock.")
+
+#                                         # คืนจำนวนสินค้าที่รับเข้าใน Receiving
+#                                         receiving = item.receiving
+#                                         receiving.quantity += item.quantity  # เพิ่มจำนวนใน Receiving
+#                                         receiving.save()
+#                                         print(f"Restored {item.quantity} to receiving ID {receiving.id}.")
+
+#                                     # ส่งการแจ้งเตือนไปยังผู้ใช้งานที่ทำคำร้อง
+#                                     notify_user_approved(order.id)  # เรียกใช้ฟังก์ชันเพื่อแจ้งเตือน
+#                                     notify_admin_order_status(order.id)
+#                             else:
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+#                         else:
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"ปฏิเสธคำร้อง [เลขที่คำร้อง] [หมายเหตุ]"'))
+
+
+#                     # จ่ายวัสดุแล้ว
+#                     elif text.startswith('จ่ายวัสดุแล้วID'):
+#                         command_parts = text.split()
+
+#                         if len(command_parts) == 2:
+#                             order_id = command_parts[1]
+#                             order = Order.objects.filter(id=order_id).first()
+
+#                             if order:
+#                                 if not order.pay_item:  # ตรวจสอบว่ายังไม่ได้จ่ายวัสดุก่อน
+#                                     order.pay_item = True  # ยืนยันว่าจ่ายวัสดุแล้ว
+#                                     order.save()
+
+#                                     # ส่งการแจ้งเตือนไปยังผู้ใช้งานที่ทำคำร้อง
+#                                     notify_user_pay_confirmed(order.id)
+
+#                                     # ส่งการแจ้งเตือนไปยังผู้อนุมัติ
+#                                     line_bot_api.push_message(userId, TextSendMessage(text=f'จ่ายวัสดุสำหรับคำร้อง ID {order_id} สำเร็จ ✅'))
+#                                 else:
+#                                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ เจ้าหน้าที่ได้จ่ายวัสดุคำร้องนี้แล้ว'))
+#                             else:
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+#                         else:
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"จ่ายวัสดุแล้วID [เลขที่คำร้อง]"'))
+#                 # else:
+#                 #     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คุณไม่มีสิทธิ์ในการดำเนินการนี้'))
+
+#         except json.JSONDecodeError as e:
+#             print(f"JSON Decode Error: {e}")
+#     return HttpResponse(status=200)
+
+# @csrf_exempt
+# def linebot(request):
+#     print(request.method)
+
+#     if request.method == 'POST':
+#         try:
+#             body = request.body.decode('utf-8')
+#             body = json.loads(body)
+#             events = body.get('events', [])
+
+#             if events:
+#                 event = events[0]
+#                 userId = event.get('source', {}).get('userId', '')
+#                 text = event.get('message', {}).get('text', '')
+
+#                 # ตรวจสอบการผูกบัญชี
+#                 line = UserLine.objects.filter(userId=userId).first()
+
+#                 # --- 1. บล็อกผูกบัญชี ---
+#                 if text.startswith('ผูกบัญชี'):
+#                     a = text.split()
+#                     if len(a) == 2:
+#                         username = a[1]
+#                         user = MyUser.objects.filter(username=username).first()
+
+#                         if user:
+#                             line = UserLine.objects.filter(user=user).first()
+#                             userId = event.get('source', {}).get('userId', '')
+#                             print(user)
+#                             print(userId)
+
+#                             if not line:
+#                                 line = UserLine(user=user, userId=userId)
+#                                 line.save()
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='ผูกบัญชีสำเร็จ✅'))
+#                             else:
+#                                 line.userId = userId
+#                                 line.save()
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='อัพเดตการผูกบัญชีสำเร็จ✅'))
+#                         else:
+#                             userId = event.get('source', {}).get('userId', '')
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ Username ไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
+#                     else:
+#                         userId = event.get('source', {}).get('userId', '')
+#                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำว่า \n"ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
+                    
+#                     return HttpResponse(status=200) 
+
+#                 # --- 2. บล็อกแจ้งเตือนหากยังไม่ผูกบัญชี ---
+#                 elif not line:
+#                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาผูกบัญชีของคุณก่อนใช้งาน\nใช้คำสั่ง "ผูกบัญชี [Username]"'))
+#                     return HttpResponse(status=200) 
+
+                
+#                 # --- 3. บล็อกคำสั่งทั่วไป (สำหรับผู้ใช้ที่ผูกบัญชีแล้ว) ---
+                
+
+#                 # ยืนยันรับวัสดุ
+#                 elif text.startswith('รับวัสดุแล้วID'): # <--- ชื่อคำสั่งยังเหมือนเดิม
+#                     command_parts = text.split()
+#                     print(f"Command Parts: {command_parts}")
+                    
+#                     if len(command_parts) >= 2:
+#                         order_code = command_parts[1] # <--- เปลี่ยนจาก order_id
+#                         try:
+#                             date_time_received = timezone.now()
+#                             print(f"Current Date and Time: {date_time_received}")
+
+#                             order = Order.objects.filter(order_code=order_code).first() # <--- เปลี่ยนจาก id=order_id
+
+#                             if order:
+#                                 if not order.confirm:
+#                                     order.confirm = True
+#                                     name_sign = order.user.get_first_name()
+#                                     order.name_sign = name_sign
+#                                     order.date_received = date_time_received
+                                    
+#                                     print(f"Saving Order Code: {order.order_code}, Name Sign: {name_sign}, Date Received: {date_time_received}") # <--- เปลี่ยน
+#                                     order.save()
+
+#                                     if order.date_received:
+#                                         print(f"Date Received successfully saved: {order.date_received}")
+                                    
+#                                     line_bot_api.push_message(userId, TextSendMessage(text=f'ยืนยันรับวัสดุคำร้อง {order_code} สำเร็จ✅')) # <--- เปลี่ยน
+                                    
+#                                     # notify_admin_receive_confirmation(order.id) 
+#                                 else:
+#                                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ได้รับการยืนยันแล้ว'))
+#                             else:
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+
+#                         except Exception as e:
+#                             print(f"Error: {e}")
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'))
+#                     else:
+#                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"รับวัสดุแล้วID [รหัสออเดอร์]"')) # <--- เปลี่ยน
+
+#                 # เช็คสถานะ
+#                 elif text.startswith('เช็คสถานะID'): # <--- ชื่อคำสั่งยังเหมือนเดิม
+#                     command_parts = text.split()
+#                     if len(command_parts) == 2:
+#                         order_code = command_parts[1] # <--- เปลี่ยนจาก order_id
+#                         order = Order.objects.filter(order_code=order_code).first() # <--- เปลี่ยนจาก id=order_id
+
+#                         if order:
+#                             user_name = order.user.get_full_name() if order.user else "ไม่พบข้อมูลผู้เบิก"
+                            
+#                             issuing_items = Issuing.objects.filter(order=order)
+#                             product_list = '\n'.join([f"สินค้า: {item.product.product_name}, จำนวน: {item.quantity}, ราคา: {item.price} บาท" for item in issuing_items])
+
+#                             status_message = f"คำร้อง: {order_code}\n" # <--- เปลี่ยน
+#                             status_message += f"ชื่อผู้เบิก: {user_name}\n\n"
+#                             status_message += f"รายการวัสดุที่เบิก:\n{product_list}\n\n"
+                            
+#                             if order.status is None:
+#                                 status_message += "สถานะออเดอร์: ยังไม่ได้รับการยืนยัน\n\n"
+#                             elif order.status is False:
+#                                 status_message += "สถานะออเดอร์: ถูกปฏิเสธ❌\n\n"
+#                             else:
+#                                 status_message += "สถานะออเดอร์: อนุมัติแล้ว✅\n\n"
+                            
+#                             status_message += f"วันที่นัดรับพัสดุ: {order.date_receive.strftime('%d-%m-%Y') if order.date_receive else 'ยังไม่มีการระบุ'}\n"
+#                             status_message += f"วันที่รับพัสดุ: {order.date_received.strftime('%d-%m-%Y') if order.date_received else 'ยังไม่มีการระบุ'}\n\n"
+#                             status_message += f"สถานะการจ่ายวัสดุ: {'จ่ายแล้ว' if order.pay_item else 'ยังไม่ได้ยืนยันจ่ายวัสดุ'}\n"
+#                             status_message += f"สถานะการรับวัสดุ: {'ยืนยันแล้ว✅' if order.confirm else 'ยังไม่ได้ยืนยันรับวัสดุ'}\n"
+#                             status_message += f"ชื่อผู้รับวัสดุ: {order.name_sign if order.name_sign else 'ยังไม่มีการระบุ'}\n\n"
+#                             status_message += f"หมายเหตุ: {order.other if order.other else 'ไม่มีหมายเหตุ'}\n"
+
+#                             line_bot_api.push_message(userId, TextSendMessage(text=status_message))
+#                         else:
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+#                     else:
+#                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"เช็คสถานะID [รหัสออเดอร์]"')) # <--- เปลี่ยน
+
+
+#                 # --- 4. บล็อกคำสั่ง Admin ---
+                
+#                 user = line.user  
+                
+#                 if user.is_warehouse_manager or user.is_admin:
+                    
+#                     # อนุมัติคำร้อง
+#                     if text.startswith('อนุมัติคำร้อง'):
+#                         command_parts = text.split()
+#                         if len(command_parts) >= 3:
+#                             order_code = command_parts[1] # <--- เปลี่ยนจาก order_id
+#                             date_receive = command_parts[2]
+
+#                             if len(command_parts) >= 4 and ":" in command_parts[3]:
+#                                 time_receive = command_parts[3]
+#                                 other = ' '.join(command_parts[4:]) if len(command_parts) > 4 else None
+#                             else:
+#                                 time_receive = None
+#                                 other = ' '.join(command_parts[3:]) if len(command_parts) > 3 else None
+
+#                             order = Order.objects.filter(order_code=order_code).first() # <--- เปลี่ยนจาก id=order_id
+
+#                             if order:
+#                                 if order.status:
+#                                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ได้รับการอนุมัติแล้ว'))
+#                                 else:
+#                                     try:
+#                                         parsed_date = datetime.strptime(date_receive, '%d-%m-%Y')
+#                                         if time_receive:
+#                                             parsed_time = datetime.strptime(time_receive, '%H:%M').time()
+#                                             order.date_receive = datetime.combine(parsed_date, parsed_time)
+#                                         else:
+#                                             order.date_receive = datetime.combine(parsed_date, datetime.min.time())
+
+#                                         order.status = True
+#                                         order.other = other
+#                                         order.save()
+
+#                                         line_bot_api.push_message(userId, TextSendMessage(text=f'อนุมัติคำร้อง {order_code} สำเร็จ ✅')) # <--- เปลี่ยน
+                                        
+#                                         # notify_user_approved(order.id)
+#                                         # notify_admin_order_status(order.id)
+
+#                                     except ValueError:
+#                                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ รูปแบบวันที่หรือเวลาไม่ถูกต้อง โปรดใช้รูปแบบ วัน-เดือน-ปี หรือ วัน-เดือน-ปี HH:MM'))
+#                             else:
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+#                         else:
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"อนุมัติคำร้อง [รหัสออเดอร์] [วันที่รับวัสดุ] [เวลา] [หมายเหตุ]"')) # <--- เปลี่ยน
+
+#                     # ปฏิเสธคำร้อง
+#                     elif text.startswith('ปฏิเสธคำร้อง'):
+#                         command_parts = text.split()
+#                         if len(command_parts) >= 2:
+#                             order_code = command_parts[1] # <--- เปลี่ยนจาก order_id
+#                             other = ' '.join(command_parts[2:]) if len(command_parts) > 2 else None
+
+#                             order = Order.objects.filter(order_code=order_code).first() # <--- เปลี่ยนจาก id=order_id
+
+#                             if order:
+#                                 if order.status == False:
+#                                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ถูกปฏิเสธแล้ว'))
+#                                 else:
+#                                     order.status = False
+#                                     order.other = other
+#                                     order.save()
+
+#                                     line_bot_api.push_message(userId, TextSendMessage(text=f'ปฏิเสธคำร้อง {order_code} สำเร็จ ❌')) # <--- เปลี่ยน
+
+#                                     for item in order.items.all():
+#                                         product = item.product
+#                                         product.quantityinstock += item.quantity
+#                                         product.save()
+#                                         print(f"Restored {item.quantity} of {product.product_name} to stock.")
+
+#                                         receiving = item.receiving
+#                                         receiving.quantity += item.quantity
+#                                         receiving.save()
+#                                         print(f"Restored {item.quantity} to receiving ID {receiving.id}.")
+
+#                                     # notify_user_approved(order.id)
+#                                     # notify_admin_order_status(order.id)
+#                             else:
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+#                         else:
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"ปฏิเสธคำร้อง [รหัสออเดอร์] [หมายเหตุ]"')) # <--- เปลี่ยน
+
+#                     # จ่ายวัสดุแล้ว
+#                     elif text.startswith('จ่ายวัสดุแล้วID'): # <--- ชื่อคำสั่งยังเหมือนเดิม
+#                         command_parts = text.split()
+#                         if len(command_parts) == 2:
+#                             order_code = command_parts[1] # <--- เปลี่ยนจาก order_id
+#                             order = Order.objects.filter(order_code=order_code).first() # <--- เปลี่ยนจาก id=order_id
+
+#                             if order:
+#                                 if not order.pay_item:
+#                                     order.pay_item = True
+#                                     order.save()
+
+#                                     # notify_user_pay_confirmed(order.id) 
+
+#                                     line_bot_api.push_message(userId, TextSendMessage(text=f'จ่ายวัสดุสำหรับคำร้อง {order_code} สำเร็จ ✅')) # <--- เปลี่ยน
+#                                 else:
+#                                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ เจ้าหน้าที่ได้จ่ายวัสดุคำร้องนี้แล้ว'))
+#                             else:
+#                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+#                         else:
+#                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"จ่ายวัสดุแล้วID [รหัสออเดอร์]"')) # <--- เปลี่ยน
+                
+
+#         except json.JSONDecodeError as e:
+#             print(f"JSON Decode Error: {e}")
+#             return HttpResponse(status=400) 
+        
+#         return HttpResponse(status=200)
+
+#     return HttpResponse(status=200)
 
 
 @csrf_exempt
@@ -38,276 +575,226 @@ def linebot(request):
             if events:
                 event = events[0]
                 userId = event.get('source', {}).get('userId', '')
-                text = event.get('message', {}).get('text', '')
+                text = event.get('message', {}).get('text', '').strip() # .strip() เพื่อความสะอาด
 
                 # ตรวจสอบการผูกบัญชี
                 line = UserLine.objects.filter(userId=userId).first()
 
-                # ผูกบัญชี
+                # --- 1. บล็อกผูกบัญชี ---
                 if text.startswith('ผูกบัญชี'):
                     a = text.split()
                     if len(a) == 2:
                         username = a[1]
-                        user = MyUser.objects.filter(username=username).first()
+                        # (เปลี่ยนชื่อตัวแปร user เป็น user_account เพื่อไม่ให้สับสน)
+                        user_account = MyUser.objects.filter(username=username).first() 
 
-                        if user:
-                            line = UserLine.objects.filter(user=user).first()
-                            userId = event.get('source', {}).get('userId', '')
-                            print(user)
-                            print(userId)
-
-                            if not line:
-                                line = UserLine(user=user, userId=userId)
-                                line.save()
-                                # ส่งข้อความแจ้งเตือนผู้ใช้
+                        if user_account:
+                            line_obj = UserLine.objects.filter(user=user_account).first()
+                            if not line_obj:
+                                line_obj = UserLine(user=user_account, userId=userId)
+                                line_obj.save()
                                 line_bot_api.push_message(userId, TextSendMessage(text='ผูกบัญชีสำเร็จ✅'))
-
                             else:
-                                line.userId = userId
-                                line.save()
-                                # ส่งข้อความแจ้งเตือนผู้ใช้ (กรณีอัพเดตการผูกบัญชี)
+                                line_obj.userId = userId
+                                line_obj.save()
                                 line_bot_api.push_message(userId, TextSendMessage(text='อัพเดตการผูกบัญชีสำเร็จ✅'))
                         else:
-                            # ส่งข้อความแจ้งเตือนถ้า username ไม่ถูกต้อง
-                            userId = event.get('source', {}).get('userId', '')
                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ Username ไม่ถูกต้อง❗\nกรุณาตรวจสอบและลองใหม่อีกครั้ง'))
                     else:
-                        # ส่งข้อความแจ้งเตือนถ้ามีการป้อนข้อมูลไม่ครบ
-                        userId = event.get('source', {}).get('userId', '')
                         line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์คำว่า \n"ผูกบัญชี ตามด้วย Username ของคุณค่ะ"'))
+                    
+                    return HttpResponse(status=200) # จบการทำงาน
 
-                # แจ้งเตือนผู้ใช้ถ้ายังไม่ผูกบัญชี
+                # --- 2. บล็อกแจ้งเตือนหากยังไม่ผูกบัญชี ---
                 elif not line:
                     line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาผูกบัญชีของคุณก่อนใช้งาน\nใช้คำสั่ง "ผูกบัญชี [Username]"'))
-                    # return HttpResponse(status=200)
+                    return HttpResponse(status=200) # จบการทำงาน
 
                 
+                # --- [ ❗ จุดแก้ไขที่ 1 ❗ ] ---
+                # ถ้ามาถึงตรงนี้ได้ แสดงว่า "ผูกบัญชีแล้ว"
+                # ดึงข้อมูลผู้ใช้ (MyUser) มาเตรียมไว้
+                user = line.user
+
+
+                # --- [ ❗ จุดแก้ไขที่ 2 ❗ ] ---
+                # เริ่มต้น if/elif chain "ชุดใหม่" สำหรับคำสั่งต่างๆ
+                # เปลี่ยนจาก 'elif' เป็น 'if'
+                
+                # --- 3. บล็อกคำสั่งทั่วไป (สำหรับผู้ใช้ที่ผูกบัญชีแล้ว) ---
+
                 # ยืนยันรับวัสดุ
-                elif text.startswith('รับวัสดุแล้วID'):
+                if text.startswith('รับวัสดุแล้วID'): 
                     command_parts = text.split()
-                    
-                    print(f"Command Parts: {command_parts}")  # ดีบักเพื่อดูคำสั่งที่แยกออก
-                    if len(command_parts) >= 2:  # ต้องมี ID ของคำร้องเท่านั้น
-                        order_id = command_parts[1]  # ใช้ ID เป็นคำที่ 1
-
+                    if len(command_parts) >= 2:
+                        order_code = command_parts[1]
                         try:
-                            # กำหนดวันที่และเวลาปัจจุบัน
-                            date_time_received = timezone.now()
-                            print(f"Current Date and Time: {date_time_received}")  # ดีบักเพื่อดูวันที่และเวลาปัจจุบัน
-
-                            # ดึงข้อมูลออเดอร์
-                            order = Order.objects.filter(id=order_id).first()
-
+                            order = Order.objects.filter(order_code=order_code).first()
                             if order:
-                                if not order.confirm:  # ตรวจสอบว่าออเดอร์ยังไม่ได้รับการยืนยัน
-                                    order.confirm = True  # ตั้งค่าสถานะการยืนยันรับวัสดุ
-
-                                    # ใช้ชื่อผู้ใช้งานจากข้อมูลออเดอร์ (first_name)
-                                    name_sign = order.user.get_first_name()
-                                    order.name_sign = name_sign  # บันทึกชื่อผู้รับวัสดุ
-                                    order.date_received = date_time_received  # บันทึกวันที่และเวลารับวัสดุ
-
-                                    # ดีบักก่อนบันทึก
-                                    print(f"Saving Order ID: {order.id}, Name Sign: {name_sign}, Date Received: {date_time_received}")
-                                    
-                                    order.save()
-
-                                    # ตรวจสอบว่าอัปเดตสำเร็จหรือไม่
-                                    if order.date_received:
-                                        print(f"Date Received successfully saved: {order.date_received}")
-                                    
-                                    # ส่งการแจ้งเตือนให้ผู้ใช้งาน
-                                    line_bot_api.push_message(userId, TextSendMessage(text=f'ยืนยันรับวัสดุคำร้อง ID {order_id} สำเร็จ✅'))
-
-                                    # ส่งการแจ้งเตือนให้แอดมิน
-                                    notify_admin_receive_confirmation(order.id)
-
+                                # [ ❗ เพิ่มการตรวจสอบสิทธิ์ ❗ ]
+                                if order.user == user or user.is_warehouse_manager or user.is_admin:
+                                    if not order.confirm:
+                                        date_time_received = timezone.now()
+                                        order.confirm = True
+                                        order.name_sign = user.get_first_name() # บันทึกชื่อคนกด
+                                        order.date_received = date_time_received
+                                        order.save()
+                                        line_bot_api.push_message(userId, TextSendMessage(text=f'ยืนยันรับวัสดุคำร้อง {order_code} สำเร็จ✅'))
+                                        # notify_admin_receive_confirmation(order.id) 
+                                    else:
+                                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ได้รับการยืนยันแล้ว'))
                                 else:
-                                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ได้รับการยืนยันแล้ว'))
+                                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ คุณไม่มีสิทธิ์ยืนยันคำร้องนี้'))
                             else:
                                 line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
-
                         except Exception as e:
                             print(f"Error: {e}")
                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'))
                     else:
-                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"รับวัสดุแล้วID [เลขที่คำร้อง]"'))
-
-
+                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"รับวัสดุแล้วID [รหัสออเดอร์]"'))
 
                 # เช็คสถานะ
                 elif text.startswith('เช็คสถานะID'):
                     command_parts = text.split()
-
                     if len(command_parts) == 2:
-                        order_id = command_parts[1]
-                        order = Order.objects.filter(id=order_id).first()
-
+                        order_code = command_parts[1]
+                        order = Order.objects.filter(order_code=order_code).first()
                         if order:
-                            # ดึงข้อมูลผู้เบิกวัสดุ
-                            user_name = order.user.get_full_name() if order.user else "ไม่พบข้อมูลผู้เบิก"
-                            
-                            # ดึงรายการวัสดุที่เบิกจากตาราง Issuing
-                            issuing_items = Issuing.objects.filter(order=order)
-                            product_list = '\n'.join([f"สินค้า: {item.product.product_name}, จำนวน: {item.quantity}, ราคา: {item.price} บาท" for item in issuing_items])
-
-                            # เตรียมข้อความเพื่อแสดงข้อมูลคำร้อง
-                            status_message = f"คำร้อง ID: {order_id}\n"
-                            status_message += f"ชื่อผู้เบิก: {user_name}\n\n"
-                            status_message += f"รายการวัสดุที่เบิก:\n{product_list}\n\n"
-                            # สถานะออเดอร์
-                            if order.status is None:
-                                status_message += "สถานะออเดอร์: ยังไม่ได้รับการยืนยัน\n\n"
-                            elif order.status is False:
-                                status_message += "สถานะออเดอร์: ถูกปฏิเสธ❌\n\n"
-                            else:  # order.status is True
-                                status_message += "สถานะออเดอร์: อนุมัติแล้ว✅\n\n"
-                            status_message += f"วันที่นัดรับพัสดุ: {order.date_receive.strftime('%d-%m-%Y') if order.date_receive else 'ยังไม่มีการระบุ'}\n"
-                            status_message += f"วันที่รับพัสดุ: {order.date_received.strftime('%d-%m-%Y') if order.date_received else 'ยังไม่มีการระบุ'}\n\n"
-                            status_message += f"สถานะการจ่ายวัสดุ: {'จ่ายแล้ว' if order.pay_item else 'ยังไม่ได้ยืนยันจ่ายวัสดุ'}\n"
-                            status_message += f"สถานะการรับวัสดุ: {'ยืนยันแล้ว✅' if order.confirm else 'ยังไม่ได้ยืนยันรับวัสดุ'}\n"
-                            status_message += f"ชื่อผู้รับวัสดุ: {order.name_sign if order.name_sign else 'ยังไม่มีการระบุ'}\n\n"
-                            status_message += f"หมายเหตุ: {order.other if order.other else 'ไม่มีหมายเหตุ'}\n"
-
-                            # ส่งข้อมูลสถานะกลับไปยังผู้ใช้งาน
-                            line_bot_api.push_message(userId, TextSendMessage(text=status_message))
+                            # [ ❗ เพิ่มการตรวจสอบสิทธิ์ ❗ ]
+                            if order.user == user or user.is_admin or user.is_manager or user.is_warehouse_manager:
+                                user_name = order.user.get_full_name() if order.user else "ไม่พบข้อมูลผู้เบิก"
+                                issuing_items = Issuing.objects.filter(order=order)
+                                product_list = '\n'.join([f"สินค้า: {item.product.product_name}, จำนวน: {item.quantity}, ราคา: {item.price} บาท" for item in issuing_items])
+                                
+                                status_message = f"คำร้อง: {order_code}\n"
+                                status_message += f"ชื่อผู้เบิก: {user_name}\n\n"
+                                status_message += f"รายการวัสดุที่เบิก:\n{product_list}\n\n"
+                                if order.status is None:
+                                    status_message += "สถานะออเดอร์: ยังไม่ได้รับการยืนยัน\n\n"
+                                elif order.status is False:
+                                    status_message += "สถานะออเดอร์: ถูกปฏิเสธ❌\n\n"
+                                else:
+                                    status_message += "สถานะออเดอร์: อนุมัติแล้ว✅\n\n"
+                                status_message += f"วันที่นัดรับพัสดุ: {order.date_receive.strftime('%d-%m-%Y') if order.date_receive else 'ยังไม่มีการระบุ'}\n"
+                                status_message += f"วันที่รับพัสดุ: {order.date_received.strftime('%d-%m-%Y') if order.date_received else 'ยังไม่มีการระบุ'}\n\n"
+                                status_message += f"สถานะการจ่ายวัสดุ: {'จ่ายแล้ว' if order.pay_item else 'ยังไม่ได้ยืนยันจ่ายวัสดุ'}\n"
+                                status_message += f"สถานะการรับวัสดุ: {'ยืนยันแล้ว✅' if order.confirm else 'ยังไม่ได้ยืนยันรับวัสดุ'}\n"
+                                status_message += f"ชื่อผู้รับวัสดุ: {order.name_sign if order.name_sign else 'ยังไม่มีการระบุ'}\n\n"
+                                status_message += f"หมายเหตุ: {order.other if order.other else 'ไม่มีหมายเหตุ'}\n"
+                                
+                                line_bot_api.push_message(userId, TextSendMessage(text=status_message))
+                            else:
+                                line_bot_api.push_message(userId, TextSendMessage(text='⚠ คุณไม่มีสิทธิ์ดูสถานะคำร้องนี้'))
                         else:
-                            # ส่งข้อความแจ้งเตือนถ้าไม่พบคำร้อง
                             line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
                     else:
-                        # ส่งข้อความแจ้งเตือนถ้าพิมพ์คำสั่งไม่ถูกต้อง
-                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"เช็คสถานะID [เลขที่คำร้อง]"'))
+                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"เช็คสถานะID [รหัสออเดอร์]"'))
 
 
-                # ตรวจสอบสิทธิ์ว่าผู้ใช้มีสิทธิ์เป็น is_manager หรือ is_admin
-                user = line.user  # ดึงข้อมูลผู้ใช้จากการผูกบัญชี
-                if user.is_manager or user.is_admin:
-                    # อนุมัติคำร้อง
-                    if text.startswith('อนุมัติคำร้อง'):
-                        command_parts = text.split()
+                # --- 4. บล็อกคำสั่ง Admin (ตรวจสอบสิทธิ์แยกตามคำสั่ง) ---
 
-                        if len(command_parts) >= 3:
-                            order_id = command_parts[1]
-                            date_receive = command_parts[2]
-
-                            # ตรวจสอบว่ามีการระบุเวลา (HH:MM) หรือไม่
-                            if len(command_parts) >= 4 and ":" in command_parts[3]:
-                                time_receive = command_parts[3]
-                                other = ' '.join(command_parts[4:]) if len(command_parts) > 4 else None
-                            else:
-                                time_receive = None
-                                other = ' '.join(command_parts[3:]) if len(command_parts) > 3 else None
-
-                            order = Order.objects.filter(id=order_id).first()
-
-                            if order:
-                                if order.status:  # ตรวจสอบสถานะก่อนอนุมัติ
-                                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ได้รับการอนุมัติแล้ว'))
-
-                                else:  # ตรวจสอบสถานะก่อนอนุมัติ
-                                    try:
-                                        # แปลงวันที่
-                                        parsed_date = datetime.strptime(date_receive, '%d-%m-%Y')
-
-                                        # ถ้ามีการระบุเวลา ให้บันทึกเวลา
-                                        if time_receive:
-                                            parsed_time = datetime.strptime(time_receive, '%H:%M').time()
-                                            order.date_receive = datetime.combine(parsed_date, parsed_time)
-                                        else:
-                                            order.date_receive = datetime.combine(parsed_date, datetime.min.time())  # ถ้าไม่มีเวลาจะใช้เวลาเริ่มต้น
-
-                                        order.status = True  # อนุมัติ
-                                        order.other = other  # บันทึกหมายเหตุ (ถ้ามี)
-                                        order.save()
-
-                                        # ส่งการแจ้งเตือนกลับไปยังผู้อนุมัติ
-                                        line_bot_api.push_message(userId, TextSendMessage(text=f'อนุมัติคำร้อง ID {order_id} สำเร็จ ✅'))
-
-                                        # ส่งการแจ้งเตือนไปยังผู้ใช้งานที่ทำคำร้อง
-                                        notify_user_approved(order.id)  # เรียกใช้ฟังก์ชันเพื่อแจ้งเตือน
-                                        notify_admin_order_status(order.id)
-
-                                    except ValueError:
-                                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ รูปแบบวันที่หรือเวลาไม่ถูกต้อง โปรดใช้รูปแบบ วัน-เดือน-ปี หรือ วัน-เดือน-ปี HH:MM'))
-                                
-                            else:
-                                line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+                # คำสั่งสำหรับ "ผู้จัดการ" (อนุมัติ/ปฏิเสธ)
+                elif (user.is_manager or user.is_admin) and text.startswith('อนุมัติคำร้อง'):
+                    command_parts = text.split()
+                    if len(command_parts) >= 3:
+                        order_code = command_parts[1]
+                        date_receive = command_parts[2]
+                        # ... (ตรรกะการอนุมัติของคุณ) ...
+                        
+                        time_receive = None
+                        other = None
+                        if len(command_parts) >= 4 and ":" in command_parts[3]:
+                            time_receive = command_parts[3]
+                            other = ' '.join(command_parts[4:]) if len(command_parts) > 4 else None
                         else:
-                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"อนุมัติคำร้อง [เลขที่คำร้อง] [วันที่รับวัสดุ] [เวลา] [หมายเหตุ]"'))
-
-
-                    # ปฏิเสธคำร้อง
-                    elif text.startswith('ปฏิเสธคำร้อง'):
-                        command_parts = text.split()
-                        if len(command_parts) >= 2:
-                            order_id = command_parts[1]
-                            other = ' '.join(command_parts[2:]) if len(command_parts) > 2 else None
-
-                            order = Order.objects.filter(id=order_id).first()
-
-                            if order:
-                                if order.status == False:  # ตรวจสอบว่าคำร้องนี้ถูกปฏิเสธแล้วหรือไม่
-                                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ถูกปฏิเสธแล้ว'))
-                                else:
-                                    order.status = False  # ปฏิเสธ
+                            other = ' '.join(command_parts[3:]) if len(command_parts) > 3 else None
+                        
+                        order = Order.objects.filter(order_code=order_code).first()
+                        if order:
+                            if order.status:
+                                line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ได้รับการอนุมัติแล้ว'))
+                            else:
+                                try:
+                                    parsed_date = datetime.strptime(date_receive, '%d-%m-%Y')
+                                    if time_receive:
+                                        parsed_time = datetime.strptime(time_receive, '%H:%M').time()
+                                        order.date_receive = datetime.combine(parsed_date, parsed_time)
+                                    else:
+                                        order.date_receive = datetime.combine(parsed_date, datetime.min.time())
+                                    order.status = True
                                     order.other = other
                                     order.save()
-
-                                    # ส่งการแจ้งเตือนให้แอดมิน
-                                    line_bot_api.push_message(userId, TextSendMessage(text=f'ปฏิเสธคำร้อง ID {order_id} สำเร็จ ❌'))
-
-                                    # คืนจำนวนสินค้ากลับไปยังสต๊อก
-                                    for item in order.items.all():  # assuming `items` is a related name for Issuing
-                                        product = item.product
-                                        product.quantityinstock += item.quantity  # เพิ่มจำนวนวัสดุกลับไปในสต๊อก
-                                        product.save()
-                                        print(f"Restored {item.quantity} of {product.product_name} to stock.")
-
-                                        # คืนจำนวนสินค้าที่รับเข้าใน Receiving
-                                        receiving = item.receiving
-                                        receiving.quantity += item.quantity  # เพิ่มจำนวนใน Receiving
-                                        receiving.save()
-                                        print(f"Restored {item.quantity} to receiving ID {receiving.id}.")
-
-                                    # ส่งการแจ้งเตือนไปยังผู้ใช้งานที่ทำคำร้อง
-                                    notify_user_approved(order.id)  # เรียกใช้ฟังก์ชันเพื่อแจ้งเตือน
-                                    notify_admin_order_status(order.id)
-                            else:
-                                line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+                                    line_bot_api.push_message(userId, TextSendMessage(text=f'อนุมัติคำร้อง {order_code} สำเร็จ ✅'))
+                                    # notify_user_approved(order.id)
+                                    # notify_admin_order_status(order.id)
+                                except ValueError:
+                                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ รูปแบบวันที่หรือเวลาไม่ถูกต้อง (วัน-เดือน-ปี HH:MM)'))
                         else:
-                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"ปฏิเสธคำร้อง [เลขที่คำร้อง] [หมายเหตุ]"'))
+                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+                    else:
+                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"อนุมัติคำร้อง [รหัสออเดอร์] [วันที่รับ] [เวลา] [หมายเหตุ]"'))
 
-
-                    # จ่ายวัสดุแล้ว
-                    elif text.startswith('จ่ายวัสดุแล้วID'):
-                        command_parts = text.split()
-
-                        if len(command_parts) == 2:
-                            order_id = command_parts[1]
-                            order = Order.objects.filter(id=order_id).first()
-
-                            if order:
-                                if not order.pay_item:  # ตรวจสอบว่ายังไม่ได้จ่ายวัสดุก่อน
-                                    order.pay_item = True  # ยืนยันว่าจ่ายวัสดุแล้ว
-                                    order.save()
-
-                                    # ส่งการแจ้งเตือนไปยังผู้ใช้งานที่ทำคำร้อง
-                                    notify_user_pay_confirmed(order.id)
-
-                                    # ส่งการแจ้งเตือนไปยังผู้อนุมัติ
-                                    line_bot_api.push_message(userId, TextSendMessage(text=f'จ่ายวัสดุสำหรับคำร้อง ID {order_id} สำเร็จ ✅'))
-                                else:
-                                    line_bot_api.push_message(userId, TextSendMessage(text='⚠ เจ้าหน้าที่ได้จ่ายวัสดุคำร้องนี้แล้ว'))
+                elif (user.is_manager or user.is_admin) and text.startswith('ปฏิเสธคำร้อง'):
+                    command_parts = text.split()
+                    if len(command_parts) >= 2:
+                        order_code = command_parts[1]
+                        other = ' '.join(command_parts[2:]) if len(command_parts) > 2 else None
+                        order = Order.objects.filter(order_code=order_code).first()
+                        if order:
+                            if order.status == False:
+                                line_bot_api.push_message(userId, TextSendMessage(text='⚠ คำร้องนี้ถูกปฏิเสธแล้ว'))
                             else:
-                                line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+                                order.status = False
+                                order.other = other
+                                order.save()
+                                line_bot_api.push_message(userId, TextSendMessage(text=f'ปฏิเสธคำร้อง {order_code} สำเร็จ ❌'))
+                                # (โค้ดคืน Stock)
+                                for item in order.items.all():
+                                    product = item.product
+                                    product.quantityinstock += item.quantity
+                                    product.save()
+                                    receiving = item.receiving
+                                    receiving.quantity += item.quantity
+                                    receiving.save()
+                                # notify_user_approved(order.id)
+                                # notify_admin_order_status(order.id)
                         else:
-                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"จ่ายวัสดุแล้วID [เลขที่คำร้อง]"'))
-                # else:
-                #     line_bot_api.push_message(userId, TextSendMessage(text='⚠ คุณไม่มีสิทธิ์ในการดำเนินการนี้'))
+                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+                    else:
+                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"ปฏิเสธคำร้อง [รหัสออเดอร์] [หมายเหตุ]"'))
+
+                # คำสั่งสำหรับ "ผู้จัดการคลัง" (จ่ายวัสดุ)
+                elif (user.is_warehouse_manager or user.is_admin) and text.startswith('จ่ายวัสดุแล้วID'):
+                    command_parts = text.split()
+                    if len(command_parts) == 2:
+                        order_code = command_parts[1]
+                        order = Order.objects.filter(order_code=order_code).first()
+                        if order:
+                            if not order.pay_item:
+                                order.pay_item = True
+                                order.name_pay = user.get_full_name() # บันทึกชื่อคนจ่าย
+                                order.date_pay = timezone.now()     # บันทึกเวลาจ่าย
+                                order.save()
+                                line_bot_api.push_message(userId, TextSendMessage(text=f'จ่ายวัสดุสำหรับคำร้อง {order_code} สำเร็จ ✅'))
+                                # notify_user_pay_confirmed(order.id) 
+                            else:
+                                line_bot_api.push_message(userId, TextSendMessage(text='⚠ เจ้าหน้าที่ได้จ่ายวัสดุคำร้องนี้แล้ว'))
+                        else:
+                            line_bot_api.push_message(userId, TextSendMessage(text='⚠ ไม่พบคำร้องนี้'))
+                    else:
+                        line_bot_api.push_message(userId, TextSendMessage(text='⚠ กรุณาพิมพ์ \n"จ่ายวัสดุแล้วID [รหัสออเดอร์]"'))
+                
+                # (ถ้าไม่เข้าเงื่อนไขไหนเลย บอทจะเงียบ)
 
         except json.JSONDecodeError as e:
             print(f"JSON Decode Error: {e}")
+            return HttpResponse(status=400) 
+        
+        return HttpResponse(status=200)
+
     return HttpResponse(status=200)
+
+
 
 
 
@@ -466,7 +953,7 @@ def notify_user_pay_confirmed(order_id):
                 formatted_date = order_date_receive_with_timezone.strftime("%d/%m/%Y")
                 formatted_time = order_date_receive_with_timezone.strftime("%H:%M")
                 # message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order_id} ได้รับการยืนยันจ่ายวัสดุแล้ว✅ กรุณากด ยืนยันการรับพัสดุ"
-                message = f"คุณได้รับการอนุมัติ จ่ายวัสดุแล้ว✅ กรุณากด ยืนยันการรับวัสดุ"
+                message = f"คุณได้รับการอนุมัติ จ่ายวัสดุแล้ว✅ ID {order.order_code} กรุณากด ยืนยันการรับวัสดุ สามารถกดยืนยันผ่านไลน์ได้โดยพิมคำว่า รับวัสดุแล้วID ... ตัวอย่างเช่น รับวัสดุแล้วID 150/2025"
             else:
                 message = f"รายการเบิกวัสดุของคุณ {order.user.first_name} ID {order.order_code} ได้รับการยืนยันจ่ายวัสดุแล้ว✅"
         else:
@@ -599,7 +1086,7 @@ def send_receive_confirmation(request, order_id):
                 formatted_date = order_date_receive_with_timezone.strftime("%d/%m/%Y")
                 formatted_time = order_date_receive_with_timezone.strftime("%H:%M")
                 message = (
-                    f"{order.user.first_name} เจ้าหน้าที่พัสดุจ่ายวัสดุแล้ว กรุณากดยืนยันการรับวัสดุ "
+                    f"{order.user.first_name} คุณได้รับการอนุมัติ จ่ายวัสดุแล้ว✅ ID {order.order_code} กรุณากด ยืนยันการรับวัสดุ สามารถกดยืนยันผ่านไลน์ได้โดยพิมคำว่า รับวัสดุแล้วID ... ตัวอย่างเช่น รับวัสดุแล้วID 150/2025 "
                 )
             else:
                 message = f"{order.user.first_name} เจ้าหน้าที่พัสดุจ่ายวัสดุแล้ว กรุณายืนยันการรับวัสดุ"
@@ -722,8 +1209,82 @@ def send_restock_notification(notification):
 line_bot_api_asset = LineBotApi("73ckpzhX0833x8i4m/jDhe2lYuGwaTijoooW7dEHndJbl7KUL/6fv4wfa+KXPf3IgSG+8gJ9t8yg2rrCgaAzlg8BtHAiUFVta5BlOGpUz3yuNhaab2KioEspYgX4j5UuapN7WFYGtRfcJqq5SeqzbAdB04t89/1O/w1cDnyilFU=")
 
 # ผูกบัญชี
+# @csrf_exempt
+# def linebot_assets(request):
+#     if request.method != 'POST':
+#         return HttpResponse("Method not allowed", status=405)
+
+#     try:
+#         body = request.body.decode('utf-8')
+#         body_json = json.loads(body)
+#         events = body_json.get('events', [])
+#     except Exception as e:
+#         print(f"Error parsing body: {e}")
+#         return HttpResponse(status=400)
+
+#     for event in events:
+#         userId = event.get('source', {}).get('userId')
+#         text = event.get('message', {}).get('text', '')
+
+#         if not userId:
+#             continue  # ถ้าไม่มี userId ก็ข้ามไป
+
+#         # ตรวจสอบว่ามีการพิมพ์ "ผูกบัญชี"
+#         if text.startswith('ผูกบัญชี'):
+#             parts = text.split()
+
+#             if len(parts) != 2:
+#                 # แจ้งเตือนถ้าพิมพ์ไม่ถูกต้อง
+#                 line_bot_api_asset.push_message(
+#                     userId,
+#                     TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nกรุณาพิมพ์: ผูกบัญชี [Username]')
+#                 )
+#                 continue
+
+#             username = parts[1]
+#             user = MyUser.objects.filter(username=username).first()
+
+#             if not user:
+#                 # Username ไม่ถูกต้อง
+#                 line_bot_api_asset.push_message(
+#                     userId,
+#                     TextSendMessage(text='❌ ไม่พบบัญชีผู้ใช้\nกรุณาตรวจสอบ Username อีกครั้ง')
+#                 )
+#                 continue
+
+#             # ตรวจสอบว่ามีการผูกบัญชีไว้แล้วหรือยัง
+#             line = UserLine_Asset.objects.filter(user=user).first()
+
+#             if not line:
+#                 # ยังไม่มี -> สร้างใหม่
+#                 UserLine_Asset.objects.create(user=user, userId=userId)
+#                 line_bot_api_asset.push_message(
+#                     userId,
+#                     TextSendMessage(text=f'✅ ผูกบัญชีสำเร็จ\nสวัสดี {user.get_full_name() or user.username}')
+#                 )
+#             else:
+#                 # มีแล้ว -> อัปเดต userId
+#                 line.userId = userId
+#                 line.save()
+#                 line_bot_api_asset.push_message(
+#                     userId,
+#                     TextSendMessage(text=f'🔄 อัปเดตการผูกบัญชีเรียบร้อย\nสวัสดี {user.get_full_name() or user.username}')
+#                 )
+
+#         else:
+#             # ถ้า user ยังไม่ได้ผูกบัญชี
+#             linked = UserLine_Asset.objects.filter(userId=userId).first()
+#             if not linked:
+#                 line_bot_api_asset.push_message(
+#                     userId,
+#                     TextSendMessage(text='⚠ กรุณาผูกบัญชีก่อนใช้งาน\nพิมพ์: ผูกบัญชี [Username]')
+#                 )
+
+#     return HttpResponse(status=200)
+
+# --- ⬇️ 4. ฟังก์ชัน Webhook หลัก ---
 @csrf_exempt
-def linebot(request):
+def linebot_assets(request):
     if request.method != 'POST':
         return HttpResponse("Method not allowed", status=405)
 
@@ -736,65 +1297,188 @@ def linebot(request):
         return HttpResponse(status=400)
 
     for event in events:
-        userId = event.get('source', {}).get('userId')
-        text = event.get('message', {}).get('text', '')
+        try:
+            userId = event.get('source', {}).get('userId')
+            # .strip() เพื่อตัดช่องว่างหน้า-หลัง
+            text = event.get('message', {}).get('text', '').strip() 
 
-        if not userId:
-            continue  # ถ้าไม่มี userId ก็ข้ามไป
+            if not userId:
+                continue 
 
-        # ตรวจสอบว่ามีการพิมพ์ "ผูกบัญชี"
-        if text.startswith('ผูกบัญชี'):
-            parts = text.split()
+            # --- 1. ตรวจสอบคำสั่ง "ผูกบัญชี" ก่อน ---
+            if text.startswith('ผูกบัญชี'):
+                parts = text.split()
+                if len(parts) != 2:
+                    line_bot_api_asset.push_message(
+                        userId,
+                        TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nกรุณาพิมพ์: ผูกบัญชี [Username]')
+                    )
+                    continue
 
-            if len(parts) != 2:
-                # แจ้งเตือนถ้าพิมพ์ไม่ถูกต้อง
-                line_bot_api_asset.push_message(
-                    userId,
-                    TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nกรุณาพิมพ์: ผูกบัญชี [Username]')
-                )
-                continue
+                username = parts[1]
+                user = MyUser.objects.filter(username=username).first()
 
-            username = parts[1]
-            user = MyUser.objects.filter(username=username).first()
+                if not user:
+                    line_bot_api_asset.push_message(
+                        userId,
+                        TextSendMessage(text='❌ ไม่พบบัญชีผู้ใช้\nกรุณาตรวจสอบ Username อีกครั้ง')
+                    )
+                    continue
 
-            if not user:
-                # Username ไม่ถูกต้อง
-                line_bot_api_asset.push_message(
-                    userId,
-                    TextSendMessage(text='❌ ไม่พบบัญชีผู้ใช้\nกรุณาตรวจสอบ Username อีกครั้ง')
-                )
-                continue
+                line = UserLine_Asset.objects.filter(user=user).first()
+                if not line:
+                    UserLine_Asset.objects.create(user=user, userId=userId)
+                    line_bot_api_asset.push_message(
+                        userId,
+                        TextSendMessage(text=f'✅ ผูกบัญชีสำเร็จ\nสวัสดี {user.get_full_name() or user.username}')
+                    )
+                else:
+                    line.userId = userId
+                    line.save()
+                    line_bot_api_asset.push_message(
+                        userId,
+                        TextSendMessage(text=f'🔄 อัปเดตการผูกบัญชีเรียบร้อย\nสวัสดี {user.get_full_name() or user.username}')
+                    )
+                
+                continue # จบการทำงานสำหรับ event นี้
 
-            # ตรวจสอบว่ามีการผูกบัญชีไว้แล้วหรือยัง
-            line = UserLine_Asset.objects.filter(user=user).first()
-
-            if not line:
-                # ยังไม่มี -> สร้างใหม่
-                UserLine_Asset.objects.create(user=user, userId=userId)
-                line_bot_api_asset.push_message(
-                    userId,
-                    TextSendMessage(text=f'✅ ผูกบัญชีสำเร็จ\nสวัสดี {user.get_full_name() or user.username}')
-                )
-            else:
-                # มีแล้ว -> อัปเดต userId
-                line.userId = userId
-                line.save()
-                line_bot_api_asset.push_message(
-                    userId,
-                    TextSendMessage(text=f'🔄 อัปเดตการผูกบัญชีเรียบร้อย\nสวัสดี {user.get_full_name() or user.username}')
-                )
-
-        else:
-            # ถ้า user ยังไม่ได้ผูกบัญชี
+            # --- 2. ตรวจสอบว่าผูกบัญชีหรือยัง (สำหรับคำสั่งอื่นๆ) ---
             linked = UserLine_Asset.objects.filter(userId=userId).first()
             if not linked:
                 line_bot_api_asset.push_message(
                     userId,
                     TextSendMessage(text='⚠ กรุณาผูกบัญชีก่อนใช้งาน\nพิมพ์: ผูกบัญชี [Username]')
                 )
+                continue # จบการทำงานสำหรับ event นี้
+
+            # --- 3. (มาถึงจุดนี้คือผูกบัญชีแล้ว) ตรวจสอบคำสั่ง "คืนครุภัณฑ์" ---
+            if text.startswith('คืนครุภัณฑ์'):
+                parts = text.split()
+                if len(parts) != 2:
+                    line_bot_api_asset.push_message(
+                        userId,
+                        TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nพิมพ์: คืนครุภัณฑ์ [รหัสออเดอร์]')
+                    )
+                    continue
+
+                order_code = parts[1]
+                user = linked.user # นี่คือผู้ใช้ที่กำลังพิมพ์
+
+                # ค้นหาออเดอร์
+                order = OrderAssetLoan.objects.filter(order_code=order_code).first()
+
+                if not order:
+                    line_bot_api_asset.push_message(
+                        userId,
+                        TextSendMessage(text=f'❌ ไม่พบออเดอร์ {order_code}\nกรุณาตรวจสอบรหัสออเดอร์อีกครั้ง')
+                    )
+                    continue
+                
+                # ตรวจสอบความเป็นเจ้าของ
+                if order.user != user:
+                    line_bot_api_asset.push_message(
+                        userId,
+                        TextSendMessage(text=f'❌ คุณไม่ใช่เจ้าของออเดอร์ {order_code}')
+                    )
+                    continue
+                
+                # ตรวจสอบสถานะ: ต้องเป็น 'อนุมัติแล้ว', 'กำลังยืม' หรือ 'เกินกำหนด' เท่านั้น
+                allowed_statuses = ['approved', 'borrowed', 'overdue']
+                if order.status not in allowed_statuses:
+                    if order.status in ['returned_pending', 'returned']:
+                        line_bot_api_asset.push_message(userId, TextSendMessage(text='⚠ คุณได้ส่งคืนออเดอร์นี้ไปแล้ว'))
+                    else:
+                        line_bot_api_asset.push_message(userId, TextSendMessage(text=f'ℹ ออเดอร์นี้ยังไม่พร้อมคืน (สถานะ: {order.get_status_display()})'))
+                    continue
+
+                # --- 🟢 ผ่านการตรวจสอบทั้งหมด (Logic แบบขั้นตอนเดียว) ---
+                
+                # 1. อัปเดตสถานะออเดอร์เป็น "รออนุมัติคืน" ทันที
+                order.status = 'returned_pending' 
+                
+                # 2. บันทึกวันที่และผู้คืน
+                order.date_returned = timezone.now() 
+                order.returned_by = user.get_full_name() or user.username 
+                order.save()
+
+                # 3. แจ้งเตือนผู้ใช้
+                line_bot_api_asset.push_message(
+                    userId,
+                    TextSendMessage(text=f'✅ บันทึกการคืนครุภัณฑ์ {order_code} สำเร็จ')
+                )
+
+                # 4. แจ้งเตือนแอดมิน
+                notify_admins_of_return(order)
+                
+                continue # จบการทำงานสำหรับ event นี้
+
+            # --- 4. (ใส่คำสั่งอื่นๆ ที่นี่) ---
+            # elif text.startswith('เช็คสถานะยืม'):
+            #    ...
+            #    continue
+
+            # --- 5. ถ้าพิมพ์มาแต่ไม่เข้าเงื่อนไขไหนเลย ---
+            # (ถ้าต้องการให้บอทตอบเมื่อไม่เข้าใจคำสั่ง ให้เปิดคอมเมนต์บรรทัดล่าง)
+            line_bot_api_asset.push_message(
+                userId,
+                TextSendMessage(text='ฉันไม่เข้าใจคำสั่งนี้ค่ะ')
+            )
+
+        except Exception as e:
+            print(f"Error processing event: {e}")
+            try:
+                line_bot_api_asset.push_message(
+                    userId,
+                    TextSendMessage(text='เกิดข้อผิดพลาดในการประมวลผลคำสั่ง')
+                )
+            except:
+                pass # ถ้าส่งไม่ได้ก็ไม่เป็นไร
 
     return HttpResponse(status=200)
 
+
+# --- ⬇️ 3. ฟังก์ชันแจ้งเตือนแอดมิน ---
+def notify_admins_of_return(order):
+    """
+    ฟังก์ชันสำหรับส่งข้อความแจ้งเตือนแอดมินเมื่อมีการส่งคืนครุภัณฑ์
+    (อัปเดตเป็น: แจ้งเพื่อรับทราบ)
+    """
+    try:
+        # ค้นหาผู้ใช้ที่เป็นแอดมิน
+        admin_users = MyUser.objects.filter(
+            Q(is_manager=True) | Q(is_admin=True), 
+            is_active=True
+        )
+        
+        # ค้นหาบัญชี LINE ที่ผูกกับแอดมิน
+        admin_line_accounts = UserLine_Asset.objects.filter(user__in=admin_users)
+        admin_user_ids = [admin.userId for admin in admin_line_accounts if admin.userId]
+
+        if not admin_user_ids:
+            print("No admin LINE accounts found to notify.")
+            return
+
+        # แปลงเวลาให้เป็นเขตเวลาท้องถิ่น
+        local_time = order.date_returned.astimezone(timezone.get_current_timezone())
+        
+        message_text = (
+            f"ℹ️ ขอส่งคืนครุภัณฑ์ (อัตโนมัติ)\n\n"
+            f"รหัสออเดอร์: {order.order_code}\n"
+            f"ผู้ยืม: {order.user.get_full_name() or order.user.username}\n"
+            f"ผู้ส่งคืน: {order.returned_by}\n"
+            f"วันที่คืน: {local_time.strftime('%d-%m-%Y %H:%M')}\n\n"
+            f"สถานะ 'รออนุมัติคืน' กรุณาอนุมัติการคืนครุภัณฑ์"
+        )
+
+        # ส่งข้อความแบบ Multicast
+        line_bot_api_asset.multicast(
+            admin_user_ids,
+            TextSendMessage(text=message_text)
+        )
+        print(f"Notified {len(admin_user_ids)} admins of return for {order.order_code}")
+
+    except Exception as e:
+        print(f"Error notifying admins: {e}")
 
 
 # mapping วันอังกฤษ → วันไทย
