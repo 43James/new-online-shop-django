@@ -5,6 +5,7 @@ from accounts.models import MyUser
 from shop.models import Product, Receiving
 from django.core.validators import MinValueValidator
 from django.db.models import Max  # <-- 1. เพิ่ม IMPORT นี้
+from decimal import Decimal  # อย่าลืม import
 
 
 class Order(models.Model):
@@ -88,37 +89,87 @@ class Order(models.Model):
     #         self.year = now.year
     #     super().save(*args, **kwargs)
 
-    
+
 class Issuing(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name='ออเดอร์ที่')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='Issuing', verbose_name='สินค้า')
-    receiving = models.ForeignKey(Receiving, on_delete=models.CASCADE, related_name='issuings', verbose_name='รายการรับเข้า')  # ใช้ ForeignKey
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], verbose_name='ราคา')
-    quantity = models.SmallIntegerField(verbose_name='จำนวน')
-    note = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
+    receiving = models.ForeignKey(Receiving, on_delete=models.CASCADE, related_name='issuings', verbose_name='รายการรับเข้า')
+    
+    # แก้ไข: ปรับขนาดให้เท่ากับ Receiving เพื่อป้องกัน Error เวลาดึงราคามาบันทึก
+    price = models.DecimalField(
+        max_digits=20, 
+        decimal_places=10, 
+        validators=[MinValueValidator(0.0)], 
+        verbose_name='ราคา'
+    )
+    
+    # แก้ไข: แนะนำให้ใช้ PositiveInteger เพื่อความปลอดภัยและรองรับจำนวนได้มากกว่า SmallInteger
+    quantity = models.PositiveIntegerField(verbose_name='จำนวน')
+    
+    note = models.CharField(max_length=500, blank=True, null=True, verbose_name='หมายเหตุ')
     datecreated = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
     
-    
     def __str__(self):
         return str(self.id)
 
+    # แก้ไข: ให้ส่งค่ากลับแบบตัด 0 ตัวท้าย (เช่น ราคา * จำนวน)
     def get_cost(self):
-        return self.price * self.quantity
+        if self.price and self.quantity:
+            total = self.price * self.quantity
+            return total.normalize()
+        return Decimal('0')
     
     def get_total(self):
         return self.quantity
     
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+    # เพิ่ม: Property สำหรับแสดงราคาต่อหน่วยแบบสวยๆ
+    @property
+    def clean_price(self):
+        if self.price:
+            return self.price.normalize()
+        return Decimal('0')
 
+    # แก้ไข: ยุบรวม save ให้เหลือฟังก์ชันเดียว (ของเดิมมี 2 อัน มันจะทำงานแค่อันหลังสุด)
     def save(self, *args, **kwargs):
         if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
             now = timezone.now()
             self.month = now.month
             self.year = now.year
         super().save(*args, **kwargs)
+
+    
+# class Issuing(models.Model):
+#     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name='ออเดอร์ที่')
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='Issuing', verbose_name='สินค้า')
+#     receiving = models.ForeignKey(Receiving, on_delete=models.CASCADE, related_name='issuings', verbose_name='รายการรับเข้า')  # ใช้ ForeignKey
+#     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], verbose_name='ราคา')
+#     quantity = models.SmallIntegerField(verbose_name='จำนวน')
+#     note = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
+#     datecreated = models.DateTimeField(auto_now_add=True, verbose_name='วันที่ทำรายการ')
+#     month = models.PositiveIntegerField(verbose_name='เดือน', editable=False, default=timezone.now().month)
+#     year = models.PositiveIntegerField(verbose_name='ปี', editable=False, default=timezone.now().year)
+    
+    
+#     def __str__(self):
+#         return str(self.id)
+
+#     def get_cost(self):
+#         return self.price * self.quantity
+    
+#     def get_total(self):
+#         return self.quantity
+    
+#     def save(self, *args, **kwargs):
+#         super().save(*args, **kwargs)
+
+#     def save(self, *args, **kwargs):
+#         if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+#             now = timezone.now()
+#             self.month = now.month
+#             self.year = now.year
+#         super().save(*args, **kwargs)
 
     # def save(self, *args, **kwargs):
     #     if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่

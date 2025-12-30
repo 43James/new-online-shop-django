@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
         # ค้นหาออเดอร์ที่สถานะเข้าข่ายและเลยกำหนดคืน
         overdue_orders = OrderAssetLoan.objects.filter(
-            status__in=['pending', 'approved', 'borrowed', 'returned_pending'],
+            status__in=['pending', 'approved', 'borrowed'],
             date_due__lt=timezone.now()
         )
 

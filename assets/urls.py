@@ -41,6 +41,7 @@ urlpatterns = [
     # รายการอนุมัติการยืม
     path("loan-approval-list/", views.loan_approval_list, name="loan_approval_list"),
     path("loan-approval/<int:pk>/", views.loan_approval, name="loan_approval"),
+    path('import/', views.import_assets, name='import_assets'),
     
     path("loan-orders-user/", views.loan_orders_user, name="loan_orders_user"),
     path("loan-approval-user/<int:pk>/", views.loan_approval_user, name="loan_approval_user"),

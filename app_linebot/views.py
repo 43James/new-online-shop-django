@@ -815,14 +815,14 @@ def notify_user(order_id):
 
         # message = f"{order.user.username} รายการเบิกวัสดุ เลขที่เบิก {order_id} ของคุณ ที่ต้องได้รับการอนุมัติ.."
         message = (
-            f"{order.user.first_name} รายการเบิกวัสดุเลขที่เบิก {order_id} ของคุณที่ต้องได้รับการอนุมัติ..\n"
+            f"{order.user.first_name} รายการเบิกวัสดุเลขที่เบิก {order.order_code} ของคุณที่ต้องได้รับการอนุมัติ..\n"
             f"รายการวัดสุที่เบิก:\n{items_list}"
             # f"\nยอดเงินรวม: {total_cost} บาท"
         )
         print(message)
         line_bot_api.push_message(user_line.userId, TextSendMessage(text=message))
     except Order.DoesNotExist:
-        print(f"ไม่มีคำร้อง ID {order_id}")
+        print(f"ไม่มีคำร้อง ID {order.order_code}")
     except UserLine.DoesNotExist:
         print(f"ไม่มี UserLine สำหรับผู้ใช้งาน {order.user.first_name}")
     except LineBotApiError as e:
@@ -1283,6 +1283,237 @@ line_bot_api_asset = LineBotApi("73ckpzhX0833x8i4m/jDhe2lYuGwaTijoooW7dEHndJbl7K
 #     return HttpResponse(status=200)
 
 # --- ⬇️ 4. ฟังก์ชัน Webhook หลัก ---
+# @csrf_exempt
+# def linebot_assets(request):
+#     if request.method != 'POST':
+#         return HttpResponse("Method not allowed", status=405)
+
+#     try:
+#         body = request.body.decode('utf-8')
+#         body_json = json.loads(body)
+#         events = body_json.get('events', [])
+#     except Exception as e:
+#         print(f"Error parsing body: {e}")
+#         return HttpResponse(status=400)
+
+#     for event in events:
+#         try:
+#             userId = event.get('source', {}).get('userId')
+#             # .strip() เพื่อตัดช่องว่างหน้า-หลัง
+#             text = event.get('message', {}).get('text', '').strip() 
+
+#             if not userId:
+#                 continue 
+
+#             # --- 1. ตรวจสอบคำสั่ง "ผูกบัญชี" ก่อน ---
+#             if text.startswith('ผูกบัญชี'):
+#                 parts = text.split()
+#                 if len(parts) != 2:
+#                     line_bot_api_asset.push_message(
+#                         userId,
+#                         TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nกรุณาพิมพ์: ผูกบัญชี [Username]')
+#                     )
+#                     continue
+
+#                 username = parts[1]
+#                 user = MyUser.objects.filter(username=username).first()
+
+#                 if not user:
+#                     line_bot_api_asset.push_message(
+#                         userId,
+#                         TextSendMessage(text='❌ ไม่พบบัญชีผู้ใช้\nกรุณาตรวจสอบ Username อีกครั้ง')
+#                     )
+#                     continue
+
+#                 line = UserLine_Asset.objects.filter(user=user).first()
+#                 if not line:
+#                     UserLine_Asset.objects.create(user=user, userId=userId)
+#                     line_bot_api_asset.push_message(
+#                         userId,
+#                         TextSendMessage(text=f'✅ ผูกบัญชีสำเร็จ\nสวัสดี {user.get_full_name() or user.username}')
+#                     )
+#                 else:
+#                     line.userId = userId
+#                     line.save()
+#                     line_bot_api_asset.push_message(
+#                         userId,
+#                         TextSendMessage(text=f'🔄 อัปเดตการผูกบัญชีเรียบร้อย\nสวัสดี {user.get_full_name() or user.username}')
+#                     )
+                
+#                 continue # จบการทำงานสำหรับ event นี้
+
+#             # --- 2. ตรวจสอบว่าผูกบัญชีหรือยัง (สำหรับคำสั่งอื่นๆ) ---
+#             linked = UserLine_Asset.objects.filter(userId=userId).first()
+#             if not linked:
+#                 line_bot_api_asset.push_message(
+#                     userId,
+#                     TextSendMessage(text='⚠ กรุณาผูกบัญชีก่อนใช้งาน\nพิมพ์: ผูกบัญชี [Username]')
+#                 )
+#                 continue # จบการทำงานสำหรับ event นี้
+
+#             # --- 3. (มาถึงจุดนี้คือผูกบัญชีแล้ว) ตรวจสอบคำสั่ง "คืนครุภัณฑ์" ---
+#             if text.startswith('คืนครุภัณฑ์'):
+#                 parts = text.split()
+#                 if len(parts) != 2:
+#                     line_bot_api_asset.push_message(
+#                         userId,
+#                         TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nพิมพ์: คืนครุภัณฑ์ [รหัสออเดอร์]')
+#                     )
+#                     continue
+
+#                 order_code = parts[1]
+#                 user = linked.user # นี่คือผู้ใช้ที่กำลังพิมพ์
+
+#                 # ค้นหาออเดอร์
+#                 order = OrderAssetLoan.objects.filter(order_code=order_code).first()
+
+#                 if not order:
+#                     line_bot_api_asset.push_message(
+#                         userId,
+#                         TextSendMessage(text=f'❌ ไม่พบออเดอร์ {order_code}\nกรุณาตรวจสอบรหัสออเดอร์อีกครั้ง')
+#                     )
+#                     continue
+                
+#                 # ตรวจสอบความเป็นเจ้าของ
+#                 if order.user != user:
+#                     line_bot_api_asset.push_message(
+#                         userId,
+#                         TextSendMessage(text=f'❌ คุณไม่ใช่เจ้าของออเดอร์ {order_code}')
+#                     )
+#                     continue
+                
+#                 # ตรวจสอบสถานะ: ต้องเป็น 'อนุมัติแล้ว', 'กำลังยืม' หรือ 'เกินกำหนด' เท่านั้น
+#                 allowed_statuses = ['approved', 'borrowed', 'overdue']
+#                 if order.status not in allowed_statuses:
+#                     if order.status in ['returned_pending', 'returned']:
+#                         line_bot_api_asset.push_message(userId, TextSendMessage(text='⚠ คุณได้ส่งคืนออเดอร์นี้ไปแล้ว'))
+#                     else:
+#                         line_bot_api_asset.push_message(userId, TextSendMessage(text=f'ℹ ออเดอร์นี้ยังไม่พร้อมคืน (สถานะ: {order.get_status_display()})'))
+#                     continue
+
+#                 # --- 🟢 ผ่านการตรวจสอบทั้งหมด (Logic แบบขั้นตอนเดียว) ---
+                
+#                 # 1. อัปเดตสถานะออเดอร์เป็น "รออนุมัติคืน" ทันที
+#                 order.status = 'returned_pending' 
+                
+#                 # 2. บันทึกวันที่และผู้คืน
+#                 order.date_returned = timezone.now() 
+#                 order.returned_by = user.get_full_name() or user.username 
+#                 order.save()
+
+#                 # 3. แจ้งเตือนผู้ใช้
+#                 line_bot_api_asset.push_message(
+#                     userId,
+#                     TextSendMessage(text=f'✅ บันทึกการคืนครุภัณฑ์ {order_code} สำเร็จ')
+#                 )
+
+#                 # 4. แจ้งเตือนแอดมิน
+#                 notify_admins_of_return(order)
+                
+#                 continue # จบการทำงานสำหรับ event นี้
+
+#             # --- 4. (ใส่คำสั่งอื่นๆ ที่นี่) ---
+#             # elif text.startswith('เช็คสถานะยืม'):
+#             #    ...
+#             #    continue
+#             # ... (ต่อจาก if เช็คคำสั่งคืนครุภัณฑ์) ...
+
+#             # --- 4. ตรวจสอบคำสั่ง "อนุมัติID" ---
+#             elif text.startswith('อนุมัติID'):
+                
+#                 # 4.1 แยกข้อความ: เอาแค่ [Command] [Code]
+#                 parts = text.split()
+#                 if len(parts) != 2:
+#                     line_bot_api_asset.push_message(
+#                         userId, 
+#                         TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nพิมพ์แค่: อนุมัติID [รหัสออเดอร์]')
+#                     )
+#                     continue
+
+#                 order_code = parts[1]
+
+#                 # 4.2 ค้นหาออเดอร์ (ต้องย้ายขึ้นมาทำก่อน เพื่อจะเอาข้อมูลไปเช็คสิทธิ์)
+#                 order = OrderAssetLoan.objects.filter(order_code=order_code).first()
+
+#                 if not order:
+#                     line_bot_api_asset.push_message(userId, TextSendMessage(text=f'❌ ไม่พบออเดอร์ {order_code}'))
+#                     continue
+
+#                 # 4.3 ตรวจสอบสิทธิ์ (Logic ที่ถูกต้อง)
+#                 # ดึงค่าสิทธิ์ต่าง ๆ (ใช้ getattr เพื่อกัน Error กรณี Field ไม่มีใน Database)
+#                 is_admin = getattr(user, 'is_admin', False)
+#                 is_warehouse = getattr(user, 'is_warehouse_manager', False)
+#                 is_staff = user.is_staff # Django default field
+
+#                 # เงื่อนไข: ถ้าไม่ใช่ Admin และ ไม่ใช่ Warehouse และ ไม่ใช่ Staff = "ไม่มีสิทธิ์"
+#                 if not (is_admin or is_warehouse or is_staff):
+#                     line_bot_api_asset.push_message(
+#                         userId, 
+#                         TextSendMessage(text='❌ คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้ (สำหรับเจ้าหน้าที่เท่านั้น)')
+#                     )
+#                     continue
+                
+#                 # (Optional) เพิ่มเติม: ห้ามเจ้าของออเดอร์อนุมัติของตัวเอง
+#                 if order.user == user:
+#                      line_bot_api_asset.push_message(
+#                         userId, 
+#                         TextSendMessage(text='❌ ไม่สามารถอนุมัติรายการของตัวเองได้')
+#                     )
+#                      continue
+
+#                 # 4.4 ตรวจสอบสถานะ (ต้องเป็น pending เท่านั้น)
+#                 if order.status != 'pending':
+#                     line_bot_api_asset.push_message(
+#                         userId, 
+#                         TextSendMessage(text=f'⚠ ออเดอร์นี้สถานะไม่ใช่ "รออนุมัติ" (สถานะ: {order.get_status_display()})')
+#                     )
+#                     continue
+
+#                 # --- 🟢 4.5 ดึงข้อมูลผู้อนุมัติจาก User ที่ผูกไลน์ ---
+#                 approver_name = user.get_full_name()
+#                 if not approver_name:
+#                     approver_name = user.username
+
+#                 # ดึงตำแหน่ง (ถ้าไม่มีฟิลด์ position จะแสดงคำว่า เจ้าหน้าที่ แทน)
+#                 approver_position = getattr(user, 'position', 'เจ้าหน้าที่') 
+
+#                 # --- 🟢 4.6 บันทึกข้อมูล ---
+#                 order.status = 'approved'
+#                 order.approved_by = approver_name
+#                 order.approver_position = approver_position
+#                 order.date_approved = timezone.now()
+#                 order.save()
+
+#                 # 4.7 แจ้งกลับคนอนุมัติ
+#                 line_bot_api_asset.push_message(
+#                     userId, 
+#                     TextSendMessage(text=f'✅ อนุมัติ {order_code} สำเร็จ\nโดย: {approver_name}\nตำแหน่ง: {approver_position}')
+#                 )
+
+#                 # 4.8 แจ้งเตือนผู้ยืม
+#                 notify_borrower(order, action_type="approved")
+                
+#                 continue
+
+#             # --- 5. ถ้าพิมพ์มาแต่ไม่เข้าเงื่อนไขไหนเลย ---
+#             # (ถ้าต้องการให้บอทตอบเมื่อไม่เข้าใจคำสั่ง ให้เปิดคอมเมนต์บรรทัดล่าง)
+#             line_bot_api_asset.push_message(
+#                 userId,
+#                 TextSendMessage(text='ฉันไม่เข้าใจคำสั่งนี้ค่ะ')
+#             )
+
+#         except Exception as e:
+#             print(f"Error processing event: {e}")
+#             try:
+#                 line_bot_api_asset.push_message(
+#                     userId,
+#                     TextSendMessage(text='เกิดข้อผิดพลาดในการประมวลผลคำสั่ง')
+#                 )
+#             except:
+#                 pass # ถ้าส่งไม่ได้ก็ไม่เป็นไร
+
+#     return HttpResponse(status=200)
+
 @csrf_exempt
 def linebot_assets(request):
     if request.method != 'POST':
@@ -1299,90 +1530,62 @@ def linebot_assets(request):
     for event in events:
         try:
             userId = event.get('source', {}).get('userId')
-            # .strip() เพื่อตัดช่องว่างหน้า-หลัง
-            text = event.get('message', {}).get('text', '').strip() 
+            text = event.get('message', {}).get('text', '').strip()
 
             if not userId:
-                continue 
+                continue
 
-            # --- 1. ตรวจสอบคำสั่ง "ผูกบัญชี" ก่อน ---
+            # --- 1. ตรวจสอบคำสั่ง "ผูกบัญชี" ---
             if text.startswith('ผูกบัญชี'):
                 parts = text.split()
                 if len(parts) != 2:
-                    line_bot_api_asset.push_message(
-                        userId,
-                        TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nกรุณาพิมพ์: ผูกบัญชี [Username]')
-                    )
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nกรุณาพิมพ์: ผูกบัญชี [Username]'))
                     continue
 
                 username = parts[1]
                 user = MyUser.objects.filter(username=username).first()
 
                 if not user:
-                    line_bot_api_asset.push_message(
-                        userId,
-                        TextSendMessage(text='❌ ไม่พบบัญชีผู้ใช้\nกรุณาตรวจสอบ Username อีกครั้ง')
-                    )
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text='❌ ไม่พบบัญชีผู้ใช้\nกรุณาตรวจสอบ Username อีกครั้ง'))
                     continue
 
                 line = UserLine_Asset.objects.filter(user=user).first()
                 if not line:
                     UserLine_Asset.objects.create(user=user, userId=userId)
-                    line_bot_api_asset.push_message(
-                        userId,
-                        TextSendMessage(text=f'✅ ผูกบัญชีสำเร็จ\nสวัสดี {user.get_full_name() or user.username}')
-                    )
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text=f'✅ ผูกบัญชีสำเร็จ\nสวัสดี {user.get_full_name() or user.username}'))
                 else:
                     line.userId = userId
                     line.save()
-                    line_bot_api_asset.push_message(
-                        userId,
-                        TextSendMessage(text=f'🔄 อัปเดตการผูกบัญชีเรียบร้อย\nสวัสดี {user.get_full_name() or user.username}')
-                    )
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text=f'🔄 อัปเดตการผูกบัญชีเรียบร้อย\nสวัสดี {user.get_full_name() or user.username}'))
                 
-                continue # จบการทำงานสำหรับ event นี้
+                continue 
 
             # --- 2. ตรวจสอบว่าผูกบัญชีหรือยัง (สำหรับคำสั่งอื่นๆ) ---
             linked = UserLine_Asset.objects.filter(userId=userId).first()
             if not linked:
-                line_bot_api_asset.push_message(
-                    userId,
-                    TextSendMessage(text='⚠ กรุณาผูกบัญชีก่อนใช้งาน\nพิมพ์: ผูกบัญชี [Username]')
-                )
-                continue # จบการทำงานสำหรับ event นี้
+                line_bot_api_asset.push_message(userId, TextSendMessage(text='⚠ กรุณาผูกบัญชีก่อนใช้งาน\nพิมพ์: ผูกบัญชี [Username]'))
+                continue 
 
-            # --- 3. (มาถึงจุดนี้คือผูกบัญชีแล้ว) ตรวจสอบคำสั่ง "คืนครุภัณฑ์" ---
+            user = linked.user # ผู้ใช้งานปัจจุบัน
+
+            # --- 3. ตรวจสอบคำสั่ง "คืนครุภัณฑ์" ---
             if text.startswith('คืนครุภัณฑ์'):
                 parts = text.split()
                 if len(parts) != 2:
-                    line_bot_api_asset.push_message(
-                        userId,
-                        TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nพิมพ์: คืนครุภัณฑ์ [รหัสออเดอร์]')
-                    )
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nพิมพ์: คืนครุภัณฑ์ [รหัสออเดอร์]'))
                     continue
 
                 order_code = parts[1]
-                user = linked.user # นี่คือผู้ใช้ที่กำลังพิมพ์
-
-                # ค้นหาออเดอร์
                 order = OrderAssetLoan.objects.filter(order_code=order_code).first()
 
                 if not order:
-                    line_bot_api_asset.push_message(
-                        userId,
-                        TextSendMessage(text=f'❌ ไม่พบออเดอร์ {order_code}\nกรุณาตรวจสอบรหัสออเดอร์อีกครั้ง')
-                    )
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text=f'❌ ไม่พบออเดอร์ {order_code}'))
                     continue
                 
-                # ตรวจสอบความเป็นเจ้าของ
                 if order.user != user:
-                    line_bot_api_asset.push_message(
-                        userId,
-                        TextSendMessage(text=f'❌ คุณไม่ใช่เจ้าของออเดอร์ {order_code}')
-                    )
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text=f'❌ คุณไม่ใช่เจ้าของออเดอร์ {order_code}'))
                     continue
                 
-                # ตรวจสอบสถานะ: ต้องเป็น 'อนุมัติแล้ว', 'กำลังยืม' หรือ 'เกินกำหนด' เท่านั้น
                 allowed_statuses = ['approved', 'borrowed', 'overdue']
                 if order.status not in allowed_statuses:
                     if order.status in ['returned_pending', 'returned']:
@@ -1391,48 +1594,96 @@ def linebot_assets(request):
                         line_bot_api_asset.push_message(userId, TextSendMessage(text=f'ℹ ออเดอร์นี้ยังไม่พร้อมคืน (สถานะ: {order.get_status_display()})'))
                     continue
 
-                # --- 🟢 ผ่านการตรวจสอบทั้งหมด (Logic แบบขั้นตอนเดียว) ---
-                
-                # 1. อัปเดตสถานะออเดอร์เป็น "รออนุมัติคืน" ทันที
+                # บันทึกการคืน
                 order.status = 'returned_pending' 
-                
-                # 2. บันทึกวันที่และผู้คืน
                 order.date_returned = timezone.now() 
                 order.returned_by = user.get_full_name() or user.username 
                 order.save()
 
-                # 3. แจ้งเตือนผู้ใช้
-                line_bot_api_asset.push_message(
-                    userId,
-                    TextSendMessage(text=f'✅ บันทึกการคืนครุภัณฑ์ {order_code} สำเร็จ')
-                )
-
-                # 4. แจ้งเตือนแอดมิน
-                notify_admins_of_return(order)
+                line_bot_api_asset.push_message(userId, TextSendMessage(text=f'✅ บันทึกการคืนครุภัณฑ์ {order_code} สำเร็จ'))
                 
-                continue # จบการทำงานสำหรับ event นี้
+                # แจ้ง Admin (ใส่ try เพื่อความปลอดภัย)
+                try:
+                    # notify_admins_of_return(order) # เปิดใช้งานถ้ามีฟังก์ชันนี้
+                    pass
+                except:
+                    pass
+                
+                continue
 
-            # --- 4. (ใส่คำสั่งอื่นๆ ที่นี่) ---
-            # elif text.startswith('เช็คสถานะยืม'):
-            #    ...
-            #    continue
+            # --- 4. ตรวจสอบคำสั่ง "อนุมัติID" ---
+            elif text.startswith('อนุมัติID'):
+                
+                parts = text.split()
+                if len(parts) != 2:
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text='⚠ รูปแบบไม่ถูกต้อง\nพิมพ์แค่: อนุมัติID [รหัสออเดอร์]'))
+                    continue
 
-            # --- 5. ถ้าพิมพ์มาแต่ไม่เข้าเงื่อนไขไหนเลย ---
-            # (ถ้าต้องการให้บอทตอบเมื่อไม่เข้าใจคำสั่ง ให้เปิดคอมเมนต์บรรทัดล่าง)
-            line_bot_api_asset.push_message(
-                userId,
-                TextSendMessage(text='ฉันไม่เข้าใจคำสั่งนี้ค่ะ')
-            )
+                order_code = parts[1]
+
+                # 4.1 ค้นหาออเดอร์ก่อนเช็คสิทธิ์อื่น
+                order = OrderAssetLoan.objects.filter(order_code=order_code).first()
+                if not order:
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text=f'❌ ไม่พบออเดอร์ {order_code}'))
+                    continue
+
+                # 4.2 ตรวจสอบสิทธิ์ (Staff / Admin / Warehouse)
+                is_staff = user.is_staff
+                is_admin = getattr(user, 'is_admin', False)
+                is_warehouse = getattr(user, 'is_warehouse_manager', False)
+
+                if not (is_staff or is_admin or is_warehouse):
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text='❌ คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้ (สำหรับเจ้าหน้าที่เท่านั้น)'))
+                    continue
+                
+                # 4.3 ห้ามเจ้าของออเดอร์อนุมัติของตัวเอง
+                if order.user == user:
+                     line_bot_api_asset.push_message(userId, TextSendMessage(text='❌ ไม่สามารถอนุมัติรายการของตัวเองได้'))
+                     continue
+
+                # 4.4 ตรวจสอบสถานะ
+                if order.status != 'pending':
+                    line_bot_api_asset.push_message(userId, TextSendMessage(text=f'⚠ ออเดอร์นี้สถานะไม่ใช่ "รออนุมัติ" (สถานะ: {order.get_status_display()})'))
+                    continue
+
+                # 4.5 ดึงข้อมูลผู้อนุมัติ
+                approver_name = user.get_full_name() or user.username
+                approver_position = getattr(user, 'position', 'เจ้าหน้าที่') 
+
+                # 4.6 บันทึกข้อมูล
+                order.status = 'approved'
+                order.approved_by = approver_name
+                order.approver_position = approver_position
+                order.date_approved = timezone.now()
+                order.save()
+
+                # แจ้งกลับคนอนุมัติ
+                reply_msg = f'✅ อนุมัติ {order_code} สำเร็จ\nโดย: {approver_name}\nตำแหน่ง: {approver_position}'
+                
+                # 4.7 แจ้งเตือนผู้ยืม (ใส่ Try/Except เพื่อป้องกัน Error หากส่งไลน์ไม่ได้)
+                try:
+                    notify_borrower(order, action_type="approved")
+                except Exception as notify_err:
+                    print(f"Notify Error: {notify_err}")
+                    reply_msg += "\n(⚠ แจ้งเตือนผู้ยืมไม่สำเร็จ แต่บันทึกผลแล้ว)"
+
+                line_bot_api_asset.push_message(userId, TextSendMessage(text=reply_msg))
+                continue
+
+            # --- 5. กรณีไม่เข้าเงื่อนไขใดๆ ---
+            # line_bot_api_asset.push_message(userId, TextSendMessage(text='ฉันไม่เข้าใจคำสั่งนี้ค่ะ'))
 
         except Exception as e:
+            # --- จุดดักจับ Error หลัก ---
             print(f"Error processing event: {e}")
             try:
+                # ส่ง Error จริงๆ กลับไปที่ไลน์เพื่อ Debug (ถ้าใช้งานจริงค่อยเปลี่ยนข้อความ)
                 line_bot_api_asset.push_message(
                     userId,
-                    TextSendMessage(text='เกิดข้อผิดพลาดในการประมวลผลคำสั่ง')
+                    TextSendMessage(text=f'❌ เกิดข้อผิดพลาดทางระบบ: {str(e)}') 
                 )
             except:
-                pass # ถ้าส่งไม่ได้ก็ไม่เป็นไร
+                pass
 
     return HttpResponse(status=200)
 

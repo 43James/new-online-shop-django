@@ -438,6 +438,7 @@ class OrderAssetLoan(models.Model):
     #             self.status = 'returned'
 
     #     super().save(*args, **kwargs)
+    
     # vvvv แก้ไขเมธอด save() vvvv
     def save(self, *args, **kwargs):
         # เซ็ตเดือน/ปี และรหัสออเดอร์ (เฉพาะตอนสร้างใหม่)

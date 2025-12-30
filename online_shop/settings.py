@@ -19,6 +19,19 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+
+# ALLOWED_HOSTS = [
+#     "localhost",
+#     "127.0.0.1",
+#     "lorina-uncombustive-armida.ngrok-free.dev", # ใส่โดเมน ngrok ที่นี่
+#     # หรือถ้าขี้เกียจแก้บ่อยๆ ใช้ "*" ไปเลยก็ได้ (แต่ไม่แนะนำสำหรับ Production)
+#     # "*" 
+# ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://lorina-uncombustive-armida.ngrok-free.dev",
+]
+
 # settings.py
 LOGGING = {
     'version': 1,
@@ -91,6 +104,7 @@ STATIC_DIR = BASE_DIR / 'static'
 
 INSTALLED_APPS = [
     # 1. Django Core Apps (แอปที่มากับ Django)
+    'reversion',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

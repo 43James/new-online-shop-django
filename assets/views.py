@@ -25,11 +25,119 @@ import json # นำเข้าโมดูล json
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
 from django.conf import settings
+import pandas as pd
+
 
 
 @login_required
 def home_assets(request):
-    return render(request, 'home_assets.html')
+    context = {
+        "loan_pending_count": count_pending_asset_loans(),
+    }
+    return render(request, 'home_assets.html' , context)
+
+
+
+def import_assets(request):
+    if request.method == 'POST' and request.FILES['excel_file']:
+        excel_file = request.FILES['excel_file']
+        
+        # ตรวจสอบว่าเป็นไฟล์ Excel หรือไม่
+        if not excel_file.name.endswith(('.xls', '.xlsx')):
+            messages.error(request, 'กรุณาอัปโหลดไฟล์ Excel เท่านั้น')
+            return redirect('import_assets') # เปลี่ยนเป็นชื่อ URL ของคุณ
+
+        try:
+            # อ่านไฟล์ Excel ด้วย Pandas
+            df = pd.read_excel(excel_file)
+            
+            # แปลงชื่อคอลัมน์ให้เป็นมาตรฐาน (ลบช่องว่างหัวท้าย)
+            df.columns = df.columns.str.strip()
+
+            success_count = 0
+            error_list = []
+
+            # ใช้ transaction เพื่อความปลอดภัยของข้อมูล (ถ้าพังบรรทัดไหน ให้ rollback หรือเลือกข้ามได้)
+            # ในที่นี้จะเขียนแบบข้ามบรรทัดที่ error แล้วแจ้งเตือน
+            
+            for index, row in df.iterrows():
+                try:
+                    with transaction.atomic():
+                        # 1. จัดการ หมวดหมู่หลัก (AssetCategory)
+                        category, _ = AssetCategory.objects.get_or_create(
+                            name_cate=str(row['หมวดหมู่หลัก']).strip()
+                        )
+
+                        # 2. จัดการ หมวดหมู่ย่อย (Subcategory)
+                        subcategory, _ = Subcategory.objects.get_or_create(
+                            name_sub=str(row['หมวดหมู่ย่อย']).strip(),
+                            category=category
+                        )
+
+                        # 3. จัดการ สถานที่เก็บ (StorageLocation)
+                        location, _ = StorageLocation.objects.get_or_create(
+                            name=str(row['สถานที่เก็บ']).strip()
+                        )
+
+                        # 4. จัดการ รหัสครุภัณฑ์ (AssetCode)
+                        # ต้องระวังเรื่อง unique ของ serial_year ตามโมเดลที่คุณให้มา
+                        asset_code_obj, created = AssetCode.objects.get_or_create(
+                            serial_year=str(row['ลำดับ/ปี']).strip(),
+                            defaults={
+                                'asset_type': str(row['ประเภท']).strip(),
+                                'asset_kind': str(row['ชนิด']).strip(),
+                                'asset_character': str(row['ลักษณะ']).strip(),
+                            }
+                        )
+                        
+                        # กรณีที่มีรหัสนี้อยู่แล้ว แต่อาจจะอยากอัพเดทข้อมูลประเภท/ชนิด (ถ้าจำเป็น)
+                        if not created:
+                             asset_code_obj.asset_type = str(row['ประเภท']).strip()
+                             asset_code_obj.asset_kind = str(row['ชนิด']).strip()
+                             asset_code_obj.asset_character = str(row['ลักษณะ']).strip()
+                             asset_code_obj.save()
+
+                        # 5. สร้างรายการครุภัณฑ์ (AssetItem)
+                        # แปลงวันที่ (Excel อาจส่งมาเป็น Timestamp หรือ String)
+                        p_date = pd.to_datetime(row['วันที่ซื้อ']).date()
+
+                        asset_item = AssetItem(
+                            item_name=str(row['ชื่อรายการครุภัณฑ์']).strip(),
+                            subcategory=subcategory,
+                            asset_code=asset_code_obj,
+                            unit=str(row['หน่วยนับ']).strip(),
+                            purchase_price=row['ราคาที่ซื้อ'],
+                            purchase_date=p_date,
+                            fiscal_year=int(row['ปีที่ใช้งาน']),
+                            lifetime=int(row['อายุการใช้งาน']),
+                            used_years=int(row['ใช้มาแล้วกี่ปี']), # หรือคำนวณจากปีปัจจุบันลบปีที่ซื้อก็ได้
+                            responsible_person=str(row['ผู้รับผิดชอบ']).strip(),
+                            storage_location=location,
+                            brand_model=str(row['ยี่ห้อ/รุ่น']).strip(),
+                            notes=str(row['หมายเหตุ']) if pd.notna(row['หมายเหตุ']) else "",
+                            damage_status=str(row['สถานะการใช้งาน']).strip(), # ต้องตรงกับ Choice: ชำรุด, เสื่อม, ฯลฯ
+                            status_borrowing=True if str(row['ยืมได้หรือไม่']).lower() in ['yes', 'true', 'ได้', '1'] else False
+                        )
+                        
+                        # เรียก save() เพื่อให้คำนวณค่าเสื่อมและสร้าง QR Code อัตโนมัติ
+                        asset_item.save()
+                        success_count += 1
+
+                except Exception as e:
+                    error_msg = f"Row {index + 2}: Error - {str(e)}"
+                    error_list.append(error_msg)
+                    continue
+
+            # สรุปผลการทำงาน
+            messages.success(request, f'บันทึกสำเร็จ {success_count} รายการ')
+            if error_list:
+                messages.warning(request, f'พบข้อผิดพลาด {len(error_list)} รายการ: <br>' + '<br>'.join(error_list))
+
+        except Exception as e:
+            messages.error(request, f'เกิดข้อผิดพลาดในการอ่านไฟล์: {str(e)}')
+
+    return render(request, 'import_assets.html')
+
 
 # รายการครุภัณฑ์
 @login_required
@@ -283,7 +391,10 @@ def delete_asset_item_loan(request, pk):
 @login_required
 def calendar_view(request):
     """หน้าเทมเพลตปฏิทิน"""
-    return render(request, "calendar.html")
+    context = {
+        "loan_pending_count": count_pending_asset_loans(),
+    }
+    return render(request, "calendar.html" , context)
 
 
 # @login_required
@@ -784,7 +895,7 @@ def count_pending_asset_loans():
     
     # ใช้ Q object ตามที่คุณกำหนด
     return OrderAssetLoan.objects.filter(
-        Q(status='pending') | Q(status='returned_pending')
+        Q(status='pending') | Q(status='overdue') | Q(status='returned_pending')
     ).count()
 
 # ------------------------------
@@ -828,6 +939,9 @@ def loan_approval_list(request):
               (5,'พฤษภาคม'),(6,'มิถุนายน'),(7,'กรกฎาคม'),(8,'สิงหาคม'),
               (9,'กันยายน'),(10,'ตุลาคม'),(11,'พฤศจิกายน'),(12,'ธันวาคม')]
     years = range(2020, timezone.now().year+2)
+
+    # แปลงเป็น tuple (ปีค.ศ., ปีพ.ศ.) เพื่อใช้แสดงผลใน template
+    years_display = [(y, y + 543) for y in years]
 
     if request.method == "POST":
         # ใช้สำหรับ modal submit
@@ -885,11 +999,11 @@ def loan_approval_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-
     context = {
         "page_obj": page_obj,
         "months": months,
-        "years": years,
+        # "years": years,
+        "years": years_display,  # ✅ ใช้ปี พ.ศ. สำหรับแสดงผล
         "selected_month": int(month),
         "selected_year": int(year),
         "get_params": request.GET.copy(),  # เก็บ GET params สำหรับ pagination

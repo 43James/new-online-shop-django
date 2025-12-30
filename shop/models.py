@@ -5,6 +5,7 @@ from django.template.defaultfilters import slugify
 from django.db.models import Sum
 from django.utils.html import format_html
 from django.core.validators import MinValueValidator
+from decimal import Decimal # อย่าลืม import บรรทัดบนสุด
 
 # from accounts.models import MyUser
 
@@ -46,7 +47,7 @@ class Product(models.Model):
 
 
     class Meta:
-        ordering = ('product_id',)
+        ordering = ('id',)
 
     def __str__(self):
         return self.product_id
@@ -76,16 +77,49 @@ class Suppliers(models.Model):
         return str(self.id)
     
     
+# class MonthlyStockRecord(models.Model):
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='monthly_stock_records', verbose_name='IDสินค้า')
+#     month = models.IntegerField(null=True, blank=True, verbose_name='เดือน')
+#     year = models.IntegerField(null=True, blank=True, verbose_name='ปี')
+#     end_of_month_balance = models.PositiveIntegerField(null=True, blank=True, verbose_name='จำนวนคงเหลือ')
+#     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='ราคารวม')
+#     date_recorded = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"{self.product.product_name} - {self.month}/{self.year}"
+
+
 class MonthlyStockRecord(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='monthly_stock_records', verbose_name='IDสินค้า')
-    month = models.IntegerField(null=True, blank=True, verbose_name='เดือน')
-    year = models.IntegerField(null=True, blank=True, verbose_name='ปี')
+    month = models.PositiveIntegerField(null=True, blank=True, verbose_name='เดือน') # ใช้ PositiveNumber
+    year = models.PositiveIntegerField(null=True, blank=True, verbose_name='ปี') # ใช้ PositiveNumber
     end_of_month_balance = models.PositiveIntegerField(null=True, blank=True, verbose_name='จำนวนคงเหลือ')
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='ราคารวม')
+    
+    # แก้ไข: ปรับขนาดให้รองรับตัวเลขเยอะๆ และทศนิยมละเอียดๆ (ให้เหมือน Receiving)
+    total_price = models.DecimalField(
+        max_digits=20, 
+        decimal_places=10, 
+        default=0.00, 
+        verbose_name='ราคารวม'
+    )
+    
     date_recorded = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        # เพิ่ม: ป้องกันไม่ให้มีข้อมูลซ้ำสำหรับ สินค้าตัวเดิม+เดือนเดิม+ปีเดิม
+        unique_together = ('product', 'month', 'year')
+        verbose_name = "บันทึกสต็อกรายเดือน"
+        verbose_name_plural = "บันทึกสต็อกรายเดือน"
+
     def __str__(self):
-        return f"{self.product.product_name} - {self.month}/{self.year}"
+        return f"{self.product} - {self.month}/{self.year}"
+
+    # เพิ่ม: Property สำหรับแสดงผลแบบตัดเลข 0 ตัวท้าย (เหมือนที่ทำใน Receiving)
+    @property
+    def clean_total_price(self):
+        if self.total_price is not None:
+            return self.total_price.normalize()
+        return Decimal('0')
     
 
 class Receiving(models.Model):
@@ -93,12 +127,21 @@ class Receiving(models.Model):
     suppliers = models.ForeignKey(Suppliers, on_delete=models.CASCADE, related_name='suppliers', verbose_name='IDซัพพลายเออร์')
     file = models.FileField(upload_to='receives', null=True, blank=True, verbose_name='ไฟล์เอกสารแนบ')
     quantityreceived = models.PositiveIntegerField(null=True,  verbose_name='จำนวนที่รับเข้า')
-    quantity = models.PositiveIntegerField( null=True, verbose_name='จำนวนคงเหลือ')
-    unitprice = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)], null=True, verbose_name='ราคา/หน่วย')
+    quantity = models.PositiveIntegerField(null=True, verbose_name='จำนวนคงเหลือ')
+    
+    # แก้ไข: เพิ่ม max_digits เป็น 20 เพื่อรองรับการคำนวณเลขเยอะๆ และทศนิยม 10 หลัก
+    unitprice = models.DecimalField(
+        max_digits=20, 
+        decimal_places=10, 
+        validators=[MinValueValidator(0.0)], 
+        null=True, 
+        verbose_name='ราคา/หน่วย'
+    )
+    
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
     date_received = models.DateTimeField(blank=True, null=True, verbose_name='วันที่รับเข้า')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
-    note = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
+    note = models.CharField(max_length=500, blank=True, null=True, verbose_name='หมายเหตุ')
     month = models.PositiveIntegerField(verbose_name='เดือนที่รับเข้า', editable=False, default=timezone.now().month)
     year = models.PositiveIntegerField(verbose_name='ปีที่รับเข้า', editable=False, default=timezone.now().year)
 
@@ -108,11 +151,6 @@ class Receiving(models.Model):
     def __str__(self):
         return str(self.product)
     
-    # def save(self, *args, **kwargs):
-    #     if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
-    #         self.month = self.month
-    #         self.year = self.year
-    #     super().save(*args, **kwargs)
     def save(self, *args, **kwargs):
         # ถ้ามีการกำหนดวันที่รับเข้า
         if self.date_received:
@@ -130,19 +168,79 @@ class Receiving(models.Model):
         return result['total_quantity'] or 0
     
     def get_absolute_url(self):
-        return reverse('shop:product_detail', kwargs={'id':self.id})
-        # return reverse('shop:product_detail', kwargs={'slug': self.product.slug})
+        return reverse('shop:product_detail', kwargs={'id': self.id})
 
-    # @property
-    # def total_quantity(self):
-    #     return Receiving.objects.filter(product=self.product).aggregate(total_quantity=Sum('quantityreceived'))['total_quantity'] or 0
+    # --- ส่วนที่เพิ่มเพื่อจัดการทศนิยม (Properties) ---
+
+    @property
+    def clean_unitprice(self):
+        """แสดงราคาต่อหน่วย แบบตัด 0 ตัวท้ายทิ้ง"""
+        if self.unitprice is not None:
+            return self.unitprice.normalize()
+        return Decimal('0')
+
+    @property
+    def total_remaining_value(self):
+        """คำนวณมูลค่าคงเหลือ (จำนวน * ราคา) และตัด 0 ตัวท้ายทิ้ง"""
+        if self.quantity is not None and self.unitprice is not None:
+            total = self.quantity * self.unitprice
+            return total.normalize()  # normalize() จะตัด 0 ทิ้งให้ เช่น 374.12000 -> 374.12
+        return Decimal('0')
     
-    # @property
-    # def total_price(self):
-    #     total_price = Receiving.objects.filter(product=self.product).aggregate(
-    #         total_price=Sum(F('quantityreceived') * F('unitprice'))
-    #     )['total_price']
-    #     return total_price or 0
+
+# class Receiving(models.Model):
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='Receiving', verbose_name='IDสินค้า')
+#     suppliers = models.ForeignKey(Suppliers, on_delete=models.CASCADE, related_name='suppliers', verbose_name='IDซัพพลายเออร์')
+#     file = models.FileField(upload_to='receives', null=True, blank=True, verbose_name='ไฟล์เอกสารแนบ')
+#     quantityreceived = models.PositiveIntegerField(null=True,  verbose_name='จำนวนที่รับเข้า')
+#     quantity = models.PositiveIntegerField( null=True, verbose_name='จำนวนคงเหลือ')
+#     unitprice = models.DecimalField(max_digits=20, decimal_places=10, validators=[MinValueValidator(0.0)], null=True, verbose_name='ราคา/หน่วย')
+#     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
+#     date_received = models.DateTimeField(blank=True, null=True, verbose_name='วันที่รับเข้า')
+#     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
+#     note = models.CharField(max_length=500 ,blank=True, null=True, verbose_name='หมายเหตุ')
+#     month = models.PositiveIntegerField(verbose_name='เดือนที่รับเข้า', editable=False, default=timezone.now().month)
+#     year = models.PositiveIntegerField(verbose_name='ปีที่รับเข้า', editable=False, default=timezone.now().year)
+
+#     class Meta:
+#         ordering = ('-id',)
+    
+#     def __str__(self):
+#         return str(self.product)
+    
+#     # def save(self, *args, **kwargs):
+#     #     if not self.id:  # ตรวจสอบว่าเป็นการบันทึกครั้งแรกหรือไม่
+#     #         self.month = self.month
+#     #         self.year = self.year
+#     #     super().save(*args, **kwargs)
+#     def save(self, *args, **kwargs):
+#         # ถ้ามีการกำหนดวันที่รับเข้า
+#         if self.date_received:
+#             self.month = self.date_received.month
+#             self.year = self.date_received.year
+#         else:
+#             # fallback (ใช้วันเวลาปัจจุบันถ้าไม่มี date_received)
+#             self.month = timezone.now().month
+#             self.year = timezone.now().year
+#         super().save(*args, **kwargs)
+
+#     @staticmethod
+#     def total_quantity_by_product(product_id):
+#         result = Receiving.objects.filter(product_id=product_id).aggregate(total_quantity=Sum('quantity'))
+#         return result['total_quantity'] or 0
+    
+#     def get_absolute_url(self):
+#         return reverse('shop:product_detail', kwargs={'id':self.id})
+#         # return reverse('shop:product_detail', kwargs={'slug': self.product.slug})
+
+#     # เพิ่มส่วนนี้เข้าไป
+#     @property
+#     def clean_unitprice(self):
+#         if self.unitprice:
+#             return self.unitprice.normalize()
+#         return Decimal('0')
+
+
 
 
 class Total_Quantity(models.Model):

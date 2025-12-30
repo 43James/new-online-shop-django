@@ -2544,7 +2544,7 @@ def subcategory(request):
     context = {
         'title':'หมวดหมู่ย่อย', 
         'subcategory':subcategory,
-        'pending_orders_count': count_pending_orders(),}
+        'pending_orders_count': count_pending_orders(),} 
     return render(request, 'subcategory.html', context)
 
 
@@ -2834,6 +2834,7 @@ def acknowledge_notification(request, notification_id):
             messages.warning(request, f"การแจ้งเตือนนี้ได้รับการรับทราบแล้วก่อนหน้านี้!")
 
     return redirect('dashboard:notification')
+
 
 
 # ยืนยันการเติมสต๊อกวัสดุ

@@ -52,11 +52,12 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom" id="title">
         <h1 class="h3 mb-2 mb-md-0">รายการครุภัณฑ์</h1> <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2 d-none d-md-block"> 
-                <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+                <a href="{% url 'assets:import_assets' %}" type="button" class="btn btn-sm btn-outline-secondary">Upload</a>
                 <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
             </div>
         </div>
     </div>
+    
 
     <div class="row">
         <nav aria-label="breadcrumb">

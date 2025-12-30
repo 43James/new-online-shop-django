@@ -67,8 +67,8 @@
                 <td><a class="text-decoration-none" href="{{ item.product.get_absolute_url }}">
                         {{item.product.product_name}}</a></td>
                 <td>{{item.quantity}}</td>
-                <td>{{item.price|intcomma}} </td>
-                <td>{{item.get_cost|intcomma }} </td>
+                <td>{{item.price|floatformat:"-3"|intcomma}} บาท</td>
+                <td>{{item.get_cost|intcomma }} บาท</td>
 
                 {% if item.note %}
                     <td>{{item.note}}</td>

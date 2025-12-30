@@ -198,14 +198,14 @@
                     <td class="text-center">ไม่มีข้อมูลผู้เบิก</td>                    
                     {% endfor %}
                     <td class="text-center">{{ item.issued_current_month|intcomma }} {{ item.unit }}</td>
-                    <td class="text-end">{{ item.total_issued_value|intcomma }} บาท</td>
+                    <td class="text-end">{{ item.total_issued_value|floatformat:"-3"|intcomma }} บาท</td>
 
                     <td class="text-center">{{ item.remaining_balance|intcomma }} {{ item.unit }}</td>
 
                     {% if item.total_remaining_value == 0 %}
-                    <td class="text-end">{{ item.total_remaining_value2|intcomma }} บาท</td>
+                    <td class="text-end">{{ item.total_remaining_value2|floatformat:"-3"|intcomma }} บาท</td>
                     {% else %}
-                    <td class="text-end">{{ item.total_remaining_value|intcomma }} บาท</td>
+                    <td class="text-end">{{ item.total_remaining_value|floatformat:"-3"|intcomma }} บาท</td>
                     {% endif %}
 
                     <!-- <td class="text-center">{{ item.total_price|intcomma }} บาท</td> -->
@@ -215,12 +215,12 @@
                 <tr>
                     <td colspan="6" class="text-center"><strong>รวมรายจ่ายที่เบิก</strong></td>
                     {% for user in all_users %}
-                    <td class="text-center"><strong>{{ total_issued_value_by_user|get_item:user|intcomma }} บาท</strong></td>
+                    <td class="text-center"><strong>{{ total_issued_value_by_user|get_item:user|floatformat:"-5"|intcomma }} บาท</strong></td>
                     {% endfor %}
                     <td colspan="1"></td>
-                    <td class="text-end"><strong>{{ total_issued_value|intcomma }} บาท</strong></td>
+                    <td class="text-end"><strong>{{ total_issued_value|floatformat:"-5"|intcomma }} บาท</strong></td>
                     <td colspan="1"></td>
-                    <td class="text-end"><strong>{{ total_remaining_value_sum|intcomma }} บาท</strong></td>
+                    <td class="text-end"><strong>{{ total_remaining_value_sum|floatformat:"-5"|intcomma }} บาท</strong></td>
                     <!-- <td></td> -->
                 </tr>
             </tbody>

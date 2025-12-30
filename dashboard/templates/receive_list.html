@@ -52,7 +52,7 @@
                     <td style="background-color: #1eff00;">{{ re.quantity|intcomma }} </td>
                     {% endif %}
 
-                    <td>{{ re.unitprice|intcomma }} บาท </td>
+                    <td>{{ re.unitprice|floatformat:"-3"|intcomma }} บาท </td>
                     <td>{{ re.product.unit }}</td>
                     <td>{{ re.date_received | date:"d M Y, H:i" }} น.</td>
                     {% if request.user.is_admin %}

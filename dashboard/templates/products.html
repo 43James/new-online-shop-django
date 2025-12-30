@@ -48,7 +48,7 @@
                 <th style="background-color: aquamarine;">{{ product.total_current_stock|default:0|intcomma }} &nbsp;{{ product.unit}}</th>
                 {% endif %}
 
-                <td>{{ product.total_remaining_value|default:"-"|intcomma }}</td>
+                <td>{{ product.total_remaining_value|default:"-"|floatformat:"-10"|intcomma }}</td>
 
                 <td>{{ product.date_created|date:"d M Y" }}</td>
 
