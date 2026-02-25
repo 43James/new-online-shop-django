@@ -22,6 +22,9 @@ urlpatterns = [
     path('profile/manager/<str:username>/', views.manager_profile_detail, name='manager_profile_detail'),
     path('profile/<str:username>/', views.profile_users, name='profile_users'),
     path('change_password/', views.change_password, name='change_password'),
+    # path('update-product-status/<int:product_id>/', views.update_product_status, name='update_product_status'),
+    # urls.py
+    path('update-all-products-status/', views.update_all_products_status, name='update_all_products_status'),
 
 
     path(

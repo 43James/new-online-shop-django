@@ -44,6 +44,7 @@ class Product(models.Model):
     unit = models.CharField(max_length=20, verbose_name='หน่วย')
     date_created = models.DateTimeField(auto_now_add=True, verbose_name='วันที่เพิ่มรายการ')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='วันที่อัพเดตข้อมูล')
+    is_active_selling = models.BooleanField(default=True, verbose_name="เปิดขายปกติ")
 
 
     class Meta:

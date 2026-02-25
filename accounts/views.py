@@ -13,6 +13,7 @@ from django.db.models import Q
 from orders.models import Order
 from django.contrib.auth import logout as auth_logout
 
+from shop.models import Product
 from shop.views import count_unconfirmed_orders
 from .forms import EditProfileForm, ProfileImageForm, RegistrationForm, ProfileForm, UserLoginForm, ManagerLoginForm, UserProfileForm, UserEditForm, ExtendedProfileForm
 from accounts.models import MyUser, Profile, WorkGroup
@@ -22,6 +23,10 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.core.files.base import ContentFile
 import base64
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import user_passes_test
+import json
 
 from django.core.exceptions import PermissionDenied
 
@@ -50,6 +55,45 @@ def is_authorized_admin(user):
     if is_admin(user):
         return True
     raise PermissionDenied
+
+
+# ตรวจสอบว่าเป็นแอดมินไหม
+# @user_passes_test(lambda u: u.is_superuser or u.is_staff)
+# def update_product_status(request, product_id):
+#     if request.method == "POST":
+#         try:
+#             data = json.loads(request.body)
+#             product = Product.objects.get(pk=product_id)
+            
+#             # อัปเดตสถานะ
+#             product.is_active_selling = data.get('is_active', True)
+#             product.save()
+            
+#             return JsonResponse({'success': True, 'status': product.is_active_selling})
+#         except Product.DoesNotExist:
+#             return JsonResponse({'success': False, 'error': 'Product not found'})
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'error': str(e)})
+    
+#     return JsonResponse({'success': False, 'error': 'Invalid method'})
+
+
+# views.py
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def update_all_products_status(request): # ไม่ต้องรับ product_id แล้ว
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            is_active = data.get('is_active', True)
+            
+            # คำสั่งนี้จะอัปเดตสินค้า "ทุกชิ้น" ในฐานข้อมูลทันที
+            Product.objects.all().update(is_active_selling=is_active)
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid method'})
 
 
 @login_required

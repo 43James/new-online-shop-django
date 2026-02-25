@@ -903,6 +903,25 @@ def count_pending_asset_loans():
 # ------------------------------
 @login_required
 def loan_approval_list(request):
+    # ==========================================================
+    # 1. ระบบตรวจสอบ อัปเดตสถานะ 'เกินกำหนด' และส่ง Line Notify อัตโนมัติ
+    # ==========================================================
+    overdue_orders = OrderAssetLoan.objects.filter(
+        status__in=['pending', 'approved', 'borrowed'],
+        date_due__lt=timezone.now()
+    )
+    
+    if overdue_orders.exists():
+        # วนลูปส่งแจ้งเตือนทีละรายการก่อนเปลี่ยนสถานะ
+        for loan in overdue_orders:
+            # ใช้ฟังก์ชัน notify_borrower ที่คุณมีอยู่แล้ว แต่ส่ง action_type เป็น 'overdue'
+            # notify_borrower(loan, action_type="overdue")
+            notify_overdue_asset_loan(loan)
+            messages.success(request, f"ส่งแจ้งเตือนเกินกำหนดสำหรับ Order #{loan.id} ไปยังผู้ยืม ({loan.user.get_full_name()}) แล้ว")
+
+        # เมื่อส่งแจ้งเตือนครบแล้ว ค่อยเปลี่ยนสถานะในฐานข้อมูลเป็น overdue รวดเดียว
+        overdue_orders.update(status='overdue')
+    # ==========================================================
     month = request.GET.get('month', timezone.now().month)
     year = request.GET.get('year', timezone.now().year)
 

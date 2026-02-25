@@ -100,15 +100,27 @@
             <div class="d-flex flex-wrap gap-3 justify-content-center mt-4">
                 {% if total_quantity != 0 %}
                     <!-- ปุ่มเพิ่มไปยังรถเข็น -->
-                    <button type="submit" class="btn btn-success px-4 py-2 d-inline-flex align-items-center gap-2 shadow rounded-pill">
-                        <i class="bi bi-cart-plus-fill"></i> 
-                        เพิ่มไปยังรถเข็น
-                    </button>
+                    {% if product.is_active_selling %}
+                        <button type="submit" class="btn btn-success px-4 py-2 d-inline-flex align-items-center gap-2 shadow rounded-pill">
+                            <i class="bi bi-cart-plus-fill"></i> 
+                            เพิ่มไปยังรถเข็น
+                        </button>
+                    {% else %}
+                    <!-- ปุ่มปิดปรับปรุง -->
+                        <a class="btn btn-warning px-4 py-2 d-inline-flex align-items-center gap-2 shadow rounded-pill disabled" aria-disabled="true">
+                            <i class="bi bi-exclamation-triangle-fill"></i> 
+                            ปิดปรับปรุงชั่วคราว
+                        </a>
+                    {% endif %}
+                {% endif %}
 
-                    <!-- <a class="btn btn-warning px-4 py-2 d-inline-flex align-items-center gap-2 shadow rounded-pill">
-                        <i class="bi bi-cart-plus-fill"></i> 
-                        ปิดปรับปรุง
-                    </a> -->
+                {% if user.is_superuser or user.is_staff %}
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input master-switch" type="checkbox" role="switch"{% if product.is_active_selling %}checked{% endif %}>
+                        <label class="form-check-label text-muted">
+                            <i class="bi bi-shield-lock"></i> สวิตช์เปิด/ปิด สถานะทั้งระบบ
+                        </label>
+                    </div>
                 {% endif %}
             </div>
         </form>
@@ -184,6 +196,51 @@
     </div>
 </div>
 
+<!-- ปุ่มสวิตปิดปรับปรุง/เพิ่มไปยังรถเข็น -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // หาปุ่มสวิตช์ทั้งหมดในหน้า
+    const allSwitches = document.querySelectorAll('.master-switch');
+    
+    allSwitches.forEach(toggleSwitch => {
+        toggleSwitch.addEventListener('change', function() {
+            const isChecked = this.checked;
+
+            // ถามยืนยันก่อน เพราะมันจะเปลี่ยนทุกตัว
+            if(!confirm('คุณต้องการเปลี่ยนสถานะ "สินค้าทั้งหมด" ใช่หรือไม่?')) {
+                this.checked = !isChecked; // คืนค่าเดิมถ้ากด ยกเลิก
+                return;
+            }
+
+            // ส่งข้อมูลไปหลังบ้าน (ไม่ต้องส่ง product_id)
+            fetch('/update-all-products-status/', {  // ตรวจสอบ URL ให้ตรงกับ urls.py
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ 'is_active': isChecked })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // รีโหลดหน้าจอ สินค้าทุกตัวจะเปลี่ยนสถานะ
+                    location.reload(); 
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.error);
+                    this.checked = !isChecked;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+                this.checked = !isChecked;
+            });
+        });
+    });
+});
+</script>
+
 <!-- ช่องใส่จำนวน -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -211,7 +268,6 @@
     });
     </script>
 
-
 <!-- JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -227,7 +283,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
 
 <!-- related products -->
 <div class="row mt-4 mb-4">
@@ -249,9 +304,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             </div>
         {% endif %}
-    {% endfor %}
+    {% endfor %}    
 </div>
-
 
 {% endblock %}
 
@@ -290,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <!-- <button type="submit" class="btn btn-success mt-4 px-4 py-2 d-flex align-items-center gap-2 shadow rounded-pill">
             <i class="bi bi-cart-plus-fill"></i> 
             เพิ่มไปยังรถเข็น
-          </button>               -->
+          </button> -->
         {% endif %}
     </form>
     <br>

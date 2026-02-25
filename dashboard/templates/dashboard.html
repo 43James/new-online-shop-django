@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{title}}</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
@@ -14,33 +14,29 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=TH-Sarabun">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
         crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-
-    <!-- Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap-select CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/css/bootstrap-select.min.css" rel="stylesheet">
-
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
-    <!-- Bootstrap-select JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta2/js/bootstrap-select.min.js"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <style>
         body {
-        font-family: 'TH-Sarabun', sans-serif;
-        font-size: 16px;
+            font-family: 'TH-Sarabun', sans-serif;
+            font-size: 16px;
+        }
+
+        /* ป้องกันตารางล้นจอในมือถือ */
+        .table-responsive-custom {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         table {
@@ -48,30 +44,15 @@
             width: 100%;
         }
 
-        /* th,
-        td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
-        } */
-
-        /* ใช้ CSS เพื่อป้องกันข้อความไม่ตกไปบรรทัดใหม่ */
-        td,
-        tr {
+        td, tr {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-    </style>
-    <style>
         .password-container {
             position: relative;
         }
-
-        /* input {
-            padding-right: 10px;
-        } */
 
         .toggle-password {
             position: absolute;
@@ -81,112 +62,96 @@
             cursor: pointer;
         }
         label {
-        font-weight: bold;
+            font-weight: bold;
+        }
+
+        /* แต่งปุ่มค้นหาให้บนมือถือดูเต็มตาขึ้น */
+        @media (max-width: 768px) {
+            .input-group {
+                flex-wrap: wrap;
+            }
+            .input-group > * {
+                flex: 1 1 auto;
+                margin-bottom: 5px;
+            }
         }
     </style>
-
 </head>
 
 <body>
-    <div class="row d-flex mt-3" style="margin-right: 10px; margin-left: 10px;">
-        <!-- <div class="col-md-1"></div> -->
-        <!-- content -->
-        <div class="col-md-10 justify-content-center">
-            <h2 class="text-capitalize border-bottom text-center p-2" style="font-weight: bold;">{{ title }}</h2>
+    <div class="d-md-none p-3 bg-light shadow-sm mb-3 d-flex justify-content-between align-items-center">
+        <h4 class="m-0 fw-bold">{{ title }}</h4>
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarCollapse" aria-expanded="false" aria-controls="sidebarCollapse">
+            <i class="bi bi-list"></i> เมนู
+        </button>
+    </div>
+
+    <div class="row d-flex mt-md-3 mx-2">
+        <div class="col-12 col-md-9 col-lg-10 order-2 order-md-1">
+            <h2 class="text-capitalize border-bottom text-center p-2 d-none d-md-block" style="font-weight: bold;">{{ title }}</h2>
             <div class="p-2">
-                <!-- messages -->
                 {% if messages %}
                 <div class="messages justify-content-center">
                     {% for message in messages %}
-                    {% if 'error' in message.tags %} <ul class="alert alert-danger text-center">
-                        <h6>{{ message }}</h6>
-                    </ul> {% endif %}
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% if messages %}
-                <div class=" messages justify-content-center">
-                    {% for message in messages %}
-                    {% if 'success' in message.tags %} <ul class="alert alert-success text-center">
-                        <h6>{{ message }}</h6>
-                    </ul> {% endif %}
+                        {% if 'error' in message.tags %} 
+                            <ul class="alert alert-danger text-center"><h6>{{ message }}</h6></ul> 
+                        {% endif %}
+                        {% if 'success' in message.tags %} 
+                            <ul class="alert alert-success text-center"><h6>{{ message }}</h6></ul> 
+                        {% endif %}
                     {% endfor %}
                 </div>
                 {% endif %}
 
                 <div class="row">
-                    <!-- search form -->
                     {% if '/products/' in request.path %}
-                    <div class="col-6">
-                        <div class="row">
-                            <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_product'%}"><i class="bi bi-plus-circle"></i> เพิ่มวัสดุ</a></div>
-                            <div class="col-auto mb-3" >
-                                <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:products' %}">
+                    <div class="col-12 col-xl-6 mb-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-auto">
+                                <a class="btn-warning btn w-100" href="{% url 'dashboard:add_product'%}"><i class="bi bi-plus-circle"></i> เพิ่มวัสดุ</a>
+                            </div>
+                            <div class="col-12 col-sm-auto mb-3">
+                                <form action="{% url 'dashboard:products' %}">
                                     <div class="input-group">
-                                        <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                        <input name="q" type="search" class="form-control" placeholder="Search..." aria-label="Search">
                                         <button type="button" class="btn btn-danger" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
-                                        <button type="submit" name="filter_stock" value="all" class="{% if filter_stock == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">แสดงทั้งหมด</button>
-                                        <button type="submit" name="filter_stock" value="in_stock" class="{% if filter_stock == 'in_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">วัสดุที่ยังมี</button>
-                                        <button type="submit" name="filter_stock" value="out_of_stock" class="{% if filter_stock == 'out_of_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">วัสดุที่หมด</button>
+                                        <button type="submit" name="filter_stock" value="all" class="{% if filter_stock == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">ทั้งหมด</button>
+                                        <button type="submit" name="filter_stock" value="in_stock" class="{% if filter_stock == 'in_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">ยังมี</button>
+                                        <button type="submit" name="filter_stock" value="out_of_stock" class="{% if filter_stock == 'out_of_stock' %}btn-primary{% else %}btn-outline-primary{% endif %}">หมด</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
-                    <div class="col-6">
-                        <div class=" mb-3">
-                            <form method="post" enctype="multipart/form-data" action="{% url 'dashboard:upload_products' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
-                                {% csrf_token %}
-                                <div class="col-4">
-                                    <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-outline-success ms-2"><i class="bi bi-upload"></i> นำเข้า Excel</button>
-                                    <!-- <button href="{% url 'dashboard:export_products' %}" class="btn btn-outline-danger ms-2"><i class="bi bi-upload"></i> นำออก to Excel</button> -->
-                                </div>
-                                <div class="col-auto">
-                                    <a href="{% url 'dashboard:export_products' %}?filter_stock={{ filter_stock }}" class="icon-link justify-content-end">
-                                        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
-                                            <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
-                                            <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>
-                                            <rect width="16" height="9" x="28" y="24" fill="#107c42"></rect>
-                                            <rect width="16" height="9" x="12" y="15" fill="#3fa071"></rect>
-                                            <path fill="#33c481" d="M42,6H28v9h16V8C44,6.895,43.105,6,42,6z"></path>
-                                            <path fill="#21a366" d="M14,6h14v9H12V8C12,6.895,12.895,6,14,6z"></path>
-                                            <path d="M22.319,13H12v24h10.319C24.352,37,26,35.352,26,33.319V16.681C26,14.648,24.352,13,22.319,13z"
-                                                opacity=".05"></path>
-                                            <path
-                                                d="M22.213,36H12V13.333h10.213c1.724,0,3.121,1.397,3.121,3.121v16.425	C25.333,34.603,23.936,36,22.213,36z"
-                                                opacity=".07"></path>
-                                            <path
-                                                d="M22.106,35H12V13.667h10.106c1.414,0,2.56,1.146,2.56,2.56V32.44C24.667,33.854,23.52,35,22.106,35z"
-                                                opacity=".09"></path>
-                                            <linearGradient id="flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1" x1="4.725" x2="23.055" y1="14.725"
-                                                y2="33.055" gradientUnits="userSpaceOnUse">
-                                                <stop offset="0" stop-color="#18884f"></stop>
-                                                <stop offset="1" stop-color="#0b6731"></stop>
-                                            </linearGradient>
-                                            <path fill="url(#flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1)"
-                                                d="M22,34H6c-1.105,0-2-0.895-2-2V16c0-1.105,0.895-2,2-2h16c1.105,0,2,0.895,2,2v16	C24,33.105,23.105,34,22,34z">
-                                            </path>
-                                            <path fill="#fff"
-                                                d="M9.807,19h2.386l1.936,3.754L16.175,19h2.229l-3.071,5l3.141,5h-2.351l-2.11-3.93L11.912,29H9.526	l3.193-5.018L9.807,19z">
-                                            </path>
-                                        </svg>
-                                    </a>
-                                </div>
-                            </form>
-                        </div>
+                    <div class="col-12 col-xl-6 mb-3">
+                        <form method="post" enctype="multipart/form-data" action="{% url 'dashboard:upload_products' %}" class="row g-2 align-items-center justify-content-xl-end">
+                            {% csrf_token %}
+                            <div class="col-12 col-sm-6">
+                                <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-outline-success"><i class="bi bi-upload"></i> นำเข้า Excel</button>
+                            </div>
+                            <div class="col-auto">
+                                <a href="{% url 'dashboard:export_products' %}?filter_stock={{ filter_stock }}" class="icon-link">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 48 48">
+                                        <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect><path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path><rect width="16" height="9" x="28" y="24" fill="#107c42"></rect><rect width="16" height="9" x="12" y="15" fill="#3fa071"></rect><path fill="#33c481" d="M42,6H28v9h16V8C44,6.895,43.105,6,42,6z"></path><path fill="#21a366" d="M14,6h14v9H12V8C12,6.895,12.895,6,14,6z"></path><path d="M22.319,13H12v24h10.319C24.352,37,26,35.352,26,33.319V16.681C26,14.648,24.352,13,22.319,13z" opacity=".05"></path><path d="M22.213,36H12V13.333h10.213c1.724,0,3.121,1.397,3.121,3.121v16.425   C25.333,34.603,23.936,36,22.213,36z" opacity=".07"></path><path d="M22.106,35H12V13.667h10.106c1.414,0,2.56,1.146,2.56,2.56V32.44C24.667,33.854,23.52,35,22.106,35z" opacity=".09"></path><linearGradient id="flEJnwg7q~uKUdkX0KCyBa" x1="4.725" x2="23.055" y1="14.725" y2="33.055" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#18884f"></stop><stop offset="1" stop-color="#0b6731"></stop></linearGradient><path fill="url(#flEJnwg7q~uKUdkX0KCyBa)" d="M22,34H6c-1.105,0-2-0.895-2-2V16c0-1.105,0.895-2,2-2h16c1.105,0,2,0.895,2,2v16   C24,33.105,23.105,34,22,34z"></path><path fill="#fff" d="M9.807,19h2.386l1.936,3.754L16.175,19h2.229l-3.071,5l3.141,5h-2.351l-2.11-3.93L11.912,29H9.526   l3.193-5.018L9.807,19z"></path>
+                                    </svg>
+                                </a>
+                            </div>
+                        </form>
                     </div>
 
                     {% elif '/suppliers/' in request.path %}
-                    <div class="col-6">
-                        <div class="row">
-                            <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_suppliers'%}">เพิ่มข้อมูล</a></div>
-                            <div class="col-5 mb-3" >
-                                <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:suppliers' %}">
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-auto">
+                                <a class="btn-warning btn w-100" href="{% url 'dashboard:add_suppliers'%}">เพิ่มข้อมูล</a>
+                            </div>
+                            <div class="col">
+                                <form action="{% url 'dashboard:suppliers' %}">
                                     <div class="input-group">
-                                        <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                        <input name="q" type="search" class="form-control" placeholder="Search..." aria-label="Search">
                                         <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
                                     </div>
                                 </form>
@@ -195,31 +160,31 @@
                     </div>
 
                     {% elif '/receive_list/' in request.path %}
-                    <div class="col-6 mb-4">
-                        <div class="row">
-                            <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:receive_product'%}"><i class="bi bi-plus-circle"></i> เพิ่มข้อมูล</a></div>
-                            <div class="col-6" >
+                    <div class="col-12 col-lg-6 mb-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-auto">
+                                <a class="btn-warning btn w-100" href="{% url 'dashboard:receive_product'%}"><i class="bi bi-plus-circle"></i> เพิ่มข้อมูล</a>
+                            </div>
+                            <div class="col">
                                 <form action="{% url 'dashboard:receive_list' %}">
-                                    <div class="input-group ">
-                                        <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
-                                        <!-- <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button> -->
+                                    <div class="input-group">
+                                        <input name="q" type="search" class="form-control" placeholder="Search..." aria-label="Search">
                                     </div>
                                 </form>
                             </div>
                         </div> 
                     </div>
-                    
-                    <div class="col mb-4">
-                        <form method="get" action="{% url 'dashboard:receive_list' %}" class="row gy-2 gx-3 align-items-center justify-content-end">
-                            <div class="col-auto">
-                                <select name="month" id="month" class="form-select">
+                    <div class="col-12 col-lg-6 mb-3">
+                        <form method="get" action="{% url 'dashboard:receive_list' %}" class="row g-2 align-items-center justify-content-lg-end">
+                            <div class="col-12 col-sm-auto">
+                                <select name="month" id="month" class="form-select w-100">
                                     {% for m in months %}
                                         <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="col-auto">
-                                <select name="year" id="year" class="form-select">
+                            <div class="col-12 col-sm-auto">
+                                <select name="year" id="year" class="form-select w-100">
                                     {% for y in years %}
                                         <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
                                     {% endfor %}
@@ -229,257 +194,181 @@
                                 <button type="submit" class="btn btn-primary">ค้นหา</button>
                                 <a type="button" class="btn btn-secondary" href="{% url 'dashboard:receive_list' %}" >ยกเลิก</a>
                             </div>
+                            <div class="col-auto">
+                                <a href="{% url 'dashboard:export_receive_to_excel' %}?month={{ selected_month }}&year={{ selected_year }}" class="btn btn-success">
+                                    Export <i class="fa fa-file-excel-o"></i> 
+                                </a>
+                            </div>
                         </form>
                     </div>
-                    <div class="col-auto mb-4">
-                        <a href="{% url 'dashboard:export_receive_to_excel' %}?month={{ selected_month }}&year={{ selected_year }}" class="btn btn-success">
-                            Export <i class="fa fa-file-excel-o" style="font-size:20px"></i> 
-                        </a>
-                    </div>
-                    
                     
                     {% elif '/total_quantity/' in request.path %}
-                    
-                    <div class="row">
-                        <div class="col-3 mb-3" >
-                            <form class="col-lg-auto mb-lg-0 me-lg-3" action="{% url 'dashboard:total_quantity' %}">
-                                <div class="input-group">
-                                    <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
-                                    <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
-                                </div>
-                            </form>
-                        </div>
+                    <div class="col-12 col-md-6 mb-3">
+                        <form action="{% url 'dashboard:total_quantity' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control" placeholder="Search..." aria-label="Search">
+                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                            </div>
+                        </form>
                     </div>
-                    
 
                     {% elif '/orders_all/' in request.path %}
-                    <div class="col-6">
-                        <div class="col-6 mb-3" >
-                            <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:orders_all' %}">
-                                <div class="input-group">
-                                    <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
-                                    <!-- <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button> -->
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    
-                    <div class="col-6">
-                    <form method="get" action="{% url 'dashboard:orders_all' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
-                        
-                        <div class="col-auto">
-                            <div class="form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="showRejected" name="show_rejected" {% if show_rejected  %}checked{% endif %} style="display: block;">
-                                <label class="form-check-label" for="showRejected">แสดงรายการที่ถูกปฏิเสธ</label>
+                    <div class="col-12 col-lg-4 mb-3">
+                        <form action="{% url 'dashboard:orders_all' %}">
+                            <div class="input-group">
+                                <input name="q" type="search" class="form-control" placeholder="Search..." aria-label="Search">
                             </div>
-                        </div>
-                        <div class="col-auto">
-                            <button type="submit" class="btn btn-primary btn-sm">ปรับปรุง</button>
-                        </div>&nbsp;&nbsp;&nbsp;&nbsp;
-                        <div class="col-auto">
-                            <select name="month" id="month" class="form-select">
-                                {% for m in months %}
-                                    <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-auto">
-                            <select name="year" id="year" class="form-select">
-                                {% for y in years %}
-                                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-auto">
-                            <button type="submit" class="btn btn-primary">ค้นหา</button>
-                            <!-- <button type="button" class="btn btn-secondary" onclick="clearFormAndSubmit()">ยกเลิก</button> -->
-                            <a type="button" class="btn btn-secondary" href="{% url 'dashboard:orders_all' %}" >ยกเลิก</a>
-                        </div>
-                      </form>
-                      </div>  
+                        </form>
+                    </div>
+                    <div class="col-12 col-lg-8 mb-3">
+                        <form method="get" action="{% url 'dashboard:orders_all' %}" class="row g-2 align-items-center justify-content-lg-end">
+                            <div class="col-12 col-sm-auto d-flex align-items-center">
+                                <div class="form-check form-switch me-2">
+                                    <input type="checkbox" class="form-check-input" id="showRejected" name="show_rejected" {% if show_rejected  %}checked{% endif %}>
+                                    <label class="form-check-label" for="showRejected">แสดงรายการที่ถูกปฏิเสธ</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm">ปรับปรุง</button>
+                            </div>
+                            <div class="col-12 col-sm-auto">
+                                <select name="month" id="month" class="form-select w-100">
+                                    {% for m in months %}
+                                        <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-auto">
+                                <select name="year" id="year" class="form-select w-100">
+                                    {% for y in years %}
+                                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary">ค้นหา</button>
+                                <a type="button" class="btn btn-secondary" href="{% url 'dashboard:orders_all' %}" >ยกเลิก</a>
+                            </div>
+                        </form>
+                    </div>  
 
                     {% elif '/manage/user/' in request.path %}
-                    <div class="col-6">
-                        <div class="row">
-                            <div class="col-auto"><a class="btn-warning btn" href="{% url 'accounts:user_register'%}">เพิ่มข้อมูล</a></div>
-                            <div class="col-5 mb-3" >
-                                <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'accounts:manage_user' %}">
+                    <div class="col-12 col-xl-6 mb-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-auto">
+                                <a class="btn-warning btn w-100" href="{% url 'accounts:user_register'%}">เพิ่มข้อมูล</a>
+                            </div>
+                            <div class="col">
+                                <form action="{% url 'accounts:manage_user' %}">
                                     <div class="input-group">
-                                        <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                        <input name="q" type="search" class="form-control" placeholder="Search..." aria-label="Search">
                                         <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
-                    <div class="col-6">
-                        <div class=" mb-3">
-                            <form method="post" enctype="multipart/form-data" action="{% url 'accounts:import_users' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
-                                {% csrf_token %}
-                                <div class="col-4">
-                                    <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-outline-success ms-2"><i class="bi bi-upload"></i> นำเข้า Excel</button>
-                                    <!-- <button href="{% url 'dashboard:export_products' %}" class="btn btn-outline-danger ms-2"><i class="bi bi-upload"></i> นำออก to Excel</button> -->
-                                </div>
-                                <div class="col-auto">
-                                    <a href="{% url 'accounts:export_users' %}" class="icon-link justify-content-end">
-                                        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
-                                            <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
-                                            <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>
-                                            <rect width="16" height="9" x="28" y="24" fill="#107c42"></rect>
-                                            <rect width="16" height="9" x="12" y="15" fill="#3fa071"></rect>
-                                            <path fill="#33c481" d="M42,6H28v9h16V8C44,6.895,43.105,6,42,6z"></path>
-                                            <path fill="#21a366" d="M14,6h14v9H12V8C12,6.895,12.895,6,14,6z"></path>
-                                            <path d="M22.319,13H12v24h10.319C24.352,37,26,35.352,26,33.319V16.681C26,14.648,24.352,13,22.319,13z"
-                                                opacity=".05"></path>
-                                            <path
-                                                d="M22.213,36H12V13.333h10.213c1.724,0,3.121,1.397,3.121,3.121v16.425	C25.333,34.603,23.936,36,22.213,36z"
-                                                opacity=".07"></path>
-                                            <path
-                                                d="M22.106,35H12V13.667h10.106c1.414,0,2.56,1.146,2.56,2.56V32.44C24.667,33.854,23.52,35,22.106,35z"
-                                                opacity=".09"></path>
-                                            <linearGradient id="flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1" x1="4.725" x2="23.055" y1="14.725"
-                                                y2="33.055" gradientUnits="userSpaceOnUse">
-                                                <stop offset="0" stop-color="#18884f"></stop>
-                                                <stop offset="1" stop-color="#0b6731"></stop>
-                                            </linearGradient>
-                                            <path fill="url(#flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1)"
-                                                d="M22,34H6c-1.105,0-2-0.895-2-2V16c0-1.105,0.895-2,2-2h16c1.105,0,2,0.895,2,2v16	C24,33.105,23.105,34,22,34z">
-                                            </path>
-                                            <path fill="#fff"
-                                                d="M9.807,19h2.386l1.936,3.754L16.175,19h2.229l-3.071,5l3.141,5h-2.351l-2.11-3.93L11.912,29H9.526	l3.193-5.018L9.807,19z">
-                                            </path>
-                                        </svg>
-                                    </a>
-                                </div>
-                            </form>
-                        </div>
+                    <div class="col-12 col-xl-6 mb-3">
+                        <form method="post" enctype="multipart/form-data" action="{% url 'accounts:import_users' %}" class="row g-2 align-items-center justify-content-xl-end">
+                            {% csrf_token %}
+                            <div class="col-12 col-sm-6">
+                                <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-outline-success"><i class="bi bi-upload"></i> นำเข้า Excel</button>
+                            </div>
+                            <div class="col-auto">
+                                <a href="{% url 'accounts:export_users' %}" class="icon-link">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 48 48">
+                                        <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect><path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path><rect width="16" height="9" x="28" y="24" fill="#107c42"></rect><rect width="16" height="9" x="12" y="15" fill="#3fa071"></rect><path fill="#33c481" d="M42,6H28v9h16V8C44,6.895,43.105,6,42,6z"></path><path fill="#21a366" d="M14,6h14v9H12V8C12,6.895,12.895,6,14,6z"></path><path d="M22.319,13H12v24h10.319C24.352,37,26,35.352,26,33.319V16.681C26,14.648,24.352,13,22.319,13z" opacity=".05"></path><path d="M22.213,36H12V13.333h10.213c1.724,0,3.121,1.397,3.121,3.121v16.425   C25.333,34.603,23.936,36,22.213,36z" opacity=".07"></path><path d="M22.106,35H12V13.667h10.106c1.414,0,2.56,1.146,2.56,2.56V32.44C24.667,33.854,23.52,35,22.106,35z" opacity=".09"></path><linearGradient id="flEJnwg" x1="4.725" x2="23.055" y1="14.725" y2="33.055" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#18884f"></stop><stop offset="1" stop-color="#0b6731"></stop></linearGradient><path fill="url(#flEJnwg)" d="M22,34H6c-1.105,0-2-0.895-2-2V16c0-1.105,0.895-2,2-2h16c1.105,0,2,0.895,2,2v16   C24,33.105,23.105,34,22,34z"></path><path fill="#fff" d="M9.807,19h2.386l1.936,3.754L16.175,19h2.229l-3.071,5l3.141,5h-2.351l-2.11-3.93L11.912,29H9.526   l3.193-5.018L9.807,19z"></path>
+                                    </svg>
+                                </a>
+                            </div>
+                        </form>
                     </div>
 
-                    {% elif '/workgroup/' in request.path %}
-                    <div class="col-6">
-                        <div class="row">
-                            <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_work_group'%}">เพิ่มข้อมูล</a></div>
-                            <div class="col-5 mb-3" >
-                                <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:workgroup' %}">
+                    {% elif '/workgroup/' in request.path or '/category/' in request.path or '/subcategory/' in request.path %}
+                    <div class="col-12 col-lg-6 mb-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-auto">
+                                {% if '/workgroup/' in request.path %}
+                                    <a class="btn-warning btn w-100" href="{% url 'dashboard:add_work_group'%}">เพิ่มข้อมูล</a>
+                                {% elif '/category/' in request.path %}
+                                    <a class="btn-warning btn w-100" href="{% url 'dashboard:add_category'%}">เพิ่มข้อมูล</a>
+                                {% elif '/subcategory/' in request.path %}
+                                    <a class="btn-warning btn w-100" href="{% url 'dashboard:add_subcategory'%}">เพิ่มข้อมูล</a>
+                                {% endif %}
+                            </div>
+                            <div class="col">
+                                <form action="{{ request.path }}">
                                     <div class="input-group">
-                                        <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
+                                        <input name="q" type="search" class="form-control" placeholder="Search..." aria-label="Search">
                                         <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
-                    <div class="col-6">
-                        <div class=" mb-3">
-                            <form method="post" enctype="multipart/form-data" action="{% url 'dashboard:import_work_group' %}" class="row gy-2 gx-3 align-items-center justify-content-end mb-4">
-                                {% csrf_token %}
-                                <div class="col-4">
-                                    <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required>
-                                </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-outline-success ms-2"><i class="bi bi-upload"></i> นำเข้า Excel</button>
-                                    <!-- <button href="{% url 'dashboard:export_products' %}" class="btn btn-outline-danger ms-2"><i class="bi bi-upload"></i> นำออก to Excel</button> -->
-                                </div>
-                            </form>
-                            
-                        </div>
-                    </div>
-
-                    {% elif '/category/' in request.path %}
-                    <div class="col-6">
-                    <div class="row">
-                        <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_category'%}">เพิ่มข้อมูล</a></div>
-                    <div class="col-5 mb-3" >
-                        <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:category' %}">
-                            <div class="input-group">
-                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
-                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
+                    {% if '/workgroup/' in request.path %}
+                    <div class="col-12 col-lg-6 mb-3">
+                        <form method="post" enctype="multipart/form-data" action="{% url 'dashboard:import_work_group' %}" class="row g-2 align-items-center justify-content-lg-end">
+                            {% csrf_token %}
+                            <div class="col-12 col-sm-6">
+                                <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-outline-success"><i class="bi bi-upload"></i> นำเข้า Excel</button>
                             </div>
                         </form>
                     </div>
-                    </div>
-                    </div>
-
-                    {% elif '/subcategory/' in request.path %}
-                    <div class="col-6">
-                    <div class="row">
-                        <div class="col-auto"><a class="btn-warning btn" href="{% url 'dashboard:add_subcategory'%}">เพิ่มข้อมูล</a></div>
-                    <div class="col-5 mb-3" >
-                        <form class="col-lg-auto mb-lg-0 me-lg-3"  action="{% url 'dashboard:subcategory' %}">
-                            <div class="input-group">
-                                <input name="q" type="search" class="form-control form-control-dark" placeholder="Search..." aria-label="Search">
-                                <button type="button" class="btn btn-secondary" onclick="this.form.q.value=''; this.form.submit();">ยกเลิก</button>
-                            </div>
-                        </form>
-                    </div>
-                    </div>
-                    </div>
+                    {% endif %}
                     {% endif %}
                 </div>
                 
-                {% block content %}{% endblock %}
+                <div class="table-responsive-custom mt-3">
+                    {% block content %}{% endblock %}
+                </div>
+
             </div>
         </div>
-        <!-- sidebar -->
-        <div class="col-md-2 border-start sidebar">
-            <h4 class="text-muted">Dashboard</h4>
+
+        <div class="col-12 col-md-3 col-lg-2 border-end sidebar collapse d-md-block order-1 order-md-2 mb-4" id="sidebarCollapse">
+            <h4 class="text-muted d-none d-md-block">Dashboard</h4>
             <a class="text-decoration-none " href="{% url 'dashboard:dashboard_home' %}">
-                <li
-                    class="rounded list-group-item mt-2  text-primary {% if '/dashboard_home/' in request.path %}active text-white{% endif %}">
+                <li class="rounded list-group-item mt-2 text-primary {% if '/dashboard_home/' in request.path %}active text-white{% endif %}">
                     Dashboard Home
                 </li>
             </a>
-            <!-- <a class="text-decoration-none " href="{% url 'dashboard:dashboard_report' %}">
-                <li
-                    class="rounded list-group-item mt-2  text-primary {% if '/dashboard_report/' in request.path %}active text-white{% endif %}">
-                    Line Chart Report
-                </li>
-            </a> -->
-            <!-- <a class="text-decoration-none " href="{% url 'dashboard:issuing_report' %}">
-                <li
-                    class="rounded list-group-item mt-2  text-primary {% if '/issuing_report/' in request.path %}active text-white{% endif %}">
-                    Issuing Report 
-                </li>
-            </a> -->
+            
             <a class="text-decoration-none " href="{% url 'dashboard:monthly_report' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/monthly_report/' in request.path %}active text-white{% endif %}" >รายงานประจำเดือน</li>
-
+                <li class="rounded list-group-item mt-2 text-primary {% if '/monthly_report/' in request.path %}active text-white{% endif %}">รายงานประจำเดือน</li>
             </a>
-            <!-- <a class="text-decoration-none " href="{% url 'dashboard:monthly_stock_sum' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/monthly-stock-sum/' in request.path %}active text-white{% endif %}">รายงานวัสดุคงเหลือ</li>
-            </a> -->
+            
             <div class="dropdown">
-                <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
+                <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle w-100"
                     type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
                     รายงานอื่นๆ..
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    
+                <ul class="dropdown-menu w-100" aria-labelledby="dropdownMenuButton1">
                     <li><a class="dropdown-item {% if '/dashboard_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:dashboard_report' %}">Line Chart Report</a></li>
                     <li><a class="dropdown-item {% if '/issuing_report/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:issuing_report' %}">Issuing Report</a></li>
                     <li><a class="dropdown-item {% if '/monthly-stock-sum/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_stock_sum' %}">รายงานวัสดุคงเหลือ</a></li>
-
                     <li><a class="dropdown-item {% if '/monthly-report-receive/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_report_receive' %}">รายงานรับเข้าประจำเดือน</a></li>
                     <li><a class="dropdown-item {% if '/report_order_list/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:report_order_list' %}">รายการเบิกประจำเดือน รายบุคคล</a></li>
                     <li><a class="dropdown-item {% if '/report-monthly-totals/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:report_monthly_totals' %}">ยอดที่เบิกวัสดุแต่ละเดือน</a></li>
-                    <!-- <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %} text-danger"  href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุคงเหลือยกมา (อัพทุกวันที่1) </a></li> -->
                     <li><a class="dropdown-item {% if '/total_quantity/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:total_quantity' %}">จำนวนวัสดุที่รับเข้าทั้งหมด</a></li>
                 </ul>
             </div>
             <hr>
+
             {% if request.user.is_manager %}
             <h4 class="text-muted">จัดการวัสดุ</h4>
-            <a class="btn btn-primary rounded list-group-item text-danger text-start {% if '/orders/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:orders' %}">
-                <strong class="">คำร้องใหม่</strong>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger ">
+            <a class="btn btn-primary rounded list-group-item text-danger text-start w-100 position-relative mb-2 {% if '/orders/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:orders' %}">
+                <strong>คำร้องใหม่</strong>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                     {{ pending_orders_count }}
                 </span>
             </a>
             <a class="text-decoration-none" href="{% url 'dashboard:orders_all' %}">
-                <li class="rounded list-group-item mt-2 mb-3 text-primary {% if '/orders_all/' in request.path %}active text-white{% endif %}">
+                <li class="rounded list-group-item mb-3 text-primary {% if '/orders_all/' in request.path %}active text-white{% endif %}">
                     คำร้องทั้งหมด</li>
             </a>
             {% endif %}
@@ -487,169 +376,143 @@
             {% if request.user.is_warehouse_manager or user.is_admin %}
                 <h4 class="text-muted">จัดการวัสดุ</h4>
                 {% if request.user.is_authenticated %}
-                    <a class="btn btn-primary rounded list-group-item text-danger text-start {% if '/orders/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:orders' %}">
-                        <strong class="">คำร้องใหม่</strong>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger ">
+                    <a class="btn btn-primary rounded list-group-item text-danger text-start w-100 position-relative mb-2 {% if '/orders/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:orders' %}">
+                        <strong>คำร้องใหม่</strong>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                             {{ pending_orders_count }}
                         </span>
                     </a>
                 {% endif %}
 
                 <a class="text-decoration-none" href="{% url 'dashboard:orders_all' %}">
-                    <li class="rounded list-group-item mt-2  text-primary {% if '/orders_all/' in request.path %}active text-white{% endif %}">
+                    <li class="rounded list-group-item text-primary mb-2 {% if '/orders_all/' in request.path %}active text-white{% endif %}">
                         คำร้องทั้งหมด</li>
                 </a>
 
-                <a class="btn btn-primary mt-2 rounded list-group-item text-danger text-start {% if '/notification/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:notification' %}">
-                    <strong class="">คำร้องแจ้งวัสดุหมด!</strong>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger ">
+                <a class="btn btn-primary rounded list-group-item text-danger text-start w-100 position-relative mb-3 {% if '/notification/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:notification' %}">
+                    <strong>คำร้องแจ้งวัสดุหมด!</strong>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                         {{ pending_outofstock_count }}
                     </span>
                 </a>
                 <hr>
             
                 <a class="text-decoration-none" href="{% url 'dashboard:receive_list' %}">
-                    <li class="rounded list-group-item mt-2  text-primary {% if '/receive_list/' in request.path %}active text-white{% endif %}">
+                    <li class="rounded list-group-item mb-2 text-primary {% if '/receive_list/' in request.path %}active text-white{% endif %}">
                         รับเข้าวัสดุ</li>
                 </a>
             
                 <a class="text-decoration-none" href="{% url 'dashboard:products' %}">
-                    <li class="rounded list-group-item mt-2  text-primary {% if '/products/' in request.path %}active text-white{% endif %}">
+                    <li class="rounded list-group-item mb-2 text-primary {% if '/products/' in request.path %}active text-white{% endif %}">
                         รายการวัสดุและสต๊อก</li>
                 </a>
             
                 {% if stock_record_exists %}
                 <a class="text-decoration-none" href="{% url 'dashboard:record_monthly_stock' %}">
-                    <li class="rounded list-group-item mt-2 bg-success text-white {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %}">
-                        นับสต๊อกแล้ว 
-                    <i class="bi bi-check-circle-fill text-white"></i>
+                    <li class="rounded list-group-item mb-2 bg-success text-white {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %}">
+                        นับสต๊อกแล้ว <i class="bi bi-check-circle-fill text-white"></i>
                     </li>   
                 </a>
-            
-            {% else %}
+                {% else %}
                 <a class="text-decoration-none" href="{% url 'dashboard:record_monthly_stock' %}">
-                    <li class="rounded list-group-item mt-2 bg-danger text-white {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %}">
+                    <li class="rounded list-group-item mb-2 bg-danger text-white {% if '/record_monthly_stock/' in request.path %}active text-white{% endif %}">
                         คุณยังไม่นับสต๊อกในเดือนนี้<br>(กรุณานับสต๊อกด่วน)
                         <i class="bi bi-exclamation-octagon-fill"></i>
                     </li>
                 </a>
-            {% endif %}
+                {% endif %}
 
-            <!-- <a class="text-decoration-none" href="{% url 'dashboard:total_quantity' %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/total_quantity/' in request.path %}active text-white{% endif %}">
-                    จำนวนวัสดุที่รับเข้าทั้งหมด</li>
-            </a> -->
-            <div class="dropdown">
-                <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
-                    type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                    อื่นๆ..
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุคงเหลือ (ยกมา)</a></li>
-                    <li><a class="dropdown-item {% if '/suppliers/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:suppliers' %}">ซัพพลายเออร์</a></li>
-                    <!-- <li><a class="dropdown-item {% if '/add-suppliers/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:add_suppliers' %}">เพิ่มซัพพลายเออร์ <b class="text-danger">ใหม่!</b></a></li> -->
-                    <li><a class="dropdown-item {% if '/workgroup/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:workgroup' %}">เพิ่มกลุ่มงาน</a></li>
-                    <li><a class="dropdown-item {% if '/subcategory/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:subcategory' %}">เพิ่มหมวดหมู่ย่อย</a></li>
-                    <li><a class="dropdown-item {% if '/category/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:category' %}">เพิ่มหมวดหมู่หลัก</a></li>
-                    </li>
-                </ul>
-            </div>
-            <hr>
+                <div class="dropdown">
+                    <button class="btn text-start rounded list-group-item mb-2 text-primary dropdown-toggle w-100"
+                        type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                        อื่นๆ..
+                    </button>
+                    <ul class="dropdown-menu w-100" aria-labelledby="dropdownMenuButton1">
+                        <li><a class="dropdown-item {% if '/monthly-stock-records/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:monthly_stock_records' %}">ข้อมูลวัสดุคงเหลือ (ยกมา)</a></li>
+                        <li><a class="dropdown-item {% if '/suppliers/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:suppliers' %}">ซัพพลายเออร์</a></li>
+                        <li><a class="dropdown-item {% if '/workgroup/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:workgroup' %}">เพิ่มกลุ่มงาน</a></li>
+                        <li><a class="dropdown-item {% if '/subcategory/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:subcategory' %}">เพิ่มหมวดหมู่ย่อย</a></li>
+                        <li><a class="dropdown-item {% if '/category/' in request.path %}active text-white{% endif %}" href="{% url 'dashboard:category' %}">เพิ่มหมวดหมู่หลัก</a></li>
+                    </ul>
+                </div>
+                <hr>
             {% endif %}
 
             <h4 class="text-muted">ข้อมูลของฉัน</h4>
             <a class="text-decoration-none" href="{% url 'accounts:manager_profile_detail' user.username %}">
-                <li class="rounded list-group-item mt-2  text-primary {% if '/profile/manager/' in request.path %}active text-white{% endif %}">
+                <li class="rounded list-group-item mt-2 text-primary {% if '/profile/manager/' in request.path %}active text-white{% endif %}">
                     โปรไฟล์ของฉัน</li>
             </a>
-            
             
             <hr>
             {% if request.user.is_admin %}
             <h4 class="text-muted">จัดการข้อมูลผู้ใช้งาน</h4>
             <div class="dropdown">
                 <a class="text-decoration-none" href="{% url 'accounts:manage_user' %}">
-                    <li class="rounded list-group-item mt-2  text-primary {% if '/manage/user/' in request.path %}active text-white{% endif %}">
+                    <li class="rounded list-group-item mt-2 text-primary {% if '/manage/user/' in request.path %}active text-white{% endif %}">
                         ข้อมูลผู้ใช้</li>
                 </a>
-                <!-- <a class="text-decoration-none" href="{% url 'accounts:manager_profile_detail' user.username %}">
-                    <li class="rounded list-group-item mt-2  text-primary {% if '/profile/manager/' in request.path %}active text-white{% endif %}">
-                        โปรไฟล์ของฉัน</li>
-                </a> -->
-                <!-- <button class="btn text-start rounded list-group-item mt-2 text-primary dropdown-toggle col-12"
-                    type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                    จัดการสมาชิก..
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    <li><a class="dropdown-item {% if '/profile/manager/' in request.path %}active text-white{% endif %}"
-                            href="{% url 'accounts:manager_profile_detail' user.username %}">โปรไฟล์ของฉัน
-                        </a></li>
-                    <li><a class="dropdown-item {% if '/profile/edit/manager/' in request.path %}active text-white{% endif %}" href="{% url 'accounts:edit_profile_manager' %}">แก้ไขโปรไฟล์ของฉัน </a></li>
-                </ul> -->
             </div>
             <hr>
             {% endif %}
-            <div class="row ">
+
+            <div class="row g-2">
                 {% if request.user.is_manager or user.is_warehouse_manager or user.is_admin or user.is_executive %}
-                <div class="col-6">
+                <div class="col-12 col-xl-6">
                     <a class="text-decoration-none" href="{% url 'shop:home_page' %}">
-                        <li class="rounded list-group-item bg-primary mt-2 text-center text-white">เบิกวัสดุ</li>
+                        <li class="rounded list-group-item bg-primary text-center text-white">เบิกวัสดุ</li>
                     </a>
                 </div>
-                <div class="col-6">
+                <div class="col-12 col-xl-6">
                     <a class="text-decoration-none" href="{% url 'accounts:user_logout' %}">
-                        <li class="rounded list-group-item bg-danger mt-2 text-center text-white">Logout</li>
+                        <li class="rounded list-group-item bg-danger text-center text-white">Logout</li>
                     </a>
                 </div>
-                <div class="col-6">
+                <div class="col-12 mt-2">
                     <a class="text-decoration-none" href="{% url 'assets:calendar' %}">
-                        <li class="rounded list-group-item bg-warning mt-2 text-center text-white">ยืมครุภัณฑ์</li>
+                        <li class="rounded list-group-item bg-warning text-center text-white">ยืมครุภัณฑ์</li>
                     </a>
                 </div>
                 {% else %}
-                <div class="col-6 container justify-content-center">
+                <div class="col-12">
                     <a class="text-decoration-none" href="{% url 'accounts:user_logout' %}">
-                        <li class="rounded list-group-item bg-danger mt-2 text-center text-white">Logout</li>
+                        <li class="rounded list-group-item bg-danger text-center text-white">Logout</li>
                     </a>
                 </div>
                 {% endif %}
-                
             </div>
-            <div class="row d-flex justify-content-center mt-2 mb-2 mx-2 "
-                style="box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px; 
-            font-size: 15px; background:rgb(58, 82, 114); padding: 0.5em; border-radius: 8px;  color:rgb(255, 255, 255);">
-                <div class="col-2 d-flex justify-content-center">
+
+            <div class="d-flex align-items-center justify-content-center mt-3 mb-2 p-2 rounded text-white"
+                style="box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px; background:rgb(58, 82, 114);">
+                <div class="me-2">
                     {% if user.profile.img %}
-                    <img src="{{ user.profile.img.url }}" style="border-radius: 50%; max-height: 50px; max-width: 50px;">
-                    <!-- <canvas id="profileCanvas" width="50" height="50" style="border-radius: 50%;"></canvas>
-                    <script>
-                        var canvas = document.getElementById('profileCanvas');
-                        var ctx = canvas.getContext('2d');
-
-                        var img = new Image();
-                        img.src = "{{ user.profile.img.url }}"; // ใส่ URL ของรูปภาพของคุณที่นี่
-
-                        img.onload = function () {
-                            ctx.beginPath();
-                            ctx.arc(25, 25, 25, 0, 2 * Math.PI);
-                            ctx.clip();
-                            ctx.drawImage(img, 0, 0, 50, 50);
-                        };
-                    </script> -->
+                        <img src="{{ user.profile.img.url }}" style="border-radius: 50%; width: 50px; height: 50px; object-fit: cover;">
                     {% else %}
-                    <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg"
-                        style="max-height: 50px; border-radius: 50%;">
+                        <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg" style="border-radius: 50%; width: 50px; height: 50px; object-fit: cover;">
                     {% endif %}
                 </div>
-                <div class="col-9 " style="display: grid; place-items: center;">You logged in as:
-                    <h style="font-size: 20px; font-weight: bolder; color:rgb(26, 255, 0);">{{user.username}}</h>
+                <div>
+                    <span class="d-block" style="font-size: 13px;">You logged in as:</span>
+                    <strong style="font-size: 16px; color:rgb(26, 255, 0);">{{user.username}}</strong>
                 </div>
             </div>
-            <!-- <div class="text-muted mt-2">You logged in as: {{ request.user.email }}</div> -->
         </div>
-        <!-- <div class="col-md-1 "></div> -->
     </div>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            window.setTimeout(function () {
+                $(".alert").fadeTo(1000, 0).slideUp(1000, function () {
+                    $(this).remove();
+                });
+            }, 1500);
+        });
+    </script>
+    <script>
+        // Scripts เดิมทั้งหมดไม่ต้องเปลี่ยน
+    </script>
 </body>
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script type="text/javascript">
     $(document).ready(function () {
@@ -737,27 +600,6 @@
     }
 </script>
 
-<!-- <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var searchInput = document.getElementById('searchInput');
-        var rows = document.querySelectorAll('.table tbody tr');
-
-        searchInput.addEventListener('keyup', function() {
-            var query = searchInput.value.trim().toLowerCase();
-
-            rows.forEach(function(row) {
-                var product = row.querySelector('td:nth-child(2)').textContent.trim().toLowerCase(); // เปลี่ยนตามคอลัมน์ที่ต้องการค้นหา
-
-                if (product.includes(query)) {
-                    row.style.display = ''; // แสดงรายการที่ตรงกับคำค้นหา
-                } else {
-                    row.style.display = 'none'; // ซ่อนรายการที่ไม่ตรงกับคำค้นหา
-                }
-            });
-        });
-    });
-</script> -->
-
 <!-- ฟังก์ชันค้นหาลิสในตาราง -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -811,5 +653,4 @@
         document.querySelector('form').submit();       // Submit the form
     }
 </script>
-
 </html>

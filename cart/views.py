@@ -151,32 +151,49 @@ def show_cart(request):
 
 @user_passes_test(is_authorized)
 @login_required
+# def remove_from_cart(request, product_id, receiving_id):
+#     cart = Cart(request)  # สร้าง instance ของ Cart
+#     product = get_object_or_404(Product, id=product_id)
+
+#     # cart.remove() จะคืนสต็อกไปยัง Receiving โดยอัตโนมัติ
+#     # (เพราะใน Cart.remove() เราใช้ restore_stock_on_remove=True)
+#     # *แต่* ในโค้ด Cart.remove() ที่คุณให้มา ไม่ได้รับ restore_stock_on_remove 
+#     # เป็น argument ในการเรียกใช้เมธอด ให้ดูบรรทัดถัดไป
+
+#     # ✅ ต้องเรียก remove แบบนี้เพื่อให้มีการคืนสต็อกกลับไปที่ Receiving
+#     # (หากคุณต้องการให้การลบจากรถเข็นด้วยตนเอง คืนสต็อกทันที)
+#     removed_item = cart.remove(product, receiving_id, restore_stock_on_remove=True)
+    
+#     # ⚠️ ข้อควรระวัง: เมธอด remove ในคลาส Cart ที่คุณให้มา
+#     # ไม่ได้ใส่ restore_stock_on_remove=True เป็นค่า default ในการเรียกใช้
+#     # หากไม่ใส่ restore_stock_on_remove=True การคืนสต็อกจะเกิดขึ้น
+#     # เฉพาะตอนที่สินค้าหมดอายุใน __iter__() เท่านั้น
+    
+#     # ดังนั้น การแก้ไขที่ถูกต้องที่สุดคือ:
+#     removed_item = cart.remove(product, receiving_id, restore_stock_on_remove=True) 
+
+#     if removed_item:
+#         # ✅ โค้ดที่สะอาดและถูกต้อง (Logic การคืนสต็อกถูกย้ายไปที่ Cart.remove() แล้ว)
+#         messages.success(request, 'ลบสินค้าออกจากตะกร้าแล้ว และคืนสต็อกแล้ว')
+#         return redirect('cart:show_cart')
+#     else:
+#         messages.success(request, 'ลบสินค้าออกจากตะกร้าแล้ว และคืนสต็อกแล้ว')
+#         messages.error(request, 'ไม่พบสินค้าในตะกร้า')
+#         return redirect('cart:show_cart')
+
+@user_passes_test(is_authorized)
+@login_required
 def remove_from_cart(request, product_id, receiving_id):
-    cart = Cart(request)  # สร้าง instance ของ Cart
+    cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
 
-    # cart.remove() จะคืนสต็อกไปยัง Receiving โดยอัตโนมัติ
-    # (เพราะใน Cart.remove() เราใช้ restore_stock_on_remove=True)
-    # *แต่* ในโค้ด Cart.remove() ที่คุณให้มา ไม่ได้รับ restore_stock_on_remove 
-    # เป็น argument ในการเรียกใช้เมธอด ให้ดูบรรทัดถัดไป
-
-    # ✅ ต้องเรียก remove แบบนี้เพื่อให้มีการคืนสต็อกกลับไปที่ Receiving
-    # (หากคุณต้องการให้การลบจากรถเข็นด้วยตนเอง คืนสต็อกทันที)
-    removed_item = cart.remove(product, receiving_id, restore_stock_on_remove=True)
-    
-    # ⚠️ ข้อควรระวัง: เมธอด remove ในคลาส Cart ที่คุณให้มา
-    # ไม่ได้ใส่ restore_stock_on_remove=True เป็นค่า default ในการเรียกใช้
-    # หากไม่ใส่ restore_stock_on_remove=True การคืนสต็อกจะเกิดขึ้น
-    # เฉพาะตอนที่สินค้าหมดอายุใน __iter__() เท่านั้น
-    
-    # ดังนั้น การแก้ไขที่ถูกต้องที่สุดคือ:
-    removed_item = cart.remove(product, receiving_id, restore_stock_on_remove=True) 
+    # แปลง receiving_id เป็น int ก่อนส่งเข้าฟังก์ชัน เพื่อป้องกัน Type Mismatch
+    # (เช่น URL ส่งมาเป็น str แต่ใน Cart เก็บเป็น int)
+    removed_item = cart.remove(product, int(receiving_id), restore_stock_on_remove=True)
 
     if removed_item:
-        # ✅ โค้ดที่สะอาดและถูกต้อง (Logic การคืนสต็อกถูกย้ายไปที่ Cart.remove() แล้ว)
-        messages.success(request, 'ลบสินค้าออกจากตะกร้าแล้ว และคืนสต็อกแล้ว')
-        return redirect('cart:show_cart')
+        messages.success(request, f'ลบสินค้า {product.product_name} ออกจากตะกร้าและคืนสต็อกเรียบร้อยแล้ว')
     else:
-        messages.success(request, 'ลบสินค้าออกจากตะกร้าแล้ว และคืนสต็อกแล้ว')
-        messages.error(request, 'ไม่พบสินค้าในตะกร้า')
-        return redirect('cart:show_cart')
+        messages.error(request, 'ไม่พบสินค้าในตะกร้า หรือเกิดข้อผิดพลาดในการลบ')
+        
+    return redirect('cart:show_cart')

@@ -74,7 +74,7 @@
                         {% if loan.status == 'pending' %}table-warning{% endif %}
                         {% if loan.status == 'returned_pending' %}table-info{% endif %}
                         {% if loan.status == 'overdue' %}table-danger{% endif %}
-                    ">
+                        ">
                         <th scope="row">{{ forloop.counter0|add:page_obj.start_index }}</th>
                         <td>{{ loan.user.get_full_name }}</td>
                         <td class="fw-bold">{{ loan.order_code }}</td>
@@ -372,5 +372,10 @@ document.addEventListener("DOMContentLoaded", function () {
         loanInfoDisplay.value = `#${loanId} โดยคุณ ${loanUser}`;
     });
 });
+</script>
+<script type="text/javascript">
+  setInterval(function () {
+    window.location.reload();
+  }, 30000);  //3000มิลลิวินาที=30วินาที รีเฟรชทุก 30 วินาที
 </script>
 {% endblock %}

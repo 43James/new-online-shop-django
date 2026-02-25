@@ -111,23 +111,59 @@ class Cart:
             return True
         return False
 
+    # def remove(self, product, receiving_id, restore_stock_on_remove=False):
+    #     product_id = str(product.id)
+    #     if product_id in self.cart:
+    #         for item in list(self.cart[product_id]):
+    #             if item['receiving_id'] == receiving_id:
+    #                 quantity = item['quantity']
+    #                 self.cart[product_id].remove(item)
+    #                 if not self.cart[product_id]:
+    #                     del self.cart[product_id]
+    #                 self.save()
+
+    #                 if restore_stock_on_remove and not self.session.get('cart_cleared'):
+    #                     receiving = Receiving.objects.get(id=receiving_id)
+    #                     receiving.quantity += quantity
+    #                     receiving.save()
+    #                     # product.quantityinstock += quantity
+    #                     # product.save()
+    #                 return item
+    #     return None
+
     def remove(self, product, receiving_id, restore_stock_on_remove=False):
         product_id = str(product.id)
+        # แปลง receiving_id เป็น int เพื่อความชัวร์ในการเปรียบเทียบ
+        try:
+            receiving_id = int(receiving_id)
+        except ValueError:
+            return None
+
         if product_id in self.cart:
+            # ใช้ list() ครอบเพื่อป้องกัน error ขณะลบข้อมูลใน loop
             for item in list(self.cart[product_id]):
-                if item['receiving_id'] == receiving_id:
+                # เปรียบเทียบโดยแปลง item['receiving_id'] เป็น int ด้วย
+                if int(item['receiving_id']) == receiving_id:
                     quantity = item['quantity']
+                    
+                    # 1. ลบออกจาก Session Cart (ส่วนนี้ทำงานแล้วจากที่คุณบอก)
                     self.cart[product_id].remove(item)
+                    
                     if not self.cart[product_id]:
                         del self.cart[product_id]
                     self.save()
 
-                    if restore_stock_on_remove and not self.session.get('cart_cleared'):
-                        receiving = Receiving.objects.get(id=receiving_id)
-                        receiving.quantity += quantity
-                        receiving.save()
-                        # product.quantityinstock += quantity
-                        # product.save()
+                    # 2. คืนสต็อก (ส่วนที่มีปัญหา)
+                    # ✅ แก้ไข: ตัดเงื่อนไข session.get('cart_cleared') ออก
+                    if restore_stock_on_remove:
+                        try:
+                            receiving = Receiving.objects.get(id=receiving_id)
+                            receiving.quantity += quantity
+                            receiving.save()
+                            # print(f"Restored stock: {quantity} to Receiving ID {receiving_id}") # Debug
+                        except Receiving.DoesNotExist:
+                            pass # หรือจัดการ error ตามต้องการ
+
                     return item
         return None
 

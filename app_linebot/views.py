@@ -796,8 +796,6 @@ def linebot(request):
 
 
 
-
-
 #ส่งการแจ้งเตือนไปยังผู้ใช้งานเมื่อเช็คเอ้าท์สินค้า
 def notify_user(order_id):
     try:

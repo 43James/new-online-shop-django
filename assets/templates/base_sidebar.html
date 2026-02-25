@@ -308,13 +308,13 @@
 		</a>
 		<hr>
 		<ul class="nav nav-pills flex-column mb-auto">
-			<li class="nav-item">
+			<!-- <li class="nav-item">
 				<a href="{% url 'assets:home_assets' %}"
 					class="nav-link d-flex align-items-center {% if '/home/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
 					<i class="bi bi-speedometer2 me-2"></i>
 					Dashboard
 				</a>
-			</li>
+			</li> -->
 
 			<li>
 				<a href="{% url 'assets:calendar' %}"
@@ -336,13 +336,19 @@
 				<a href="{% url 'assets:loan_orders_user' %}"
 					class="nav-link d-flex align-items-center {% if '/loan-orders-user/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
 					<i class="bi bi-card-list me-2"></i><strong>
-						รายการยืมครุภัณฑ์ของคุณ</strong>
+						รายการยืมครุภัณฑ์ของฉัน</strong>
 				</a>
 			</li>
 
 			{% if request.user.is_warehouse_manager or request.user.is_admin %}
 			<hr>
-
+			<li class="nav-item">
+				<a href="{% url 'assets:home_assets' %}"
+					class="nav-link d-flex align-items-center {% if '/home/' in request.path %}active text-white bg-primary{% else %}text-primary link-body-emphasis{% endif %}">
+					<i class="bi bi-speedometer2 me-2"></i>
+					Dashboard
+				</a>
+			</li>
 			<li>
 				<a href="{% url 'assets:loan_approval_list' %}"
 					class="nav-link d-flex align-items-center justify-content-between {% if '/loan-approval-list/' in request.path %}active text-white bg-warning{% else %}text-warning link-body-emphasis{% endif %}">
