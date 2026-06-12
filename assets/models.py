@@ -163,11 +163,11 @@ class AssetCode(models.Model):
 # รายการครุภัณฑ์
 class AssetItem(models.Model):
     DAMAGE_STATUS_CHOICES = [
+        ('ใช้งานได้', 'ใช้งานได้'),  # ปรับให้ตรงหน้าฟอร์ม
         ('ชำรุด', 'ชำรุด'),
-        ('เสื่อม', 'เสื่อม'),
+        ('เสื่อมสภาพ', 'เสื่อมสภาพ'),
         ('สูญไป', 'สูญไป'),
         ('ไม่ใช้', 'ไม่ใช้'),
-        ('ใช้อยู่', 'ใช้อยู่'),
     ]
     item_name = models.CharField(max_length=255, verbose_name="ชื่อรายการครุภัณฑ์")
     # category = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='Subcategory', null=True, blank=True, verbose_name='หมวดหมู่')
@@ -187,7 +187,7 @@ class AssetItem(models.Model):
     storage_location = models.ForeignKey(StorageLocation, on_delete=models.CASCADE, verbose_name="สถานที่เก็บ")
     brand_model = models.CharField(max_length=255, verbose_name="ยี่ห้อ/รุ่น")
     notes = models.TextField(blank=True, null=True, verbose_name="หมายเหตุ")
-    damage_status = models.CharField(max_length=10, choices=DAMAGE_STATUS_CHOICES, verbose_name="สถานะการใช้งาน")
+    damage_status = models.CharField(max_length=15, choices=DAMAGE_STATUS_CHOICES, verbose_name="สถานะการใช้งาน")
     status_borrowing = models.BooleanField(default=False, verbose_name="ครุภัณฑ์ที่ยืมได้")
     status_assetloan = models.BooleanField(default=False, verbose_name="สถานะการยืม")
     asset_image = models.ImageField(upload_to="assets/", blank=True, null=True, verbose_name="รูปภาพครุภัณฑ์") # เพิ่มฟิลด์รูปภาพครุภัณฑ์    
@@ -236,20 +236,154 @@ class AssetItem(models.Model):
             self.generate_qr_code()
             super().save(update_fields=['qr_code']) # บันทึกเฉพาะฟิลด์ qr_code
 
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # การครอบครองครุภัณฑ์
+# class AssetOwnership(models.Model):
+#     asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์")
+#     user = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name="ผู้ครอบครอง")
+#     start_date = models.DateField(blank=True, null=True, verbose_name="วันที่เริ่มครอบครอง")
+#     end_date = models.DateField(blank=True, null=True, verbose_name="วันที่สิ้นสุดการครอบครอง")
+
+#     class Meta:
+#         verbose_name = "ตารางการครอบครองครุภัณฑ์"
+#         ordering = ('-id',)
+
+#     def __str__(self):
+#         return f"{self.user.username} - {self.asset.item_name}"
+
+
 class AssetOwnership(models.Model):
-    asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์")
+    asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์", related_name="ownerships")
     user = models.ForeignKey(MyUser, on_delete=models.CASCADE, verbose_name="ผู้ครอบครอง")
     start_date = models.DateField(blank=True, null=True, verbose_name="วันที่เริ่มครอบครอง")
     end_date = models.DateField(blank=True, null=True, verbose_name="วันที่สิ้นสุดการครอบครอง")
+    # เพิ่มฟิลด์นี้ เพื่อระบุว่าสิทธิ์ครอบครองนี้เป็นปัจจุบันหรือไม่
+    is_active = models.BooleanField(default=True, verbose_name="สถานะครอบครองปัจจุบัน") 
 
     class Meta:
         verbose_name = "ตารางการครอบครองครุภัณฑ์"
         ordering = ('-id',)
 
     def __str__(self):
-        return f"{self.user.username} - {self.asset.item_name}"
+        return f"{self.user.username} - {self.asset.item_name} ({'ปัจจุบัน' if self.is_active else 'อดีต'})"
+
+
+
+class AssetTransferRequest(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING_HEAD', 'รอหัวหน้างานพัสดุเห็นชอบ'),
+        ('PENDING_DIRECTOR', 'รอผู้อำนวยการอนุมัติ'),
+        ('PENDING_ACTION', 'รอเจ้าหน้าที่พัสดุดำเนินการ'),
+        ('COMPLETED', 'ดำเนินการเสร็จสิ้น'),
+        ('REJECTED', 'ปฏิเสธ/ไม่อนุมัติ'),
+    ]
+
+    # ส่วนที่ 1: ข้อมูลผู้ขอคำร้อง
+    request_date = models.DateField(default=timezone.now, verbose_name="วันที่ใบคำร้อง")
+    requester = models.ForeignKey(MyUser, on_delete=models.PROTECT, related_name='transfer_requests', verbose_name="ผู้ขอเคลื่อนย้าย/ส่งคืน")
+    # กลุ่ม/ฝ่าย สามารถดึงจาก MyUser ได้ถ้าผูกไว้ แต่ถ้าไม่มี ให้เก็บแยกไว้ตรงนี้
+    department_name = models.CharField(max_length=255, verbose_name="กลุ่ม/ฝ่าย ที่ยื่นคำร้อง") 
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING_HEAD', verbose_name="สถานะใบคำร้อง")
+
+    # ส่วนที่ 2: ความเห็นหัวหน้างานพัสดุ
+    head_approved = models.BooleanField(null=True, blank=True, verbose_name="ความเห็นหัวหน้างาน (เห็นชอบ)")
+    head_reject_reason = models.TextField(null=True, blank=True, verbose_name="เหตุผลกรณีไม่เห็นชอบ")
+    head_approver = models.ForeignKey(MyUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='head_vetted_requests', verbose_name="หัวหน้างานพัสดุผู้ลงชื่อ")
+    head_action_date = models.DateField(null=True, blank=True, verbose_name="วันที่หัวหน้างานลงชื่อ")
+
+    # ส่วนที่ 3: การพิจารณาของผู้อำนวยการ
+    director_approved = models.BooleanField(null=True, blank=True, verbose_name="การพิจารณาผู้อำนวยการ (อนุมัติ)")
+    director_reject_reason = models.TextField(null=True, blank=True, verbose_name="เหตุผลกรณีไม่อนุมัติ")
+    director_approver = models.ForeignKey(MyUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='director_approved_requests', verbose_name="ผู้อำนวยการผู้ลงชื่อ")
+    director_action_date = models.DateField(null=True, blank=True, verbose_name="วันที่ผู้อำนวยการลงชื่อ")
+
+    # ส่วนที่ 4: สำหรับเจ้าหน้าที่พัสดุดำเนินการ
+    officer_action_status = models.CharField(
+        max_length=50, 
+        choices=[
+            ('MOVED', 'ดำเนินการเคลื่อนย้ายเสร็จสิ้น'),
+            ('RETURNED', 'ดำเนินการส่งคืนผู้ควบคุมดูแลพัสดุเสร็จสิ้น'),
+            ('FAILED', 'ไม่สามารถดำเนินการได้')
+        ],
+        null=True, blank=True, 
+        verbose_name="ผลการดำเนินการของเจ้าหน้าที่"
+    )
+    officer_fail_reason = models.TextField(null=True, blank=True, verbose_name="เหตุผลกรณีดำเนินการไม่ได้")
+    officer = models.ForeignKey(MyUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='officer_handled_requests', verbose_name="เจ้าหน้าที่พัสดุผู้ดำเนินการ")
+    officer_action_date = models.DateField(null=True, blank=True, verbose_name="วันที่เจ้าหน้าที่ดำเนินการ")
+
+    class Meta:
+        verbose_name = "ใบคำร้องขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์"
+        verbose_name_plural = "ใบคำร้องขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์"
+        ordering = ('-id',)
+
+    def __str__(self):
+        return f"ใบคำร้องที่ {self.id} โดย {self.requester.username}"
+
+    def apply_ownership_and_location_changes(self):
+        """
+        ฟังก์ชันอัตโนมัติ: จะทำงานเมื่อเจ้าหน้าที่พัสดุบันทึกการทำงานส่วนที่ 4 สำเร็จ (สถานะเป็น COMPLETED)
+        ลอจิกนี้จะอัปเดตสถานที่และผู้ครอบครองปัจจุบันในฐานข้อมูลทันที
+        """
+        if self.status == 'COMPLETED':
+            for item in self.request_items.all():
+                asset = item.asset
+                
+                # 1. อัปเดตสถานะความเสียหายหน้าฟอร์ม ไปยังครุภัณฑ์หลัก
+                asset.damage_status = item.condition
+                
+                if item.action_type == 'RETURN':
+                    # กรณีส่งคืน: ปิดประวัติการครอบครองเดิม
+                    AssetOwnership.objects.filter(asset=asset, is_active=True).update(
+                        is_active=False, 
+                        end_date=self.officer_action_date or timezone.now().date()
+                    )
+                    # อัปเดตข้อมูลสถานที่เก็บหลัก (เช่น เปลี่ยนเป็น คลังพัสดุกลาง)
+                    if item.transfer_to_location:
+                        asset.storage_location = item.transfer_to_location
+                    
+                elif item.action_type == 'MOVE':
+                    # กรณีเคลื่อนย้ายสถานที่: อัปเดตสถานที่เก็บใหม่ในโมเดลหลัก
+                    if item.transfer_to_location:
+                        asset.storage_location = item.transfer_to_location
+                        
+                asset.save()
+
+
+class AssetTransferItem(models.Model):
+    ACTION_CHOICES = [
+        ('MOVE', 'เคลื่อนย้าย'),
+        ('RETURN', 'ส่งคืน'),
+    ]
+    CONDITION_CHOICES = [
+        ('ใช้งานได้', 'ใช้งานได้'),
+        ('ชำรุด', 'ชำรุด'),
+        ('เสื่อมสภาพ', 'เสื่อมสภาพ'),
+    ]
+
+    request_form = models.ForeignKey(AssetTransferRequest, on_delete=models.CASCADE, related_name='request_items', verbose_name="ใบคำร้อง")
+    asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, verbose_name="ครุภัณฑ์")
+    
+    # Checkbox เลือกประเภทและสภาพในหน้าฟอร์ม
+    action_type = models.CharField(max_length=10, choices=ACTION_CHOICES, verbose_name="ความประสงค์")
+    condition = models.CharField(max_length=15, choices=CONDITION_CHOICES, verbose_name="สภาพการใช้งาน ณ วันที่ขอ")
+    
+    # ข้อมูลรองรับส่วนที่ 4 (เคลื่อนย้ายจาก... ไปยัง...)
+    transfer_from_location = models.ForeignKey(StorageLocation, on_delete=models.SET_NULL, null=True, blank=True, related_name='items_moved_from', verbose_name="ดำเนินการเคลื่อนย้ายจาก")
+    transfer_to_location = models.ForeignKey(StorageLocation, on_delete=models.SET_NULL, null=True, blank=True, related_name='items_moved_to', verbose_name="ไปยัง / ส่งคืนที่")
+    
+    remark = models.CharField(max_length=255, blank=True, null=True, verbose_name="หมายเหตุ (การเคลื่อนย้าย)")
+
+    class Meta:
+        verbose_name = "รายการครุภัณฑ์ในใบคำร้อง"
+        verbose_name_plural = "รายการครุภัณฑ์ในใบคำร้อง"
+
+    def __str__(self):
+        return f"{self.asset.item_name} ({self.get_action_type_display()})"
+
+#-------------------------------------------------------------------------------------------------------------------------------------------
 
 
 # การตรวจเช็คครุภัณฑ์
@@ -278,7 +412,7 @@ class AssetCheck(models.Model):
         self.year = self.check_date.year
         super().save(*args, **kwargs)
 
-    
+#-------------------------------------------------------------------------------------------------------------------------------------------   
 
 # รายการครุภัณฑ์สำหรับยืม
 class AssetItemLoan(models.Model):

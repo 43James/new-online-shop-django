@@ -340,6 +340,20 @@
 				</a>
 			</li>
 
+			<li>
+				<a href="{% url 'assets:my_assets' %}" class="nav-link d-flex align-items-center link-body-emphasis">
+					<i class="bi bi-person-circle me-2"></i>
+					รายการครอบครองครุภัณฑ์ของฉัน
+				</a>
+			</li>
+
+			<li>
+				<a href="{% url 'assets:transfer_request_list' %}" class="nav-link d-flex align-items-center link-body-emphasis">
+					<i class="bi bi-file-earmark-text me-2"></i>
+					รายการขอเคลื่อนย้าย/ส่งคืน
+				</a>
+			</li>
+
 			{% if request.user.is_warehouse_manager or request.user.is_admin %}
 			<hr>
 			<li class="nav-item">
@@ -364,8 +378,7 @@
 					{% endif %}
 				</a>
 			</li>
-			{% endif %}
-			{% if request.user.is_admin %}
+			
 			<li>
 				<a href="{% url 'assets:asset_list' %}"
 					class="nav-link d-flex align-items-center {% if '/asset-list/' in request.path %}active text-white bg-success{% else %}link-body-emphasis{% endif %}">
@@ -375,9 +388,9 @@
 			</li>
 
 			<li>
-				<a href="#" class="nav-link d-flex align-items-center link-body-emphasis">
+				<a href="{% url 'assets:admin_ownership_list' %}" class="nav-link d-flex align-items-center link-body-emphasis">
 					<i class="bi bi-person-circle me-2"></i>
-					การครอบครองครุภัณฑ์
+					รายการครอบครองครุภัณฑ์
 				</a>
 			</li>
 

@@ -1,0 +1,814 @@
+{% extends "base_sidebar.html" %}
+{% load form_tags %}
+{% load static %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    /* ==========================================
+       สไตล์สำหรับกระดาษเอกสาร (Web View)
+       ========================================== */
+    .a4-paper {
+        font-family: 'TH Sarabun PSK', 'TH Sarabun New', 'Sarabun', sans-serif;
+        font-size: 16pt;
+        line-height: 1.5;
+        color: #000;
+        background: #fff;
+        width: 210mm;
+        min-height: 297mm;
+        margin: 20px auto;
+        padding: 20mm;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ddd;
+        box-sizing: border-box; /* ✅ สำคัญ: ป้องกันกระดาษล้น */
+        overflow: hidden;
+    }
+
+    .a4-paper h3 {
+        font-size: 20pt;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .a4-paper p {
+        margin-bottom: 8px;
+    }
+
+    /* ✅ คลาสสำหรับเส้นจุดเติมคำ ป้องกันปัญหาตารางพัง และจัดข้อความกึ่งกลางเป๊ะ */
+    .dotted-line {
+        display: inline-block;
+        border-bottom: 1px dotted #000;
+        text-align: center;
+        line-height: 1.2;
+        min-height: 24px;
+        color: #000;
+    }
+
+    .doc-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        margin-bottom: 30px;
+        font-size: 15pt;
+    }
+    .doc-table th, .doc-table td {
+        border: 1px solid #000;
+        padding: 6px 8px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .doc-table th { font-weight: bold; }
+    .text-left { text-align: left !important; }
+
+    .approval-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #000;
+        margin-top: 20px;
+        table-layout: fixed; /* ✅ สำคัญ: บังคับให้ 3 ช่องกว้างเท่ากันเสมอ ไม่ล้นกรอบ */
+        word-wrap: break-word;
+    }
+    .approval-table td {
+        border: 1px solid #000;
+        padding: 12px;
+        vertical-align: top;
+        font-size: 15pt;
+        text-align: left;
+    }
+
+    @media print {
+        body { background: #fff !important; }
+        .no-print, nav, aside, header, footer { display: none !important; }
+        #main { width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; }
+        .a4-paper {
+            margin: 0 !important;
+            padding: 10mm !important;
+            box-shadow: none !important;
+            border: none !important;
+            width: 100% !important;
+            min-height: auto !important;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <div class="no-print d-flex justify-content-between align-items-center mb-4" style="max-width: 210mm; margin: 0 auto;">
+        <a href="{% url 'assets:transfer_request_list' %}" class="btn btn-outline-secondary fw-bold rounded-pill px-4">
+            <i class="bi bi-arrow-left"></i> กลับหน้ารวม
+        </a>
+        <button onclick="window.print()" class="btn btn-primary fw-bold shadow-sm rounded-pill px-4">
+            <i class="bi bi-printer-fill me-2"></i> พิมพ์ / สั่งเป็น PDF
+        </button>
+    </div>
+
+    <div class="a4-paper">
+        <div style="text-align: left; margin-bottom: -30px;">
+            <img src="{% static 'sidebar/logo-ubu-spark-011.png' %}" style="width: 120px; filter: grayscale(100%);" alt="Logo">
+        </div>
+
+        <h3>แบบฟอร์มการขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์<br>
+            <span style="font-size: 16pt; font-weight: normal;">อุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี<br>(Ubon Ratchathani University Science Park)</span>
+        </h3>
+        
+        <div style="text-align: right; margin-bottom: 20px;">
+            วันที่ <span class="dotted-line" style="width: 40px;">{{ req.request_date|date:"d" }}</span> 
+            เดือน <span class="dotted-line" style="width: 100px;">{{ req.request_date|date:"F" }}</span> 
+            พ.ศ. <span class="dotted-line" style="width: 50px;">{{ req.request_date.year|add:543 }}</span>
+        </div>
+        
+        <p><strong>1. เรียน ผู้อำนวยการโครงการอุทยานวิทยาศาสตร์</strong></p>
+        <p style="text-indent: 80px;">
+            ด้วยข้าพเจ้า <span class="dotted-line" style="width: 250px;">{{ req.requester.get_full_name }}</span> 
+            กลุ่มงาน/ฝ่าย <span class="dotted-line" style="width: 200px;">{{ req.department_name }}</span>
+        </p>
+        <p>อุทยานวิทยาศาสตร์และนวัตกรรม มหาวิทยาลัยอุบลราชธานี มีความประสงค์จะขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์ตามรายการ ดังนี้</p>
+
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width: 25%;">ชื่อครุภัณฑ์</th>
+                    <th rowspan="2" style="width: 20%;">หมายเลขครุภัณฑ์</th>
+                    <th colspan="2">ความประสงค์</th>
+                    <th colspan="3">สภาพการใช้งาน</th>
+                    <th rowspan="2" style="width: 20%;">หมายเหตุ<br>(การเคลื่อนย้าย)</th>
+                </tr>
+                <tr>
+                    <th>ย้าย</th>
+                    <th>คืน</th>
+                    <th>ใช้ได้</th>
+                    <th>ชำรุด</th>
+                    <th>เสื่อม</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="text-left">{{ item.asset.item_name }}</td>
+                    <td>{{ item.asset.asset_code }}</td>
+                    <td>{% if item.action_type == 'MOVE' %} ✔ {% endif %}</td>
+                    <td>{% if item.action_type == 'RETURN' %} ✔ {% endif %}</td>
+                    <td>{% if item.condition == 'ใช้งานได้' %} ✔ {% endif %}</td>
+                    <td>{% if item.condition == 'ชำรุด' %} ✔ {% endif %}</td>
+                    <td>{% if item.condition == 'เสื่อมสภาพ' %} ✔ {% endif %}</td>
+                    <td class="text-left">
+                        <small>
+                        {% if item.action_type == 'MOVE' %}
+                            ไปที่ {{ item.transfer_to_location.name|default:"-" }}
+                        {% endif %}
+                        {{ item.remark|default:"" }}
+                        </small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p style="text-indent: 80px;">จึงเรียนมาเพื่อโปรดพิจารณา</p>
+        <div style="text-align: right; padding-right: 50px; margin-bottom: 40px;">
+            <br>
+            ลงชื่อ <span class="dotted-line" style="width: 200px;">{{ req.requester.first_name }}</span> ผู้ขอ<br>
+            ( <span class="dotted-line" style="width: 200px;">{{ req.requester.get_full_name }}</span> )<br>
+            ผู้ขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์
+        </div>
+
+        <table class="approval-table">
+            <tr>
+                <td>
+                    <strong>2. ความเห็นหัวหน้างานพัสดุ</strong><br><br>
+                    [ {% if req.head_approved == True %}✔{% else %} &nbsp; {% endif %} ] เห็นชอบ เคลื่อนย้าย/ส่งคืน<br>
+                    [ {% if req.head_approved == False %}✔{% else %} &nbsp; {% endif %} ] ไม่เห็นชอบ เคลื่อนย้าย/ส่งคืน<br>
+                    เนื่องจาก <span class="dotted-line" style="width: 70%;">{{ req.head_reject_reason|default:"" }}</span><br><br><br>
+                    ลงชื่อ <span class="dotted-line" style="width: 75%;">{{ req.requester.first_name }}</span><br>
+                    <div style="text-align: center;">
+                        ( <span class="dotted-line" style="width: 80%;">{% if req.head_approver %}{{ req.head_approver.get_full_name|default:req.head_approver.first_name }}{% endif %}</span> )<br>
+                        ผู้ช่วยผู้อำนวยการอุทยาน<br>วิทยาศาสตร์และนวัตกรรม<br>
+                        <span class="dotted-line" style="width: 30px;"></span> / <span class="dotted-line" style="width: 30px;"></span> / <span class="dotted-line" style="width: 40px;"></span>
+                    </div>
+                </td>
+
+                <td>
+                    <strong>3. การพิจารณา</strong><br><br>
+                    [ {% if req.director_approved == True %}✔{% else %} &nbsp; {% endif %} ] อนุมัติ<br>
+                    [ {% if req.director_approved == False %}✔{% else %} &nbsp; {% endif %} ] ไม่อนุมัติ<br>
+                    เนื่องจาก <span class="dotted-line" style="width: 70%;">{{ req.director_reject_reason|default:"" }}</span><br><br><br>
+                    ลงชื่อ <span class="dotted-line" style="width: 75%;">{{ req.director_approver.first_name }}</span><br>
+                    <div style="text-align: center;">
+                        ( <span class="dotted-line" style="width: 80%;">{% if req.director_approver %}{{ req.director_approver.get_full_name|default:req.director_approver.first_name }}{% endif %}</span> )<br>
+                        ผู้อำนวยการอุทยาน<br>วิทยาศาสตร์และนวัตกรรม<br>
+                        <span class="dotted-line" style="width: 30px;"></span> / <span class="dotted-line" style="width: 30px;"></span> / <span class="dotted-line" style="width: 40px;"></span>
+                    </div>
+                </td>
+
+                <td>
+                    <strong>4. เพื่อดำเนินการ</strong><br><br>
+                    [ {% if req.officer_action_status == 'MOVED' %}✔{% else %} &nbsp; {% endif %} ] ดำเนินการเคลื่อนย้าย<br>
+                    [ {% if req.officer_action_status == 'RETURNED' %}✔{% else %} &nbsp; {% endif %} ] ดำเนินการส่งคืนผู้ควบคุม<br>
+                    [ {% if req.officer_action_status == 'FAILED' %}✔{% else %} &nbsp; {% endif %} ] ไม่สามารถดำเนินการได้<br>
+                    เนื่องจาก <span class="dotted-line" style="width: 70%;">{{ req.officer_fail_reason|default:"" }}</span><br><br>
+                    ลงชื่อ <span class="dotted-line" style="width: 75%;">{{ req.officer.first_name }}</span><br>
+                    <div style="text-align: center;">
+                        ( <span class="dotted-line" style="width: 80%;">{% if req.officer %}{{ req.officer.get_full_name|default:req.officer.first_name }}{% endif %}</span> )<br>
+                        เจ้าหน้าที่พัสดุ<br>
+                        <span class="dotted-line" style="width: 30px;"></span> / <span class="dotted-line" style="width: 30px;"></span> / <span class="dotted-line" style="width: 40px;"></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="no-print mt-4 p-4 border rounded-4 bg-white shadow-sm" style="max-width: 210mm; margin: 0 auto;">
+        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-shield-lock-fill me-2"></i> ส่วนการพิจารณา / อนุมัติในระบบ</h5>
+        <hr class="opacity-25">
+        
+        {% if req.status == 'PENDING_HEAD' %}
+            {% if can_approve_head %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <p class="mb-2 fw-bold text-dark">หัวหน้างานพัสดุ (ส่วนที่ 2):</p>
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        <input type="radio" class="btn-check" name="head_approval" id="headApprove" value="True" required>
+                        <label class="btn btn-outline-success px-4 rounded-pill" for="headApprove">✔️ เห็นชอบ</label>
+
+                        <input type="radio" class="btn-check" name="head_approval" id="headReject" value="False">
+                        <label class="btn btn-outline-danger px-4 rounded-pill" for="headReject">❌ ไม่เห็นชอบ</label>
+                    </div>
+                    <input type="text" name="head_reject_reason" class="form-control mb-3" placeholder="ระบุเหตุผล (บังคับกรอกกรณีไม่เห็นชอบ)...">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">💾 บันทึกความเห็น</button>
+                </form>
+            {% else %}
+                <div class="alert alert-warning border-warning border-start border-5 fw-medium">⏳ ใบคำร้องนี้กำลังรอหัวหน้างานพัสดุพิจารณาให้ความเห็นชอบ</div>
+            {% endif %}
+        {% endif %}
+
+        {% if req.status == 'PENDING_DIRECTOR' %}
+            {% if can_approve_director %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <p class="mb-2 fw-bold text-dark">ผู้อำนวยการ (ส่วนที่ 3):</p>
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        <input type="radio" class="btn-check" name="director_approval" id="dirApprove" value="True" required>
+                        <label class="btn btn-outline-success px-4 rounded-pill" for="dirApprove">✔️ อนุมัติ</label>
+
+                        <input type="radio" class="btn-check" name="director_approval" id="dirReject" value="False">
+                        <label class="btn btn-outline-danger px-4 rounded-pill" for="dirReject">❌ ไม่อนุมัติ</label>
+                    </div>
+                    <input type="text" name="director_reject_reason" class="form-control mb-3" placeholder="ระบุเหตุผล (บังคับกรอกกรณีไม่อนุมัติ)...">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">💾 บันทึกการอนุมัติ</button>
+                </form>
+            {% else %}
+                <div class="alert alert-warning border-warning border-start border-5 fw-medium">⏳ ใบคำร้องนี้กำลังรอผู้อำนวยการพิจารณาอนุมัติ</div>
+            {% endif %}
+        {% endif %}
+
+        {% if req.status == 'PENDING_ACTION' %}
+            {% if can_execute_action %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <p class="mb-2 fw-bold text-dark">เจ้าหน้าที่พัสดุบันทึกการดำเนินการ (ส่วนที่ 4):</p>
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        <input type="radio" class="btn-check" name="officer_action_status" id="actMove" value="MOVED" required>
+                        <label class="btn btn-outline-info px-4 rounded-pill" for="actMove">🚚 เคลื่อนย้ายแล้ว</label>
+
+                        <input type="radio" class="btn-check" name="officer_action_status" id="actReturn" value="RETURNED">
+                        <label class="btn btn-outline-success px-4 rounded-pill" for="actReturn">🔙 รับคืนส่วนกลางแล้ว</label>
+
+                        <input type="radio" class="btn-check" name="officer_action_status" id="actFail" value="FAILED">
+                        <label class="btn btn-outline-danger px-4 rounded-pill" for="actFail">❌ ดำเนินการไม่ได้</label>
+                    </div>
+                    <input type="text" name="fail_reason" class="form-control mb-3" placeholder="ระบุเหตุผลที่ดำเนินการไม่ได้...">
+                    <button type="submit" class="btn btn-dark w-100 fw-bold rounded-pill">✂️ บันทึกผลและตัดยอดครุภัณฑ์ในระบบ</button>
+                </form>
+            {% else %}
+                <div class="alert alert-info border-info border-start border-5 fw-medium">⏳ ใบคำร้องนี้ได้รับการอนุมัติแล้ว กำลังรอเจ้าหน้าที่พัสดุดำเนินการ</div>
+            {% endif %}
+        {% endif %}
+        
+        {% if req.status == 'COMPLETED' %}
+            <div class="alert alert-success mb-0 text-center fw-bold border-success border-2">✅ ใบคำร้องนี้ได้รับการดำเนินการเสร็จสิ้นเรียบร้อยแล้ว</div>
+        {% elif req.status == 'REJECTED' %}
+            <div class="alert alert-danger mb-0 text-center fw-bold border-danger border-2">❌ ใบคำร้องนี้ถูกปฏิเสธ หรือ ตีกลับ</div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+
+
+
+
+<!-- <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    /* ==========================================
+       สไตล์สำหรับกระดาษเอกสาร (Web View)
+       ========================================== */
+    .a4-paper {
+        /* ใช้ฟอนต์ TH Sarabun PSK เป็นหลัก ถ้าไม่มีให้ใช้ Sarabun จากเน็ต */
+        font-family: 'TH Sarabun PSK', 'TH Sarabun New', 'Sarabun', sans-serif;
+        font-size: 16pt; /* ขนาดฟอนต์มาตรฐานเอกสารราชการ */
+        line-height: 1.5;
+        color: #000;
+        background: #fff;
+        width: 210mm; /* ความกว้างกระดาษ A4 */
+        min-height: 297mm; /* ความสูงกระดาษ A4 */
+        margin: 20px auto;
+        padding: 20mm; /* ขอบกระดาษ */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* เงาจำลองกระดาษ */
+        border: 1px solid #ddd;
+    }
+
+    .a4-paper h3 {
+        font-size: 20pt;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .a4-paper p {
+        margin-bottom: 8px;
+    }
+
+    /* ตารางรายการครุภัณฑ์ */
+    .doc-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        margin-bottom: 30px;
+        font-size: 15pt;
+    }
+    .doc-table th, .doc-table td {
+        border: 1px solid #000;
+        padding: 6px 8px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .doc-table th {
+        font-weight: bold;
+    }
+    .text-left { text-align: left !important; }
+
+    /* ตารางเซ็นอนุมัติ 3 ส่วนด้านล่าง */
+    .approval-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #000;
+        margin-top: 20px;
+    }
+    .approval-table td {
+        border: 1px solid #000;
+        padding: 15px;
+        vertical-align: top;
+        width: 33.33%;
+        font-size: 15pt;
+        text-align: left;
+    }
+
+    /* ==========================================
+       สไตล์สำหรับเวลาสั่งพิมพ์ (Print View)
+       ========================================== */
+    @media print {
+        body { background: #fff !important; }
+        
+        /* ซ่อนเมนู Navbar, Sidebar และส่วนที่ไม่เกี่ยวกับการพิมพ์ทั้งหมด */
+        .no-print, nav, aside, header, footer { display: none !important; }
+        
+        /* ปรับ Main content ให้เต็มจอเพื่อให้กระดาษพอดีหน้าจอ */
+        #main { width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; }
+        
+        /* ล้างเงาและขอบของ A4 ตอนพิมพ์ */
+        .a4-paper {
+            margin: 0 !important;
+            padding: 10mm !important; /* ปรับขอบตอนพิมพ์ให้พอดี */
+            box-shadow: none !important;
+            border: none !important;
+            width: 100% !important;
+            min-height: auto !important;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <div class="no-print d-flex justify-content-between align-items-center mb-4" style="max-width: 210mm; margin: 0 auto;">
+        <a href="{% url 'assets:transfer_request_list' %}" class="btn btn-outline-secondary fw-bold rounded-pill px-4">
+            <i class="bi bi-arrow-left"></i> กลับหน้ารวม
+        </a>
+        <button onclick="window.print()" class="btn btn-primary fw-bold shadow-sm rounded-pill px-4">
+            <i class="bi bi-printer-fill me-2"></i> พิมพ์ / สั่งเป็น PDF
+        </button>
+    </div>
+
+    <div class="a4-paper">
+        <div style="text-align: left; margin-bottom: -30px;">
+            <img src="{% static 'sidebar/logo-ubu-spark-011.png' %}" style="width: 120px; filter: grayscale(100%);" alt="Logo">
+        </div>
+
+        <h3>แบบฟอร์มการขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์<br>
+            <span style="font-size: 16pt; font-weight: normal;">อุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี<br>(Ubon Ratchathani University Science Park)</span>
+        </h3>
+        
+        <div style="text-align: right; margin-bottom: 20px;">
+            วันที่........<span style="display: inline-block; width: 30px; text-align: center;">{{ req.request_date|date:"d" }}</span>........
+            เดือน........<span style="display: inline-block; width: 80px; text-align: center;">{{ req.request_date|date:"F" }}</span>........
+            พ.ศ. ........<span style="display: inline-block; width: 40px; text-align: center;">{{ req.request_date.year|add:543 }}</span>........
+        </div>
+        
+        <p><strong>1. เรียน ผู้อำนวยการโครงการอุทยานวิทยาศาสตร์</strong></p>
+        <p style="text-indent: 40px;">
+            ด้วยข้าพเจ้า.....<span style="display: inline-block; width: 200px; border-bottom: 1px dotted #000; text-align: center;">{{ req.requester.get_full_name }}</span>..... 
+            กลุ่ม/ฝ่าย .....<span style="display: inline-block; width: 200px; border-bottom: 1px dotted #000; text-align: center;">{{ req.department_name }}</span>.....
+        </p>
+        <p>โครงการอุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี มีความประสงค์จะขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์ตามรายการ ดังนี้</p>
+
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width: 25%;">ชื่อครุภัณฑ์</th>
+                    <th rowspan="2" style="width: 20%;">หมายเลขครุภัณฑ์</th>
+                    <th colspan="2">ความประสงค์</th>
+                    <th colspan="3">สภาพการใช้งาน</th>
+                    <th rowspan="2" style="width: 20%;">หมายเหตุ<br>(การเคลื่อนย้าย)</th>
+                </tr>
+                <tr>
+                    <th>ย้าย</th>
+                    <th>คืน</th>
+                    <th>ใช้ได้</th>
+                    <th>ชำรุด</th>
+                    <th>เสื่อม</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="text-left">{{ item.asset.item_name }}</td>
+                    <td>{{ item.asset.asset_code }}</td>
+                    <td>{% if item.action_type == 'MOVE' %} ✔ {% endif %}</td>
+                    <td>{% if item.action_type == 'RETURN' %} ✔ {% endif %}</td>
+                    <td>{% if item.condition == 'ใช้งานได้' %} ✔ {% endif %}</td>
+                    <td>{% if item.condition == 'ชำรุด' %} ✔ {% endif %}</td>
+                    <td>{% if item.condition == 'เสื่อมสภาพ' %} ✔ {% endif %}</td>
+                    <td class="text-left">
+                        <small>
+                        {% if item.action_type == 'MOVE' %}
+                            ไปที่ {{ item.transfer_to_location.name|default:"-" }}
+                        {% endif %}
+                        {{ item.remark|default:"" }}
+                        </small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="text-align: right; padding-right: 50px; margin-bottom: 40px;">
+            จึงเรียนมาเพื่อโปรดพิจารณา<br><br><br>
+            ลงชื่อ............................................................. ผู้ขอ<br>
+            ( {{ req.requester.first_name }} {{ req.requester.last_name }} )<br>
+            ผู้ขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์
+        </div>
+
+        <table class="approval-table">
+            <tr>
+                <td>
+                    <strong>2. ความเห็นหัวหน้างานพัสดุ</strong><br><br>
+                    [ {% if req.head_approved == True %}✔{% else %} &nbsp; {% endif %} ] เห็นชอบ เคลื่อนย้าย/ส่งคืน<br>
+                    [ {% if req.head_approved == False %}✔{% else %} &nbsp; {% endif %} ] ไม่เห็นชอบ เคลื่อนย้าย/ส่งคืน<br>
+                    เนื่องจาก: {{ req.head_reject_reason|default:".........................................." }}<br><br><br>
+                    ลงชื่อ.........................................................<br>
+                    <div style="text-align: center;">
+                        ({% if req.head_approver %}{{ req.head_approver.get_full_name|default:req.head_approver.first_name }}{% else %}.........................................................{% endif %})<br>
+                        ผู้ช่วยผู้อำนวยการโครงการอุทยาน<br>วิทยาศาสตร์<br>
+                        ........../........../..........
+                    </div>
+                </td>
+
+                <td>
+                    <strong>3. การพิจารณา</strong><br><br>
+                    [ {% if req.director_approved == True %}✔{% else %} &nbsp; {% endif %} ] อนุมัติ<br>
+                    [ {% if req.director_approved == False %}✔{% else %} &nbsp; {% endif %} ] ไม่อนุมัติ<br>
+                    เนื่องจาก: {{ req.director_reject_reason|default:".........................................." }}<br><br><br>
+                    ลงชื่อ.........................................................<br>
+                    <div style="text-align: center;">
+                        ({% if req.director_approver %}{{ req.director_approver.get_full_name|default:req.director_approver.first_name }}{% else %}.........................................................{% endif %})<br>
+                        ผู้อำนวยการโครงการอุทยาน<br>วิทยาศาสตร์<br>
+                        ........../........../..........
+                    </div>
+                </td>
+
+                <td>
+                    <strong>4. เพื่อดำเนินการ</strong><br><br>
+                    [ {% if req.officer_action_status == 'MOVED' %}✔{% else %} &nbsp; {% endif %} ] ดำเนินการเคลื่อนย้าย<br>
+                    [ {% if req.officer_action_status == 'RETURNED' %}✔{% else %} &nbsp; {% endif %} ] ดำเนินการส่งคืนผู้ควบคุม<br>
+                    [ {% if req.officer_action_status == 'FAILED' %}✔{% else %} &nbsp; {% endif %} ] ไม่สามารถดำเนินการได้<br>
+                    เนื่องจาก: {{ req.officer_fail_reason|default:".........................................." }}<br><br><br>
+                    ลงชื่อ.........................................................<br>
+                    <div style="text-align: center;">
+                        ({% if req.officer %}{{ req.officer.get_full_name|default:req.officer.first_name }}{% else %}.........................................................{% endif %})<br>
+                        เจ้าหน้าที่พัสดุ<br>
+                        ........../........../..........
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="no-print mt-4 p-4 border rounded-4 bg-white shadow-sm" style="max-width: 210mm; margin: 0 auto;">
+        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-shield-lock-fill me-2"></i> ส่วนการพิจารณา / อนุมัติในระบบ</h5>
+        <hr class="opacity-25">
+        
+        {% if req.status == 'PENDING_HEAD' %}
+            {% if can_approve_head %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <p class="mb-2 fw-bold text-dark">หัวหน้างานพัสดุ (ส่วนที่ 2):</p>
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        <input type="radio" class="btn-check" name="head_approval" id="headApprove" value="True" required>
+                        <label class="btn btn-outline-success px-4 rounded-pill" for="headApprove">✔️ เห็นชอบ</label>
+
+                        <input type="radio" class="btn-check" name="head_approval" id="headReject" value="False">
+                        <label class="btn btn-outline-danger px-4 rounded-pill" for="headReject">❌ ไม่เห็นชอบ</label>
+                    </div>
+                    <input type="text" name="head_reject_reason" class="form-control mb-3" placeholder="ระบุเหตุผล (บังคับกรอกกรณีไม่เห็นชอบ)...">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">💾 บันทึกความเห็น</button>
+                </form>
+            {% else %}
+                <div class="alert alert-warning border-warning border-start border-5 fw-medium">⏳ ใบคำร้องนี้กำลังรอหัวหน้างานพัสดุพิจารณาให้ความเห็นชอบ</div>
+            {% endif %}
+        {% endif %}
+
+        {% if req.status == 'PENDING_DIRECTOR' %}
+            {% if can_approve_director %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <p class="mb-2 fw-bold text-dark">ผู้อำนวยการ (ส่วนที่ 3):</p>
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        <input type="radio" class="btn-check" name="director_approval" id="dirApprove" value="True" required>
+                        <label class="btn btn-outline-success px-4 rounded-pill" for="dirApprove">✔️ อนุมัติ</label>
+
+                        <input type="radio" class="btn-check" name="director_approval" id="dirReject" value="False">
+                        <label class="btn btn-outline-danger px-4 rounded-pill" for="dirReject">❌ ไม่อนุมัติ</label>
+                    </div>
+                    <input type="text" name="director_reject_reason" class="form-control mb-3" placeholder="ระบุเหตุผล (บังคับกรอกกรณีไม่อนุมัติ)...">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">💾 บันทึกการอนุมัติ</button>
+                </form>
+            {% else %}
+                <div class="alert alert-warning border-warning border-start border-5 fw-medium">⏳ ใบคำร้องนี้กำลังรอผู้อำนวยการพิจารณาอนุมัติ</div>
+            {% endif %}
+        {% endif %}
+
+        {% if req.status == 'PENDING_ACTION' %}
+            {% if can_execute_action %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <p class="mb-2 fw-bold text-dark">เจ้าหน้าที่พัสดุบันทึกการดำเนินการ (ส่วนที่ 4):</p>
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        <input type="radio" class="btn-check" name="officer_action_status" id="actMove" value="MOVED" required>
+                        <label class="btn btn-outline-info px-4 rounded-pill" for="actMove">🚚 เคลื่อนย้ายแล้ว</label>
+
+                        <input type="radio" class="btn-check" name="officer_action_status" id="actReturn" value="RETURNED">
+                        <label class="btn btn-outline-success px-4 rounded-pill" for="actReturn">🔙 รับคืนส่วนกลางแล้ว</label>
+
+                        <input type="radio" class="btn-check" name="officer_action_status" id="actFail" value="FAILED">
+                        <label class="btn btn-outline-danger px-4 rounded-pill" for="actFail">❌ ดำเนินการไม่ได้</label>
+                    </div>
+                    <input type="text" name="fail_reason" class="form-control mb-3" placeholder="ระบุเหตุผลที่ดำเนินการไม่ได้...">
+                    <button type="submit" class="btn btn-dark w-100 fw-bold rounded-pill">✂️ บันทึกผลและตัดยอดครุภัณฑ์ในระบบ</button>
+                </form>
+            {% else %}
+                <div class="alert alert-info border-info border-start border-5 fw-medium">⏳ ใบคำร้องนี้ได้รับการอนุมัติแล้ว กำลังรอเจ้าหน้าที่พัสดุดำเนินการ</div>
+            {% endif %}
+        {% endif %}
+        
+        {% if req.status == 'COMPLETED' %}
+            <div class="alert alert-success mb-0 text-center fw-bold border-success border-2">✅ ใบคำร้องนี้ได้รับการดำเนินการเสร็จสิ้นเรียบร้อยแล้ว</div>
+        {% elif req.status == 'REJECTED' %}
+            <div class="alert alert-danger mb-0 text-center fw-bold border-danger border-2">❌ ใบคำร้องนี้ถูกปฏิเสธ หรือ ตีกลับ</div>
+        {% endif %}
+    </div>
+
+</div> -->
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>แบบฟอร์มการขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; padding: 20px; }
+        .form-container { max-width: 900px; margin: auto; border: 1px solid #ccc; padding: 40px; background: #fff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        .signature-box { display: flex; justify-content: space-between; margin-top: 30px; }
+        .box { border: 1px solid black; padding: 15px; width: 30%; }
+        
+        /* ตั้งค่าสำหรับตอนกดพิมพ์ (Print / Export PDF) */
+        @media print {
+            body { padding: 0; background: #fff; }
+            .form-container { border: none; padding: 0; max-width: 100%; }
+            .no-print { display: none !important; } /* ซ่อนปุ่มต่างๆ ตอนพิมพ์ */
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print" style="max-width: 900px; margin: auto; padding-bottom: 20px; text-align: right;">
+    <button onclick="window.print()" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer;">
+        🖨️ พิมพ์ / Export เป็น PDF
+    </button>
+</div>
+
+<div class="form-container">
+    <h3 style="text-align: center;">แบบฟอร์มการขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์</h3>
+    <p style="text-align: right;">วันที่ {{ req.request_date|date:"d" }} เดือน {{ req.request_date|date:"F" }} พ.ศ. {{ req.request_date.year|add:543 }}</p>
+    
+    <p><strong>1. เรียน ผู้อำนวยการโครงการอุทยานวิทยาศาสตร์</strong></p>
+    <p>ด้วยข้าพเจ้า {{ req.requester.first_name }} {{ req.requester.last_name }} กลุ่ม/ฝ่าย {{ req.department_name }} 
+       มีความประสงค์จะขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์ตามรายการ ดังนี้</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2">ชื่อครุภัณฑ์</th>
+                <th rowspan="2">หมายเลขครุภัณฑ์</th>
+                <th colspan="2">ความประสงค์</th>
+                <th colspan="3">สภาพการใช้งาน</th>
+                <th rowspan="2">หมายเหตุ (การเคลื่อนย้าย)</th>
+            </tr>
+            <tr>
+                <th>ย้าย</th>
+                <th>คืน</th>
+                <th>ใช้ได้</th>
+                <th>ชำรุด</th>
+                <th>เสื่อม</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.asset.item_name }}</td>
+                <td>{{ item.asset.asset_code }}</td>
+                <td>{% if item.action_type == 'MOVE' %} ✔ {% endif %}</td>
+                <td>{% if item.action_type == 'RETURN' %} ✔ {% endif %}</td>
+                <td>{% if item.condition == 'ใช้งานได้' %} ✔ {% endif %}</td>
+                <td>{% if item.condition == 'ชำรุด' %} ✔ {% endif %}</td>
+                <td>{% if item.condition == 'เสื่อมสภาพ' %} ✔ {% endif %}</td>
+                <td>
+                    {% if item.action_type == 'MOVE' %}
+                        ไปที่ {{ item.transfer_to_location.name|default:"-" }}
+                    {% endif %}
+                    {{ item.remark|default:"" }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <p>ลงชื่อ............................................................. ผู้ขอ</p>
+        <p>({{ req.requester.first_name }} {{ req.requester.last_name }})</p>
+    </div>
+
+    <div class="signature-box">
+        <div class="box">
+            <strong>2. ความเห็นหัวหน้างานพัสดุ</strong><br>
+            [ {% if req.head_approved == True %}✔{% else %} &nbsp; {% endif %} ] เห็นชอบ<br>
+            [ {% if req.head_approved == False %}✔{% else %} &nbsp; {% endif %} ] ไม่เห็นชอบ <br>
+            เนื่องจาก: {{ req.head_reject_reason|default:"..........................." }}<br><br>
+            ลงชื่อ: {{ req.head_approver.first_name|default:"..........................." }}
+        </div>
+
+        <div class="box">
+            <strong>3. การพิจารณา</strong><br>
+            [ {% if req.director_approved == True %}✔{% else %} &nbsp; {% endif %} ] อนุมัติ<br>
+            [ {% if req.director_approved == False %}✔{% else %} &nbsp; {% endif %} ] ไม่อนุมัติ <br>
+            เนื่องจาก: {{ req.director_reject_reason|default:"..........................." }}<br><br>
+            ลงชื่อ: {{ req.director_approver.first_name|default:"..........................." }}
+        </div>
+
+        <div class="box">
+            <strong>4. เพื่อดำเนินการ</strong><br>
+            [ {% if req.officer_action_status == 'MOVED' %}✔{% else %} &nbsp; {% endif %} ] เคลื่อนย้าย<br>
+            [ {% if req.officer_action_status == 'RETURNED' %}✔{% else %} &nbsp; {% endif %} ] ส่งคืน<br>
+            [ {% if req.officer_action_status == 'FAILED' %}✔{% else %} &nbsp; {% endif %} ] ดำเนินการไม่ได้ <br>
+            เนื่องจาก: {{ req.officer_fail_reason|default:"..........................." }}<br><br>
+            ลงชื่อ: {{ req.officer.first_name|default:"..........................." }}
+        </div>
+    </div>
+</div>
+
+<div class="no-print mt-4 p-4 border rounded-3 bg-light shadow-sm" style="max-width: 900px; margin: 0 auto;">
+    <h5 class="fw-bold text-primary mb-3"><i class="bi bi-shield-lock"></i> ส่วนการพิจารณา / อนุมัติ</h5>
+    <hr>
+    
+    {% if req.status == 'PENDING_HEAD' %}
+        {% if can_approve_head %}
+            <form method="POST">
+                {% csrf_token %}
+                <p class="mb-2 fw-bold text-dark">หัวหน้างานพัสดุ (ส่วนที่ 2):</p>
+                <div class="mb-3">
+                    <input type="radio" class="btn-check" name="head_approval" id="headApprove" value="True" required>
+                    <label class="btn btn-outline-success me-2" for="headApprove">✔️ เห็นชอบ</label>
+
+                    <input type="radio" class="btn-check" name="head_approval" id="headReject" value="False">
+                    <label class="btn btn-outline-danger" for="headReject">❌ ไม่เห็นชอบ</label>
+                </div>
+                <input type="text" name="head_reject_reason" class="form-control mb-3" placeholder="ระบุเหตุผล (ถ้ามี)...">
+                <button type="submit" class="btn btn-primary w-100">บันทึกความเห็น</button>
+            </form>
+        {% else %}
+            <div class="alert alert-warning">⏳ รอหัวหน้างานพัสดุพิจารณาให้ความเห็นชอบ</div>
+        {% endif %}
+    {% endif %}
+
+    {% if req.status == 'PENDING_DIRECTOR' %}
+        {% if can_approve_director %}
+            <form method="POST">
+                {% csrf_token %}
+                <p class="mb-2 fw-bold text-dark">ผู้อำนวยการ (ส่วนที่ 3):</p>
+                <div class="mb-3">
+                    <input type="radio" class="btn-check" name="director_approval" id="dirApprove" value="True" required>
+                    <label class="btn btn-outline-success me-2" for="dirApprove">✔️ อนุมัติ</label>
+
+                    <input type="radio" class="btn-check" name="director_approval" id="dirReject" value="False">
+                    <label class="btn btn-outline-danger" for="dirReject">❌ ไม่อนุมัติ</label>
+                </div>
+                <input type="text" name="director_reject_reason" class="form-control mb-3" placeholder="ระบุเหตุผล (ถ้ามี)...">
+                <button type="submit" class="btn btn-primary w-100">บันทึกการอนุมัติ</button>
+            </form>
+        {% else %}
+            <div class="alert alert-warning">⏳ รอผู้อำนวยการพิจารณาอนุมัติ</div>
+        {% endif %}
+    {% endif %}
+
+    {% if req.status == 'PENDING_ACTION' %}
+        {% if can_execute_action %}
+            <form method="POST">
+                {% csrf_token %}
+                <p class="mb-2 fw-bold text-dark">เจ้าหน้าที่พัสดุบันทึกดำเนินการ (ส่วนที่ 4):</p>
+                <div class="mb-3 d-flex flex-wrap gap-2">
+                    <input type="radio" class="btn-check" name="officer_action_status" id="actMove" value="MOVED" required>
+                    <label class="btn btn-outline-info" for="actMove">🚚 เคลื่อนย้ายแล้ว</label>
+
+                    <input type="radio" class="btn-check" name="officer_action_status" id="actReturn" value="RETURNED">
+                    <label class="btn btn-outline-success" for="actReturn">🔙 รับคืนส่วนกลางแล้ว</label>
+
+                    <input type="radio" class="btn-check" name="officer_action_status" id="actFail" value="FAILED">
+                    <label class="btn btn-outline-danger" for="actFail">❌ ดำเนินการไม่ได้</label>
+                </div>
+                <input type="text" name="fail_reason" class="form-control mb-3" placeholder="ระบุเหตุผลที่ดำเนินการไม่ได้ (ถ้ามี)...">
+                <button type="submit" class="btn btn-dark w-100">บันทึกผลและตัดยอดในระบบ</button>
+            </form>
+        {% else %}
+            <div class="alert alert-info">⏳ รอเจ้าหน้าที่พัสดุดำเนินการและอัปเดตข้อมูล</div>
+        {% endif %}
+    {% endif %}
+    
+    {% if req.status == 'COMPLETED' %}
+        <div class="alert alert-success mb-0 text-center fw-bold">✅ ใบคำร้องนี้ดำเนินการเสร็จสิ้นแล้ว</div>
+    {% elif req.status == 'REJECTED' %}
+        <div class="alert alert-danger mb-0 text-center fw-bold">❌ ใบคำร้องนี้ถูกปฏิเสธ/ตีกลับ</div>
+    {% endif %}
+
+    <div class="mt-3 text-center">
+        <a href="{% url 'assets:transfer_request_list' %}" class="text-decoration-none text-secondary">🔙 กลับไปหน้ารวมคำร้อง</a>
+    </div>
+</div>
+
+</body>
+</html> -->
+
+
+<!-- <div class="no-print" style="max-width: 900px; margin: 20px auto; padding: 20px; background: #eef; border-radius: 8px;">
+    <h4>ฟอร์มพิจารณา (เฉพาะเจ้าหน้าที่)</h4>
+    
+    {% if req.status == 'PENDING_HEAD' %}
+        <form method="POST">
+            {% csrf_token %}
+            <label><strong>หัวหน้างานพัสดุ:</strong></label>
+            <input type="radio" name="head_approval" value="True" required> เห็นชอบ
+            <input type="radio" name="head_approval" value="False"> ไม่เห็นชอบ
+            <input type="text" name="head_reject_reason" placeholder="เหตุผล (ถ้าไม่เห็นชอบ)">
+            <button type="submit">บันทึกความเห็น</button>
+        </form>
+    {% endif %}
+
+    {% if req.status == 'PENDING_DIRECTOR' %}
+        <form method="POST">
+            {% csrf_token %}
+            <label><strong>ผู้อำนวยการ:</strong></label>
+            <input type="radio" name="director_approval" value="True" required> อนุมัติ
+            <input type="radio" name="director_approval" value="False"> ไม่อนุมัติ
+            <input type="text" name="director_reject_reason" placeholder="เหตุผล (ถ้าไม่อนุมัติ)">
+            <button type="submit">บันทึกการพิจารณา</button>
+        </form>
+    {% endif %}
+
+    {% if req.status == 'PENDING_ACTION' %}
+        <p style="color: red;"><i>*รอเจ้าหน้าที่พัสดุดำเนินการ และกดอัปเดตระบบในหน้าจัดการพัสดุ</i></p>
+    {% endif %}
+</div> -->

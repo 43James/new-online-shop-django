@@ -20,6 +20,17 @@ urlpatterns = [
 
     # เพิ่มผู้ครอบครอง
     # path('ownership-create/', views.create_asset_ownership, name='create_asset_ownership'), 
+    # ฝั่ง user
+    path('my-assets/', views.my_assets_view, name='my_assets'),
+    path('create-request/', views.create_request_view, name='create_request'),
+    
+    # ฝั่ง Admin
+    path('admin/add-ownership/', views.admin_add_ownership_view, name='admin_add_ownership'),
+    path('admin-ownerships/', views.admin_ownership_list_view, name='admin_ownership_list'),
+    path('admin-complete-request/<int:request_id>/', views.admin_complete_request_view, name='admin_complete_request'),
+    path('request/<int:request_id>/', views.request_detail_view, name='request_detail'),
+    path('transfer-requests/', views.transfer_request_list_view, name='transfer_request_list'),
+
 
 
     # รายการที่ยืม ยืม อนุมัติยืม ยืนยันรับ แจ้งคืน อนุมันิคืน

@@ -29,7 +29,7 @@ ALLOWED_HOSTS = ['*']
 # ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://lorina-uncombustive-armida.ngrok-free.dev",
+    "https://lorina-uncombustive-armida.ngrok-free.dev","https://unselfishly-plexiform-deacon.ngrok-free.dev"
 ]
 
 # settings.py

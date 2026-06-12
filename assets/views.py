@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from accounts.models import MyUser, Profile
 from app_linebot.models import UserLine, UserLine_Asset
 from app_linebot.views import notify_admin_assetloan, notify_admin_on_auto_loan, notify_admin_on_return, notify_borrower, notify_overdue_asset_loan
-from assets.models import AssetCode, AssetItem, AssetCheck, AssetItemLoan, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
+from assets.models import AssetCode, AssetItem, AssetCheck, AssetItemLoan, AssetOwnership, AssetReservation, AssetTransferItem, AssetTransferRequest, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
 from dashboard.views import thai_month_name
 from .forms import ApproveLoanForm, AssetCheckForm, AssetCodeForm, AssetItemForm, AssetItemLoanForm, CategoryForm, LoanForm, ReservationForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
 from django.utils import timezone
@@ -299,6 +299,557 @@ def asset_delete(request, pk):
 #         form = AssetOwnershipForm()
 #     return render(request, 'create_asset_ownership.html', {'form': form})
 
+# ==========================================
+# ฝั่งผู้ใช้งาน (User)
+# ==========================================
+@login_required
+def my_assets_view(request):
+    """ฟังก์ชันแสดงรายการครุภัณฑ์ที่ผู้ใช้งานครอบครองอยู่ปัจจุบัน"""
+    my_ownerships = AssetOwnership.objects.filter(user=request.user, is_active=True).select_related('asset')
+    
+    context = {
+        'my_ownerships': my_ownerships
+    }
+    return render(request, 'ownership/my_assets.html', context)
+
+# @login_required
+# def create_request_view(request):
+#     """ฟังก์ชันสำหรับให้ผู้ใช้งานสร้างใบคำร้องขอเคลื่อนย้าย/ส่งคืน"""
+#     my_active_assets = AssetOwnership.objects.filter(user=request.user, is_active=True)
+#     all_locations = StorageLocation.objects.all()
+
+#     if request.method == 'POST':
+#         # รับค่าจากฟอร์ม HTML
+#         asset_id = request.POST.get('asset_id')
+#         action_type = request.POST.get('action_type')
+#         condition = request.POST.get('condition')
+#         transfer_to_id = request.POST.get('transfer_to_location')
+#         remark = request.POST.get('remark')
+
+#         asset = get_object_or_404(AssetItem, id=asset_id)
+#         transfer_to_location = StorageLocation.objects.filter(id=transfer_to_id).first() if transfer_to_id else None
+
+#         # 1. สร้างหัวใบคำร้อง
+#         new_request = AssetTransferRequest.objects.create(
+#             requester=request.user,
+#             department_name=request.user.department if hasattr(request.user, 'department') else "ไม่ระบุ",
+#             status='PENDING_HEAD'
+#         )
+
+#         # 2. สร้างรายการครุภัณฑ์ในใบคำร้อง
+#         AssetTransferItem.objects.create(
+#             request_form=new_request,
+#             asset=asset,
+#             action_type=action_type,
+#             condition=condition,
+#             transfer_from_location=asset.storage_location,
+#             transfer_to_location=transfer_to_location,
+#             remark=remark
+#         )
+
+#         messages.success(request, 'สร้างใบคำร้องสำเร็จ ระบบกำลังส่งเรื่องให้หัวหน้างาน')
+#         return redirect('my_assets')
+
+#     context = {
+#         'my_assets': [own.asset for own in my_active_assets],
+#         'locations': all_locations
+#     }
+#     return render(request, 'ownership/create_request.html', context)
+
+# @login_required
+# def create_request_view(request):
+#     """ฟังก์ชันสำหรับให้ผู้ใช้งานสร้างใบคำร้องขอเคลื่อนย้าย/ส่งคืน"""
+#     my_active_assets = AssetOwnership.objects.filter(user=request.user, is_active=True)
+#     all_locations = StorageLocation.objects.all()
+
+#     if request.method == 'POST':
+#         # ✅ 1. เปลี่ยนมารับค่า asset_ids เป็นลิสต์ (Array) ด้วย getlist()
+#         asset_ids = request.POST.getlist('asset_ids') 
+#         action_type = request.POST.get('action_type')
+#         condition = request.POST.get('condition')
+#         transfer_to_id = request.POST.get('transfer_to_location')
+#         remark = request.POST.get('remark')
+
+#         transfer_to_location = StorageLocation.objects.filter(id=transfer_to_id).first() if transfer_to_id else None
+
+#         # ตรวจสอบว่ามีการเลือกครุภัณฑ์มาหรือไม่
+#         if not asset_ids:
+#             messages.error(request, 'กรุณาเลือกครุภัณฑ์อย่างน้อย 1 รายการ')
+#             return redirect('assets:create_request')
+
+#         # ✅ 2. สร้างหัวใบคำร้องแค่ 1 ใบ
+#         new_request = AssetTransferRequest.objects.create(
+#             requester=request.user,
+#             department_name=request.user.department if hasattr(request.user, 'department') else "ไม่ระบุ",
+#             status='PENDING_HEAD'
+#         )
+
+#         # ✅ 3. วนลูปเพื่อนำครุภัณฑ์ทุกชิ้นที่เลือก ไปใส่ในใบคำร้องนี้
+#         for asset_id in asset_ids:
+#             asset = get_object_or_404(AssetItem, id=asset_id)
+#             AssetTransferItem.objects.create(
+#                 request_form=new_request,
+#                 asset=asset,
+#                 action_type=action_type,
+#                 condition=condition,
+#                 transfer_from_location=asset.storage_location,
+#                 transfer_to_location=transfer_to_location,
+#                 remark=remark
+#             )
+
+#         messages.success(request, f'สร้างใบคำร้องสำหรับครุภัณฑ์ {len(asset_ids)} รายการสำเร็จ ระบบกำลังส่งเรื่องให้หัวหน้างาน')
+#         return redirect('assets:my_assets') # ปรับ URL ให้ตรงกับของคุณ
+
+#     context = {
+#         'my_assets': [own.asset for own in my_active_assets],
+#         'locations': all_locations
+#     }
+#     return render(request, 'ownership/create_request.html', context)
+
+@login_required
+def create_request_view(request):
+    """ฟังก์ชันสร้างใบคำร้อง (อัปเดตดึง 'กลุ่มงาน' จาก Profile)"""
+    my_active_assets = AssetOwnership.objects.filter(user=request.user, is_active=True)
+    all_locations = StorageLocation.objects.all()
+
+    if request.method == 'POST':
+        asset_ids = request.POST.getlist('asset_ids') 
+        action_type = request.POST.get('action_type')
+        condition = request.POST.get('condition')
+        transfer_to_id = request.POST.get('transfer_to_location')
+        remark = request.POST.get('remark')
+
+        transfer_to_location = StorageLocation.objects.filter(id=transfer_to_id).first() if transfer_to_id else None
+
+        if not asset_ids:
+            messages.error(request, 'กรุณาเลือกครุภัณฑ์อย่างน้อย 1 รายการ')
+            return redirect('assets:create_request')
+
+        # ✅ แก้ไขตรงนี้: ดึงชื่อกลุ่ม/ฝ่ายจากโมเดล Profile โดยใช้ str() 
+        try:
+            department_name = str(request.user.profile.workgroup)
+        except Exception as e:
+            print("เกิดข้อผิดพลาดในการดึงกลุ่มงาน:", e) # จะแสดงใน Terminal ถ้ามี Error
+            department_name = "ไม่ระบุ"
+
+        new_request = AssetTransferRequest.objects.create(
+            requester=request.user,
+            department_name=department_name,
+            status='PENDING_HEAD'
+        )
+
+        for asset_id in asset_ids:
+            asset = get_object_or_404(AssetItem, id=asset_id)
+            AssetTransferItem.objects.create(
+                request_form=new_request,
+                asset=asset,
+                action_type=action_type,
+                condition=condition,
+                transfer_from_location=asset.storage_location,
+                transfer_to_location=transfer_to_location,
+                remark=remark
+            )
+
+        messages.success(request, f'สร้างใบคำร้องจำนวน {len(asset_ids)} รายการสำเร็จ ระบบกำลังส่งเรื่องให้หัวหน้างาน')
+        return redirect('assets:transfer_request_list') 
+
+    context = {
+        'my_assets': [own.asset for own in my_active_assets],
+        'locations': all_locations
+    }
+    return render(request, 'ownership/create_request.html', context)
+
+
+@login_required
+def transfer_request_list_view(request):
+    """ฟังก์ชันแสดงหน้ารวมคำร้อง (แยกสิทธิ์การมองเห็น)"""
+    my_requests = AssetTransferRequest.objects.filter(requester=request.user).order_by('-id')
+
+    all_requests = None
+    # ✅ ตรวจสอบสิทธิ์ว่ามีสิทธิ์เป็น แอดมิน/ผู้จัดการ/พัสดุ/ผู้บริหาร หรือไม่ ถ้ามีให้เห็นรายการรออนุมัติ
+    if request.user.is_admin or request.user.is_manager or request.user.is_warehouse_manager or request.user.is_executive:
+        all_requests = AssetTransferRequest.objects.all().order_by('-id')
+
+    context = {
+        'my_requests': my_requests,
+        'all_requests': all_requests,
+    }
+    return render(request, 'ownership/transfer_request_list.html', context)
+
+
+
+# @login_required
+# def request_detail_view(request, request_id):
+#     """หน้าดูรายละเอียดแบบฟอร์ม (และใช้สำหรับสั่งพิมพ์ / อนุมัติ)"""
+#     transfer_request = get_object_or_404(AssetTransferRequest, id=request_id)
+#     items = transfer_request.request_items.all()
+
+#     # ✅ 1. กำหนดสิทธิ์การมองเห็นปุ่มอนุมัติ ตามโมเดล MyUser ของคุณ
+#     can_approve_head = request.user.is_manager or request.user.is_admin
+#     can_approve_director = request.user.is_executive or request.user.is_admin
+#     can_execute_action = request.user.is_warehouse_manager or request.user.is_admin
+
+#     if request.method == 'POST':
+#         # ฟอร์มหัวหน้างาน (ส่วนที่ 2)
+#         if 'head_approval' in request.POST and can_approve_head:
+#             transfer_request.head_approved = request.POST.get('head_approval') == 'True'
+#             transfer_request.head_reject_reason = request.POST.get('head_reject_reason', '')
+#             transfer_request.head_approver = request.user
+#             transfer_request.head_action_date = timezone.now().date()
+#             transfer_request.status = 'PENDING_DIRECTOR' if transfer_request.head_approved else 'REJECTED'
+#             transfer_request.save()
+#             messages.success(request, 'บันทึกความเห็นหัวหน้างานแล้ว')
+
+#         # ฟอร์มผู้อำนวยการ (ส่วนที่ 3)
+#         elif 'director_approval' in request.POST and can_approve_director:
+#             transfer_request.director_approved = request.POST.get('director_approval') == 'True'
+#             transfer_request.director_reject_reason = request.POST.get('director_reject_reason', '')
+#             transfer_request.director_approver = request.user
+#             transfer_request.director_action_date = timezone.now().date()
+#             transfer_request.status = 'PENDING_ACTION' if transfer_request.director_approved else 'REJECTED'
+#             transfer_request.save()
+#             messages.success(request, 'บันทึกการอนุมัติของผู้อำนวยการแล้ว')
+            
+#         # ฟอร์มเจ้าหน้าที่พัสดุ (ส่วนที่ 4)
+#         elif 'officer_action_status' in request.POST and can_execute_action:
+#             action_status = request.POST.get('officer_action_status')
+#             transfer_request.officer_action_status = action_status
+#             transfer_request.officer_fail_reason = request.POST.get('fail_reason', '')
+#             transfer_request.officer = request.user
+#             transfer_request.officer_action_date = timezone.now().date()
+            
+#             if action_status in ['MOVED', 'RETURNED']:
+#                 transfer_request.status = 'COMPLETED'
+#                 transfer_request.save()
+#                 # เรียกฟังก์ชันตัดยอดที่อยู่ใน models.py
+#                 if hasattr(transfer_request, 'apply_ownership_and_location_changes'):
+#                     transfer_request.apply_ownership_and_location_changes()
+#                 messages.success(request, 'ดำเนินการและอัปเดตข้อมูลครุภัณฑ์สำเร็จ')
+#             else:
+#                 transfer_request.status = 'REJECTED'
+#                 transfer_request.save()
+#                 messages.warning(request, 'บันทึกว่าไม่สามารถดำเนินการได้')
+
+#         return redirect('assets:request_detail', request_id=request_id)
+
+#     # ✅ 2. ส่งตัวแปรสิทธิ์เหล่านี้แนบไปกับ Context เพื่อให้ HTML รู้ว่าต้องโชว์ฟอร์มไหน
+#     context = {
+#         'req': transfer_request,
+#         'items': items,
+#         'can_approve_head': can_approve_head,
+#         'can_approve_director': can_approve_director,
+#         'can_execute_action': can_execute_action,
+#     }
+#     return render(request, 'ownership/request_detail.html', context)
+
+from django.contrib.auth import get_user_model
+
+@login_required
+def request_detail_view(request, request_id):
+    """หน้าดูรายละเอียดแบบฟอร์ม และปุ่มพิจารณาอนุมัติตามระดับสิทธิ์จริงในระบบ"""
+    transfer_request = get_object_or_404(AssetTransferRequest, id=request_id)
+    items = transfer_request.request_items.all()
+
+    # ตรวจสอบสิทธิ์การใช้งานจากฟิลด์ของโมเดลผู้ใช้งานโดยตรง
+    is_super = request.user.is_superuser or getattr(request.user, 'is_admin', False)
+    
+    # แยกสิทธิ์ให้ตรงตามตารางและเงื่อนไขของแต่ละฝ่าย
+    can_approve_head = is_super or getattr(request.user, 'is_manager', False)
+    can_approve_director = is_super or getattr(request.user, 'is_executive', False)
+    can_execute_action = is_super or getattr(request.user, 'is_warehouse_manager', False)
+
+    # can_approve_head = request.user.is_manager or request.user.is_admin
+    # can_approve_director = request.user.is_executive or request.user.is_admin
+    # can_execute_action = request.user.is_warehouse_manager or request.user.is_admin
+
+    if request.method == 'POST':
+        # 1. ส่วนของหัวหน้างานพัสดุ (ส่วนที่ 2)
+        if 'head_approval' in request.POST and can_approve_head:
+            transfer_request.head_approved = request.POST.get('head_approval') == 'True'
+            transfer_request.head_reject_reason = request.POST.get('head_reject_reason', '')
+            transfer_request.head_approver = request.user
+            transfer_request.head_action_date = timezone.now().date()
+            transfer_request.status = 'PENDING_DIRECTOR' if transfer_request.head_approved else 'REJECTED'
+            transfer_request.save()
+            messages.success(request, 'บันทึกความเห็นหัวหน้างานแล้ว')
+
+        # 2. ส่วนของผู้อำนวยการ (ส่วนที่ 3)
+        elif 'director_approval' in request.POST and can_approve_director:
+            transfer_request.director_approved = request.POST.get('director_approval') == 'True'
+            transfer_request.director_reject_reason = request.POST.get('director_reject_reason', '')
+            transfer_request.director_approver = request.user
+            transfer_request.director_action_date = timezone.now().date()
+            transfer_request.status = 'PENDING_ACTION' if transfer_request.director_approved else 'REJECTED'
+            transfer_request.save()
+            messages.success(request, 'บันทึกการอนุมัติของผู้อำนวยการแล้ว')
+            
+        # 3. ส่วนของเจ้าหน้าที่พัสดุผู้ดำเนินการ (ส่วนที่ 4)
+        elif 'officer_action_status' in request.POST and can_execute_action:
+            action_status = request.POST.get('officer_action_status')
+            transfer_request.officer_action_status = action_status
+            transfer_request.officer_fail_reason = request.POST.get('fail_reason', '')
+            transfer_request.officer = request.user
+            transfer_request.officer_action_date = timezone.now().date()
+            
+            if action_status in ['MOVED', 'RETURNED']:
+                transfer_request.status = 'COMPLETED'
+                transfer_request.save()
+                # เรียกลอจิกสลับชื่อผู้ครอบครองและสถานที่ตั้งใหม่ในฐานข้อมูลอัตโนมัติ
+                if hasattr(transfer_request, 'apply_ownership_and_location_changes'):
+                    transfer_request.apply_ownership_and_location_changes()
+                messages.success(request, 'ดำเนินการและอัปเดตข้อมูลครุภัณฑ์สำเร็จ')
+            else:
+                transfer_request.status = 'REJECTED'
+                transfer_request.save()
+                messages.warning(request, 'บันทึกว่าไม่สามารถดำเนินการได้')
+
+        return redirect('assets:request_detail', request_id=request_id)
+
+    context = {
+        'req': transfer_request,
+        'items': items,
+        'can_approve_head': can_approve_head,
+        'can_approve_director': can_approve_director,
+        'can_execute_action': can_execute_action,
+    }
+    return render(request, 'ownership/request_detail.html', context)
+
+
+@login_required
+def transfer_request_list_view(request):
+    """ฟังก์ชันแสดงหน้ารวมคำร้อง (แยกสิทธิ์การมองเห็น)"""
+    my_requests = AssetTransferRequest.objects.filter(requester=request.user).order_by('-id')
+
+    all_requests = None
+    # ✅ ตรวจสอบสิทธิ์ว่ามีสิทธิ์เป็น แอดมิน/ผู้จัดการ/พัสดุ/ผู้บริหาร หรือไม่ ถ้ามีให้เห็นรายการรออนุมัติ
+    if request.user.is_admin or request.user.is_manager or request.user.is_warehouse_manager or request.user.is_executive:
+        all_requests = AssetTransferRequest.objects.all().order_by('-id')
+
+    context = {
+        'my_requests': my_requests,
+        'all_requests': all_requests,
+    }
+    return render(request, 'ownership/transfer_request_list.html', context)
+
+
+# @login_required
+# def request_detail_view(request, request_id):
+#     """หน้าดูรายละเอียดและพิจารณาอนุมัติ (แยกสิทธิ์คนกด)"""
+#     transfer_request = get_object_or_404(AssetTransferRequest, id=request_id)
+#     items = transfer_request.request_items.all()
+
+#     # เช็คสิทธิ์เพื่อส่งไปเปิด/ปิดฟอร์มในหน้า HTML
+#     can_approve_head = request.user.is_manager or request.user.is_admin
+#     can_approve_director = request.user.is_executive or request.user.is_admin
+#     can_execute_action = request.user.is_warehouse_manager or request.user.is_admin
+
+#     if request.method == 'POST':
+#         # 1. ฟอร์มหัวหน้างาน
+#         if 'head_approval' in request.POST and can_approve_head:
+#             transfer_request.head_approved = request.POST.get('head_approval') == 'True'
+#             transfer_request.head_reject_reason = request.POST.get('head_reject_reason', '')
+#             transfer_request.head_approver = request.user
+#             transfer_request.head_action_date = timezone.now().date()
+#             transfer_request.status = 'PENDING_DIRECTOR' if transfer_request.head_approved else 'REJECTED'
+#             transfer_request.save()
+#             messages.success(request, 'บันทึกความเห็นหัวหน้างานแล้ว')
+
+#         # 2. ฟอร์มผู้อำนวยการ
+#         elif 'director_approval' in request.POST and can_approve_director:
+#             transfer_request.director_approved = request.POST.get('director_approval') == 'True'
+#             transfer_request.director_reject_reason = request.POST.get('director_reject_reason', '')
+#             transfer_request.director_approver = request.user
+#             transfer_request.director_action_date = timezone.now().date()
+#             transfer_request.status = 'PENDING_ACTION' if transfer_request.director_approved else 'REJECTED'
+#             transfer_request.save()
+#             messages.success(request, 'บันทึกการอนุมัติของผู้อำนวยการแล้ว')
+            
+#         # 3. ฟอร์มเจ้าหน้าที่พัสดุดำเนินการ (ยุบรวมจากที่เคยแยกหน้า)
+#         elif 'officer_action_status' in request.POST and can_execute_action:
+#             action_status = request.POST.get('officer_action_status')
+#             transfer_request.officer_action_status = action_status
+#             transfer_request.officer_fail_reason = request.POST.get('fail_reason', '')
+#             transfer_request.officer = request.user
+#             transfer_request.officer_action_date = timezone.now().date()
+            
+#             if action_status in ['MOVED', 'RETURNED']:
+#                 transfer_request.status = 'COMPLETED'
+#                 transfer_request.save()
+#                 transfer_request.apply_ownership_and_location_changes() # ฟังก์ชันอัปเดต DB อัตโนมัติ
+#                 messages.success(request, 'ดำเนินการและตัดยอดครุภัณฑ์ในระบบสำเร็จ')
+#             else:
+#                 transfer_request.status = 'REJECTED'
+#                 transfer_request.save()
+#                 messages.warning(request, 'บันทึกว่าไม่สามารถดำเนินการได้')
+
+#         return redirect('assets:request_detail', request_id=request_id)
+
+#     context = {
+#         'req': transfer_request,
+#         'items': items,
+#         'can_approve_head': can_approve_head,
+#         'can_approve_director': can_approve_director,
+#         'can_execute_action': can_execute_action,
+#     }
+#     return render(request, 'ownership/request_detail.html', context)
+
+# ==========================================
+# ฝั่งแอดมิน / เจ้าหน้าที่พัสดุ (Admin)
+# ==========================================
+
+# @login_required
+# def admin_add_ownership_view(request):
+#     """ฟังก์ชันสำหรับแอดมิน/เจ้าหน้าที่ บันทึกมอบหมายครุภัณฑ์ให้ผู้ใช้งาน (ยืมใช้/ครอบครอง)"""
+#     # ตรวจสอบสิทธิ์แอดมิน
+#     if not request.user.is_staff:
+#         messages.error(request, 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้')
+#         return redirect('my_assets')
+
+#     # ✅ แก้ไขจุดนี้: เรียกจากคลังคลาส MyUser ตรงๆ และใช้ .order_by() ให้ถูกต้องตามหลัก Django
+#     all_users = MyUser.objects.all().order_by('first_name')
+#     all_assets = AssetItem.objects.all() 
+
+#     if request.method == 'POST':
+#         user_id = request.POST.get('user_id')
+#         asset_id = request.POST.get('asset_id')
+#         start_date = request.POST.get('start_date')
+
+#         # ✅ แก้ไขจุดนี้: เปลี่ยนจากอ้างอิง User (ที่เป็น instance เก่า) มาใช้คลาส MyUser
+#         target_user = get_object_or_404(MyUser, id=user_id)
+#         target_asset = get_object_or_404(AssetItem, id=asset_id)
+        
+#         if not start_date:
+#             start_date = timezone.now().date()
+
+#         # ลอจิกตรวจสอบและเคลียร์ผู้ครอบครองคนเก่าออก
+#         AssetOwnership.objects.filter(asset=target_asset, is_active=True).update(
+#             is_active=False,
+#             end_date=start_date
+#         )
+
+#         # บันทึกผู้ครอบครองปัจจุบันคนใหม่เข้าไป
+#         AssetOwnership.objects.create(
+#             asset=target_asset,
+#             user=target_user,
+#             start_date=start_date,
+#             is_active=True 
+#         )
+
+#         messages.success(request, f'บันทึกการมอบครุภัณฑ์ให้คุณ {target_user.first_name} {target_user.last_name} เรียบร้อยแล้ว')
+#         return redirect('admin_ownership_list') 
+
+#     context = {
+#         'users': all_users,
+#         'assets': all_assets,
+#     }
+#     return render(request, 'ownership/admin_add_ownership.html', context)
+
+@login_required
+def admin_add_ownership_view(request):
+    """ฟังก์ชันสำหรับแอดมิน/เจ้าหน้าที่ บันทึกมอบหมายครุภัณฑ์ให้ผู้ใช้งาน (ยืมใช้/ครอบครอง)"""
+    if not request.user.is_staff:
+        messages.error(request, 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้')
+        return redirect('my_assets')
+
+    all_users = MyUser.objects.all().order_by('first_name')
+    all_assets = AssetItem.objects.all() 
+
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        # ✅ ใช้ getlist() เพื่อรับค่าเป็น Array รองรับการเลือกหลายรายการ
+        asset_ids = request.POST.getlist('asset_ids') 
+        start_date = request.POST.get('start_date')
+
+        target_user = get_object_or_404(MyUser, id=user_id)
+        
+        if not start_date:
+            start_date = timezone.now().date()
+
+        # ตรวจสอบว่ามีการเลือกครุภัณฑ์มาหรือไม่
+        if not asset_ids:
+            messages.error(request, 'กรุณาเลือกครุภัณฑ์อย่างน้อย 1 รายการ')
+            return redirect('admin_add_ownership')
+
+        # ✅ วนลูปบันทึกครุภัณฑ์ทุกชิ้นที่ถูกเลือก
+        for asset_id in asset_ids:
+            target_asset = get_object_or_404(AssetItem, id=asset_id)
+            
+            # ลอจิกตรวจสอบและเคลียร์ผู้ครอบครองคนเก่าออก (ทำทีละชิ้น)
+            AssetOwnership.objects.filter(asset=target_asset, is_active=True).update(
+                is_active=False,
+                end_date=start_date
+            )
+
+            # บันทึกผู้ครอบครองปัจจุบันคนใหม่เข้าไป
+            AssetOwnership.objects.create(
+                asset=target_asset,
+                user=target_user,
+                start_date=start_date,
+                is_active=True 
+            )
+
+        messages.success(request, f'บันทึกการมอบครุภัณฑ์จำนวน {len(asset_ids)} รายการ ให้คุณ {target_user.first_name} {target_user.last_name} เรียบร้อยแล้ว')
+        # เปลี่ยนชื่อ URL ตรงนี้ให้ตรงกับใน urls.py ของคุณ
+        return redirect('assets:admin_ownership_list') 
+
+    context = {
+        'users': all_users,
+        'assets': all_assets,
+    }
+    return render(request, 'ownership/admin_add_ownership.html', context)
+
+@login_required
+def admin_ownership_list_view(request):
+    """ฟังก์ชันแสดงรายการผู้ครอบครองครุภัณฑ์ทั้งหมดในระบบ (สำหรับแอดมิน)"""
+    # ตรวจสอบสิทธิ์เบื้องต้น (สมมติว่าเช็คจาก is_staff)
+    if not request.user.is_staff:
+        messages.error(request, 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้')
+        return redirect('my_assets')
+
+    all_active_ownerships = AssetOwnership.objects.filter(is_active=True).select_related('user', 'asset')
+    
+    context = {
+        'ownerships': all_active_ownerships
+    }
+    return render(request, 'ownership/admin_ownership_list.html', context)
+
+@login_required
+def admin_complete_request_view(request, request_id):
+    """ฟังก์ชันสำหรับเจ้าหน้าที่พัสดุกดดำเนินการเสร็จสิ้น (ส่วนที่ 4)"""
+    if not request.user.is_staff:
+        return redirect('my_assets')
+
+    transfer_request = get_object_or_404(AssetTransferRequest, id=request_id)
+
+    if request.method == 'POST':
+        action_status = request.POST.get('action_status') # MOVED, RETURNED, FAILED
+        fail_reason = request.POST.get('fail_reason', '')
+
+        # อัปเดตข้อมูลส่วนที่ 4
+        transfer_request.officer_action_status = action_status
+        transfer_request.officer_fail_reason = fail_reason
+        transfer_request.officer = request.user
+        transfer_request.officer_action_date = timezone.now().date()
+        
+        if action_status in ['MOVED', 'RETURNED']:
+            transfer_request.status = 'COMPLETED'
+            transfer_request.save()
+            # เรียกใช้ฟังก์ชันอัปเดตผู้ครอบครองและสถานที่อัตโนมัติ ที่เราเขียนไว้ใน Models
+            transfer_request.apply_ownership_and_location_changes()
+            messages.success(request, 'ดำเนินการและอัปเดตข้อมูลครุภัณฑ์สำเร็จ')
+        else:
+            transfer_request.status = 'REJECTED'
+            transfer_request.save()
+            messages.warning(request, 'บันทึกว่าไม่สามารถดำเนินการได้')
+
+        return redirect('admin_ownership_list') # หรือกลับไปหน้าจัดการคำร้อง
+
+    return render(request, 'ownership/admin_complete_request.html', {'transfer_request': transfer_request})
+
+
+# -----------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 # บันทึกการตรวจเช็คครุภัณฑ์
 @login_required
@@ -397,85 +948,6 @@ def calendar_view(request):
     return render(request, "calendar.html" , context)
 
 
-# @login_required
-# def calendar_events(request):
-#     """ส่งข้อมูลการยืม/จองเป็น JSON ให้ FullCalendar"""
-#     events = []
-
-#     # 🎨 Mapping สีตามสถานะ
-#     status_colors = {
-#         "approved": "#28a745",   # เขียว = อนุมัติ
-#         "borrowed": "#28a745",   # เขียว = กำลังยืม
-#         "pending":  "#FFA500",   # ส้ม = รออนุมัติ
-#         "overdue":  "#FF0000",   # ส้ม = รออนุมัติ
-#     }
-
-#     # 🟢 การยืมครุภัณฑ์ (เฉพาะสถานะ approved, borrowed, pending)
-#     loans = (
-#         OrderAssetLoan.objects
-#         .filter(status__in=status_colors.keys())
-#         .select_related("user")
-#     )
-
-#     for loan in loans:
-#         issued_assets = loan.items.all()
-#         asset_images_urls = []
-#         asset_names = []
-#         for issued_asset in issued_assets:
-#             if issued_asset.asset and issued_asset.asset.asset_image:
-#                 asset_images_urls.append(request.build_absolute_uri(issued_asset.asset.asset_image.url))
-#             if issued_asset.asset:
-#                 asset_names.append(issued_asset.asset.item_name)
-        
-#         start_time_loan = timezone.localtime(loan.date_created) if loan.date_created else None
-#         end_time_loan = timezone.localtime(loan.date_due) if loan.date_due else None
-
-#         events.append({
-#             "title": f"{loan.user.get_first_name()} ยืม : ({', '.join(asset_names)}) {loan.get_status_display()}",
-#             "start": start_time_loan.isoformat() if start_time_loan else None,
-#             "end": end_time_loan.isoformat() if end_time_loan else None,
-#             "color": status_colors.get(loan.status, "#6c757d"),
-#             "extendedProps": {
-#                 "status": loan.get_status_display(),
-#                 "status_color": status_colors.get(loan.status, "#6c757d"), # เพิ่มค่าสีใน extendedProps
-#                 "user": loan.user.get_full_name(),
-#                 "note": loan.note or "",
-#                 "total_assets": loan.get_total_assets, # เก็บจำนวนรายการ
-#                 "asset_names": ", ".join(asset_names),
-#                 "asset_images": asset_images_urls,
-#             }
-#         })
-
-#     # 🟡 การจองครุภัณฑ์
-#     reservations = (
-#         AssetReservation.objects
-#         .select_related("user", "asset")
-#     )
-
-#     for r in reservations:
-#         asset_image_url = None
-#         if r.asset and r.asset.asset_image:
-#             asset_image_url = request.build_absolute_uri(r.asset.asset_image.url)
-
-#         start_time_res = timezone.localtime(r.reserved_date) if r.reserved_date else None
-#         end_time_res = timezone.localtime(r.returning_date) if r.returning_date else None
-
-#         events.append({
-#             "title": f"{r.user.get_first_name()} จอง : ({r.asset.item_name})",
-#             "start": start_time_res.isoformat() if start_time_res else None,
-#             "end": end_time_res.isoformat() if end_time_res else None,
-#             "color": "#FFD700",
-#             "extendedProps": {
-#                 "status": "จองแล้ว",
-#                 "status_color": "#FFD700", # เพิ่มค่าสีสำหรับสถานะจอง
-#                 "user": r.user.get_full_name(),
-#                 "asset": r.asset.item_name,
-#                 "notes": r.notes or "",
-#                 "asset_image": asset_image_url,
-#             }
-#         })
-
-#     return JsonResponse(events, safe=False)
 
 @login_required
 def calendar_events(request):
@@ -1441,10 +1913,10 @@ def asset_list_subcate(request):
         subcategories_list = Subcategory.objects.filter(
             Q(name_sub__icontains=query) |
             Q(category__name_cate__icontains=query)
-        ).order_by('id')
+        ).order_by('category__name_cate', 'name_sub')
     else:
         # ถ้าไม่มีคำค้นหา ให้ดึงข้อมูลทั้งหมด
-        subcategories_list = Subcategory.objects.all().order_by('id')
+        subcategories_list = Subcategory.objects.all().order_by('category__name_cate', 'name_sub')
 
     # ดึงรายการหมวดหมู่หลักทั้งหมดสำหรับ Modal (แยกจาก Paginator)
     categories = AssetCategory.objects.all()

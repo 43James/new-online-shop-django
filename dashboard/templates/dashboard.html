@@ -223,9 +223,13 @@
                     <div class="col-12 col-lg-8 mb-3">
                         <form method="get" action="{% url 'dashboard:orders_all' %}" class="row g-2 align-items-center justify-content-lg-end">
                             <div class="col-12 col-sm-auto d-flex align-items-center">
-                                <div class="form-check form-switch me-2">
+                                <!-- <div class="form-check form-switch me-2">
                                     <input type="checkbox" class="form-check-input" id="showRejected" name="show_rejected" {% if show_rejected  %}checked{% endif %}>
                                     <label class="form-check-label" for="showRejected">แสดงรายการที่ถูกปฏิเสธ</label>
+                                </div> -->
+                                <div class="custom-control custom-switch me-2">
+                                    <input type="checkbox" class="custom-control-input" id="showRejected" name="show_rejected" {% if show_rejected %}checked{% endif %}>
+                                    <label class="custom-control-label" for="showRejected">แสดงรายการที่ถูกปฏิเสธ</label>
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-sm">ปรับปรุง</button>
                             </div>

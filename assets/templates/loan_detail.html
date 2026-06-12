@@ -69,7 +69,10 @@
                     {% for item in loan.items.all %}
                     <tr>
                         <td class="text-center">{{ forloop.counter }}</td>
-                        <td>{{ item.asset.item_name }} ({{ item.asset.asset_code }})</td>
+                        <td>{{ item.asset.item_name }} / ({{ item.asset.asset_code }}) /
+                                {% if item.asset.subcategory %}
+                                    [{{ item.asset.subcategory.category.name_cate }}]
+                                {% endif %}</td>
                         <td class="text-center">1 {{ item.asset.unit }}</td>
                         <td>{{ item.asset.notes }}</td>
                     </tr>

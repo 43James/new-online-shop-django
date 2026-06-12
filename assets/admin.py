@@ -23,7 +23,7 @@
 
 from django.contrib import admin
 from .models import (
-    AssetCategory, AssetReservation, Subcategory, StorageLocation,
+    AssetCategory, AssetOwnership, AssetReservation, AssetTransferItem, AssetTransferRequest, Subcategory, StorageLocation,
     AssetCode, AssetItem, OrderAssetLoan, IssuingAssetLoan, AssetItemLoan
 )
 
@@ -212,4 +212,51 @@ class AssetItemLoanAdmin(admin.ModelAdmin):
     )
     readonly_fields = (
         'current_loan',
+    )
+
+    # ==========================================
+# 3. ข้อมูลการครอบครองครุภัณฑ์
+# ==========================================
+@admin.register(AssetOwnership)
+class AssetOwnershipAdmin(admin.ModelAdmin):
+    list_display = ('user', 'asset', 'start_date', 'end_date', 'is_active')
+    list_filter = ('is_active', 'start_date')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'asset__item_name', 'asset__asset_code__serial_year')
+    autocomplete_fields = ('user', 'asset') # ช่วยให้เลือกข้อมูลได้ง่ายขึ้นเมื่อมีข้อมูลเยอะ (ต้องตั้ง search_fields ในโมเดลปลายทางด้วย)
+
+# ==========================================
+# 4. ระบบใบคำร้องขอเคลื่อนย้าย/ส่งคืน
+# ==========================================
+
+# สร้าง Inline เพื่อให้เห็นรายการครุภัณฑ์ย่อยๆ ในหน้าใบคำร้องเดียวกัน
+class AssetTransferItemInline(admin.TabularInline):
+    model = AssetTransferItem
+    extra = 0 # ไม่ให้โชว์บรรทัดว่างๆ ล่วงหน้า
+    fields = ('asset', 'action_type', 'condition', 'transfer_from_location', 'transfer_to_location', 'remark')
+
+@admin.register(AssetTransferRequest)
+class AssetTransferRequestAdmin(admin.ModelAdmin):
+    list_display = ('id', 'requester', 'department_name', 'request_date', 'status')
+    list_filter = ('status', 'request_date', 'head_approved', 'director_approved')
+    search_fields = ('requester__first_name', 'requester__last_name', 'id')
+    readonly_fields = ('request_date',)
+    inlines = [AssetTransferItemInline] # นำ Inline เข้ามาแสดงผล
+
+    # จัดกลุ่มฟิลด์ให้ดูง่ายเหมือนหน้าฟอร์มกระดาษ
+    fieldsets = (
+        ('ส่วนที่ 1: ข้อมูลผู้ขอคำร้อง', {
+            'fields': ('request_date', 'requester', 'department_name', 'status')
+        }),
+        ('ส่วนที่ 2: ความเห็นหัวหน้างานพัสดุ', {
+            'fields': ('head_approved', 'head_reject_reason', 'head_approver', 'head_action_date'),
+            'classes': ('collapse',) # ซ่อนไว้เป็นแถบกดกางออกได้
+        }),
+        ('ส่วนที่ 3: การพิจารณาผู้อำนวยการ', {
+            'fields': ('director_approved', 'director_reject_reason', 'director_approver', 'director_action_date'),
+            'classes': ('collapse',)
+        }),
+        ('ส่วนที่ 4: การดำเนินการของเจ้าหน้าที่พัสดุ', {
+            'fields': ('officer_action_status', 'officer_fail_reason', 'officer', 'officer_action_date'),
+            'classes': ('collapse',)
+        }),
     )

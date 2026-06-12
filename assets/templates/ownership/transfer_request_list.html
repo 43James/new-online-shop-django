@@ -1,0 +1,140 @@
+{% extends "base_sidebar.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">📑 รายการขอเคลื่อนย้าย/ส่งคืน</h2>
+            <p class="text-muted mb-0">ติดตามสถานะใบคำร้องของคุณ และพิจารณาอนุมัติรายการ</p>
+        </div>
+        <div>
+            <a href="{% url 'assets:create_request' %}" class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 shadow-sm fw-semibold rounded-pill">
+                <span>➕</span> สร้างใบคำร้องใหม่
+            </a>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="requestTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="my-requests-tab" data-bs-toggle="tab" data-bs-target="#my-requests" type="button" role="tab">
+                คำร้องของฉัน
+            </button>
+        </li>
+        {% if all_requests is not None %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-danger" id="all-requests-tab" data-bs-toggle="tab" data-bs-target="#all-requests" type="button" role="tab">
+                รายการรอพิจารณา (สำหรับเจ้าหน้าที่/ผู้บริหาร)
+            </button>
+        </li>
+        {% endif %}
+    </ul>
+
+    <div class="tab-content" id="requestTabsContent">
+        
+        <div class="tab-pane fade show active" id="my-requests" role="tabpanel">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-secondary">
+                                <tr>
+                                    <th class="ps-4 py-3">เลขที่คำร้อง</th>
+                                    <th>วันที่ยื่นเรื่อง</th>
+                                    <th>กลุ่ม/ฝ่าย</th>
+                                    <th class="text-center">สถานะ</th>
+                                    <th class="pe-4 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in my_requests %}
+                                <tr>
+                                    <td class="ps-4 fw-bold">REQ-{{ req.id|stringformat:"04d" }}</td>
+                                    <td>{{ req.request_date|date:"d M Y" }}</td>
+                                    <td>{{ req.department_name }}</td>
+                                    <td class="text-center">
+                                        {% if req.status == 'PENDING_HEAD' %}
+                                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">รอหัวหน้าพัสดุ</span>
+                                        {% elif req.status == 'PENDING_DIRECTOR' %}
+                                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">รอ ผอ. อนุมัติ</span>
+                                        {% elif req.status == 'PENDING_ACTION' %}
+                                            <span class="badge bg-info text-dark px-3 py-2 rounded-pill">รอพัสดุดำเนินการ</span>
+                                        {% elif req.status == 'COMPLETED' %}
+                                            <span class="badge bg-success px-3 py-2 rounded-pill">เสร็จสิ้น</span>
+                                        {% else %}
+                                            <span class="badge bg-danger px-3 py-2 rounded-pill">ถูกตีกลับ/ปฏิเสธ</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-4 text-center">
+                                        <a href="{% url 'assets:request_detail' req.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            👁️ ดูรายละเอียด
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center py-4 text-muted">คุณยังไม่มีประวัติการยื่นคำร้อง</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if all_requests is not None %}
+        <div class="tab-pane fade" id="all-requests" role="tabpanel">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-secondary">
+                                <tr>
+                                    <th class="ps-4 py-3">เลขที่</th>
+                                    <th>ผู้ยื่นคำร้อง</th>
+                                    <th>วันที่ยื่น</th>
+                                    <th class="text-center">สถานะปัจจุบัน</th>
+                                    <th class="pe-4 text-center">การพิจารณา</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in all_requests %}
+                                <tr>
+                                    <td class="ps-4 fw-bold text-secondary">REQ-{{ req.id|stringformat:"04d" }}</td>
+                                    <td>
+                                        <span class="fw-bold">{{ req.requester.first_name }} {{ req.requester.last_name }}</span><br>
+                                        <small class="text-muted">{{ req.department_name }}</small>
+                                    </td>
+                                    <td>{{ req.request_date|date:"d M Y" }}</td>
+                                    <td class="text-center">
+                                        {% if req.status == 'PENDING_HEAD' %}
+                                            <span class="badge bg-warning text-dark px-3 py-2">รอหัวหน้าพัสดุ</span>
+                                        {% elif req.status == 'PENDING_DIRECTOR' %}
+                                            <span class="badge bg-warning text-dark px-3 py-2">รอ ผอ. อนุมัติ</span>
+                                        {% elif req.status == 'PENDING_ACTION' %}
+                                            <span class="badge bg-info text-dark px-3 py-2">รอพัสดุดำเนินการ</span>
+                                        {% elif req.status == 'COMPLETED' %}
+                                            <span class="badge bg-success px-3 py-2">เสร็จสิ้น</span>
+                                        {% else %}
+                                            <span class="badge bg-danger px-3 py-2">ถูกตีกลับ/ปฏิเสธ</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-4 text-center">
+                                        <a href="{% url 'assets:request_detail' req.id %}" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                            👁️ พิจารณา / ดำเนินการ
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center py-4 text-muted">ไม่มีรายการรอพิจารณา</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

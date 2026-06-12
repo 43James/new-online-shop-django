@@ -219,11 +219,12 @@
                                             {% elif issue.order_asset.status == "pending" %}
                                                 <i class="bi bi-hourglass-split"></i> รออนุมัติ
                                             {% elif issue.order_asset.status == "returned_pending" %}
-                                                <i class="bi bi-arrow-return-left"></i> รอคืน
+                                                <i class="bi bi-arrow-return-left"></i> รออนุมัติคืน
                                             {% else %}
                                                 <i class="bi bi-person-fill"></i> กำลังยืม
                                             {% endif %}
-                                            #{{ issue.order_asset.id }}
+                                            คำร้องที่ {{ issue.order_asset.order_code }}
+                                            <!-- #{{ issue.order_asset.id }} -->
                                         </span>
                                         <div class="small mt-1">
                                             <strong>ผู้ยืม:</strong> {{ issue.order_asset.user.get_full_name }} <br>

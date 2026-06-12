@@ -16,7 +16,7 @@
 <div class="col-md-4 mt-5 justify-content-center container">
   <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-
+    {% if request.user.is_admin %}
     <div>
       <label for="id_product" class="form-label required">เลือกวัสดุ</label>
       <select style="color: rgb(8, 0, 255);" name="product" class="form-select col-auto mb-3 selectpicker" data-live-search="true" required id="id_product">
@@ -82,6 +82,8 @@
           value="{{form.instance.year}}" name="year" placeholder="ปี ค.ศ." readonly>
       </div>
     </div>
+    {% endif %}
+
 
     {{ form.file }}
 

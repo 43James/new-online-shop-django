@@ -68,7 +68,7 @@
                         ไม่มีเอกสาร
                         {% endif %}
                     </td>
-                    {% if request.user.is_admin %}
+                    {% if request.user.is_admin or request.user.is_warehouse_manager %}
                     <td><a class="text-info text-decoration-none"
                             href="{% url 'dashboard:update_received_product' re.id %}"><i
                                 class="bi bi-pencil-square"></i></a></td>
