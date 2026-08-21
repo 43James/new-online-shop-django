@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import ModelForm
 
-from orders.models import Issuing, Order, OutOfStockNotification
+from orders.models import Order, OutOfStockNotification
 
 class UserApproveForm(ModelForm):
     class Meta:

@@ -1,0 +1,54 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% block content %}
+
+<style>
+  /* Custom form styling for {{ form.as_p }} */
+  .custom-form-container p { margin-bottom: 1.25rem; }
+  .custom-form-container label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.95rem; color: #495057; }
+  .custom-form-container input[type="text"], 
+  .custom-form-container input[type="number"], 
+  .custom-form-container input[type="email"], 
+  .custom-form-container input[type="file"],
+  .custom-form-container input[type="password"],
+  .custom-form-container select, 
+  .custom-form-container textarea { 
+      width: 100%; padding: 0.75rem 1rem; border: 1px solid #dee2e6; border-radius: 0.5rem; font-size: 1rem; background-color: #f8f9fa; transition: all 0.2s;
+  }
+  .custom-form-container input:focus, .custom-form-container select:focus, .custom-form-container textarea:focus {
+      background-color: #fff; border-color: #86b7fe; outline: 0; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+  .custom-form-container .helptext { font-size: 0.8rem; color: #6c757d; margin-top: 0.25rem; display: block; }
+  .custom-form-container ul.errorlist { color: #dc3545; padding-left: 0; list-style: none; font-size: 0.85rem; margin-top: 0.25rem; }
+</style>
+
+<div class="container d-flex justify-content-center mt-5 mb-5">
+  <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5" style="max-width: 600px; width: 100%;">
+    <div class="card-body p-0 custom-form-container">
+      
+      <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 70px; height: 70px;">
+          <i class="bi bi-pencil-square fs-1"></i>
+        </div>
+        <h4 class="fw-bold text-dark">เพิ่ม/แก้ไขข้อมูล</h4>
+        <p class="text-muted small">กรอกรายละเอียดข้อมูลให้ครบถ้วน</p>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        {{ form.non_field_errors }}
+        
+        <hr class="text-muted my-4">
+        <div class="row g-3">
+          <div class="col-6">
+            <a class="btn btn-light btn-lg w-100 rounded-pill fw-medium text-secondary border shadow-sm" onclick="history.back()">ย้อนกลับ</a>
+          </div>
+          <div class="col-6">
+            <button class="btn btn-primary btn-lg w-100 rounded-pill fw-medium shadow-sm" type="submit" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\' role=\'status\' aria-hidden=\'true\'></span>กำลังบันทึก...'; this.form.submit();">บันทึกข้อมูล</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

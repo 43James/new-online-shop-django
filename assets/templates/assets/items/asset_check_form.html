@@ -1,0 +1,103 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-success text-white text-center py-3 rounded-top-4">
+                    <h4 class="mb-0 fw-bold"><i class="fas fa-clipboard-check me-2"></i>บันทึกการตรวจนับครุภัณฑ์</h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- ข้อมูลครุภัณฑ์เบื้องต้น -->
+                    <div class="bg-light p-3 border border-success-subtle rounded-3 mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px;">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold text-dark">{{ asset.item_name }}</h5>
+                                <small class="text-muted">รหัส: {{ asset.asset_code }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-2 small">
+                            <div class="col-6">
+                                <span class="text-muted">หมวดหมู่:</span> 
+                                <span class="fw-semibold">{{ asset.subcategory.name_sub|default:"-" }}</span>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted">สถานที่เก็บปัจจุบัน:</span> 
+                                <span class="fw-semibold">{{ asset.storage_location.name|default:"-" }}</span>
+                            </div>
+                            <div class="col-12 mt-2">
+                                <span class="text-muted">ผู้ดูแลปัจจุบัน:</span> 
+                                <span class="fw-semibold">{{ asset.responsible_person|default:"-" }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" action="" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-4 text-success border-bottom pb-2">
+                                <i class="fas fa-edit me-2"></i>อัปเดตข้อมูลล่าสุด
+                            </h6>
+                            
+                            <!-- สถานะการใช้งาน -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-dark small mb-2"><i class="fas fa-heartbeat text-success me-1"></i> สถานะการใช้งาน</label>
+                                {{ form.damage_status }}
+                            </div>
+                            
+                            <!-- ผู้รับผิดชอบดูแล -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-dark small mb-2"><i class="fas fa-user-shield text-success me-1"></i> ผู้รับผิดชอบดูแลกำกับ</label>
+                                {{ form.responsible_person }}
+                            </div>
+                            
+                            <!-- สถานที่เก็บ -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-dark small mb-2"><i class="fas fa-map-marker-alt text-success me-1"></i> สถานที่เก็บ</label>
+                                {{ form.storage_location }}
+                            </div>
+                            
+                            <!-- ปีงบประมาณ -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-dark small mb-2"><i class="fas fa-calendar-alt text-success me-1"></i> ปีงบประมาณ <span class="text-danger">*</span></label>
+                                {{ form.fiscal_year }}
+                            </div>
+
+                            <!-- แนบรูปภาพ -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-dark small mb-2"><i class="fas fa-camera text-success me-1"></i> แนบรูปภาพประกอบ (ไม่บังคับ)</label>
+                                {{ form.check_image }}
+                            </div>
+
+                            <!-- หมายเหตุ -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-dark small mb-2"><i class="fas fa-comment-dots text-success me-1"></i> หมายเหตุเพิ่มเติม</label>
+                                {{ form.remarks }}
+                            </div>
+                        </div>
+                        
+                        <!-- ปุ่มบันทึก -->
+                        <div class="d-grid gap-3 mt-5">
+                            <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold shadow">
+                                <i class="fas fa-save me-2"></i> บันทึกการตรวจนับ
+                            </button>
+                            <a href="{% url 'assets:asset_detail' asset.id %}" class="btn btn-light btn-lg rounded-pill border shadow-sm text-secondary fw-semibold">
+                                ยกเลิกและกลับไปหน้ารายละเอียด
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

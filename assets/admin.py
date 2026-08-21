@@ -236,16 +236,30 @@ class AssetTransferItemInline(admin.TabularInline):
 
 @admin.register(AssetTransferRequest)
 class AssetTransferRequestAdmin(admin.ModelAdmin):
-    list_display = ('id', 'requester', 'department_name', 'request_date', 'status')
-    list_filter = ('status', 'request_date', 'head_approved', 'director_approved')
-    search_fields = ('requester__first_name', 'requester__last_name', 'id')
-    readonly_fields = ('request_date',)
+    # นำ request_code มาแสดงแทน id เพื่อให้ดูง่ายและเป็นระบบ
+    list_display = ('request_code', 'requester', 'department_name', 'request_date', 'status')
+    
+    # เพิ่ม year ในการกรองข้อมูล เผื่อต้องการดูคำร้องของแต่ละปี
+    list_filter = ('status', 'year', 'request_date', 'head_approved', 'director_approved')
+    
+    # เพิ่ม request_code เพื่อให้สามารถพิมพ์ค้นหาจากรหัสคำร้องได้โดยตรง
+    search_fields = ('request_code', 'requester__first_name', 'requester__last_name', 'id')
+    
+    # กำหนดให้ฟิลด์เหล่านี้เป็นแบบอ่านอย่างเดียว ป้องกันการแก้ไขด้วยมือ
+    readonly_fields = ('request_code', 'running_number', 'year', 'request_date')
+    
     inlines = [AssetTransferItemInline] # นำ Inline เข้ามาแสดงผล
 
     # จัดกลุ่มฟิลด์ให้ดูง่ายเหมือนหน้าฟอร์มกระดาษ
     fieldsets = (
         ('ส่วนที่ 1: ข้อมูลผู้ขอคำร้อง', {
-            'fields': ('request_date', 'requester', 'department_name', 'status')
+            'fields': (
+                'request_code', # เพิ่มรหัสคำร้องโชว์ไว้บนสุด
+                'request_date', 
+                'requester', 
+                'department_name', 
+                'status'
+            )
         }),
         ('ส่วนที่ 2: ความเห็นหัวหน้างานพัสดุ', {
             'fields': ('head_approved', 'head_reject_reason', 'head_approver', 'head_action_date'),

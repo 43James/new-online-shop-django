@@ -1,0 +1,53 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<style>
+    /* Modern Form Styling */
+    .manager-edit-form .form-control, 
+    .manager-edit-form .form-select {
+        background-color: #f8f9fa !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        color: #495057 !important;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+    .manager-edit-form .form-control:focus, 
+    .manager-edit-form .form-select:focus {
+        background-color: #fff !important;
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15) !important;
+    }
+    .manager-edit-form .form-label {
+        font-weight: 600 !important;
+        color: #6c757d !important;
+        font-size: 0.875rem !important;
+        margin-bottom: 0.5rem;
+    }
+    .manager-edit-form .asteriskField {
+        color: #dc3545;
+    }
+</style>
+<div class="container d-flex justify-content-center mt-5 mb-5">
+    <div class="card border-0 shadow-sm rounded-4" style="width: 100%; max-width: 500px;">
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-pencil-square fs-2"></i>
+                </div>
+                <h4 class="fw-bold text-dark">แก้ไขข้อมูลผู้ใช้งาน</h4>
+            </div>
+            <form method="post" enctype="multipart/form-data" class="manager-edit-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                
+                <div class="d-flex justify-content-between mt-5">
+                    <a href="{% url 'accounts:manage_user'%}" class="btn btn-light rounded-pill px-4 fw-medium text-secondary">ย้อนกลับ</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-medium shadow-sm" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\'></span>กำลังบันทึก...'; this.form.submit();">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

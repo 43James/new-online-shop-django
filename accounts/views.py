@@ -4,14 +4,15 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
+from django.http import HttpResponseForbidden, JsonResponse
+from openpyxl import load_workbook
 import pandas as pd
 from app_linebot.models import UserLine
 from cart.utils.cart import Cart
 from dashboard.views import is_manager
 from django.db.models import Q
 from orders.models import Order
-from django.contrib.auth import logout as auth_logout
 
 from shop.models import Product
 from shop.views import count_unconfirmed_orders
@@ -24,9 +25,137 @@ from django.contrib.auth import update_session_auth_hash
 from django.core.files.base import ContentFile
 import base64
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import user_passes_test
 import json
+
+from accounts.models import PortalApp
+
+from django.views.decorators.http import require_POST
+
+@require_POST
+def toggle_portal_favorite(request, app_id):
+    try:
+        app = PortalApp.objects.get(id=app_id)
+        app.is_favorite = not app.is_favorite
+        app.save()
+        return JsonResponse({'success': True, 'is_favorite': app.is_favorite})
+    except PortalApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'App not found'}, status=404)
+
+def portal_hub(request):
+    apps = PortalApp.objects.all()
+    apps_list = []
+    for app in apps:
+        apps_list.append({
+            'id': f'app-{app.id}',
+            'code': app.code,
+            'title': app.title,
+            'category': app.category,
+            'desc': app.description,
+            'icon': app.icon,
+            'iconColor': app.icon_color,
+            'url': app.url,
+            'imageUrl': app.app_image.url if app.app_image else '',
+            'isFav': app.is_favorite,
+        })
+    context = {
+        'portal_apps_json': json.dumps(apps_list, ensure_ascii=False),
+    }
+    return render(request, 'accounts/portal_sip_web.html', context)
+
+@login_required
+def add_portal_app(request):
+    if not request.user.is_admin:
+        return JsonResponse({'success': False, 'error': 'ไม่มีสิทธิ์เข้าถึง'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            data = request.POST
+            app_image = request.FILES.get('app_image')
+            
+            # Auto-generate code: SIP-01, SIP-02, ...
+            last_app = PortalApp.objects.order_by('-id').first()
+            if last_app:
+                try:
+                    last_num = int(last_app.code.split('-')[-1])
+                    new_code = f'SIP-{str(last_num + 1).zfill(2)}'
+                except (ValueError, IndexError):
+                    new_code = f'SIP-{str(PortalApp.objects.count() + 1).zfill(2)}'
+            else:
+                new_code = 'SIP-01'
+            
+            app = PortalApp.objects.create(
+                code=new_code,
+                title=data.get('title', ''),
+                category=data.get('category', 'admin'),
+                description=data.get('desc', ''),
+                url=data.get('url', ''),
+                app_image=app_image,
+                icon=data.get('icon', 'fa-link'),
+                icon_color=data.get('iconColor', 'text-sky-600 bg-sky-50'),
+                is_favorite=False,
+            )
+            return JsonResponse({
+                'success': True,
+                'app': {
+                    'id': f'app-{app.id}',
+                    'code': app.code,
+                    'title': app.title,
+                    'category': app.category,
+                    'desc': app.description,
+                    'icon': app.icon,
+                    'iconColor': app.icon_color,
+                    'url': app.url,
+                    'imageUrl': app.app_image.url if app.app_image else '',
+                    'isFav': app.is_favorite,
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+@login_required
+def edit_portal_app(request, app_id):
+    if not request.user.is_admin:
+        return JsonResponse({'success': False, 'error': 'ไม่มีสิทธิ์เข้าถึง'}, status=403)
+    
+    app = get_object_or_404(PortalApp, id=app_id)
+    
+    if request.method == 'POST':
+        try:
+            data = request.POST
+            app_image = request.FILES.get('app_image')
+            
+            app.title = data.get('title', app.title)
+            app.category = data.get('category', app.category)
+            app.description = data.get('desc', app.description)
+            app.url = data.get('url', app.url)
+            
+            if app_image:
+                app.app_image = app_image
+                
+            app.save()
+            
+            return JsonResponse({
+                'success': True,
+                'app': {
+                    'id': f'app-{app.id}',
+                    'code': app.code,
+                    'title': app.title,
+                    'category': app.category,
+                    'desc': app.description,
+                    'icon': app.icon,
+                    'iconColor': app.icon_color,
+                    'url': app.url,
+                    'imageUrl': app.app_image.url if app.app_image else '',
+                    'isFav': app.is_favorite,
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+            
+    return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
 from django.core.exceptions import PermissionDenied
 
@@ -114,7 +243,7 @@ def change_password(request):
             messages.error(request, 'กรุณาแก้ไขข้อผิดพลาดด้านล่าง.')
     else:
         form = PasswordChangeForm(request.user)
-    return render(request, 'change_password.html', 
+    return render(request, 'accounts/other/change_password.html', 
                   {'form': form,
                     'count_unconfirmed_orders': count_unconfirmed,})
 
@@ -143,7 +272,7 @@ def user_register(request):
         user_form = RegistrationForm()
         profile_form = ProfileForm()
 
-    return render(request, 'register.html', {
+    return render(request, 'accounts/auth/register.html', {
         'title' : 'เพิ่มสมาชิก',
         'user_form': user_form, 
         'profile_form': profile_form
@@ -184,7 +313,7 @@ def manager_login(request):
     else:
         form = ManagerLoginForm()
     context = { 'title':'LogIn','form': form}
-    return render(request, 'manager_login.html', context)
+    return render(request, 'accounts/auth/manager_login.html', context)
 
 
 
@@ -226,12 +355,16 @@ def manager_login(request):
 #         form = UserLoginForm()
 #     context = {
 #         'title':'Login', 'form': form}
-#     return render(request, 'login.html', context)
+#     return render(request, 'accounts/auth/login.html', context)
 
 def user_login(request):
     if request.user.is_authenticated:
+        next_url = request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
+            
         if request.user.is_general or request.user.is_manager or request.user.is_admin:
-            return redirect('shop:home_page')
+            return redirect('assets:home_assets')
         elif request.user.is_executive:
             return redirect('dashboard:dashboard_home')
         else:
@@ -245,8 +378,13 @@ def user_login(request):
             user = authenticate(request, username=data['username'], password=data['password'])
             if user is not None:
                 login(request, user)
+                
+                next_url = request.GET.get('next')
+                if next_url:
+                    return redirect(next_url)
+                    
                 if user.is_general or user.is_manager or user.is_admin:
-                    return redirect('shop:home_page')
+                    return redirect('assets:home_assets')
                 elif user.is_executive:
                     return redirect('dashboard:dashboard_home')
             else:
@@ -255,7 +393,7 @@ def user_login(request):
         form = UserLoginForm()
 
     context = {'title': 'Login', 'form': form}
-    return render(request, 'login.html', context)
+    return render(request, 'accounts/auth/login.html', context)
 
 
 # ใหม่8
@@ -270,7 +408,7 @@ def user_logout(request):
     
     # คืน session หลังจากที่ logout เสร็จสิ้น
     cart.logout()
-    return redirect('accounts:user_login')
+    return redirect('accounts:portal_hub')
 
 # def manager_logout(request):
 #     # เก็บ session ไว้ก่อนที่จะ logout
@@ -306,7 +444,7 @@ def manager_edit_profile(request, user_id):
         'profile': profile,
             }
     
-    return render(request, 'manager_edit_profil.html', context)
+    return render(request, 'accounts/profile/manager_edit_profil.html', context)
 
 
 @login_required
@@ -354,7 +492,7 @@ def edit_profile (request):
         'pending_orders_count': count_pending_orders(),
         'count_unconfirmed_orders': count_unconfirmed,
     }
-    return render(request, 'edit_profile.html', context)
+    return render(request, 'accounts/profile/edit_profile.html', context)
 
 
 
@@ -402,7 +540,7 @@ def edit_profile_manager (request):
         "extended_form": extended_form,
         'pending_orders_count': count_pending_orders(),
     }
-    return render(request, 'edit_profile_manager.html', context)
+    return render(request, 'accounts/profile/edit_profile_manager.html', context)
 
 
 
@@ -426,7 +564,7 @@ def user_profile_detail(request, username):
         'pending_orders_count': count_pending_orders(),
         'count_unconfirmed_orders': count_unconfirmed,
     }
-    return render(request, 'user_profile.html', context)
+    return render(request, 'accounts/profile/user_profile.html', context)
 
 
 
@@ -472,7 +610,7 @@ def upload_profile_picture(request):
         'count_unconfirmed_orders': count_unconfirmed,
         
     }
-    return render(request, 'upload_profile_picture.html', context)
+    return render(request, 'accounts/profile/upload_profile_picture.html', context)
 
 
 
@@ -502,7 +640,7 @@ def upload_profile_picture_manager(request):
         'form': form,
         'pending_orders_count': count_pending_orders(),
     }
-    return render(request, 'upload_profile_picture_manager.html', context)
+    return render(request, 'accounts/profile/upload_profile_picture_manager.html', context)
 
 
 @user_passes_test(is_authorized)
@@ -524,7 +662,7 @@ def manager_profile_detail(request, username):
         'obj': obj,
         'pending_orders_count': count_pending_orders(),
     }
-    return render(request, 'manager_profile.html', context)
+    return render(request, 'accounts/profile/manager_profile.html', context)
 
 
 @user_passes_test(is_authorized)
@@ -547,7 +685,7 @@ def manager_profile_detail(request, username):
 #         'obj': obj,
 #         'pending_orders_count': count_pending_orders(),
 #     }
-#     return render(request, 'profile_users.html', context)
+#     return render(request, 'accounts/management/profile_users.html', context)
 
 @login_required
 def profile_users(request, username):
@@ -572,7 +710,7 @@ def profile_users(request, username):
         'pending_orders_count': count_pending_orders(),
         'line_user_exists': line_user_exists,  # ส่งสถานะการผูกบัญชีไลน์
     }
-    return render(request, 'profile_users.html', context)
+    return render(request, 'accounts/management/profile_users.html', context)
 
 
 @user_passes_test(is_authorized)
@@ -607,7 +745,7 @@ def manage_user(request):
     except:
         my = p.page(1)
 
-    return render(request, "manage_user.html",{
+    return render(request, "accounts/management/manage_user.html",{
         "my" : my,
         "userline" : userline,
         'title':'จัดการสมาชิก',
@@ -727,7 +865,7 @@ def update_user(request, id):
         else:
             messages.error(request, 'กรุณากรอกข้อมูลให้ครบถ้วน')
 
-    return render(request, 'update_user.html', {
+    return render(request, 'accounts/management/update_user.html', {
         'my': my,
         'form': form,
         'title': 'แก้ไขข้อมูลสมาชิก',

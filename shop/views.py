@@ -1,13 +1,11 @@
-from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Q
-from dashboard.views import count_pending_orders
 from orders.models import Order
-from shop.models import MonthlyStockRecord, Product, Category, Receiving, Stock, Subcategory
+from shop.models import Product, Category, Receiving, Stock, Subcategory
 from cart.forms import QuantityForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
@@ -15,47 +13,47 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.exceptions import PermissionDenied
 
 def is_general(user):
-    if not user.is_general:
-        raise PermissionDenied
+    if not user.is_authenticated or not user.is_general:
+        return False
     return True
 
 def is_manager(user):
-    if not user.is_manager:
-        raise PermissionDenied
+    if not user.is_authenticated or not user.is_manager:
+        return False
     return True
 
 def is_executive(user):
-    if not user.is_executive:
-        raise PermissionDenied
+    if not user.is_authenticated or not user.is_executive:
+        return False
     return True
 
 def is_admin(user):
-    if not user.is_admin:
-        raise PermissionDenied
+    if not user.is_authenticated or not user.is_admin:
+        return False
     return True
 
 def is_authorized(user):
     # ถ้าผู้ใช้เป็น is_manager, is_executive หรือ is_admin อย่างใดอย่างหนึ่ง
-    if user.is_manager or user.is_warehouse_manager or user.is_executive or user.is_admin:
+    if user.is_authenticated and (user.is_manager or getattr(user, 'is_warehouse_manager', False) or user.is_executive or user.is_admin):
         return True
-    raise PermissionDenied
+    return False
 
 def is_authorized_admin(user):
     if is_admin(user):
         return True
-    raise PermissionDenied
+    return False
 
 # def is_authorized_manager(user, request):
 #     if user.is_manager or user.is_admin:
 #         return True
-#     return render(request, '403.html', status=403)
+#     return render(request, 'shop/403.html', status=403)
     
 
 # def some_view(request):
-#     return render(request, '403.html', context={})
+#     return render(request, 'shop/403.html', context={})
 
 # def custom_404_view(request, exception=None):
-#     return render(request, '404.html', status=404)
+#     return render(request, 'shop/404.html', status=404)
 
 def paginat(request, list_objects):
 	p = Paginator(list_objects, 18)
@@ -123,7 +121,7 @@ def home_page(request):
     context = {'products': paginat(request, sorted_products),
                'count_unconfirmed_orders': unconfirmed_count,
                }
-    return render(request, 'home_page.html', context)
+    return render(request, 'shop/home_page.html', context)
 
 
 
@@ -154,7 +152,7 @@ def product_detail(request, product_id):
     else:
         context['favorites'] = 'favorites'  # ถ้าไม่อยู่ในรายการโปรด
 
-    return render(request, 'product_detail.html', context)
+    return render(request, 'shop/product_detail.html', context)
 
 
 
@@ -193,7 +191,7 @@ def favorites(request):
         'count_unconfirmed_orders': count_unconfirmed,  # ส่งผลลัพธ์ของฟังก์ชันไปยัง context
     }
 
-    return render(request, 'favorites.html', context)
+    return render(request, 'shop/favorites.html', context)
 
 
 @user_passes_test(is_general)
@@ -202,7 +200,7 @@ def search(request):
 	query = request.GET.get('q')
 	products = Product.objects.filter(title__icontains=query).all()
 	context = {'products': paginat(request ,products)}
-	return render(request, 'home_page.html', context)
+	return render(request, 'shop/home_page.html', context)
 
 
 
@@ -239,5 +237,5 @@ def filter_by_category(request, category_id=None, subcategory_id=None):
         'count_unconfirmed_orders': count_unconfirmed,
     }
 
-    return render(request, 'home_page.html', context)
+    return render(request, 'shop/home_page.html', context)
 

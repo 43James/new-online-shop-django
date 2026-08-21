@@ -1,4 +1,3 @@
-from datetime import timedelta, timezone
 from django.http import Http404, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -7,7 +6,6 @@ from cart.utils.cart import Cart
 from shop.views import count_unconfirmed_orders
 from .forms import QuantityForm
 from shop.models import Product, Receiving
-from django.db import transaction  # import transaction
 from django.contrib.auth.decorators import user_passes_test
 
 
@@ -122,7 +120,7 @@ def show_cart(request):
         'count_unconfirmed_orders': count_unconfirmed,  # ส่งจำนวนออเดอร์ที่ยังไม่ยืนยันไปยัง context
     }
 
-    return render(request, 'cart.html', context)
+    return render(request, 'cart/cart.html', context)
 
 
 # aremove_from_cart ของ Product & Receiving

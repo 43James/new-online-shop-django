@@ -1,4 +1,4 @@
-from django.urls import include, path, reverse_lazy
+from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 
 from accounts import views
@@ -7,7 +7,11 @@ from accounts import views
 app_name = 'accounts'
 
 urlpatterns = [
-    path('', views.user_login, name='user_login'),
+    path('', views.portal_hub, name='portal_hub'),
+    path('portal/toggle-favorite/<int:app_id>/', views.toggle_portal_favorite, name='toggle_portal_favorite'),
+    path('portal/add/', views.add_portal_app, name='add_portal_app'),
+    path('portal/edit/<int:app_id>/', views.edit_portal_app, name='edit_portal_app'),
+    path('login/', views.user_login, name='user_login'),
     path('register/', views.user_register, name='user_register'),
     path('login/manager/', views.manager_login, name='manager_login'),
     path('logout/', views.user_logout, name='user_logout'),
@@ -30,23 +34,23 @@ urlpatterns = [
     path(
         'password-reset/',
         auth_views.PasswordResetView.as_view(
-            template_name='password_reset.html',
+            template_name='accounts/auth/password_reset.html',
             success_url=reverse_lazy('accounts:password_reset_done'),
-            email_template_name='email_template.html'
+            email_template_name='accounts/other/email_template.html'
         ),
         name='password_reset'
     ),
     path(
         'password-reset/done',
         auth_views.PasswordResetDoneView.as_view(
-            template_name='password_reset_done.html',
+            template_name='accounts/auth/password_reset_done.html',
         ),
         name='password_reset_done'
     ),
     path(
         'password-reset-confirm/<uidb64>/<token>/',
         auth_views.PasswordResetConfirmView.as_view(
-            template_name='password_reset_confirm.html',
+            template_name='accounts/auth/password_reset_confirm.html',
             success_url=reverse_lazy('accounts:password_reset_complete'),
         ),
         name='password_reset_confirm'
@@ -54,7 +58,7 @@ urlpatterns = [
     path(
         'password-reset-complete/',
         auth_views.PasswordResetCompleteView.as_view(
-            template_name='password_reset_complete.html',
+            template_name='accounts/auth/password_reset_complete.html',
         ),
         name='password_reset_complete'
     ),

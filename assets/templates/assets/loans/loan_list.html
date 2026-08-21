@@ -1,0 +1,612 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* ************************************ */
+    /* CSS สำหรับ Floating Cart */
+    /* ************************************ */
+    #floating-cart-wrapper {
+        position: fixed;
+        bottom: 20px;
+        right: 40px; 
+        z-index: 1050;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 50%;
+        padding: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25); 
+        width: 60px; 
+        height: 60px; 
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    #floating-cart-wrapper .nav-link {
+        padding: 0 !important;
+    }
+
+    #floating-cart-wrapper .bi-cart3 {
+        color: #0d6efd !important;
+        font-size: 1.9rem !important;
+        line-height: 1;
+    }
+    
+    #floating-cart-wrapper #cart-badge {
+        font-size: 0.8rem !important;
+        padding: 0.3em 0.5em;
+        top: -2px; 
+        left: 100%;
+        transform: translate(-30%, -60%) !important; 
+    }
+
+    /* ************************************ */
+    /* CSS สำหรับตาราง และปรับขนาดรูปภาพ */
+    /* ************************************ */
+    /* รูปภาพครุภัณฑ์บน Desktop/Tablet */
+    .table-responsive table img {
+        width: 300px; 
+        /* height: 100px;  */
+        object-fit: cover;
+        border-radius: 4px;
+        transition: transform 0.2s;
+    }
+    .table-responsive table img:hover {
+        transform: scale(1.05);
+    }
+    
+    /* ปรับปรุงความกว้างคอลัมน์บน Desktop */
+    .table-responsive table tr > th:nth-child(1) { width: 110px; } /* รูป */
+    .table-responsive table tr > th:nth-child(3) { width: 180px; } /* รหัสครุภัณฑ์ */
+    .table-responsive table tr > th:nth-child(4) { width: 150px; } /* สถานที่เก็บ */
+
+    @media (max-width: 767.98px) {
+        /* *** การซ่อนคอลัมน์: ลบคอลัมน์รูปภาพออก และซ่อนเฉพาะที่ไม่จำเป็น (รหัสครุภัณฑ์ และ สถานที่เก็บ) *** */
+        /* ซ่อน รหัสครุภัณฑ์ (3) */
+        .table-responsive table tr > td:nth-child(3),
+        .table-responsive table tr > th:nth-child(3),
+        /* ซ่อน สถานที่เก็บ (4) */
+        .table-responsive table tr > td:nth-child(4),
+        .table-responsive table tr > th:nth-child(4) {
+            display: none;
+        }
+        
+        /* *** บังคับลดขนาดรูปภาพบนมือถือ *** */
+        .table-responsive table img {
+            width: 60px !important; 
+            height: 60px !important; 
+            object-fit: cover;
+            border-radius: 4px; 
+        }
+
+        /* *** ปรับความกว้างคอลัมน์ที่เหลือสำหรับมือถือ *** */
+        .table-responsive table tr > th:nth-child(1) { width: 15% !important; } /* รูปภาพ */
+        .table-responsive table tr > th:nth-child(2) { width: 35% !important; } /* ชื่อครุภัณฑ์ */
+        /* คอลัมน์ที่ 3 และ 4 ถูกซ่อน */
+        .table-responsive table tr > th:nth-child(5) { width: 40% !important; } /* การทำงาน */
+        /* คอลัมน์ที่ 6 (จัดการ) ถูกปรับปรุงตามเงื่อนไขของโค้ดเดิม */
+
+        /* ปรับขนาดตัวอักษรในตารางให้เล็กลง */
+        .table-responsive table {
+            font-size: 0.85rem;
+        }
+
+        /* ปรับฟอร์มค้นหาให้เต็มความกว้าง */
+        .row.g-2 > div {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+        
+        .row.g-2 .col-md-2 {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .row.g-2 .col-md-2 .btn {
+            flex: 1;
+        }
+    }
+    /* สไตล์สำหรับตารางให้สถานะยืมซ้อนกัน */
+    .loan-status-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* Modern Button Styles */
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+    }
+    .btn-gradient-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+    }
+    .btn-gradient-success:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+    }
+    .btn-gradient-warning {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: #1a1a1a;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+    }
+    .btn-gradient-warning:hover {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: #1a1a1a;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+    }
+    .btn-gradient-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
+    }
+    .btn-gradient-danger:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+    }
+    .btn-gradient-secondary {
+        background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(100, 116, 139, 0.35);
+    }
+    .btn-gradient-secondary:hover {
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(100, 116, 139, 0.45);
+    }
+    .btn-gradient-info {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.35);
+    }
+    .btn-gradient-info:hover {
+        background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45);
+    }
+    .btn-gradient-add {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(34, 197, 94, 0.35);
+    }
+    .btn-gradient-add:hover {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.45);
+    }
+
+    /* Minimal Search Bar */
+    .search-minimal {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 12px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: all 0.3s ease;
+    }
+    .search-minimal:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .search-minimal .form-control,
+    .search-minimal .form-select {
+        border: none;
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    .search-minimal .form-control:focus,
+    .search-minimal .form-select:focus {
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    }
+    .search-minimal .input-group-text {
+        border: none;
+        background: #f8fafc;
+        border-radius: 10px 0 0 10px;
+        color: #94a3b8;
+    }
+    .search-minimal .input-group .form-control {
+        border-radius: 0 10px 10px 0;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 text-primary fw-bold"><i class="bi bi-box-seam me-2"></i> รายการครุภัณฑ์ที่ยืมได้</h1>
+    <div class="d-flex align-items-center">
+        {% if request.user.is_admin or request.user.is_warehouse_manager %}
+        <a href="{% url 'assets:add_asset_item_loan' %}" type="button" class="btn btn-gradient-add me-3 px-3 py-2">
+            <i class="bi bi-plus-circle me-1"></i> เพิ่มครุภัณฑ์ใหม่
+        </a>
+        {% endif %}
+        <button type="button" class="btn btn-gradient-info px-3 py-2" data-bs-toggle="modal" data-bs-target="#helpModal">
+            <i class="bi bi-question-circle me-1"></i> วิธีใช้
+        </button>
+    </div>
+</div>
+
+<div id="floating-cart-wrapper">
+    <a href="{% url 'assets:loan_cart' %}" class="nav-link position-relative" title="ตะกร้าสินทรัพย์">
+        <i class="bi bi-cart3 text-primary"></i> 
+        <span id="cart-badge"
+            class="position-absolute translate-middle badge rounded-pill bg-danger">0</span>
+    </a>
+</div>
+
+<form method="get" class="search-minimal row g-2 mb-4">
+    <div class="col-12 col-md-4">
+        <label for="q" class="form-label visually-hidden">ค้นหา</label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อ, รหัสครุภัณฑ์..." value="{{ query }}">
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <label for="category" class="form-label visually-hidden">หมวดหลัก</label>
+        <select name="category" id="category" class="form-select">
+            <option value="">-- เลือกหมวดหลักทั้งหมด --</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %} selected {% endif %}>{{ category.name_cate }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12 col-md-3">
+        <label for="subcategory" class="form-label visually-hidden">หมวดย่อย</label>
+        <select name="subcategory" id="subcategory" class="form-select">
+            <option value="">-- เลือกหมวดย่อยทั้งหมด --</option>
+            {% for subcategory in subcategories %}
+            <option value="{{ subcategory.id }}" {% if selected_subcategory and selected_subcategory.id == subcategory.id %}selected{% endif %}>{{ subcategory.name_sub }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12 col-md-2 d-flex">
+        <button type="submit" class="btn btn-gradient-primary me-2 flex-grow-1 py-2"><i class="bi bi-funnel me-1"></i> กรอง</button>
+        <a href="{% url 'assets:loan_list' %}" class="btn btn-gradient-secondary flex-grow-1 py-2"><i class="bi bi-arrow-counterclockwise me-1"></i> ยกเลิก</a>
+    </div>
+</form>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 container mx-auto mb-5">
+    {% for asset in asset_items %}
+    <div class="col">
+        <div class="card h-100 glass-panel border-0 p-0" data-id="{{ asset.id }}">
+            {% if asset.asset_image %}
+            <img src="{{ asset.asset_image.url }}" class="card-img-top" alt="{{ asset.item_name }}" style="height: 250px; object-fit: cover; border-top-left-radius: 20px; border-top-right-radius: 20px;">
+            {% else %} 
+            <div class="card-img-top d-flex justify-content-center align-items-center bg-light" style="height: 250px; border-top-left-radius: 20px; border-top-right-radius: 20px;">
+                <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
+            </div>
+            {% endif %}
+            
+            <div class="card-body d-flex flex-column p-4">
+                <h5 class="card-title fw-bold text-primary mb-1">{{ asset.item_name }}</h5>
+                <p class="card-text small text-muted mb-3"><i class="bi bi-upc-scan"></i> {{ asset.asset_code }}</p>
+                <div class="mb-3">
+                    <span class="badge bg-white text-dark border shadow-sm p-2"><i class="bi bi-geo-alt-fill text-danger"></i> {{ asset.storage_location }}</span>
+                </div>
+                
+                <div class="mt-auto">
+                    {% with active_loan_found=asset.active_loan_list|length %}
+                        <div class="loan-status-stack">
+                        {% for issue in asset.active_loan_list %}
+                            <div class="border rounded p-2 w-100 
+                                {% if issue.order_asset.status == "overdue" %} border-danger bg-danger-subtle {% endif %}
+                                {% if issue.order_asset.status == "pending" %} border-warning bg-warning-subtle {% endif %}
+                                {% if issue.order_asset.status == "returned_pending" %} border-info bg-info-subtle {% endif %}
+                                {% if issue.order_asset.status == "approved" or issue.order_asset.status == "borrowed" %} border-secondary bg-light {% endif %}
+                                ">
+                                <span class="badge 
+                                    {% if issue.order_asset.status == "overdue" %} bg-danger {% elif issue.order_asset.status == "pending" or issue.order_asset.status == "returned_pending" %} bg-warning text-dark {% else %} bg-secondary {% endif %}
+                                    fw-bold me-2">
+                                    {% if issue.order_asset.status == "overdue" %}
+                                        <i class="bi bi-exclamation-circle"></i> เกินกำหนด
+                                    {% elif issue.order_asset.status == "pending" %}
+                                        <i class="bi bi-hourglass-split"></i> รออนุมัติ
+                                    {% elif issue.order_asset.status == "returned_pending" %}
+                                        <i class="bi bi-arrow-return-left"></i> รออนุมัติคืน
+                                    {% else %}
+                                        <i class="bi bi-person-fill"></i> กำลังยืม
+                                    {% endif %}
+                                    คำร้องที่ {{ issue.order_asset.order_code }}
+                                </span>
+                                <div class="small mt-1">
+                                    <strong>ผู้ยืม:</strong> {{ issue.order_asset.user.get_full_name }} <br>
+                                    <strong>วันที่ใช้งาน:</strong> {{ issue.order_asset.date_of_use|date:"d M Y, H:i น." }}<br>
+                                    <strong>กำหนดคืน:</strong> <span class="fw-bold">{{ issue.order_asset.date_due|date:"d M Y, H:i น." }}</span>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <button class="btn btn-gradient-success add-to-cart w-100 py-2 fw-bold" title="ครุภัณฑ์ว่าง สามารถยืมได้ทันที"><i class="bi bi-cart-plus-fill fs-5 me-1"></i> เพิ่มลงตะกร้ายืม</button>
+                        {% endfor %}
+
+                        {% if active_loan_found > 0 %}
+                            <button class="btn btn-gradient-info add-to-cart w-100 mt-2 py-2 fw-bold" 
+                                    data-is-reserve="true" 
+                                    title="ยืมต่อจากผู้ใช้คนปัจจุบัน (เพิ่มลงตะกร้า)"><i class="bi bi-arrow-repeat fs-5 me-1"></i> ยืมต่อคิว</button>
+                        {% endif %}
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+            
+            {% if request.user.is_admin or request.user.is_warehouse_manager %}
+            <div class="card-footer bg-transparent border-0 pt-0 pb-3 d-flex justify-content-center gap-2 px-4">
+                <a href="{% url 'assets:edit_asset_item_loan' asset.pk %}" class="btn btn-gradient-warning w-50 py-2" title="แก้ไข"><i class="bi bi-pencil-square me-1"></i> แก้ไข</a>
+                <button type="button" class="btn btn-gradient-danger w-50 py-2" title="ลบ" data-bs-toggle="modal"
+                    data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}"
+                    data-delete-url="{% url 'assets:delete_asset_item_loan' asset.pk %}">
+                    <i class="bi bi-trash me-1"></i> ลบ
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 glass-panel">
+        <i class="bi bi-box-seam text-muted" style="font-size: 4rem;"></i>
+        <h4 class="mt-3 text-muted">ไม่พบรายการครุภัณฑ์ที่สามารถให้ยืมได้ในเงื่อนไขนี้</h4>
+    </div>
+    {% endfor %}
+</div>
+
+
+{% if asset_items.paginator.num_pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if asset_items.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ asset_items.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">ก่อนหน้า</a>
+        </li>
+        {% endif %}
+        <li class="page-item disabled">
+            <a class="page-link">หน้า {{ asset_items.number }} จาก {{ asset_items.paginator.num_pages }}</a>
+        </li>
+        {% if asset_items.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ asset_items.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">ถัดไป</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-question-circle"></i> วิธีใช้งานระบบยืม-จองครุภัณฑ์</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h4>การยืมครุภัณฑ์</h4>
+                <ol>
+                    <li>แอดไลน์เพื่อรับการแจ้งเตือน**<kbd class="bg-success">ID @602xcbcb</kbd>** และผูกบัญชีให้เรียบร้อย</li>
+                    <li>เลือกครุภัณฑ์ที่ต้องการยืมที่มีปุ่ม **<kbd class="bg-success">เพิ่มในตะกร้า</kbd>**</li>
+                    <li>กดปุ่ม **<kbd class="bg-success">เพิ่มในตะกร้า</kbd>** ครุภัณฑ์จะถูกเพิ่มไปยังตะกร้า สามารถยืมได้หลายรายการใน 1 คำร้อง</li>
+                    <li>กดที่ไอคอน **<i class="bi bi-cart3"></i> ตะกร้า** (ด้านขวาล่าง) เพื่อไปยังหน้ารายการยืม</li>
+                    <li>กรอกรายละเอียดการยืม **วัน-เวลาที่ต้องการยืม** และ **วัน-เวลาที่ต้องการคืน** แล้วส่งคำขอ</li>
+                    <li>รอผู้ดูแลอนุมัติ (หากผูกบัญชี LINE Notify ไว้ จะได้รับการแจ้งเตือน)</li>
+                </ol>
+                <hr>
+                <h4>สถานะการทำงาน</h4>
+                <ul class="list-unstyled">
+                    <li><span class="badge bg-success">เพิ่มในตะกร้า</span>: ครุภัณฑ์ว่าง สามารถยืมได้ทันที</li>
+                    <li><span class="badge bg-info">เพิ่มในตะกร้า</span>: ครุภัณฑ์มีการยืมอยู่แต่สามารถยืมได้ โดยจะยืมไม่ได้ในช่วงเวลาเดียวกัน</li>
+                    <li><span class="badge bg-secondary">กำลังยืมอยู่</span>: ถูกยืมและได้รับอนุมัติแล้ว หรืออยู่ระหว่างการใช้งาน</li>
+                    <li><span class="badge bg-warning text-dark">รออนุมัติ</span>: อยู่ระหว่างรอผู้ดูแลอนุมัติคำขอยืม (ไม่สามารถยืมซ้ำได้ในช่วงเวลาเดียวกัน)</li>
+                    <li><span class="badge bg-warning text-dark">รอคืน</span>: ผู้ยืมแจ้งคืนแล้ว อยู่ระหว่างรอผู้ดูแลตรวจสอบและรับคืน</li>
+                    <li><span class="badge bg-danger">เกินกำหนด</span>: ยืมเกินวันที่กำหนดคืนแล้ว</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel"><i class="bi bi-trash"></i> ยืนยันการลบข้อมูล</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger fw-bold">การกระทำนี้ไม่สามารถย้อนกลับได้!</p>
+                คุณต้องการลบรายการครุภัณฑ์ "<strong id="asset-name"></strong>" ใช่หรือไม่?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <form id="deleteForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" onclick="this.disabled=true; this.innerHTML='กำลังลบ...';">ยืนยันการลบ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="lineNotifyModal" tabindex="-1" aria-labelledby="lineNotifyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="lineNotifyModalLabel"><i class="bi bi-bell-fill"></i> กรุณาผูกบัญชี LINE
+                    เพื่อรับการแจ้งเตือน</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="lead">
+                    เพื่อไม่พลาดทุกการแจ้งเตือนสถานะการยืมครุภัณฑ์<br>
+                    <strong>กรุณาแอดไลน์และผูกบัญชีเพื่อรับการแจ้งเตือน</strong>
+                </p>
+
+                <img src="{% static 'app_general/line_qrcode_asset.png' %}" alt="LINE QR Code"
+                    class="img-fluid mb-3 border p-2" style="max-width: 200px;">
+
+                <div class="alert alert-info text-start small">
+                    <p class="mb-1"><strong>วิธีผูกบัญชี:</strong></p>
+                    <ol class="mb-0">
+                        <li>สแกนคิวอาร์โค้ด หรือเพิ่มเพื่อน LINE Bot</li>
+                        <li>พิมพ์คำว่าผูกบัญชี ตามด้วยรหัสส่วนตัวของคุณ</li>
+                    </ol>
+                    <p class="mt-2 mb-0 fw-bold">ตัวอย่าง: <kbd>ผูกบัญชี ad......</kbd></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">รับทราบ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // **********************************
+    // โค้ดสำหรับแสดง LINE Notify Modal (เดิม)
+    // **********************************
+    const hasLineAccount = {{ has_line_account|yesno:"true,false" }}; 
+    
+    document.addEventListener('DOMContentLoaded', (event) => {
+        if ({{ request.user.is_authenticated|lower }} === true && hasLineAccount === false) {
+            const lineNotifyModalElement = document.getElementById('lineNotifyModal');
+            const lineNotifyModal = new bootstrap.Modal(lineNotifyModalElement);
+            lineNotifyModal.show();
+            
+            setTimeout(() => {
+                lineNotifyModal.hide();
+            }, 10000); // 10 วินาที
+        }
+    });
+
+
+    // document.addEventListener('DOMContentLoaded', (event) => {
+    //     if ({{ request.user.is_authenticated|lower }} === true && hasLineAccount === false) {
+    //         const lineNotifyModalElement = document.getElementById('lineNotifyModal');
+    //         // เช็คว่า Modal ถูกแสดงมาก่อนหรือไม่ (ใช้ LocalStorage เพื่อควบคุมการแสดงผลบนหน้าเดียวกัน)
+    //         if (!localStorage.getItem('lineNotifyShown')) {
+    //             const lineNotifyModal = new bootstrap.Modal(lineNotifyModalElement);
+    //             lineNotifyModal.show();
+    //             localStorage.setItem('lineNotifyShown', 'true');
+                
+    //             // ซ่อนเองหลังจาก 10 วินาที
+    //             setTimeout(() => {
+    //                 lineNotifyModal.hide();
+    //             }, 10000); 
+    //         }
+    //     }
+    // });
+    
+
+    // **********************************
+    // โค้ดสำหรับตะกร้าและ Modal ต่างๆ (ปรับปรุง)
+    // **********************************
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const cartBadge = document.getElementById('cart-badge');
+
+    function updateCartUI() {
+        cartBadge.textContent = cart.length;
+        document.querySelectorAll('.add-to-cart').forEach(btn => {
+            const card = btn.closest('.card');
+            if (!card) return;
+            const assetId = parseInt(card.dataset.id);
+            if (cart.includes(assetId)) {
+                btn.innerHTML = '<i class="bi bi-check-circle-fill fs-5 me-1"></i> เพิ่มลงตะกร้าแล้ว';
+                btn.disabled = true;
+                btn.classList.remove('btn-success', 'btn-outline-info');
+                btn.classList.add('btn-secondary');
+            } else {
+                if (btn.dataset.isReserve === 'true') {
+                    btn.innerHTML = '<i class="bi bi-arrow-repeat fs-5 me-1"></i> ยืมต่อคิว';
+                    btn.classList.add('btn-outline-info');
+                } else {
+                    btn.innerHTML = '<i class="bi bi-cart-plus-fill fs-5 me-1"></i> เพิ่มลงตะกร้ายืม';
+                    btn.classList.add('btn-success');
+                }
+                btn.disabled = false;
+                btn.classList.remove('btn-secondary');
+            }
+        });
+    }
+
+    document.querySelectorAll('.add-to-cart').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const card = this.closest('.card');
+            if (!card) return;
+            const assetId = parseInt(card.dataset.id);
+            if (!cart.includes(assetId)) {
+                cart.push(assetId);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCartUI();
+            }
+        });
+    });
+
+    // Modal Delete Logic
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const deleteUrl = button.getAttribute('data-delete-url');
+            const assetName = button.getAttribute('data-asset-name');
+            const deleteForm = deleteModal.querySelector('#deleteForm');
+            const assetNamePlaceholder = deleteModal.querySelector('#asset-name');
+            deleteForm.action = deleteUrl;
+            assetNamePlaceholder.textContent = assetName;
+        });
+    }
+    
+    // โค้ด Modal Reserve ถูกลบออกจาก JavaScript แล้ว 
+    
+    updateCartUI();
+</script>
+{% endblock %}

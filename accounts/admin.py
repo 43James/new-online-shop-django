@@ -45,7 +45,7 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin # Import UserAdmin
-from .models import MyUser, Profile, WorkGroup
+from .models import MyUser, Profile, WorkGroup, PortalApp
 
 # ----------------------------------------------------
 # 1. สร้าง Profile Inline
@@ -118,3 +118,14 @@ class WorkGroupAdmin(admin.ModelAdmin):
 # admin.site.register(MyUser,MyUserAdmin) # ไม่ต้องใช้
 # admin.site.register(Profile,ProfileAdmin) # ไม่ต้องใช้ (ไปรวมกับ User แล้ว)
 # admin.site.register(WorkGroup,WorkGroupAdmin) # ไม่ต้องใช้
+
+# ----------------------------------------------------
+# 5. PortalApp Admin
+# ----------------------------------------------------
+@admin.register(PortalApp)
+class PortalAppAdmin(admin.ModelAdmin):
+    list_display = ['code', 'title', 'category', 'url', 'is_favorite', 'order']
+    list_filter = ['category', 'is_favorite']
+    search_fields = ['code', 'title', 'description']
+    list_editable = ['order', 'is_favorite']
+    ordering = ['order', 'id']

@@ -1,0 +1,251 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+<style>
+    @font-face {
+        font-family: 'TH Sarabun New';
+        src: url('https://db.s-cdn.co/fonts/thsarabunnew-webfont.woff2') format('woff2'),
+             url('https://db.s-cdn.co/fonts/thsarabunnew-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'TH Sarabun New';
+        src: url('https://db.s-cdn.co/fonts/thsarabunnew-bold-webfont.woff2') format('woff2'),
+             url('https://db.s-cdn.co/fonts/thsarabunnew-bold-webfont.woff') format('woff');
+        font-weight: bold;
+        font-style: normal;
+    }
+    
+    /* A4 Paper Preview Styling */
+    .a4-preview {
+        font-family: 'TH Sarabun New', sans-serif;
+        box-sizing: border-box;
+        background: #ffffff;
+        width: 210mm;
+        min-height: 297mm;
+        padding: 15mm 20mm;
+        margin: 20px auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 1px solid #ccc;
+        color: #000;
+        font-size: 20px;
+        line-height: 1.2;
+    }
+    
+    .a4-preview h3 { font-size: 28px; font-weight: bold; margin-bottom: 5px; }
+    .a4-preview h4 { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+    .a4-preview h5 { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+    .a4-preview h6 { font-size: 20px; margin-bottom: 5px; }
+
+    .a4-preview table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .a4-preview th,
+    .a4-preview td {
+        border: 1px solid #000;
+        padding: 6px 8px;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 20px;
+    }
+    
+    .a4-preview th {
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .a4-preview td {
+        /* Allow wrapping only where necessary */
+        word-break: break-word;
+    }
+    
+    /* Force specific columns to not wrap if possible */
+    .a4-preview td:nth-child(1),
+    .a4-preview td:nth-child(2),
+    .a4-preview td:nth-child(4),
+    .a4-preview td:nth-child(5),
+    .a4-preview td:nth-child(6) {
+        white-space: nowrap;
+    }
+
+    .a4-preview .text-end { text-align: right; }
+    .a4-preview .text-center { text-align: center; }
+    
+    @media (max-width: 210mm) {
+        .a4-preview {
+            width: 100%;
+            min-height: auto;
+            margin: 0;
+            padding: 15px;
+            box-shadow: none;
+            border: none;
+        }
+    }
+</style>
+
+<!-- order payment status -->
+<div class="row">
+    <div class="col">
+        {% if order.status == True %}
+        <i class="bi bi-printer-fill fs-2 float-end text-primary" style="cursor: pointer;"
+            onclick="printA4(document.getElementById('content').innerHTML)" title="พิมพ์เอกสาร"></i>
+        <h3><b class="text-success">ดำเนินการสำเร็จ <i class="bi bi-check-circle-fill"></i></b></h3>
+        <h5><b style="font-weight: bold;">วันที่รับวัสดุ : </b><i class="bi bi-calendar-check-fill text-warning">
+            </i>วันที่ {{ order.date_receive|date:"d  M  Y เวลา H:i น." }}</h5>
+        {% elif order.status == False %}
+        <h3><b class="text-danger">ปฏิเสธคำร้อง <i class="bi bi-heartbreak-fill"></i></b></h3>
+            {% if order.other == None %}
+                <h5><b style="font-weight: bold;" class="text-danger">หมายเหตุ : -</i></b></h5>
+            {% else%}
+                <h5><b style="font-weight: bold;" class="text-danger">หมายเหตุ : {{ order.other }}</i></b></h5>
+            {% endif %}
+        {% else %}
+        <h4><b class="text-warning">รอดำเนินการ..</b></h4>
+        <h5><b style="font-weight: bold;">วันที่รับวัสดุ : <i class="bi bi-calendar-check-fill text-warning">
+                    รอดำเนินการ</i></b></h5>
+        {% endif %}
+    </div>
+</div>
+<br>
+
+<div id="content" class="a4-preview">
+    <div class="justify-content-center d-flex">
+        <img src="{% static 'app_general/logo.png' %}" width="80">
+    </div>
+    <h4 class="text-center mt-2">รายการเบิกจ่ายวัสดุ อุทยานวิทยาศาสตร์และนวัตกรรม ฯ</h4>
+    <br>
+
+    <h3 class="text-end">เลขที่เบิก : {{ order.order_code }}</h3>
+    <h6 class="text-end">วันที่ทำรายการ : {{ order.date_created|date:"d  M  Y เวลา H:i น." }}</h6>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ลำดับ</th>
+                <th>รหัสวัสดุ</th>
+                <th style="width: 30%;">ชื่อรายการ</th>
+                <th>จำนวน/หน่วย</th>
+                <th>ราคา/หน่วย</th>
+                <th>ราคารวม</th>
+                <th style="width: 20%;">หมายเหตุ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <!-- ใส่ข้อมูลออเดอร์ที่ได้จาก Django Model ตรงนี้ -->
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{item.product.product_id}} </td>
+                <td><a class="text-decoration-none" href="{{ item.product.get_absolute_url }}">
+                        {{item.product.product_name}}</a></td>
+                <td>{{item.quantity}}</td>
+                <td>{{item.price|floatformat:"-3"|intcomma}} บาท</td>
+                <td>{{item.get_cost|intcomma }} บาท</td>
+
+                {% if item.note %}
+                    <td>{{item.note}}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
+            </tr>
+            <!-- สามารถทำลูปเพื่อแสดงรายการออเดอร์ทั้งหมด -->
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4 class="mt-2 pt-2 text-muted text-end border-bottom">รวมทั้งหมด : {{ order.get_total_price|intcomma }} บาท</h4>
+
+    <br><br>
+    {% if order.status == True %}
+    <div class="row">
+        <div class="col-6 " style="margin-top: 20px;">
+            <!-- <p>วันที่รับพัสดุ _______ /_______ /________ </p><br> -->
+            {% if order.status == True %}
+                <p class="text-center">ลงชื่อ {{ order.user.first_name }} ผู้เบิก</p>
+            {% else %}
+                <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
+            {% endif %}
+                <p class="text-center">( {{ order.user.get_full_name }} )</p>
+                <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p>
+                {% if order.confirm == True %}
+                <p class="text-center text-success">{{ order.name_sign }} ยืนยันรับวัสดุแล้ว</p>
+                <p class="text-center text-success">วันที่รับวัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_received|date:"d / m / Y" }} </p><br>
+                {% else %}
+                <p class="text-center text-danger">ยังไม่ยืนยันรับวัสดุ</p><br>
+                {% endif %}
+        </div>
+        <div class="col-6" style="margin-top: 20px;">
+            {% if order.status == True %}
+                <p class="text-center">ลงชื่อ อารีรัตน์ ผู้อนุมัติ</p>
+            {% else %}
+                <p class="text-center">ลงชื่อ _____________________ ผู้อนุมัติ</p>
+            {% endif %}
+                <p class="text-center">( ผู้ช่วยศาสตราจารย์ อารีรัตน์ ลุนผา )</p>
+                <p class="text-center">ตำแหน่ง หัวหน้าเจ้าหน้าที่</p>
+            {% if order.status == True %}
+                <p class="text-center text-success">อนุมัติคำร้อง</p>
+                <p class="text-center text-success">วันที่อนุมัติ :&nbsp;&nbsp;วันที่ {{ order.date_approved |date:"d / m / Y" }} </p><br>
+                {% else %}
+                <p class="text-center text-danger"></p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="text-center" >
+        {% if order.pay_item == True %}
+            <p>ลงชื่อ {{ order.name_pay }} ผู้จ่ายวัสดุ</p>
+        {% else %}
+            <p>ลงชื่อ _____________________ ผู้จ่ายวัสดุ</p>
+        {% endif %}
+            <p>(นางสาว{{ order.name_pay }} {{ order.surname_pay }} )</p>
+            <p>ตำแหน่ง เจ้าหน้าที่พัสดุ</p>
+            {% if order.pay_item == True %}
+                <p class="text-center text-success">จ่ายวัสดุแล้ว</p>
+                <p class="text-center text-success">วันที่จ่ายพัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_pay |date:"d / m / Y" }} </p><br>
+                {% else %}
+                <p class="text-center text-danger">ยังไม่จ่ายพัสดุ</p>
+            {% endif %}<br>
+            <!-- <p>วันที่นัดรับวัสดุ :&nbsp;&nbsp;วันที่ {{ order.date_receive|date:"d / m / Y" }} </p><br> -->
+    </div>
+    {% endif %}
+
+    {% if order.status == None %}
+    <div class="row">
+        <div class="text-center" style="margin-top: 20px;">
+            {% if order.status == none %}
+                <p class="text-center">ลงชื่อ {{ order.user.first_name }} ผู้เบิก</p>
+            {% else %}
+                <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
+            {% endif %}
+                <p class="text-center">( {{ order.user.get_full_name }} )</p>
+                <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p><br>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if order.status == False %}
+    <div class="row">
+        <div class="text-center" style="margin-top: 20px;">
+            <h3 class="mb-4"><b class="text-danger">ปฏิเสธคำร้อง <i class="bi bi-heartbreak-fill"></i></b></h3>
+            {% if order.status == False %}
+                <p class="text-center">ลงชื่อ {{ order.user.first_name }} ผู้เบิก</p>
+            {% else %}
+                <p class="text-center">ลงชื่อ _____________________ ผู้เบิก</p>
+            {% endif %}
+                <p class="text-center">( {{ order.user.get_full_name }} )</p>
+                <p class="text-center">ตำแหน่ง {{ order.user.profile.position}}</p><br>
+                {% if order.other == None %}
+                <p>หมายเหตุ : -</p><br>
+                {% else %}
+                <p>หมายเหตุ : {{ order.other }}</p><br>
+                {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

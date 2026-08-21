@@ -1,0 +1,172 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<style>
+  .product-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+  }
+  .product-card img {
+    border-radius: 12px;
+  }
+</style>
+
+<body class="home-page">
+
+   <!-- Modal -->
+   <div class="modal fade" id="orderConfirmationModal" tabindex="-1" aria-labelledby="orderConfirmationLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content text-center">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderConfirmationLabel">แจ้งเตือน</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="font-size: 50px; line-height: 1.5;">
+              คุณมีรายการเบิกที่ยังไม่ยืนยันรับวัสดุ <br>
+              กรุณา <strong class="text-danger" style="margin-top: 20px; display: inline-block;"> ยืนยันรับวัสดุ!</strong>
+          </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <a href="{% url 'orders:user_orders' %}" class="btn btn-outline-warning">ยืนยันรับวัสดุ</a>
+                <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button> -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var orderModal = new bootstrap.Modal(document.getElementById('orderConfirmationModal'));
+            orderModal.show();
+        });
+    </script>
+{% endif %}
+
+
+  <div class="text-white mb-3">
+    {% if selected_category %}
+    <div>
+      <h5>หมวดหมู่ที่เลือก : <i>{{ selected_category.name_cate }}</i></h5>
+    </div>
+    {% endif %}
+
+    {% if selected_subcategory %}
+    <div>
+      <h6>หมวดหมู่ย่อยที่เลือก : <i>{{ selected_subcategory.name_sub }}</i></h6>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if products %}
+  <div class="d-flex flex-wrap justify-content-center px-1">
+  {% for product in products %}
+  <div class="card m-2 mt-4 product-card" style="width: calc(50% - 1rem); max-width: 11rem;">
+
+    {% if product.total_quantity == 0 %}
+    <div id="watermark">
+      <a href="{{ product.get_absolute_url }}">
+        {% if product.image %}
+        <img class="card-img mt-2 mx-auto d-block" style="object-fit: cover; max-width: 90%; height: 150px;"
+          src="{{ product.image.url }}">
+        {% else %}
+        <img style="object-fit: cover; opacity: 0.5; max-width: 90%; height: 150px;" class="card-img mt-2 mx-auto d-block"
+          src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+        {% endif %}
+      </a>
+      <p> &nbsp;หมดสต๊อก</p>
+    </div>
+    {% else %}
+    <a href="{{ product.get_absolute_url }}">
+      {% if product.image %}
+      <img style="object-fit: cover; max-width: 90%; height: 150px;" class="card-img mt-2 mx-auto d-block" src="{{ product.image.url }}">
+      {% else %}
+      <img style="object-fit: cover; max-width: 90%; height: 150px;" class="card-img mt-2 mx-auto d-block"
+        src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+      {% endif %}
+    </a>
+    {% endif %}
+
+    <div class="mt-3 text-center px-1">
+      <h6 class="card-title element" style="font-size: 0.9rem;">{{ product.product_name }}</h6>
+      <!-- <p class="text-muted">{{ product.price }} ฿</p> -->
+      <!-- <a href="{{ product.get_absolute_url }}" class="mb-3 btn btn-outline-primary w-100">เลือก</a> -->
+    </div>
+  </div>
+  {% endfor %}
+  </div>
+
+
+  <nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center mt-4 mb-2">
+        {% if products.has_previous %}
+        <a href="?page=1" class="page-link bg-primary text-white"
+            style="border-top-left-radius: 30px; border-bottom-left-radius: 30px;">หน้าแรก</a>
+        <!-- <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}"><span
+            aria-hidden="true">&laquo;</span></a></li> -->
+        {% else %}
+        <li class="page-item disabled"></li>
+        {% endif %}
+
+        {% if products.number|add:'-2' > 1 %}
+        <li><a class="page-link" href="?page={{ products.number|add:'-2' }}">&hellip;</a></li>
+        {% endif %}
+
+        {% for i in products.paginator.page_range %}
+        {% if products.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}<span class="sr-only"></span></span>
+        </li>
+        {% elif i > products.number|add:'-2' and i < products.number|add:'2' %} <li class="page-item"><a
+                class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if products.paginator.num_pages > products.number|add:'2' %}
+            <li><a class="page-link" href="?page={{ products.number|add:'-2' }}">&hellip;</a></li>
+            <li><a href="?page={{ i }}">{{ i }}</a></li>
+            <li><a class="page-link" href="?page={{ products.paginator.num_pages }}">{{ products.paginator.num_pages }}</a>
+            </li>
+            {% endif %}
+
+            {% if products.has_next %}
+            <!-- <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}"><span
+                aria-hidden="true">&raquo;</span></a></li> -->
+            <a href="?page={{ products.paginator.num_pages }}" class="page-link bg-primary text-white"
+                style="border-top-right-radius: 30px; border-bottom-right-radius: 30px;">หน้าสุดท้าย</a>
+            {% else %}
+            <li class="page-item disabled"></li>
+            {% endif %}
+    </ul>
+</nav>
+
+  {% else %}
+  <div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 mt-5 pt-5 text-center">
+      <br>
+      <h3 class="text-muted text-capitalize">ไม่มีรายการวัสดุ!</h3>
+      <!-- <h3 class="text-muted text-capitalize">No Products..!</h3> -->
+    </div>
+    <div class="col-md-2"></div>
+  </div>
+  {% endif %}
+</body>
+
+<style>
+  .page-link.current-page {
+    color: #fff;
+    /* สีของลิงก์เป็นสีขาว */
+    background-color: #007bff;
+    /* สีพื้นหลังเป็นสีน้ำเงินเข้ม */
+    border-color: #007bff;
+    /* สีเส้นขอบเป็นสีน้ำเงินเข้ม */
+  }
+</style>
+{% endblock %}

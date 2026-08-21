@@ -5,34 +5,25 @@ from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
-from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.core.paginator import Paginator
 from app_linebot.views import notify_admin_order_status, notify_user_approved, notify_user_pay_confirmed, send_acknowledge_notification, send_restock_notification
-from django.db.models import Q, Sum, Max, F, ExpressionWrapper, DecimalField
-from shop.models import Category, MonthlyStockRecord, Product, Stock, Subcategory, Suppliers, Total_Quantity, Receiving
-from accounts.models import MyUser, Profile, WorkGroup
+from django.db.models import Q, Sum, Max, F, DecimalField
+from shop.models import Category, MonthlyStockRecord, Product, Subcategory, Suppliers, Total_Quantity, Receiving
+from accounts.models import WorkGroup
 from orders.models import Order, Issuing, OutOfStockNotification
-from .forms import AddProductForm, AddCategoryForm, AddSubcategoryForm, ApprovePayForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, EditWorkGroupForm, MonthYearForm, OrderFilterForm,  ReceivingForm, RecordMonthlyStockForm, WorkGroupForm
+from .forms import AddProductForm, AddCategoryForm, AddSubcategoryForm, ApprovePayForm, EditCategoryForm, EditProductForm, ApproveForm, AddSuppliersForm, EditSubcategoryForm, EditSuppliersForm, EditWorkGroupForm, ReceivingForm, RecordMonthlyStockForm, WorkGroupForm
 from django.db.models import F
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
 from datetime import datetime, timedelta
-import openpyxl, re
+import openpyxl
 from openpyxl.styles import Alignment
 from openpyxl.styles import Font, Border, Side, Alignment
 from django.http import HttpResponse
 from collections import defaultdict
-import calendar
 import locale
-import plotly.express as px
 import pandas as pd
 locale.setlocale(locale.LC_TIME, 'th_TH.UTF-8')  # ตั้งค่า locale เป็นภาษาไทย
-from .forms import UploadFileForm
-from django.http import Http404
 from openpyxl import Workbook
 from babel.dates import format_datetime
-from django.utils.dateparse import parse_date
 from django.db.models import Subquery, OuterRef
 from django.utils import timezone
 
@@ -463,7 +454,7 @@ def monthly_report(request, month=None, year=None):
         'selected_category_name': selected_category_name,
         'total_remaining_value_sum': total_remaining_value_sum,  # ✅ ส่งไป template
     }
-    return render(request, 'monthly_report.html', context)
+    return render(request, 'dashboard/reports/monthly_report.html', context)
 
 
 
@@ -522,7 +513,7 @@ def record_monthly_stock_view(request):
         'pending_orders_count': count_pending_orders(),
     }
 
-    return render(request, 'record_monthly_stock.html', context)
+    return render(request, 'dashboard/orders_and_stock/record_monthly_stock.html', context)
 
 
 
@@ -569,7 +560,7 @@ def monthly_stock_records(request):
     previous_year_ad = year_ad if month > 1 else year_ad - 1
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year_ad)
-    return render(request, 'monthly_stock_records.html', context)
+    return render(request, 'dashboard/orders_and_stock/monthly_stock_records.html', context)
 
 
 from dateutil.relativedelta import relativedelta
@@ -687,7 +678,7 @@ def monthly_stock_sum(request):
     previous_year = year_ad if month > 1 else year_ad - 1
     context['previous_month_name'] = thai_month_name(previous_month)  # ฟังก์ชันที่แปลงเดือนเป็นชื่อเดือนภาษาไทย
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)  # ฟังก์ชันที่แปลงปีคริสต์ศักราชเป็นปีพุทธศักราช
-    return render(request, 'monthly_stock_sum.html', context)
+    return render(request, 'dashboard/orders_and_stock/monthly_stock_sum.html', context)
 
 
 
@@ -934,8 +925,6 @@ def export_monthly_stock_records_to_excel(request):
 
 
 
-
-
 @user_passes_test(is_authorized)
 @login_required
 # รายงานรับเข้าประจำเดือน
@@ -1006,7 +995,7 @@ def monthly_report_receive(request):
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
     
-    return render(request, 'monthly_report_receive.html', context)
+    return render(request, 'dashboard/reports/monthly_report_receive.html', context)
 
 
 
@@ -1143,7 +1132,7 @@ def report_monthly_totals(request):
         'report_monthly_totals': report_monthly_totals_float,
         'pending_orders_count': count_pending_orders(),
     }
-    return render(request, 'report_monthly_totals.html', context)
+    return render(request, 'dashboard/reports/report_monthly_totals.html', context)
 
 
 
@@ -1172,7 +1161,7 @@ def total_quantity(request):
         'product':products,
         'pending_orders_count': count_pending_orders(),
         }
-    return render(request, 'total_quantity.html', context)
+    return render(request, 'dashboard/orders_and_stock/total_quantity.html', context)
 
 
 @user_passes_test(is_authorized)
@@ -1215,7 +1204,7 @@ def report_order_list(request):
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
     
-    return render(request, 'report_order_list.html', context)
+    return render(request, 'dashboard/reports/report_order_list.html', context)
 
 
 @user_passes_test(is_authorized)
@@ -1457,7 +1446,7 @@ def dashboard_home(request):
             ],
         }
 
-    return render(request, 'dashboard_home.html', context)
+    return render(request, 'dashboard/home/dashboard_home.html', context)
 
 
 import random
@@ -1615,9 +1604,7 @@ def dashboard_report(request):
         'current_month': current_month,  # เพิ่มข้อมูลเดือนปัจจุบัน
         'current_year_buddhist': current_year_buddhist  # เพิ่มข้อมูลปีพ.ศ. ปัจจุบัน
     }
-    return render(request, 'dashboard_report.html', context)
-
-
+    return render(request, 'dashboard/reports/dashboard_report.html', context)
 
 
 
@@ -1760,7 +1747,7 @@ def issuing_report(request):
             ],
         }
 
-    return render(request, 'issuing_report.html', context)
+    return render(request, 'dashboard/reports/issuing_report.html', context)
 
 
 
@@ -1877,63 +1864,8 @@ def products(request):
         'total_quantity': sum(product.total_current_stock or 0 for product in products), 
         'filter_stock': filter_stock
     }
-    return render(request, 'products.html', context)
+    return render(request, 'dashboard/products/products.html', context)
 
-
-@user_passes_test(is_authorized_manager)
-@login_required
-# def products(request):
-#     query = request.GET.get('q')
-#     filter_stock = request.GET.get('filter_stock', 'all')  # รับค่าจากปุ่มกรอง
-#     products = Product.objects.all()
-
-#     if query is not None:
-#         lookups = Q(product_id__icontains=query) | Q(product_name__icontains=query)
-#         products = products.filter(lookups)
-
-#     # กรองวัสดุตามตัวเลือกจากปุ่ม
-#     if filter_stock == 'in_stock':
-#         products = products.filter(quantityinstock__gt=0)  # แสดงเฉพาะวัสดุที่ยังมีในสต๊อก
-#         products = products.order_by('quantityinstock')  # เรียงจากน้อยไปมาก
-#     elif filter_stock == 'out_of_stock':
-#         products = products.filter(quantityinstock=0)  # แสดงเฉพาะวัสดุที่หมดสต๊อก
-#     else:
-#         products = products.order_by('id')  # เรียงตามสต็อกทั้งหมด
-
-#      # ดึง end_of_month_balance จาก MonthlyStockRecord ของเดือนล่าสุด
-#     latest_balance_subquery = MonthlyStockRecord.objects.filter(
-#         product=OuterRef('pk')
-#     ).order_by('-year', '-month').values('end_of_month_balance')[:1]
-
-#     # ใช้ annotate เพื่อคำนวณจำนวนรวมและวันที่รับเข้าล่าสุด
-#     products = products.annotate(
-#         total_quantity_received=Sum('Receiving__quantity'),
-#         latest_receiving_date=Max('Receiving__id'),
-#         total_remaining_value=Sum(F('Receiving__quantity') * F('Receiving__unitprice'), output_field=DecimalField()),
-#         end_of_month_balance=Subquery(latest_balance_subquery)  # ดึงจำนวนคงเหลือเดือนล่าสุด
-#     )
-
-#     # เพิ่มการเรียงลำดับที่แน่นอนหลังการ annotate
-#     # products = products.order_by('id')
-#     # เรียงลำดับจากน้อยไปมากตาม total_quantity_received
-#     products = products.order_by('total_quantity_received')
-
-#     # pagination
-#     page = request.GET.get('page')
-#     p = Paginator(products, 20)
-#     try:
-#         products = p.page(page)
-#     except:
-#         products = p.page(1)
-
-#     context = {
-#         'title': 'รายการวัสดุทั้งหมด',
-#         'products': products,
-#         'pending_orders_count': count_pending_orders(),
-#         'total_quantity': sum(product.quantityinstock for product in products),
-#         'filter_stock': filter_stock  # เก็บค่าตัวเลือกการกรองไว้ใน context
-#     }
-#     return render(request, 'products.html', context)
 
 
 @user_passes_test(is_authorized_manager)
@@ -1986,7 +1918,7 @@ def add_product(request):
                 'Category':Category.objects.all(),
                 'Subcategory':Subcategory.objects.all(),
                 'pending_orders_count': count_pending_orders(),}
-    return render(request, 'add_product.html', context)
+    return render(request, 'dashboard/products/add_product.html', context)
 
 
 
@@ -2014,7 +1946,7 @@ def edit_product(request, id):
     context = {'title': 'Edit Product', 
                'form':form,
                 'pending_orders_count': count_pending_orders(),}
-    return render(request, 'edit_product.html', context)
+    return render(request, 'dashboard/products/edit_product.html', context)
 
 
 
@@ -2041,7 +1973,7 @@ def suppliers(request):
         'suppliers':suppliers,
         'pending_orders_count': count_pending_orders(),
         }
-    return render(request, 'suppliers.html', context)
+    return render(request, 'dashboard/suppliers/suppliers.html', context)
 
 
 
@@ -2058,7 +1990,7 @@ def add_suppliers(request):
         form = AddSuppliersForm()
     context = {'title':'เพิ่มซัพพลายเอร์', 'form':form,
                 'pending_orders_count': count_pending_orders(),}
-    return render(request, 'add_suppliers.html', context)
+    return render(request, 'dashboard/suppliers/add_suppliers.html', context)
 
 
 
@@ -2089,7 +2021,7 @@ def edit_suppliers(request, id):
                'sup':sup,
                'form':form,
                'pending_orders_count': count_pending_orders(),}
-    return render(request, 'edit_suppliers.html', context)
+    return render(request, 'dashboard/suppliers/edit_suppliers.html', context)
 
 
 
@@ -2102,7 +2034,7 @@ def detail_suppliers(request, id):
         'sup':sup,
         'pending_orders_count': count_pending_orders(),
         }
-    return render(request, 'detail_suppliers.html', context)
+    return render(request, 'dashboard/suppliers/detail_suppliers.html', context)
 
 
 
@@ -2199,11 +2131,12 @@ def receive_list(request):
 
     # การค้นหา
     query = request.GET.get('q')
-    if query is not None:
+    if query:
         lookups = Q(product__product_name__icontains=query) | Q(product__product_id__icontains=query)
         receive = receive.filter(lookups)
-    else:
-        receive = receive.filter(month=month, year=year_ad)
+
+    # กรองตามเดือนและปีที่ระบุเสมอ
+    receive = receive.filter(month=month, year=year_ad)
 
     context = {
         'title': 'รับเข้าวัสดุ',
@@ -2223,7 +2156,7 @@ def receive_list(request):
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
 
-    return render(request, 'receive_list.html', context)
+    return render(request, 'dashboard/orders_and_stock/receive_list.html', context)
 
 
 
@@ -2266,7 +2199,7 @@ def receive_product(request):
         'Suppliers':Suppliers.objects.all(),
         'pending_orders_count': count_pending_orders(),
         }
-    return render(request, 'receive_product.html', context)
+    return render(request, 'dashboard/orders_and_stock/receive_product.html', context)
 
 
 @user_passes_test(is_authorized_manager)
@@ -2310,7 +2243,7 @@ def update_received_product(request, id):
         'Suppliers': Suppliers.objects.all(),
         'pending_orders_count': count_pending_orders(),
     }
-    return render(request, 'update_received_product.html', context)
+    return render(request, 'dashboard/orders_and_stock/update_received_product.html', context)
 
 
 
@@ -2349,7 +2282,7 @@ def stock(request):
         'title':'สต๊อก', 
         'products':products,
         'pending_orders_count': count_pending_orders(),}
-    return render(request, 'stock.html', context)
+    return render(request, 'dashboard/orders_and_stock/stock.html', context)
 
 
 
@@ -2375,7 +2308,7 @@ def workgroup(request):
         'title':'กลุ่มงาน', 
         'workgroup':workgroup,
         'pending_orders_count': count_pending_orders(),}
-    return render(request, 'workgroup.html', context)
+    return render(request, 'dashboard/categories/workgroup.html', context)
 
 
 
@@ -2395,7 +2328,7 @@ def add_work_group(request):
                'form':form,
                 'pending_orders_count': count_pending_orders(),}
     
-    return render(request, 'add_work_group.html', context)
+    return render(request, 'dashboard/categories/add_work_group.html', context)
 
 
 @user_passes_test(is_authorized_manager)
@@ -2444,7 +2377,7 @@ def edit_workgroup(request, id):
                'work':work,
                'form':form,
                'pending_orders_count': count_pending_orders(),}
-    return render(request, 'edit_workgroup.html', context)
+    return render(request, 'dashboard/categories/edit_workgroup.html', context)
 
 
 
@@ -2470,7 +2403,7 @@ def category(request):
         'title':'หมวดหมู่หลัก', 
         'category':category,
         'pending_orders_count': count_pending_orders(),}
-    return render(request, 'category.html', context)
+    return render(request, 'dashboard/categories/category.html', context)
 
 
 
@@ -2488,7 +2421,7 @@ def add_category(request):
     context = {'title':'เพิ่มหมวดหมู่หลัก', 
                'form':form,
                 'pending_orders_count': count_pending_orders(),}
-    return render(request, 'add_category.html', context)
+    return render(request, 'dashboard/categories/add_category.html', context)
 
 
 
@@ -2519,7 +2452,7 @@ def edit_category(request, id):
                'cate':cate,
                'form':form,
                'pending_orders_count': count_pending_orders(),}
-    return render(request, 'edit_category.html', context)
+    return render(request, 'dashboard/categories/edit_category.html', context)
 
 
 
@@ -2545,7 +2478,7 @@ def subcategory(request):
         'title':'หมวดหมู่ย่อย', 
         'subcategory':subcategory,
         'pending_orders_count': count_pending_orders(),} 
-    return render(request, 'subcategory.html', context)
+    return render(request, 'dashboard/categories/subcategory.html', context)
 
 
 
@@ -2563,7 +2496,7 @@ def add_subcategory(request):
     context = {'title':'เพิ่มหมวดหมู่ย่อย', 
                'form':form,
                 'pending_orders_count': count_pending_orders(),}
-    return render(request, 'add_subcategory.html', context)
+    return render(request, 'dashboard/categories/add_subcategory.html', context)
 
 
 
@@ -2594,7 +2527,7 @@ def edit_subcategory(request, id):
                'sub':sub,
                'form':form,
                'pending_orders_count': count_pending_orders(),}
-    return render(request, 'edit_subcategory.html', context)
+    return render(request, 'dashboard/categories/edit_subcategory.html', context)
 
 
 
@@ -2619,30 +2552,39 @@ def orders_all(request):
     year_ad = year_buddhist - 543
 
     # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
-    orders_all = Order.objects.all().select_related('user')
+    orders_all_query = Order.objects.all().select_related('user')
 
     # ตรวจสอบค่าจาก checkbox
     show_rejected = request.GET.get('show_rejected', None) == 'on'
     # หากไม่ต้องการแสดงรายการที่ถูกปฏิเสธให้กรองออก
     if not show_rejected:
-        orders_all = orders_all.exclude(status=False)
+        orders_all_query = orders_all_query.exclude(status=False)
 
     # การค้นหา
     query = request.GET.get('q')
     if query is not None:
         lookups = Q(id__icontains=query) | Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query)
-        orders_all = orders_all.filter(lookups)
+        orders_all_query = orders_all_query.filter(lookups)
 
-    # กรองตามเดือนและปีที่ระบุ
-    orders_all = orders_all.filter(
-        month=month,
-        year=year_ad
-    )
+    # จำนวนที่ยังไม่ยืนยันจ่ายวัสดุ และไม่ยืนยันรับวัสดุ
+    not_disbursed_count = Order.objects.filter(status=True, pay_item=False).count()
+    not_received_count = Order.objects.filter(status=True, pay_item=True, confirm=False).count()
+    rejected_count = Order.objects.filter(status=False, month=month, year=year_ad).count()
+
+    # กรองตามเดือนและปีที่ระบุ หรือ รายการที่ยังดำเนินการไม่เสร็จ
+    q_month = Q(month=month, year=year_ad)
+    q_incomplete = Q(status=True) & (Q(pay_item=False) | Q(confirm=False))
+    q_pending = Q(status=None)
+
+    orders_all = orders_all_query.filter(q_month | q_incomplete | q_pending).distinct()
 
     context = {
         'title': 'คำร้องเบิกวัสดุทั้งหมด',
         'orders_all': orders_all,
         'pending_orders_count': count_pending_orders(),
+        'not_disbursed_count': not_disbursed_count,
+        'not_received_count': not_received_count,
+        'rejected_count': rejected_count,
         'selected_month': month,
         'selected_year': year_buddhist,
         'years': range(2023 + 543, datetime.now().year + 1 + 543),
@@ -2659,7 +2601,7 @@ def orders_all(request):
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
 
-    return render(request, 'orders_all.html', context)
+    return render(request, 'dashboard/orders_and_stock/orders_all.html', context)
 
 
 
@@ -2692,7 +2634,7 @@ def orders(request):
         'status_count': orders_waiting_status.count(),
         'pending_orders_count': count_pending_orders(),
         }
-    return render(request, 'orders.html', context)
+    return render(request, 'dashboard/orders_and_stock/orders.html', context)
 
 
 
@@ -2736,7 +2678,7 @@ def approve_orders(request, order_id):
     else:
         form = ApproveForm(instance=ap)
         
-    return render(request, 'orders.html', {
+    return render(request, 'dashboard/orders_and_stock/orders.html', {
         'ap': ap,
         'form': form,
         'title': 'แก้ไขข้อมูลสมาชิก',
@@ -2761,7 +2703,7 @@ def approve_pay(request, order_id):
     else:
         form = ApprovePayForm(instance=ap)
         
-    return render(request, 'orders_all.html', {
+    return render(request, 'dashboard/orders_and_stock/orders_all.html', {
         'ap': ap,
         'form': form,
     })
@@ -2778,7 +2720,7 @@ def order_detail(request, id):
         'order':order,
         'pending_orders_count': count_pending_orders(),
         }
-    return render(request, 'order_detail.html', context)
+    return render(request, 'dashboard/orders_and_stock/order_detail.html', context)
 
 
 from django.contrib.admin.views.decorators import staff_member_required
@@ -2806,7 +2748,7 @@ def notification(request):
         'notification': notification,  # เปลี่ยนเป็น notification
         'product': products,  # ส่งข้อมูลวัสดุไปยัง Template
     }
-    return render(request, 'notification.html', context)
+    return render(request, 'dashboard/home/notification.html', context)
 
 
 

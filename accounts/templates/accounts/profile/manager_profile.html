@@ -1,0 +1,262 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<style>
+    .profile-header-gradient {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .profile-card {
+        background: #ffffff;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        margin-bottom: 24px;
+    }
+    
+    .profile-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .profile-section-title {
+        color: #059669;
+        font-weight: 600;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .profile-label {
+        color: #6b7280;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .profile-value {
+        color: #111827;
+        font-weight: 700;
+    }
+    
+    .btn-gradient-green {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        transition: opacity 0.2s;
+    }
+    
+    .btn-gradient-green:hover {
+        opacity: 0.9;
+        color: white;
+    }
+    
+    /* pointer-events none on ::after as requested */
+    .profile-card::after, .profile-header-gradient::after {
+        pointer-events: none;
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .avatar-canvas {
+        border-radius: 50%;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        background-color: #f3f4f6;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: #9ca3af;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    {% if obj == 1 %}
+    <!-- Header -->
+    <div class="profile-header-gradient d-flex align-items-center">
+        <i class="bi bi-person-circle fa-2x me-3"></i>
+        <h3 class="mb-0">โปรไฟล์ของฉัน</h3>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Profile Picture -->
+        <div class="col-lg-4 mb-4">
+            <div class="profile-card p-4 text-center">
+                {% if user.profile.img %}
+                <div class="avatar-wrapper mb-4">
+                    <canvas class="avatar-canvas mt-3 mb-3" id="profileCanvas" width="300" height="300"></canvas>
+                </div>
+                <script>
+                    var canvas = document.getElementById('profileCanvas');
+                    var ctx = canvas.getContext('2d');
+
+                    var img = new Image();
+                    img.src = "{{ user.profile.img.url }}"; // ใส่ URL ของรูปภาพของคุณที่นี่
+
+                    img.onload = function () {
+                        ctx.beginPath();
+                        ctx.arc(150, 150, 150, 0, 2 * Math.PI);
+                        ctx.clip();
+                        ctx.drawImage(img, 0, 0, 300, 300);
+                    };
+                </script>
+                <div class="d-flex justify-content-center gap-2 mt-2">
+                    <a href="{% url 'accounts:upload_profile_picture_manager' %}" class="btn btn-success rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-image me-1"></i> อัพโหลด
+                    </a>
+                    <form method="post" action="{% url 'accounts:delete_profile_picture_manager' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm">
+                            <i class="bi bi-trash3 me-1"></i> ลบ
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="py-5">
+                    <div class="empty-icon mb-3">
+                        <i class="bi bi-person-x"></i>
+                    </div>
+                    <p class="text-muted fw-bold mb-4">ไม่มีรูปโปรไฟล์</p>
+                    <a href="{% url 'accounts:upload_profile_picture_manager' %}" class="btn btn-success rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-image me-1"></i> อัพโหลดรูปโปรไฟล์
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Info Sections -->
+        <div class="col-lg-8">
+            
+            <!-- Section 1: ข้อมูลส่วนตัว -->
+            <div class="profile-card p-4">
+                <h5 class="profile-section-title">
+                    <i class="bi bi-person-vcard me-2"></i>ข้อมูลส่วนตัว
+                </h5>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4 profile-label">ชื่อ-นามสกุล</div>
+                    <div class="col-md-8 profile-value">{{ user.get_full_name }}</div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4 profile-label">เพศ</div>
+                    <div class="col-md-8 profile-value">{{ profile.gender }}</div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4 profile-label">ตำแหน่ง</div>
+                    <div class="col-md-8 profile-value">{{ profile.position }}</div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4 profile-label">กลุ่มงาน</div>
+                    <div class="col-md-8 profile-value">{{ profile.workgroup }}</div>
+                </div>
+                <div class="row mb-2 align-items-center">
+                    <div class="col-md-4 profile-label">เบอร์โทรศัพท์มือถือ</div>
+                    <div class="col-md-8 profile-value">{{ profile.phone }}</div>
+                </div>
+            </div>
+
+            <!-- Section 2: ข้อมูลบัญชี -->
+            <div class="profile-card p-4">
+                <h5 class="profile-section-title">
+                    <i class="bi bi-person-lock me-2"></i>ข้อมูลบัญชี
+                </h5>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4 profile-label">ชื่อผู้ใช้</div>
+                    <div class="col-md-8 profile-value">{{ user.username }}</div>
+                </div>
+                <div class="row mb-2 align-items-center">
+                    <div class="col-md-4 profile-label">ที่อยู่อีเมล์</div>
+                    <div class="col-md-8 profile-value">{{ user.email }}</div>
+                </div>
+            </div>
+
+            <!-- Section 3: ข้อมูลการเข้าใช้งาน -->
+            <div class="profile-card p-4">
+                <h5 class="profile-section-title">
+                    <i class="bi bi-clock-history me-2"></i>ข้อมูลการเข้าใช้งานระบบ
+                </h5>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4 profile-label">สถานะผู้ใช้งาน</div>
+                    <div class="col-md-8">
+                        {% if user.is_general and user.is_manager and user.is_admin %}
+                            <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">ผู้เข้าถึงสิทธิ์ทั้งหมด</span>
+                        {% elif user.is_general and user.is_manager %}
+                            <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">ผู้ใช้งาน, ผู้จัดการระบบ</span>
+                        {% elif user.is_general and user.is_executive %}
+                            <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">ผู้ใช้งาน, ผู้บริหาร</span>
+                        {% elif user.is_manager and user.is_admin %}
+                            <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">ผู้จัดการระบบ, แอดมิน</span>
+                        {% elif user.is_general %}
+                            <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">ผู้ใช้งาน</span>
+                        {% elif user.is_executive %}
+                            <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">ผู้บริหาร</span>
+                        {% elif user.is_manager %}
+                            <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">ผู้จัดการระบบ</span>
+                        {% elif user.is_admin %}
+                            <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">แอดมิน</span>
+                        {% else %}
+                            <span class="badge rounded-pill bg-warning text-dark px-3 py-2 shadow-sm">ไม่มีสถานะ</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4 profile-label">ผูกบัญชีไลน์</div>
+                    <div class="col-md-8">
+                        {% if user.lineuser %}
+                            <i class="bi bi-x-circle-fill text-danger fs-4 shadow-sm rounded-circle bg-white"></i>
+                        {% else %}
+                            <i class="bi bi-check-circle-fill text-success fs-4 shadow-sm rounded-circle bg-white"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4 profile-label">วันที่สร้างข้อมูล</div>
+                    <div class="col-md-8 profile-value">{{ user.date_joined|date:"d M Y เวลา H:i น." }}</div>
+                </div>
+                <div class="row mb-2 align-items-center">
+                    <div class="col-md-4 profile-label">เข้าใช้งานล่าสุด</div>
+                    <div class="col-md-8 profile-value">{{ user.last_login|date:"d M Y เวลา H:i น." }}</div>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="text-end mt-4">
+                <a href="{% url 'accounts:edit_profile_manager' %}" class="btn btn-gradient-green rounded-pill px-5 py-2 shadow fw-bold">
+                    <i class="bi bi-pencil-square me-2"></i>แก้ไขข้อมูล
+                </a>
+            </div>
+            
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state mt-5 mx-auto" style="max-width: 600px;">
+        <i class="bi bi-person-badge empty-icon"></i>
+        <h4 class="fw-bold mb-3" style="color: #374151;">ยังไม่มีข้อมูลโปรไฟล์</h4>
+        <p class="text-muted mb-4">{{ profile }}</p>
+        <a class="btn btn-gradient-green rounded-pill px-5 py-2 shadow" href="{% url 'accounts:edit_profile_manager' %}">
+            <i class="bi bi-plus-circle me-2"></i>เพิ่มข้อมูลส่วนตัว
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal-SIP | Science and Innovation Park UBU</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Prompt & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Configuration matching SIP Image Palette -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        sip: {
+                            50: '#f0f7ff',
+                            100: '#e0f0fe',
+                            200: '#bae3ff',
+                            300: '#7ccbfd',
+                            400: '#36b1fa',
+                            500: '#0c8ce9',
+                            600: '#006ec7',
+                            700: '#0056a3',
+                            800: '#054783',
+                            900: '#0b2848',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Minimal Icy Glassmorphism based on SIP background theme */
+        body {
+            font-family: 'Prompt', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f4f8fe 0%, #e8f2fc 50%, #f0f6ff 100%);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        /* Fluid glass background accents mimicking SIP dynamic organic curves */
+        .sip-fluid-bg {
+            position: fixed;
+            top: -10%;
+            right: -5%;
+            width: 50vw;
+            height: 50vw;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(12, 140, 233, 0.18) 0%, rgba(255, 255, 255, 0) 70%);
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .sip-fluid-bg-2 {
+            position: fixed;
+            bottom: -10%;
+            left: -5%;
+            width: 45vw;
+            height: 45vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(54, 177, 250, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+            filter: blur(90px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Clean Glass Card styling */
+        .clean-glass-card {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 20px -2px rgba(0, 80, 160, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clean-glass-card:hover {
+            background: #ffffff;
+            border-color: rgba(12, 140, 233, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px -5px rgba(0, 110, 199, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Search input styling */
+        .clean-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(186, 227, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0, 80, 160, 0.03);
+        }
+        .clean-input:focus {
+            background: #ffffff;
+            border-color: #0c8ce9;
+            box-shadow: 0 0 0 3px rgba(12, 140, 233, 0.15);
+        }
+
+        /* Hide scrollbars */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="flex flex-col justify-between relative selection:bg-sip-500 selection:text-white">
+
+    <!-- Background Ambient Glows -->
+    <div class="sip-fluid-bg"></div>
+    <div class="sip-fluid-bg-2"></div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-sky-100 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo & Portal Name -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sip-600 to-sip-400 flex items-center justify-center text-white text-lg font-bold shadow-md shadow-sip-500/20">
+                    <i class="fa-solid fa-shapes"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-sip-900 tracking-tight leading-none flex items-center gap-2">
+                        PORTAL-SIP
+                        <span class="text-[11px] font-normal px-2 py-0.5 rounded-full bg-sip-50 text-sip-700 border border-sip-200">UBU</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 mt-0.5">ศูนย์รวมระบบสารสนเทศ อุทยานวิทยาศาสตร์ มหาวิทยาลัยอุบลราชธานี</p>
+                </div>
+            </div>
+
+            <!-- Quick Action Links -->
+            <div class="flex items-center gap-2">
+                <button onclick="openAddModal()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sip-600 hover:bg-sip-700 text-white text-xs font-medium shadow-sm transition-all active:scale-95">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span class="hidden sm:inline">เพิ่มระบบ</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-6">
+        
+        <!-- Search & Category Header Section -->
+        <div class="max-w-3xl mx-auto text-center space-y-4">
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">
+                เลือกเข้าใช้งาน <span class="text-sip-600">ระบบงาน Portal</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
+                คลิกกล่องระบบที่ต้องการเพื่อเข้าสู่หน้าเว็บไซต์บริการอย่างรวดเร็ว
+            </p>
+
+            <!-- Search Bar -->
+            <div class="relative max-w-xl mx-auto pt-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" oninput="filterApps()" placeholder="พิมพ์ชื่อระบบ หรือรหัส เช่น SIP-01, OM01..." 
+                    class="w-full pl-11 pr-10 py-3 rounded-2xl clean-input text-slate-800 placeholder-slate-400 text-sm focus:outline-none transition-all">
+                <button id="clearSearch" onclick="clearSearchInput()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-circle-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Minimal Category Pills -->
+            <div class="flex items-center justify-center gap-1.5 overflow-x-auto py-2 no-scrollbar text-xs">
+                <button onclick="setCategory('all')" data-cat="all" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-sip-600 text-white shadow-sm transition-all">
+                    ทั้งหมด (<span id="countAll">0</span>)
+                </button>
+                <button onclick="setCategory('favorites')" data-cat="favorites" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all">
+                    <i class="fa-solid fa-star text-amber-400 mr-1"></i> รายการโปรด (<span id="countFav">0</span>)
+                </button>
+                <button onclick="setCategory('research')" data-cat="research" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all">
+                    งานวิจัย & นวัตกรรม
+                </button>
+                <button onclick="setCategory('incubator')" data-cat="incubator" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all">
+                    บ่มเพาะธุรกิจ
+                </button>
+                <button onclick="setCategory('admin')" data-cat="admin" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all">
+                    บริหารจัดการ
+                </button>
+                <button onclick="setCategory('tools')" data-cat="tools" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all">
+                    ไอที & เครื่องมือ
+                </button>
+            </div>
+        </div>
+
+        <!-- Clean Blocks Grid Container -->
+        <div id="appsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 pt-2">
+            <!-- App Cards dynamically generated via JavaScript -->
+        </div>
+
+        <!-- Empty Search Result State -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center">
+            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xl mb-3">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <p class="text-sm font-medium text-slate-700">ไม่พบระบบที่คุณค้นหา</p>
+            <p class="text-xs text-slate-400 mt-1">ลองพิมพ์ค้นหาด้วยคำอื่น หรือเลือกหมวดหมู่อื่น</p>
+            <button onclick="resetFilters()" class="mt-4 px-3.5 py-1.5 rounded-xl bg-sip-600 text-white text-xs font-medium hover:bg-sip-700 transition-all">
+                แสดงระบบทั้งหมด
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Minimal Footer -->
+    <footer class="relative z-10 bg-white/60 backdrop-blur-md border-t border-sky-100 mt-12 py-4 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p>© 2026 Science and Innovation Park (SIP) • Ubon Ratchathani University</p>
+            <p class="text-[11px] text-slate-400">Total Innovation Solutions</p>
+        </div>
+    </footer>
+
+    <!-- Add System Modal -->
+    <div id="appModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm hidden">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-100 relative">
+            <button onclick="closeAppModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-9 h-9 rounded-xl bg-sip-50 text-sip-600 flex items-center justify-center text-base">
+                    <i class="fa-solid fa-plus-circle"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">เพิ่มระบบลิงก์ใหม่</h3>
+                    <p class="text-xs text-slate-500">กรอกรายละเอียดเพื่อเพิ่มบล็อกระบบเข้าสู่ Portal</p>
+                </div>
+            </div>
+
+            <form id="appForm" onsubmit="saveCustomApp(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1">รหัสระบบ (Code)</label>
+                    <input type="text" id="formCode" placeholder="เช่น SIP-16 หรือ OM05" required 
+                        class="w-full px-3 py-2 rounded-xl clean-input text-slate-800 focus:outline-none uppercase font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1">ชื่อระบบ (Title)</label>
+                    <input type="text" id="formTitle" placeholder="เช่น ระบบจองห้องปฏิบัติการ" required 
+                        class="w-full px-3 py-2 rounded-xl clean-input text-slate-800 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1">หมวดหมู่ (Category)</label>
+                    <select id="formCategory" class="w-full px-3 py-2 rounded-xl clean-input text-slate-800 focus:outline-none">
+                        <option value="research">งานวิจัย & นวัตกรรม</option>
+                        <option value="incubator">บ่มเพาะธุรกิจ</option>
+                        <option value="admin">บริหารจัดการ</option>
+                        <option value="tools">ไอที & เครื่องมือ</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1">ลิงก์ URL</label>
+                    <input type="url" id="formUrl" placeholder="https://example.com" required 
+                        class="w-full px-3 py-2 rounded-xl clean-input text-slate-800 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-medium mb-1">คำอธิบายย่อ (Description)</label>
+                    <input type="text" id="formDesc" placeholder="อธิบายหน้าที่ของระบบสั้นๆ..." 
+                        class="w-full px-3 py-2 rounded-xl clean-input text-slate-800 focus:outline-none">
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeAppModal()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-sip-600 hover:bg-sip-700 text-white text-xs font-semibold shadow-sm">
+                        บันทึกระบบ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Default Web Applications List
+        const DEFAULT_APPS = [
+            {
+                id: 'sip-01',
+                code: 'SIP-01',
+                title: 'SIP Research Portal',
+                category: 'research',
+                desc: 'ระบบบริหารจัดการงานวิจัย นวัตกรรม และนักวิจัย',
+                icon: 'fa-microscope',
+                iconColor: 'text-sky-600 bg-sky-50',
+                url: 'https://sip.ubu.ac.th/research',
+                isFav: true
+            },
+            {
+                id: 'sip-02',
+                code: 'SIP-02',
+                title: 'Startup Incubator Hub',
+                category: 'incubator',
+                desc: 'แพลตฟอร์มบ่มเพาะสตาร์ทอัพและยื่นขอทุน',
+                icon: 'fa-rocket',
+                iconColor: 'text-emerald-600 bg-emerald-50',
+                url: 'https://sip.ubu.ac.th/incubator',
+                isFav: true
+            },
+            {
+                id: 'sip-03',
+                code: 'SIP-03',
+                title: 'Lab Equipment Booking',
+                category: 'research',
+                desc: 'จองเครื่องมือวิทยาศาสตร์และห้องปฏิบัติการ',
+                icon: 'fa-vials',
+                iconColor: 'text-indigo-600 bg-indigo-50',
+                url: 'https://sip.ubu.ac.th/lab-booking',
+                isFav: false
+            },
+            {
+                id: 'sip-04',
+                code: 'SIP-04',
+                title: 'IP & Patent Manager',
+                category: 'research',
+                desc: 'ยื่นขอจดทะเบียนทรัพย์สินทางปัญญาและสิทธิบัตร',
+                icon: 'fa-file-shield',
+                iconColor: 'text-amber-600 bg-amber-50',
+                url: 'https://sip.ubu.ac.th/ip-patent',
+                isFav: true
+            },
+            {
+                id: 'sip-05',
+                code: 'SIP-05',
+                title: 'Co-Working Space',
+                category: 'admin',
+                desc: 'จองพื้นที่ทำงาน Co-Working Space และห้องประชุม',
+                icon: 'fa-building-user',
+                iconColor: 'text-cyan-600 bg-cyan-50',
+                url: 'https://sip.ubu.ac.th/coworking',
+                isFav: false
+            },
+            {
+                id: 'sip-06',
+                code: 'OM01',
+                title: 'SIP E-Document',
+                category: 'admin',
+                desc: 'ระบบสารบรรณและลงนามเอกสารอิเล็กทรอนิกส์',
+                icon: 'fa-file-signature',
+                iconColor: 'text-blue-600 bg-blue-50',
+                url: 'https://edoc.ubu.ac.th',
+                isFav: false
+            },
+            {
+                id: 'sip-07',
+                code: 'OM02',
+                title: 'E-Meeting Online',
+                category: 'admin',
+                desc: 'ระบบนัดหมาย และจัดการวาระการประชุมออนไลน์',
+                icon: 'fa-users-rectangle',
+                iconColor: 'text-teal-600 bg-teal-50',
+                url: 'https://emeeting.ubu.ac.th',
+                isFav: false
+            },
+            {
+                id: 'sip-08',
+                code: 'SIP-08',
+                title: 'Innovation Voucher',
+                category: 'incubator',
+                desc: 'ขอรับทุนคูปองนวัตกรรมสำหรับผู้ประกอบการ',
+                icon: 'fa-ticket-simple',
+                iconColor: 'text-purple-600 bg-purple-50',
+                url: 'https://sip.ubu.ac.th/voucher',
+                isFav: false
+            },
+            {
+                id: 'sip-09',
+                code: 'UT01',
+                title: 'IT Helpdesk & Service',
+                category: 'tools',
+                desc: 'แจ้งซ่อมอุปกรณ์และขอรับบริการสนับสนุนไอที',
+                icon: 'fa-wrench',
+                iconColor: 'text-orange-600 bg-orange-50',
+                url: 'https://fixit.ubu.ac.th',
+                isFav: false
+            },
+            {
+                id: 'sip-10',
+                code: 'UT02',
+                title: 'UBU Cloud & Drive',
+                category: 'tools',
+                desc: 'พื้นที่เก็บข้อมูลคลาวด์และแชร์ไฟล์สำหรับบุคลากร',
+                icon: 'fa-cloud',
+                iconColor: 'text-sky-600 bg-sky-50',
+                url: 'https://drive.google.com',
+                isFav: false
+            },
+            {
+                id: 'sip-11',
+                code: 'UT03',
+                title: 'AI Innovation Hub',
+                category: 'tools',
+                desc: 'เครื่องมือปัญญาประดิษฐ์และการวิเคราะห์ข้อมูล',
+                icon: 'fa-brain',
+                iconColor: 'text-pink-600 bg-pink-50',
+                url: 'https://ai.ubu.ac.th',
+                isFav: true
+            },
+            {
+                id: 'sip-12',
+                code: 'UT04',
+                title: 'VPN Secure Access',
+                category: 'tools',
+                desc: 'เชื่อมต่อเครือข่ายภายในมหาวิทยาลัยจากภายนอก',
+                icon: 'fa-shield-halved',
+                iconColor: 'text-slate-600 bg-slate-100',
+                url: 'https://vpn.ubu.ac.th',
+                isFav: false
+            }
+        ];
+
+        // State Variables
+        let appsData = [];
+        let currentCategory = 'all';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAppsFromStorage();
+            renderApps();
+        });
+
+        function loadAppsFromStorage() {
+            const saved = localStorage.getItem('portal_sip_apps_minimal');
+            if (saved) {
+                try {
+                    appsData = JSON.parse(saved);
+                } catch (e) {
+                    appsData = [...DEFAULT_APPS];
+                }
+            } else {
+                appsData = [...DEFAULT_APPS];
+                saveAppsToStorage();
+            }
+        }
+
+        function saveAppsToStorage() {
+            localStorage.setItem('portal_sip_apps_minimal', JSON.stringify(appsData));
+            updateCounts();
+        }
+
+        function updateCounts() {
+            document.getElementById('countAll').textContent = appsData.length;
+            document.getElementById('countFav').textContent = appsData.filter(a => a.isFav).length;
+        }
+
+        function filterApps() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const clearBtn = document.getElementById('clearSearch');
+            
+            if (query.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            renderApps();
+        }
+
+        function clearSearchInput() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearch').classList.add('hidden');
+            renderApps();
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            
+            document.querySelectorAll('.cat-pill').forEach(pill => {
+                const isSelected = pill.getAttribute('data-cat') === cat;
+                if (isSelected) {
+                    pill.className = 'cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-sip-600 text-white shadow-sm transition-all';
+                } else {
+                    pill.className = 'cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all';
+                }
+            });
+
+            renderApps();
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearch').classList.add('hidden');
+            setCategory('all');
+        }
+
+        function toggleFavorite(id, e) {
+            e.stopPropagation();
+            const app = appsData.find(a => a.id === id);
+            if (app) {
+                app.isFav = !app.isFav;
+                saveAppsToStorage();
+                renderApps();
+            }
+        }
+
+        function renderApps() {
+            const container = document.getElementById('appsContainer');
+            const emptyState = document.getElementById('emptyState');
+            const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            updateCounts();
+
+            let filtered = appsData.filter(app => {
+                const matchesCategory = (currentCategory === 'all') || 
+                                        (currentCategory === 'favorites' && app.isFav) || 
+                                        (app.category === currentCategory);
+                
+                const matchesSearch = app.title.toLowerCase().includes(searchQuery) ||
+                                      app.code.toLowerCase().includes(searchQuery) ||
+                                      app.desc.toLowerCase().includes(searchQuery);
+
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            // Render Minimal Grid Blocks
+            container.innerHTML = filtered.map(app => `
+                <div onclick="window.open('${app.url}', '_blank')" 
+                     class="clean-glass-card rounded-2xl p-4 flex flex-col justify-between cursor-pointer group relative">
+                    
+                    <!-- Top Info Header -->
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div class="w-10 h-10 rounded-xl ${app.iconColor || 'text-sip-600 bg-sip-50'} flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105">
+                                <i class="fa-solid ${app.icon || 'fa-globe'}"></i>
+                            </div>
+                            
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200/60 px-2 py-0.5 rounded-md">
+                                    ${app.code}
+                                </span>
+                                <button onclick="toggleFavorite('${app.id}', event)" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="ติดดาวรายการโปรด">
+                                    <i class="fa-${app.isFav ? 'solid' : 'regular'} fa-star text-sm ${app.isFav ? 'text-amber-400' : ''}"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Title & Short Description -->
+                        <h3 class="font-bold text-slate-800 text-sm group-hover:text-sip-600 transition-colors line-clamp-1 mb-1">
+                            ${app.title}
+                        </h3>
+                        <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">
+                            ${app.desc}
+                        </p>
+                    </div>
+
+                    <!-- Direct Link Footer -->
+                    <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 group-hover:text-sip-600 transition-colors">
+                        <span class="text-[11px] font-medium">เข้าใช้งานเว็บไซต์</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                    </div>
+
+                </div>
+            `).join('');
+        }
+
+        // Modal Logic
+        function openAddModal() {
+            document.getElementById('appModal').classList.remove('hidden');
+            document.getElementById('appForm').reset();
+        }
+
+        function closeAppModal() {
+            document.getElementById('appModal').classList.add('hidden');
+        }
+
+        function saveCustomApp(e) {
+            e.preventDefault();
+            const code = document.getElementById('formCode').value.trim().toUpperCase();
+            const title = document.getElementById('formTitle').value.trim();
+            const category = document.getElementById('formCategory').value;
+            const url = document.getElementById('formUrl').value.trim();
+            const desc = document.getElementById('formDesc').value.trim();
+
+            const newApp = {
+                id: 'custom-' + Date.now(),
+                code: code || 'SIP-NEW',
+                title: title,
+                category: category,
+                desc: desc || 'ระบบงานวิจัยนวัตกรรม Portal-SIP',
+                icon: category === 'research' ? 'fa-microscope' : category === 'incubator' ? 'fa-rocket' : category === 'admin' ? 'fa-building' : 'fa-laptop-code',
+                iconColor: 'text-sip-600 bg-sip-50',
+                url: url,
+                isFav: false
+            };
+
+            appsData.unshift(newApp);
+            saveAppsToStorage();
+            renderApps();
+            closeAppModal();
+        }
+    </script>
+</body>
+</html>

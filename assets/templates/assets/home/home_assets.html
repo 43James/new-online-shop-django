@@ -1,0 +1,595 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load humanize %}
+{% block content %}
+
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #1e7e34, #28a745);
+        color: #fff;
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 20px rgba(30, 126, 52, 0.25);
+    }
+    .dashboard-header h2 {
+        font-weight: 800;
+        font-size: 1.6rem;
+        margin: 0;
+    }
+    .dashboard-header p {
+        margin: 4px 0 0;
+        opacity: 0.85;
+        font-size: 0.95rem;
+    }
+
+    /* Summary Cards */
+    .summary-card {
+        border: none;
+        border-radius: 14px;
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .summary-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    .summary-card .card-body {
+        padding: 20px 24px;
+    }
+    .summary-card .card-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .summary-card .card-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    .summary-card .card-value {
+        font-size: 1.7rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+    .summary-card .card-unit {
+        font-size: 0.85rem;
+        font-weight: 500;
+        opacity: 0.7;
+    }
+
+    /* Chart Cards */
+    .chart-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .chart-card .card-header {
+        background: #fff;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 16px 24px;
+        border-radius: 14px 14px 0 0 !important;
+    }
+    .chart-card .card-header h6 {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 0.95rem;
+    }
+
+    /* Quick Stats Mini Cards */
+    .quick-stat {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .quick-stat .qs-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .quick-stat .qs-value {
+        font-size: 1.3rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .quick-stat .qs-label {
+        font-size: 0.78rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    /* Recent Table */
+    .recent-table {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    .recent-table .table {
+        margin-bottom: 0;
+    }
+    .recent-table .table thead th {
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+    }
+    .recent-table .table tbody td {
+        padding: 12px 16px;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .recent-table .table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-block;
+    }
+    .status-ready { background: #dcfce7; color: #16a34a; }
+    .status-broken { background: #fef9c3; color: #ca8a04; }
+    .status-worn { background: #fee2e2; color: #dc2626; }
+    .status-lost { background: #fce7f3; color: #be185d; }
+    .status-unused { background: #f1f5f9; color: #475569; }
+
+    .loan-pending { background: #fef3c7; color: #d97706; }
+    .loan-borrowed { background: #dbeafe; color: #2563eb; }
+    .loan-overdue { background: #fee2e2; color: #dc2626; }
+    .loan-returned { background: #dcfce7; color: #16a34a; }
+    .loan-approved { background: #d1fae5; color: #059669; }
+    .loan-rejected { background: #fecaca; color: #b91c1c; }
+</style>
+
+<!-- Dashboard Header -->
+<div class="dashboard-header d-flex align-items-center justify-content-between">
+    <div>
+        <h2><i class="bi bi-speedometer2 me-2"></i> แดชบอร์ด - ระบบจัดการครุภัณฑ์</h2>
+        <p><i class="bi bi-clock me-1"></i> ข้อมูล ณ วันที่ {% now "j F Y" %}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'assets:asset_list' %}" class="btn btn-light btn-sm rounded-pill fw-bold px-3 shadow-sm">
+            <i class="bi bi-list-ul me-1"></i> ดูรายการทั้งหมด
+        </a>
+        <a href="{% url 'assets:export_assets' %}" class="btn btn-outline-light btn-sm rounded-pill fw-bold px-3">
+            <i class="bi bi-download me-1"></i> Export
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards Row -->
+<div class="row g-3 mb-4">
+    <!-- ครุภัณฑ์ทั้งหมด -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="card-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-boxes"></i>
+                </div>
+                <div>
+                    <div class="card-label text-primary">ครุภัณฑ์ทั้งหมด</div>
+                    <div class="card-value text-dark">{{ total_assets }} <span class="card-unit">รายการ</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- พร้อมใช้งาน -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="card-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div>
+                    <div class="card-label text-success">พร้อมใช้งาน</div>
+                    <div class="card-value text-dark">{{ ready_assets }} <span class="card-unit">รายการ</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ชำรุด -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="card-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-tools"></i>
+                </div>
+                <div>
+                    <div class="card-label text-warning">ชำรุด</div>
+                    <div class="card-value text-dark">{{ repairing_assets }} <span class="card-unit">รายการ</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- เสื่อมสภาพ/สูญไป/ไม่ใช้ -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="card-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-x-octagon-fill"></i>
+                </div>
+                <div>
+                    <div class="card-label text-danger">เสื่อม/สูญไป/ไม่ใช้</div>
+                    <div class="card-value text-dark">{{ broken_assets }} <span class="card-unit">รายการ</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="quick-stat">
+            <div class="qs-icon bg-info bg-opacity-10 text-info">
+                <i class="bi bi-currency-exchange"></i>
+            </div>
+            <div>
+                <div class="qs-value text-dark">{{ total_value|floatformat:0|intcomma }}</div>
+                <div class="qs-label">มูลค่ารวม (บาท)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="quick-stat">
+            <div class="qs-icon bg-warning bg-opacity-10 text-warning">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div>
+                <div class="qs-value text-dark">{{ pending_loan_approvals }}</div>
+                <div class="qs-label">รอยืมอนุมัติ</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="quick-stat">
+            <div class="qs-icon bg-primary bg-opacity-10 text-primary">
+                <i class="bi bi-arrow-left-right"></i>
+            </div>
+            <div>
+                <div class="qs-value text-dark">{{ active_loans }}</div>
+                <div class="qs-label">กำลังยืมอยู่</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="quick-stat">
+            <div class="qs-icon bg-danger bg-opacity-10 text-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div>
+                <div class="qs-value text-danger">{{ overdue_loans }}</div>
+                <div class="qs-label">เกินกำหนดคืน</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- การตรวจนับครุภัณฑ์ -->
+{% if current_check_year %}
+<div class="card mb-4" style="border:none; border-radius:14px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+    <div class="card-body py-3 px-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <div style="width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;" class="bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-clipboard-check-fill"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold text-dark">การตรวจนับครุภัณฑ์ ปีงบประมาณ {{ current_check_year }}</h6>
+                    <small class="text-muted">ความคืบหน้าการตรวจนับประจำปี</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-2 rounded-pill">
+                    <i class="bi bi-check-circle-fill me-1"></i> ตรวจแล้ว {{ checked_count }}
+                </span>
+                <span class="badge bg-warning bg-opacity-10 text-warning fw-bold px-3 py-2 rounded-pill">
+                    <i class="bi bi-hourglass-split me-1"></i> ยังไม่ตรวจ {{ unchecked_count }}
+                </span>
+                <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-2 rounded-pill">
+                    <i class="bi bi-boxes me-1"></i> ทั้งหมด {{ total_assets }}
+                </span>
+                <a href="{% url 'assets:asset_check_list' %}" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold">
+                    <i class="bi bi-arrow-right me-1"></i> ดูรายละเอียด
+                </a>
+            </div>
+        </div>
+        <div class="progress rounded-pill" style="height: 24px; background-color: #f1f5f9;">
+            <div class="progress-bar bg-success rounded-pill fw-bold" role="progressbar" 
+                 style="width: {{ check_percentage }}%; font-size: 0.85rem; transition: width 1s ease-in-out;"
+                 aria-valuenow="{{ check_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                {% if check_percentage > 5 %}{{ check_percentage }}%{% endif %}
+            </div>
+        </div>
+        {% if check_percentage <= 5 and check_percentage > 0 %}
+        <div class="text-start mt-1 ms-1">
+            <small class="text-success fw-bold">{{ check_percentage }}%</small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- กราฟแท่ง: ครุภัณฑ์ตามหมวดหมู่ -->
+    <div class="col-lg-7">
+        <div class="card chart-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="m-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i> จำนวนครุภัณฑ์ตามหมวดหมู่</h6>
+            </div>
+            <div class="card-body p-3">
+                <canvas id="categoryChart" style="max-height: 320px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- กราฟวงกลม: ครุภัณฑ์ตามสถานที่เก็บ -->
+    <div class="col-lg-5">
+        <div class="card chart-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="m-0"><i class="bi bi-pie-chart-fill text-success me-2"></i> ครุภัณฑ์ตามสถานที่เก็บ</h6>
+            </div>
+            <div class="card-body p-3 d-flex align-items-center justify-content-center">
+                <canvas id="locationChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Row -->
+<div class="row g-4 mb-4">
+    <!-- ครุภัณฑ์ล่าสุด -->
+    <div class="col-lg-7">
+        <div class="card recent-table h-100">
+            <div class="card-header d-flex align-items-center justify-content-between" style="background:#fff; border-bottom: 1px solid #f0f0f0; padding: 16px 20px; border-radius: 14px 14px 0 0 !important;">
+                <h6 class="m-0 fw-bold" style="color:#1e293b;"><i class="bi bi-clock-history text-primary me-2"></i> ครุภัณฑ์ที่เพิ่มล่าสุด</h6>
+                <a href="{% url 'assets:asset_list' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">ดูทั้งหมด</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>รหัส</th>
+                                <th>ชื่อครุภัณฑ์</th>
+                                <th>สถานที่</th>
+                                <th>สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asset in recent_assets %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'assets:asset_detail' asset.pk %}" class="text-decoration-none fw-bold text-primary">
+                                        {{ asset.asset_code }}
+                                    </a>
+                                </td>
+                                <td class="fw-semibold">{{ asset.item_name|truncatechars:30 }}</td>
+                                <td><span class="text-muted">{{ asset.storage_location.name|truncatechars:20 }}</span></td>
+                                <td>
+                                    {% if asset.damage_status == 'ใช้งานได้' %}
+                                        <span class="status-badge status-ready">ใช้งานได้</span>
+                                    {% elif asset.damage_status == 'ชำรุด' %}
+                                        <span class="status-badge status-broken">ชำรุด</span>
+                                    {% elif asset.damage_status == 'เสื่อมสภาพ' %}
+                                        <span class="status-badge status-worn">เสื่อมสภาพ</span>
+                                    {% elif asset.damage_status == 'สูญไป' %}
+                                        <span class="status-badge status-lost">สูญไป</span>
+                                    {% else %}
+                                        <span class="status-badge status-unused">{{ asset.damage_status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">ยังไม่มีข้อมูลครุภัณฑ์</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- การยืมล่าสุด -->
+    <div class="col-lg-5">
+        <div class="card recent-table h-100">
+            <div class="card-header d-flex align-items-center justify-content-between" style="background:#fff; border-bottom: 1px solid #f0f0f0; padding: 16px 20px; border-radius: 14px 14px 0 0 !important;">
+                <h6 class="m-0 fw-bold" style="color:#1e293b;"><i class="bi bi-arrow-left-right text-info me-2"></i> การยืมล่าสุด</h6>
+                <a href="{% url 'assets:loan_approval_list' %}" class="btn btn-sm btn-outline-info rounded-pill px-3 fw-bold">ดูทั้งหมด</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>รหัส</th>
+                                <th>ผู้ยืม</th>
+                                <th>สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in recent_loans %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ loan.order_code }}</td>
+                                <td class="fw-semibold">{{ loan.user.first_name }} {{ loan.user.last_name|truncatechars:10 }}</td>
+                                <td>
+                                    {% if loan.status == 'pending' %}
+                                        <span class="status-badge loan-pending">รออนุมัติ</span>
+                                    {% elif loan.status == 'approved' %}
+                                        <span class="status-badge loan-approved">อนุมัติแล้ว</span>
+                                    {% elif loan.status == 'borrowed' %}
+                                        <span class="status-badge loan-borrowed">กำลังยืม</span>
+                                    {% elif loan.status == 'overdue' %}
+                                        <span class="status-badge loan-overdue">เกินกำหนด</span>
+                                    {% elif loan.status == 'returned' %}
+                                        <span class="status-badge loan-returned">คืนแล้ว</span>
+                                    {% elif loan.status == 'rejected' %}
+                                        <span class="status-badge loan-rejected">ปฏิเสธ</span>
+                                    {% else %}
+                                        <span class="status-badge status-unused">{{ loan.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">ยังไม่มีรายการยืม</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // === กราฟแท่ง: ครุภัณฑ์ตามหมวดหมู่ ===
+    const categoryLabels = {{ chart_labels|safe }};
+    const categoryValues = {{ chart_values|safe }};
+    
+    const colors = [
+        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+        '#06b6d4', '#ec4899', '#6366f1', '#14b8a6', '#f97316'
+    ];
+    
+    if (categoryLabels.length > 0) {
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'bar',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: 'จำนวนครุภัณฑ์',
+                    data: categoryValues,
+                    backgroundColor: colors.slice(0, categoryLabels.length),
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barThickness: 36,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleFont: { size: 13 },
+                        bodyFont: { size: 12 },
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.parsed.y + ' รายการ';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: 600 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            font: { size: 11 },
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('categoryChart').parentElement.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-bar-chart" style="font-size:3rem;opacity:0.3;"></i><p class="mt-2">ยังไม่มีข้อมูลหมวดหมู่</p></div>';
+    }
+
+    // === กราฟวงกลม: ครุภัณฑ์ตามสถานที่ ===
+    const locationLabels = {{ location_labels|safe }};
+    const locationValues = {{ location_values|safe }};
+    
+    if (locationLabels.length > 0) {
+        new Chart(document.getElementById('locationChart'), {
+            type: 'doughnut',
+            data: {
+                labels: locationLabels,
+                datasets: [{
+                    data: locationValues,
+                    backgroundColor: [
+                        '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+                        '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '55%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 14,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: { size: 11, weight: 500 }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.label + ': ' + ctx.parsed + ' รายการ';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('locationChart').parentElement.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-pie-chart" style="font-size:3rem;opacity:0.3;"></i><p class="mt-2">ยังไม่มีข้อมูลสถานที่</p></div>';
+    }
+});
+</script>
+
+{% endblock %}

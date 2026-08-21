@@ -1,0 +1,162 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load form_tags %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .page-header::after {
+        content: '\f2bb';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 30px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+    .btn-add {
+        background: white;
+        color: #059669;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 50rem;
+        font-weight: 700;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+    .btn-add:hover {
+        background: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        color: #047857;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div style="position: relative; z-index: 1;">
+            <h2 class="fw-bold mb-2"><i class="fas fa-id-card-alt me-2"></i>ทะเบียนรายชื่อผู้ครอบครองครุภัณฑ์</h2>
+            <p class="mb-0 opacity-75">จัดการและตรวจสอบสิทธิ์การครอบครองครุภัณฑ์ทั้งหมดในระบบ</p>
+        </div>
+        <div style="position: relative; z-index: 1;">
+            <a href="{% url 'assets:admin_add_ownership' %}" class="btn btn-add d-flex align-items-center gap-2">
+                <i class="fas fa-plus-circle"></i> เพิ่มผู้ครอบครอง
+            </a>
+        </div>
+    </div>
+
+    <!-- Tab navigation -->
+    {% get_pending_transfer_count as transfer_pending_count %}
+    <ul class="nav nav-pills mb-4 gap-2">
+        <li class="nav-item">
+            <a class="nav-link active rounded-pill px-4 fw-semibold" style="background-color: #059669;" href="#">
+                <i class="fas fa-address-book me-2"></i> ทะเบียนผู้ครอบครอง
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-4 fw-semibold text-success bg-white border border-success" href="{% url 'assets:admin_transfer_request_list' %}">
+                <i class="fas fa-clipboard-check me-2"></i> พิจารณาคำร้องเคลื่อนย้าย
+                {% if transfer_pending_count > 0 %}
+                <span class="badge bg-danger ms-1 rounded-pill">{{ transfer_pending_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+
+    <!-- Search Bar -->
+    <div class="card shadow-sm border-0 mb-4 rounded-4">
+        <div class="card-body p-2">
+            <form method="GET" action="{% url 'assets:admin_ownership_list' %}" class="d-flex w-100">
+                <div class="input-group input-group-lg border-0">
+                    <span class="input-group-text bg-white border-0 text-muted ps-4">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ request.GET.q }}" class="form-control border-0 bg-white fs-6" placeholder="ค้นหาจากชื่อพนักงาน, username, ชื่อครุภัณฑ์ หรือรหัสครุภัณฑ์...">
+                    <button class="btn btn-success px-4 rounded-pill m-1 fw-semibold" style="background-color: #059669; border: none;" type="submit">
+                        <i class="fas fa-filter me-2"></i> ค้นหา / กรองข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-borderless align-middle mb-0">
+                    <thead class="table-light text-secondary border-bottom">
+                        <tr>
+                            <th class="ps-4 py-3 fw-semibold" style="width: 25%;">ผู้ครอบครอง</th>
+                            <th class="py-3 fw-semibold" style="width: 20%;">รหัสครุภัณฑ์</th>
+                            <th class="py-3 fw-semibold" style="width: 25%;">ชื่อครุภัณฑ์</th>
+                            <th class="py-3 fw-semibold" style="width: 15%;">สถานที่ตั้ง</th>
+                            <th class="pe-4 py-3 text-center fw-semibold" style="width: 15%;">เริ่มครอบครอง</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for own in ownerships %}
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-success text-white rounded-circle d-flex justify-content-center align-items-center fw-bold shadow-sm" style="width: 40px; height: 40px; font-size: 1.2rem;">
+                                        {{ own.user.first_name|first }}
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-bold text-dark">{{ own.user.first_name }} {{ own.user.last_name }} <span class="badge bg-success opacity-75 ms-1" style="font-size: 0.65rem;">กำลังครอบครอง</span></span>
+                                        <span class="text-muted small">@{{ own.user.username }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light px-3 py-1.5 rounded-pill border shadow-sm">
+                                        <i class="fas fa-barcode text-muted me-2"></i>
+                                        <span class="font-monospace fw-medium text-dark">{{ own.asset.asset_code }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3">
+                                <span class="text-dark fw-bold">{{ own.asset.item_name }}</span>
+                            </td>
+                            <td class="py-3">
+                                <span class="text-secondary fw-medium">
+                                    <i class="fas fa-map-marker-alt text-danger me-1"></i> {{ own.asset.storage_location.name|default:"ไม่ระบุสถานที่" }}
+                                </span>
+                            </td>
+                            <td class="pe-4 py-3 text-center">
+                                <div class="bg-success bg-opacity-10 text-success px-3 py-1.5 rounded-pill fw-bold d-inline-block border border-success border-opacity-25">
+                                    <i class="fas fa-calendar-alt me-1"></i> {{ own.start_date|date:"d M Y" }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-box-open fs-1 text-light mb-3"></i>
+                                    <p class="fs-5 mb-1 fw-bold text-dark">ยังไม่มีข้อมูลการครอบครองในระบบ</p>
+                                    <small>คุณสามารถคลิกปุ่มด้านบนเพื่อเริ่มแจกจ่ายครุภัณฑ์ชิ้นแรกได้ทันที</small>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -19,6 +19,14 @@ urlpatterns = [
 #     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # เพิ่มการเสิร์ฟไฟล์สแตติกเมื่ออยู่ในโหมดการพัฒนา
+from django.urls import re_path
+from django.views.static import serve
+
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # Serve media files natively even when DEBUG=False (for NAS environment)
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+    ]

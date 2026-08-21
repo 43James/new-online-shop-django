@@ -13,7 +13,6 @@ class AccountsConfig(AppConfig):
     name = 'accounts'
 
     def ready(self):
-        from .management.commands.createsuperuser import Command
         post_migrate.connect(create_superuser, sender=self)
 
 def create_superuser(sender, **kwargs):

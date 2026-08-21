@@ -1,0 +1,263 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* ===== Modern FullCalendar Styles ===== */
+    
+    /* Header Toolbar */
+    .fc-header-toolbar.fc-toolbar {
+        background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%);
+        border-radius: 16px;
+        padding: 16px 24px;
+        color: white;
+        margin-bottom: 24px !important;
+        box-shadow: 0 4px 15px rgba(26, 115, 232, 0.2);
+    }
+
+    .fc-toolbar-title {
+        font-weight: 700 !important;
+        font-size: 1.5rem !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Buttons */
+    .fc-button {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        box-shadow: none !important;
+        text-transform: capitalize !important;
+        border-radius: 8px !important;
+        padding: 8px 16px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s !important;
+        backdrop-filter: blur(4px);
+    }
+    
+    .fc-button:hover {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Active/Today Buttons */
+    .fc-button-primary:not(:disabled).fc-button-active,
+    .fc-button-primary:not(:disabled):active {
+        background-color: white !important;
+        color: #1a73e8 !important;
+        border-color: white !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Calendar Container */
+    #calendar {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+        padding: 20px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* Grid Lines & Cells */
+    .fc-theme-standard td, .fc-theme-standard th {
+        border-color: #f1f5f9 !important;
+    }
+    
+    .fc-col-header-cell {
+        padding: 12px 0 !important;
+        background-color: #f8fafc;
+    }
+    
+    .fc-col-header-cell-cushion {
+        color: #64748b !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+    }
+
+    .fc-daygrid-day-number {
+        text-decoration: none !important;
+        color: #475569 !important;
+        font-weight: 500;
+        padding: 8px !important;
+    }
+    
+    .fc-day-today {
+        background-color: #eff6ff !important;
+    }
+    
+    .fc-day-today .fc-daygrid-day-number {
+        color: #1a73e8 !important;
+        font-weight: 700;
+        background: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 4px;
+        box-shadow: 0 2px 6px rgba(26,115,232,0.2);
+    }
+
+    /* Events */
+    .fc-event {
+        border-radius: 6px !important;
+        border: none !important;
+        padding: 3px 6px !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        transition: transform 0.2s;
+    }
+    
+    .fc-event:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    }
+
+    a {
+        text-decoration: none !important;
+    }
+    
+    /* SweetAlert Image */
+    .swal2-popup img.asset-img-small {
+        max-width: 250px;
+        max-height: 250px;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Mobile Adjustments */
+    @media (max-width: 768px) {
+        .fc-header-toolbar.fc-toolbar {
+            flex-direction: column;
+            gap: 16px;
+            padding: 20px;
+        }
+        .fc-toolbar-title {
+            font-size: 1.25rem !important;
+        }
+        #calendar {
+            padding: 10px;
+        }
+    }
+</style>
+<div class="container mt-4 mb-4 px-3 px-md-4">
+    <h3 class="justify-content-center d-flex mb-4 text-center">📅 ปฏิทินการยืม/จองครุภัณฑ์</h3>
+    <div class="mt-4" id="calendar"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var calendarEl = document.getElementById("calendar");
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        locale: "th",
+        timeZone: "Asia/Bangkok",
+        height: "auto",
+        headerToolbar: {
+            left: "prev,next today", 
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay"
+        },
+        displayEventTime: false,  // ซ่อนเวลา
+        events: "{% url 'assets:calendar_events' %}",
+        eventClick: function(info) {
+            let props = info.event.extendedProps;
+            let imageHtml = '';
+            let assetDetailsHtml = '';
+
+            // ใช้ Bootstrap class 'img-fluid' และ 'rounded' สำหรับรูปภาพ
+            // **การเปลี่ยนแปลง 1: ลบการกำหนด max-width ออกจาก style inline**
+            // รูปภาพ
+            const imageContainerClass = "d-flex flex-wrap gap-2 justify-content-center mt-3";
+            const imageStyle = "max-width: 150px; max-height: 150px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);";
+
+            if (props.asset_image) {
+                imageHtml = `<div class="${imageContainerClass}"><img src="${props.asset_image}" style="${imageStyle}" alt="รูปภาพครุภัณฑ์"></div>`;
+            } else if (props.asset_images && props.asset_images.length > 0) {
+                imageHtml = `<div class="${imageContainerClass}">` + props.asset_images.map(url => `<img src="${url}" style="${imageStyle}" alt="รูปภาพครุภัณฑ์">`).join('') + `</div>`;
+            }
+            
+            // สถานะ
+            let statusBadge = `<span class="badge" style="background-color: ${props.status_color || '#6c757d'}; font-size: 0.9rem; padding: 0.4rem 0.8rem;">${props.status || '-'}</span>`;
+
+            // สร้าง HTML Content ในรูปแบบ Card ที่ดูทันสมัยและสะอาดตา
+            let htmlContent = `
+                <div class="text-start px-2 py-3">
+                    <h5 class="fw-bold mb-3 text-dark lh-base" style="font-size: 1.25rem;">${info.event.title}</h5>
+                    <div class="mb-4">
+                        ${statusBadge}
+                    </div>
+                    
+                    <div class="card border-0 shadow-sm bg-light rounded-4">
+                        <div class="card-body p-3 p-md-4 text-secondary" style="font-size: 0.95rem;">
+                            <div class="row mb-2">
+                                <div class="col-5 fw-semibold text-dark">ผู้ใช้</div>
+                                <div class="col-7">${props.user || '-'}</div>
+                            </div>
+                            ${props.total_assets ? `
+                            <div class="row mb-2">
+                                <div class="col-5 fw-semibold text-dark">จำนวน</div>
+                                <div class="col-7">${props.total_assets} รายการ</div>
+                            </div>` : ''}
+                            ${props.asset_names ? `
+                            <div class="row mb-2">
+                                <div class="col-5 fw-semibold text-dark">ครุภัณฑ์ที่ยืม</div>
+                                <div class="col-7">${props.asset_names}</div>
+                            </div>` : ''}
+                            ${props.asset ? `
+                            <div class="row mb-2">
+                                <div class="col-5 fw-semibold text-dark">ครุภัณฑ์</div>
+                                <div class="col-7">${props.asset}</div>
+                            </div>` : ''}
+                            ${props.note ? `
+                            <div class="row mb-2">
+                                <div class="col-5 fw-semibold text-dark">หมายเหตุ</div>
+                                <div class="col-7 text-break">${props.note}</div>
+                            </div>` : ''}
+                            ${props.notes ? `
+                            <div class="row mb-2">
+                                <div class="col-5 fw-semibold text-dark">รายละเอียดจอง</div>
+                                <div class="col-7 text-break">${props.notes}</div>
+                            </div>` : ''}
+                            <hr class="my-3 text-muted">
+                            <div class="row mb-2">
+                                <div class="col-5 fw-semibold text-dark">วันที่ใช้</div>
+                                <div class="col-7 text-primary">${info.event.start ? info.event.start.toLocaleString("th-TH") : "-"}</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-5 fw-semibold text-dark">สิ้นสุด</div>
+                                <div class="col-7 text-danger">${info.event.end ? info.event.end.toLocaleString("th-TH") : "-"}</div>
+                            </div>
+                        </div>
+                    </div>
+                    ${imageHtml}
+                </div>
+            `;
+
+            Swal.fire({
+                html: htmlContent,
+                showCloseButton: true,
+                showConfirmButton: false,
+                width: '600px',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg p-0',
+                    htmlContainer: 'm-0 p-2 p-md-4'
+                }
+            });
+        }
+    });
+
+    calendar.render();
+});
+</script>
+{% endblock %}

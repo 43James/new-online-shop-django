@@ -1,0 +1,458 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% load humanize %}
+{% block content %}
+
+<script type="text/javascript">
+  setInterval(function () {
+    window.location.reload();
+  }, 30000);  //3000มิลลิวินาที=30วินาที รีเฟรชทุก 30 วินาที
+</script>
+<style>
+  /* ===== Modern Orders Table Styles ===== */
+  .orders-wrapper {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0,0,0,0.03);
+      margin-bottom: 2rem;
+  }
+  
+  .modern-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+  }
+
+  .modern-table thead th {
+      color: #475569;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0 10px 12px;
+      border: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+  }
+
+  .modern-table tbody td {
+      background: #f1f5f9;
+      padding: 12px 10px;
+      vertical-align: middle;
+      border: none;
+      font-size: 0.95rem;
+      color: #1e293b;
+      white-space: nowrap;
+  }
+
+  .modern-table tbody tr td:first-child {
+      border-radius: 12px 0 0 12px;
+  }
+
+  .modern-table tbody tr td:last-child {
+      border-radius: 0 12px 12px 0;
+  }
+
+  .modern-table tbody tr:not(.month-header-row) {
+      transition: all 0.2s;
+  }
+
+  .modern-table tbody tr:not(.month-header-row):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .month-header-row td {
+      background: #e2e8f0;
+      color: #0f172a;
+      font-size: 1.05rem;
+      border-radius: 12px;
+      padding: 12px 20px;
+      box-shadow: none;
+  }
+  
+  .month-header-row:hover {
+      transform: none !important;
+      box-shadow: none !important;
+  }
+
+  .order-code-badge {
+      background: #e0e7ff;
+      color: #4f46e5;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+  }
+
+  .user-name {
+      font-weight: 600;
+      color: #1e293b;
+      white-space: normal;
+      min-width: 120px;
+  }
+
+  .total-price {
+      font-weight: 800;
+      color: #2563eb;
+      font-size: 1.05rem;
+  }
+  
+  .date-text {
+      color: #64748b;
+      font-size: 0.85rem;
+      font-weight: 500;
+  }
+
+  /* Status Badges */
+  .status-badge {
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+  }
+  .status-pending {
+      background: #fef3c7;
+      color: #d97706;
+      border: 1px solid #fde68a;
+  }
+  .status-approved {
+      background: #d1fae5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+  }
+  .status-rejected {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+  }
+  .status-success {
+      background: #dbeafe;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+  }
+
+  /* Action Buttons */
+  .btn-action {
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+  }
+  .btn-approve {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+  }
+  .btn-approve:hover {
+      background: #16a34a;
+      color: white;
+  }
+  .btn-reject {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+  }
+  .btn-reject:hover {
+      background: #dc2626;
+      color: white;
+  }
+  .btn-details {
+      background: white;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+  }
+  .btn-details:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #cbd5e1;
+  }
+
+  /* Modal Customization */
+  .modern-modal .modal-content {
+      border: none;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  }
+  .modern-modal .modal-header {
+      padding: 24px 24px 16px;
+  }
+  .modern-modal .modal-title {
+      font-weight: 700;
+      color: #1e293b;
+  }
+  .modern-modal .modal-footer {
+      padding: 16px 24px 24px;
+  }
+
+  /* Input Customization inside Modal */
+  .modern-modal .form-control {
+      transition: all 0.2s ease;
+      border: 1px solid #e2e8f0;
+  }
+  .modern-modal .form-control:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  }
+
+  /* Custom Radio for Approval Modal */
+  .form-check-input {
+      display: none;
+  }
+  .custom-radio {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 2px solid #cbd5e1;
+      border-radius: 50%;
+      background-color: white;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+  }
+  .form-check-input:checked + .custom-radio {
+      background-color: #10b981;
+      border-color: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+  }
+  .form-check-input:checked + .custom-radio::after {
+      content: '\2713';
+      color: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: bold;
+      font-size: 1.2rem;
+  }
+  .form-check-input:checked + .custom-radio.reject {
+      background-color: #ef4444;
+      border-color: #ef4444;
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+  }
+  .form-check-input:checked + .custom-radio.reject::after {
+      content: '\2715';
+      color: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: bold;
+      font-size: 1.2rem;
+  }
+  .form-check-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+  }
+  
+  .empty-state {
+      padding: 40px;
+      text-align: center;
+      color: #64748b;
+  }
+</style>
+
+<div class="orders-wrapper">
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th width="5%">#</th>
+                    <th width="15%">ผู้ใช้งาน</th>
+                    <th width="12%">เลขที่เบิก</th>
+                    <th width="12%">จำนวน</th>
+                    <th width="12%">ยอดรวม</th>
+                    <th width="15%">วันที่เบิก</th>
+                    <th width="12%" class="text-center">สถานะ</th>
+                    <th width="17%" class="text-center">ทำรายการ</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td class="text-muted fw-bold">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="user-name">{{ order.user.get_full_name|default:order.user.username }}</div>
+                    </td>
+                    <td>
+                        <span class="order-code-badge">ID {{ order.order_code }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ order.items.count }} รายการ</span>
+                    </td>
+                    <td>
+                        <span class="total-price">{{ order.get_total_price|intcomma }} ฿</span>
+                    </td>
+                    <td>
+                        <div class="date-text">{{ order.date_created| date:"d M Y H:i" }} น.</div>
+                    </td>
+                    <td class="text-center">
+                        {% if order.status == True %}
+                            <span class="status-badge status-approved"><i class="bi bi-check-circle-fill"></i> อนุมัติ</span>
+                        {% elif order.status == False %}
+                            <span class="status-badge status-rejected"><i class="bi bi-x-circle-fill"></i> ปฏิเสธ</span>
+                        {% else %}
+                            <span class="status-badge status-pending"><i class="bi bi-hourglass-split"></i> รออนุมัติ</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button type="button" class="btn btn-action btn-approve" data-bs-toggle="modal" data-bs-target="#exampleModal{{ order.id }}" title="อนุมัติ">
+                                อนุมัติ
+                            </button>
+                            <button type="button" class="btn btn-action btn-reject" data-bs-toggle="modal" data-bs-target="#exampleModal2{{ order.id }}" title="ปฏิเสธ">
+                                ปฏิเสธ
+                            </button>
+                            <a href="{% url 'dashboard:order_detail' order.id %}" class="btn btn-action btn-details" title="ดูรายละเอียด">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Modal Approve -->
+                <form action="{% url 'dashboard:approve_orders' order.id %}" method="POST">
+                    {% csrf_token %}
+                    <div class="modal fade modern-modal" id="exampleModal{{ order.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+                            <div class="modal-content rounded-4">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title w-100 text-center">
+                                        ดำเนินการ <span class="order-code-badge ms-2">ID {{ order.order_code }}</span>
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
+                                        <input class="form-check-input" type="radio" name="status" id="approveRadio{{ order.id }}" value="True" checked>
+                                        <label class="custom-radio" for="approveRadio{{ order.id }}"></label>
+                                        <label class="form-check-label text-success" for="approveRadio{{ order.id }}">
+                                            อนุมัติคำร้อง
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                        <input type="datetime-local" name="date_receive" class="form-control rounded-3 date-receive-input" data-order-id="{{ order.id }}" id="date_receive_{{ order.id }}" readonly style="background-color: #f8fafc; color: #475569;">
+                                        <label for="date_receive_{{ order.id }}">วันที่นัดรับพัสดุ</label>
+                                    </div>
+                                    <div class="text-danger small mb-4 fw-bold text-center bg-danger bg-opacity-10 py-2 rounded-3">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> จ่ายวัสดุทุกวันจันทร์ เวลา 16:00 น.
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                        <input type="datetime-local" name="date_approved" class="form-control rounded-3 date-approved-input" data-order-id="{{ order.id }}" id="date_approved_{{ order.id }}" readonly style="background-color: #f8fafc; color: #475569;">
+                                        <label for="date_approved_{{ order.id }}">วันที่อนุมัติ</label>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-2">
+                                        <input type="text" name="other" class="form-control rounded-3" id="otherInput{{ order.id }}" placeholder="หมายเหตุ (ถ้ามี)">
+                                        <label for="otherInput{{ order.id }}">หมายเหตุ (ถ้ามี)</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0 justify-content-between">
+                                    <button type="button" class="btn btn-light rounded-pill fw-bold px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                                    <button class="btn btn-success rounded-pill fw-bold px-4 shadow-sm" type="submit" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\'></span>กำลังบันทึก...'; this.form.submit();">
+                                        ยืนยันการอนุมัติ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Modal Reject -->
+                <form action="{% url 'dashboard:approve_orders' order.id %}" method="POST">
+                    {% csrf_token %}
+                    <div class="modal fade modern-modal" id="exampleModal2{{ order.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+                            <div class="modal-content rounded-4">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title w-100 text-center">
+                                        ดำเนินการ <span class="order-code-badge ms-2">ID {{ order.order_code }}</span>
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
+                                        <input class="form-check-input" type="radio" name="status" id="rejectRadio{{ order.id }}" value="False" checked>
+                                        <label class="custom-radio reject" for="rejectRadio{{ order.id }}"></label>
+                                        <label class="form-check-label text-danger" for="rejectRadio{{ order.id }}">
+                                            ปฏิเสธคำร้อง
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                        <input type="datetime-local" name="date_approved" class="form-control rounded-3 date-approved-input" value="{{ now|date:'Y-m-d\\TH:i' }}" id="date_approved_reject_{{ order.id }}" readonly style="background-color: #f8fafc; color: #475569;">
+                                        <label for="date_approved_reject_{{ order.id }}">วันที่ปฏิเสธ</label>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-2">
+                                        <input type="text" name="other" class="form-control rounded-3" id="otherRejectInput{{ order.id }}" placeholder="เหตุผลที่ปฏิเสธ (ถ้ามี)">
+                                        <label for="otherRejectInput{{ order.id }}">เหตุผลที่ปฏิเสธ (ถ้ามี)</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0 justify-content-between">
+                                    <button type="button" class="btn btn-light rounded-pill fw-bold px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                                    <button class="btn btn-danger rounded-pill fw-bold px-4 shadow-sm" type="submit" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\'></span>กำลังบันทึก...'; this.form.submit();">
+                                        ยืนยันการปฏิเสธ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+            {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 fw-bold text-secondary">ไม่มีคำร้องใหม่ที่รออนุมัติ</h5>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      // 📌 ตั้งค่าวันที่รับของ: วันจันทร์ถัดไป เวลา 23:00
+      const dateReceiveInputs = document.querySelectorAll('.date-receive-input');
+  
+      dateReceiveInputs.forEach(function(input) {
+          const date = new Date();
+          const day = date.getDay(); // 0 = Sunday, ..., 6 = Saturday
+          const daysUntilMonday = (day === 0) ? 1 : (8 - day);
+          date.setDate(date.getDate() + daysUntilMonday);
+          date.setHours(23, 0, 0, 0);
+          const formattedDate = date.toISOString().slice(0, 16);
+          input.value = formattedDate;
+      });
+  
+      // 📌 ตั้งค่าวันที่อนุมัติ: เวลาปัจจุบันตามเครื่องผู้ใช้ (Local Time)
+      const dateApprovedInputs = document.querySelectorAll('.date-approved-input');
+
+      dateApprovedInputs.forEach(function(input) {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+
+          const formattedNow = `${year}-${month}-${day}T${hours}:${minutes}`;
+          input.value = formattedNow;
+      });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,450 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load form_tags %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .page-header::after {
+        content: '\f067';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 30px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+    .form-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        background: white;
+        overflow: hidden;
+    }
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2563eb;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #eff6ff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+    }
+    .form-label .text-danger {
+        margin-left: 2px;
+    }
+    .form-control, .form-select {
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        transition: all 0.25s;
+        background-color: #fafbfc;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        background-color: #fff;
+    }
+    .form-control::placeholder {
+        color: #9ca3af;
+        font-weight: 400;
+    }
+    .form-control[readonly] {
+        background-color: #e5e7eb;
+        cursor: not-allowed;
+    }
+    .code-input-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #f8fafc;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+    .code-input-group .separator {
+        color: #94a3b8;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    .file-upload-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        background: #fafbfc;
+        transition: all 0.25s;
+        cursor: pointer;
+        position: relative;
+    }
+    .file-upload-area:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    .file-upload-area input[type="file"] {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+    .file-upload-area .upload-icon {
+        font-size: 2rem;
+        color: #d1d5db;
+        margin-bottom: 8px;
+    }
+    .file-upload-area .upload-text {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+    .file-upload-area .upload-text strong {
+        color: #3b82f6;
+    }
+    .btn-submit {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        border: none;
+        color: white;
+        padding: 12px 36px;
+        border-radius: 50rem;
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        transition: all 0.3s;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        color: white;
+    }
+    .btn-cancel {
+        background: #f3f4f6;
+        border: none;
+        color: #6b7280;
+        padding: 12px 32px;
+        border-radius: 50rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    .btn-cancel:hover {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    .preview-img {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 12px;
+        object-fit: cover;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-top: 12px;
+        display: none;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-2"><i class="fas fa-plus-circle me-2"></i>เพิ่มรายการครุภัณฑ์</h2>
+            <p class="mb-0 opacity-75">บันทึกข้อมูลครุภัณฑ์ใหม่เข้าสู่ระบบ</p>
+        </div>
+        <div>
+            <a href="javascript:void(0);" onclick="window.history.back();" class="btn btn-light text-primary fw-bold rounded-pill shadow-sm px-4">
+                <i class="fas fa-arrow-left me-2"></i>ย้อนกลับ
+            </a>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-11">
+            <form method="POST" enctype="multipart/form-data" action="{% url 'assets:add_asset_item' %}" novalidate>
+                {% csrf_token %}
+
+                <div class="form-card mb-4">
+                    <div class="card-body p-4 p-md-5">
+                        
+                        <!-- Section 1: รหัสครุภัณฑ์ -->
+                        <div class="form-section-title">
+                            <i class="fas fa-barcode"></i> สร้างรหัสครุภัณฑ์ใหม่
+                        </div>
+                        
+                        <div class="code-input-group mb-4 flex-wrap">
+                            <div class="flex-grow-1" style="min-width: 150px;">
+                                <label class="form-label" for="id_asset_type">ประเภท <span class="text-danger">*</span></label>
+                                <input type="text" name="asset_type" class="form-control {% if asset_code_form.asset_type.errors %}is-invalid{% endif %}" id="id_asset_type"
+                                    value="{{ asset_code_form.asset_type.value|default_if_none:'' }}" placeholder="เช่น 1100" required>
+                                {% for error in asset_code_form.asset_type.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <span class="separator d-none d-sm-block mt-4">-</span>
+                            <div class="flex-grow-1" style="min-width: 150px;">
+                                <label class="form-label" for="id_asset_kind">ชนิด <span class="text-danger">*</span></label>
+                                <input type="text" name="asset_kind" class="form-control {% if asset_code_form.asset_kind.errors %}is-invalid{% endif %}" id="id_asset_kind"
+                                    value="{{ asset_code_form.asset_kind.value|default_if_none:'' }}" placeholder="เช่น 119" required>
+                                {% for error in asset_code_form.asset_kind.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <span class="separator d-none d-sm-block mt-4">-</span>
+                            <div class="flex-grow-1" style="min-width: 150px;">
+                                <label class="form-label" for="id_asset_character">ลักษณะ <span class="text-danger">*</span></label>
+                                <input type="text" name="asset_character" class="form-control {% if asset_code_form.asset_character.errors %}is-invalid{% endif %}" id="id_asset_character"
+                                    value="{{ asset_code_form.asset_character.value|default_if_none:'' }}" placeholder="เช่น 006" required>
+                                {% for error in asset_code_form.asset_character.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <span class="separator d-none d-sm-block mt-4">-</span>
+                            <div class="flex-grow-1" style="min-width: 150px;">
+                                <label class="form-label" for="id_serial_year">ลำดับ/ปี <span class="text-danger">*</span></label>
+                                <input type="text" name="serial_year" class="form-control {% if asset_code_form.serial_year.errors %}is-invalid{% endif %}" id="id_serial_year"
+                                    value="{{ asset_code_form.serial_year.value|default_if_none:'' }}" placeholder="เช่น 10/68" required>
+                                {% for error in asset_code_form.serial_year.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Section 2: ข้อมูลพื้นฐาน -->
+                        <div class="form-section-title mt-5">
+                            <i class="fas fa-info-circle"></i> ข้อมูลพื้นฐาน
+                        </div>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label" for="id_item_name">ชื่อครุภัณฑ์ <span class="text-danger">*</span></label>
+                                <input type="text" name="item_name" placeholder="ชื่อรายการครุภัณฑ์" class="form-control {% if asset_item_form.item_name.errors %}is-invalid{% endif %}" id="id_item_name"
+                                    value="{{ asset_item_form.item_name.value|default_if_none:'' }}" required>
+                                {% for error in asset_item_form.item_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_category">หมวดหมู่ <span class="text-danger">*</span></label>
+                                <select name="subcategory" class="form-select selectpicker {% if asset_item_form.subcategory.errors %}is-invalid{% endif %}" data-live-search="true" id="id_category" required>
+                                    <option value="">-- เลือกหมวดหมู่ --</option>
+                                    {% for category in categories %}
+                                        <option value="" disabled>📂 {{ category }}</option>
+                                        {% for sub in category.subcategories.all %}
+                                            <option value="{{ sub.id }}" {% if asset_item_form.instance.subcategory and asset_item_form.instance.subcategory.id == sub.id %}selected{% endif %}>
+                                                &nbsp;&nbsp;&nbsp;├ {{ sub.name_sub }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </select>
+                                {% for error in asset_item_form.subcategory.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-1">
+                                <label class="form-label" for="id_quantity">จำนวน</label>
+                                <input min="0" max="1" value="1" placeholder="ใส่จำนวน" type="number" name="quantity" class="form-control {% if asset_item_form.quantity.errors %}is-invalid{% endif %}" id="id_quantity"
+                                    value="{{ asset_item_form.quantity.value|default_if_none:'1' }}" readonly >
+                                {% for error in asset_item_form.quantity.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label" for="id_unit">หน่วย <span class="text-danger">*</span></label>
+                                <input type="text" name="unit" placeholder="เช่น เครื่อง, ตัว" class="form-control {% if asset_item_form.unit.errors %}is-invalid{% endif %}" id="id_unit"
+                                    value="{{ asset_item_form.unit.value|default_if_none:'' }}" required>
+                                {% for error in asset_item_form.unit.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Section 3: ข้อมูลทางการเงินและอายุการใช้งาน -->
+                        <div class="form-section-title mt-5">
+                            <i class="fas fa-file-invoice-dollar"></i> ข้อมูลจัดซื้อและอายุการใช้งาน
+                        </div>
+                        <div class="row g-4 mb-4 bg-light rounded p-2 p-md-3 mx-0">
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_purchase_price">ราคาจัดซื้อ (บาท) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" min="0" name="purchase_price" placeholder="0.00" class="form-control {% if asset_item_form.purchase_price.errors %}is-invalid{% endif %}" id="id_purchase_price"
+                                    value="{{ asset_item_form.purchase_price.value|default_if_none:'' }}" required>
+                                {% for error in asset_item_form.purchase_price.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_purchase_date">วันที่จัดซื้อ <span class="text-danger">*</span></label>
+                                <input type="date" name="purchase_date" class="form-control {% if asset_item_form.purchase_date.errors %}is-invalid{% endif %}" id="id_purchase_date"
+                                    value="{{ asset_item_form.purchase_date.value|default_if_none:'' }}" required>
+                                {% for error in asset_item_form.purchase_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label" for="id_fiscal_year">ปีงบประมาณ <span class="text-danger">*</span></label>
+                                <input type="number" min="2000" name="fiscal_year" placeholder="ปี พ.ศ." class="form-control {% if asset_item_form.fiscal_year.errors %}is-invalid{% endif %}" id="id_fiscal_year"
+                                    value="{{ asset_item_form.fiscal_year.value|default_if_none:'' }}" required>
+                                {% for error in asset_item_form.fiscal_year.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label" for="id_lifetime">อายุใช้งาน (ปี) <span class="text-danger">*</span></label>
+                                <input type="number" min="1" name="lifetime" placeholder="เช่น 5" class="form-control {% if asset_item_form.lifetime.errors %}is-invalid{% endif %}" id="id_lifetime"
+                                    value="{{ asset_item_form.lifetime.value|default_if_none:'' }}" required>
+                                {% for error in asset_item_form.lifetime.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label" for="id_used_years">ใช้งานแล้ว (ปี) <span class="text-danger">*</span></label>
+                                <input type="number" min="0" name="used_years" placeholder="เช่น 0" class="form-control {% if asset_item_form.used_years.errors %}is-invalid{% endif %}" id="id_used_years"
+                                    value="{{ asset_item_form.used_years.value|default_if_none:'0' }}" required>
+                                {% for error in asset_item_form.used_years.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Section 4: การดูแลและสถานะ -->
+                        <div class="form-section-title mt-5">
+                            <i class="fas fa-user-shield"></i> ผู้ดูแลและสถานที่
+                        </div>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_responsible_person">ผู้รับผิดชอบดูแล <span class="text-danger">*</span></label>
+                                <input type="text" name="responsible_person" class="form-control {% if asset_item_form.responsible_person.errors %}is-invalid{% endif %}" id="id_responsible_person"
+                                    value="{{ asset_item_form.responsible_person.value|default_if_none:'' }}" placeholder="ชื่อ-สกุล" required>
+                                {% for error in asset_item_form.responsible_person.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_brand_model">ยี่ห้อ/รุ่น <span class="text-danger">*</span></label>
+                                <input type="text" name="brand_model" placeholder="เช่น Dell Optiplex..." class="form-control {% if asset_item_form.brand_model.errors %}is-invalid{% endif %}" id="id_brand_model"
+                                    value="{{ asset_item_form.brand_model.value|default_if_none:'' }}" required>
+                                {% for error in asset_item_form.brand_model.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_storage_location">สถานที่จัดเก็บ <span class="text-danger">*</span></label>
+                                <select name="storage_location" class="form-select selectpicker {% if asset_item_form.storage_location.errors %}is-invalid{% endif %}" data-live-search="true" id="id_storage_location" required>
+                                    <option value="">-- เลือกสถานที่จัดเก็บ --</option>
+                                    {% for value, label in asset_item_form.storage_location.field.choices %}
+                                        {% if value != "" and label != "---------" %}
+                                            <option value="{{ value }}" {% if asset_item_form.storage_location.value == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% for error in asset_item_form.storage_location.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_damage_status">สถานะปัจจุบัน</label>
+                                <select name="damage_status" class="form-select selectpicker {% if asset_item_form.damage_status.errors %}is-invalid{% endif %}" data-live-search="true" id="id_damage_status">
+                                    <option value="">-- เลือกสถานะ --</option>
+                                    {% for value, label in asset_item_form.damage_status.field.choices %}
+                                        {% if value != "" and label != "---------" %}
+                                            <option value="{{ value }}" {% if asset_item_form.damage_status.value == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% for error in asset_item_form.damage_status.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Section 5: รูปภาพและหมายเหตุ -->
+                        <div class="form-section-title mt-5">
+                            <i class="fas fa-paperclip"></i> รูปภาพและหมายเหตุ
+                        </div>
+                        <div class="row g-4 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label">แนบรูปภาพครุภัณฑ์</label>
+                                <div class="file-upload-area" id="fileUploadArea">
+                                    <input type="file" name="asset_image" class="{% if asset_item_form.asset_image.errors %}is-invalid{% endif %}" id="id_asset_image" accept="image/*" onchange="previewImage(this)">
+                                    <div class="upload-icon"><i class="fas fa-camera"></i></div>
+                                    <div class="upload-text">
+                                        <strong>คลิกเพื่ออัปโหลด</strong> หรือลากรูปมาวาง
+                                    </div>
+                                </div>
+                                <img id="imagePreview" class="preview-img" alt="ตัวอย่างรูปภาพ">
+                                {% for error in asset_item_form.asset_image.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label" for="id_notes">หมายเหตุ <small class="text-muted fw-normal">(ถ้ามี)</small></label>
+                                <textarea name="notes" class="form-control {% if asset_item_form.notes.errors %}is-invalid{% endif %}" id="id_notes" rows="6"
+                                    placeholder="ระบุข้อมูลเพิ่มเติม เช่น อุปกรณ์เสริมที่มาด้วย, ประวัติการซ่อมบำรุง...">{{ asset_item_form.notes.value|default_if_none:'' }}</textarea>
+                                {% for error in asset_item_form.notes.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer Actions -->
+                    <div class="card-footer bg-light border-top-0 px-4 px-md-5 py-4">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a onclick="history.back()" class="btn btn-cancel">
+                                <i class="fas fa-times me-2"></i>ยกเลิก
+                            </a>
+                            <button type="submit" class="btn btn-submit"
+                                onclick="this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i>กำลังบันทึก...'; this.form.submit();">
+                                <i class="fas fa-save me-2"></i>บันทึกข้อมูล
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
+        const uploadArea = document.getElementById('fileUploadArea');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+            uploadArea.querySelector('.upload-text').innerHTML = '<strong class="text-primary"><i class="fas fa-check-circle me-1"></i>' + input.files[0].name + '</strong>';
+        }
+    }
+</script>
+{% endblock %}

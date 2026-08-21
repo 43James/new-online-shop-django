@@ -1,0 +1,146 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% block content %}
+
+<style>
+  /* ปรับแต่ง selectpicker ให้ดูมนและเข้ากับ Bootstrap 5 */
+  .bootstrap-select .dropdown-toggle {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ced4da;
+    background-color: #fff;
+  }
+  .bootstrap-select .dropdown-toggle:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    border-color: #86b7fe;
+  }
+</style>
+
+<div class="container d-flex justify-content-center mt-5 mb-5">
+  <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5" style="max-width: 600px; width: 100%;">
+    <div class="card-body p-0">
+      
+      <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 70px; height: 70px;">
+          <i class="bi bi-box-seam fs-1"></i>
+        </div>
+        <h4 class="fw-bold text-dark">เพิ่มข้อมูลรับเข้าวัสดุ</h4>
+        <p class="text-muted small">กรอกรายละเอียดวัสดุและจำนวนที่ต้องการรับเข้าสต็อก</p>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data" id="receiveForm">
+        {% csrf_token %}
+
+        <div class="mb-4">
+          <label for="id_product" class="form-label fw-medium text-secondary small mb-1">เลือกรายการวัสดุ <span class="text-danger">*</span></label>
+          <select name="product" class="form-select col-12 selectpicker" data-live-search="true" required id="id_product" data-style="btn-white border">
+            <option disabled selected hidden value="">ค้นหาและเลือกวัสดุ..</option>
+            {% for o in Product %}
+            <option value="{{ o.id }}">{{ o.product_id }}&nbsp; {{ o.product_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label for="id_suppliers" class="form-label fw-medium text-secondary small mb-1">ซัพพลายเออร์ <span class="text-danger">*</span></label>
+          <select name="suppliers" class="form-select col-12 selectpicker" data-live-search="true" required id="id_suppliers" data-style="btn-white border">
+            <option disabled selected hidden value="">ค้นหาและเลือกซัพพลายเออร์..</option>
+            {% for o in Suppliers %}
+            <option value="{{o.id}}">{{o.supname}}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label for="date_received" class="form-label fw-medium text-secondary small mb-1">วันที่รับเข้า <span class="text-danger">*</span></label>
+          <input type="datetime-local" id="date_received" name="date_received" class="form-control form-control-lg fs-6 rounded-3" required>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6">
+            <label class="form-label fw-medium text-secondary small mb-1" for="quantity_received">จำนวนที่รับเข้า <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-plus-slash-minus text-muted"></i></span>
+              <input class="form-control form-control-lg fs-6 border-start-0 rounded-end-3" type="number" id="quantity_received" name="quantityreceived" placeholder="1 ขึ้นไป" min="1" required>
+            </div>
+          </div>
+
+          <div class="col-sm-6">
+            <label class="form-label fw-medium text-secondary small mb-1" for="unit_price">ราคาต่อหน่วย <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0">฿</span>
+              <input class="form-control form-control-lg fs-6 border-start-0 rounded-end-3" type="number" id="unit_price" name="unitprice" placeholder="0.00" min="1" step="0.01" required>
+            </div>
+          </div>    
+        </div>
+        
+        <div class="mb-4">
+          <input class="form-control bg-light text-muted border-dashed text-center rounded-3" type="number" id="id_quantity" name="quantity" placeholder="จำนวนคงเหลือ (ระบบจะกรอกอัตโนมัติ)" readonly>
+        </div>
+
+        <div class="mb-4">
+           <label class="form-label fw-medium text-secondary small mb-1">หมายเหตุ</label>
+           <textarea name="note" class="form-control rounded-3" rows="2" placeholder="เพิ่มคำอธิบาย หรือข้อมูลเพิ่มเติม (ถ้ามี)"></textarea>
+        </div>
+
+        <div class="mb-4">
+          <label for="formFile" class="form-label fw-medium text-secondary small mb-1">ไฟล์เอกสารแนบ (ถ้ามี)</label>
+          <input class="form-control rounded-3" type="file" id="formFile" name="file">
+          <div class="form-text small">รองรับไฟล์รูปภาพหรือ PDF ที่เกี่ยวข้องกับการรับเข้า</div>
+        </div>
+
+        {{ form.non_field_errors }}
+
+        <hr class="text-muted my-4">
+
+        <div class="row g-3">
+          <div class="col-6">
+            <a class="btn btn-light btn-lg w-100 rounded-pill fw-medium text-secondary border shadow-sm" href="{% url 'dashboard:receive_list' %}">ย้อนกลับ</a>
+          </div>
+          <div class="col-6">
+            <button id="submitBtn" class="btn btn-primary btn-lg w-100 rounded-pill fw-medium shadow-sm" type="submit">
+              บันทึกข้อมูล
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('receiveForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    Swal.fire({
+      title: 'ยืนยันการรับเข้าวัสดุ?',
+      text: "โปรดตรวจสอบข้อมูลก่อนบันทึกเข้าระบบ",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1a73e8',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      reverseButtons: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        let btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>กำลังบันทึก...';
+        document.getElementById('receiveForm').submit();
+      }
+    });
+  });
+
+  $(document).ready(function () {
+    $('.selectpicker').selectpicker();
+    
+    // Set default datetime to now
+    var now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('date_received').value = now.toISOString().slice(0,16);
+  });
+</script>
+
+{% endblock %}

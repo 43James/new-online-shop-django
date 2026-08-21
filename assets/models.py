@@ -202,7 +202,10 @@ class AssetItem(models.Model):
 
     def generate_qr_code(self):
         """ ฟังก์ชันสร้าง QR Code อัตโนมัติจากรหัสครุภัณฑ์ """
-        qr_data = f"{settings.SITE_URL}/asset/{self.id}/"
+        from django.urls import reverse
+        # สร้าง URL ให้ถูกต้อง 100% ตาม path จริง
+        url_path = reverse('assets:asset_detail', kwargs={'pk': self.id})
+        qr_data = f"{settings.SITE_URL}{url_path}"
         qr = qrcode.QRCode(box_size=10, border=4)
         qr.add_data(qr_data)
         qr.make(fit=True)
@@ -270,6 +273,88 @@ class AssetOwnership(models.Model):
 
 
 
+# class AssetTransferRequest(models.Model):
+#     STATUS_CHOICES = [
+#         ('PENDING_HEAD', 'รอหัวหน้างานพัสดุเห็นชอบ'),
+#         ('PENDING_DIRECTOR', 'รอผู้อำนวยการอนุมัติ'),
+#         ('PENDING_ACTION', 'รอเจ้าหน้าที่พัสดุดำเนินการ'),
+#         ('COMPLETED', 'ดำเนินการเสร็จสิ้น'),
+#         ('REJECTED', 'ปฏิเสธ/ไม่อนุมัติ'),
+#     ]
+
+#     # ส่วนที่ 1: ข้อมูลผู้ขอคำร้อง
+#     request_date = models.DateField(default=timezone.now, verbose_name="วันที่ใบคำร้อง")
+#     requester = models.ForeignKey(MyUser, on_delete=models.PROTECT, related_name='transfer_requests', verbose_name="ผู้ขอเคลื่อนย้าย/ส่งคืน")
+#     # กลุ่ม/ฝ่าย สามารถดึงจาก MyUser ได้ถ้าผูกไว้ แต่ถ้าไม่มี ให้เก็บแยกไว้ตรงนี้
+#     department_name = models.CharField(max_length=255, verbose_name="กลุ่ม/ฝ่าย ที่ยื่นคำร้อง") 
+    
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING_HEAD', verbose_name="สถานะใบคำร้อง")
+
+#     # ส่วนที่ 2: ความเห็นหัวหน้างานพัสดุ
+#     head_approved = models.BooleanField(null=True, blank=True, verbose_name="ความเห็นหัวหน้างาน (เห็นชอบ)")
+#     head_reject_reason = models.TextField(null=True, blank=True, verbose_name="เหตุผลกรณีไม่เห็นชอบ")
+#     head_approver = models.ForeignKey(MyUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='head_vetted_requests', verbose_name="หัวหน้างานพัสดุผู้ลงชื่อ")
+#     head_action_date = models.DateField(null=True, blank=True, verbose_name="วันที่หัวหน้างานลงชื่อ")
+
+#     # ส่วนที่ 3: การพิจารณาของผู้อำนวยการ
+#     director_approved = models.BooleanField(null=True, blank=True, verbose_name="การพิจารณาผู้อำนวยการ (อนุมัติ)")
+#     director_reject_reason = models.TextField(null=True, blank=True, verbose_name="เหตุผลกรณีไม่อนุมัติ")
+#     director_approver = models.ForeignKey(MyUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='director_approved_requests', verbose_name="ผู้อำนวยการผู้ลงชื่อ")
+#     director_action_date = models.DateField(null=True, blank=True, verbose_name="วันที่ผู้อำนวยการลงชื่อ")
+
+#     # ส่วนที่ 4: สำหรับเจ้าหน้าที่พัสดุดำเนินการ
+#     officer_action_status = models.CharField(
+#         max_length=50, 
+#         choices=[
+#             ('MOVED', 'ดำเนินการเคลื่อนย้ายเสร็จสิ้น'),
+#             ('RETURNED', 'ดำเนินการส่งคืนผู้ควบคุมดูแลพัสดุเสร็จสิ้น'),
+#             ('FAILED', 'ไม่สามารถดำเนินการได้')
+#         ],
+#         null=True, blank=True, 
+#         verbose_name="ผลการดำเนินการของเจ้าหน้าที่"
+#     )
+#     officer_fail_reason = models.TextField(null=True, blank=True, verbose_name="เหตุผลกรณีดำเนินการไม่ได้")
+#     officer = models.ForeignKey(MyUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='officer_handled_requests', verbose_name="เจ้าหน้าที่พัสดุผู้ดำเนินการ")
+#     officer_action_date = models.DateField(null=True, blank=True, verbose_name="วันที่เจ้าหน้าที่ดำเนินการ")
+
+#     class Meta:
+#         verbose_name = "ใบคำร้องขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์"
+#         verbose_name_plural = "ใบคำร้องขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์"
+#         ordering = ('-id',)
+
+#     def __str__(self):
+#         return f"ใบคำร้องที่ {self.id} โดย {self.requester.username}"
+
+#     def apply_ownership_and_location_changes(self):
+#         """
+#         ฟังก์ชันอัตโนมัติ: จะทำงานเมื่อเจ้าหน้าที่พัสดุบันทึกการทำงานส่วนที่ 4 สำเร็จ (สถานะเป็น COMPLETED)
+#         ลอจิกนี้จะอัปเดตสถานที่และผู้ครอบครองปัจจุบันในฐานข้อมูลทันที
+#         """
+#         if self.status == 'COMPLETED':
+#             for item in self.request_items.all():
+#                 asset = item.asset
+                
+#                 # 1. อัปเดตสถานะความเสียหายหน้าฟอร์ม ไปยังครุภัณฑ์หลัก
+#                 asset.damage_status = item.condition
+                
+#                 if item.action_type == 'RETURN':
+#                     # กรณีส่งคืน: ปิดประวัติการครอบครองเดิม
+#                     AssetOwnership.objects.filter(asset=asset, is_active=True).update(
+#                         is_active=False, 
+#                         end_date=self.officer_action_date or timezone.now().date()
+#                     )
+#                     # อัปเดตข้อมูลสถานที่เก็บหลัก (เช่น เปลี่ยนเป็น คลังพัสดุกลาง)
+#                     if item.transfer_to_location:
+#                         asset.storage_location = item.transfer_to_location
+                    
+#                 elif item.action_type == 'MOVE':
+#                     # กรณีเคลื่อนย้ายสถานที่: อัปเดตสถานที่เก็บใหม่ในโมเดลหลัก
+#                     if item.transfer_to_location:
+#                         asset.storage_location = item.transfer_to_location
+                        
+#                 asset.save()
+
+
 class AssetTransferRequest(models.Model):
     STATUS_CHOICES = [
         ('PENDING_HEAD', 'รอหัวหน้างานพัสดุเห็นชอบ'),
@@ -279,10 +364,32 @@ class AssetTransferRequest(models.Model):
         ('REJECTED', 'ปฏิเสธ/ไม่อนุมัติ'),
     ]
 
+    # vvvv ส่วนที่เพิ่มเข้ามาใหม่ vvvv
+    request_code = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True, 
+        unique=True,  # การันตีว่าไม่ซ้ำกันในระบบ
+        verbose_name="เลขที่ใบคำร้อง", 
+        editable=False # ไม่ต้องแก้ไขได้ในฟอร์ม
+    )
+    running_number = models.PositiveIntegerField(
+        editable=False, 
+        null=True, 
+        blank=True,
+        verbose_name="เลขลำดับ"
+    )
+    year = models.PositiveIntegerField(
+        verbose_name='ปี', 
+        editable=False, 
+        null=True, 
+        blank=True
+    )
+    # ^^^^ สิ้นสุดส่วนที่เพิ่ม ^^^^
+
     # ส่วนที่ 1: ข้อมูลผู้ขอคำร้อง
     request_date = models.DateField(default=timezone.now, verbose_name="วันที่ใบคำร้อง")
     requester = models.ForeignKey(MyUser, on_delete=models.PROTECT, related_name='transfer_requests', verbose_name="ผู้ขอเคลื่อนย้าย/ส่งคืน")
-    # กลุ่ม/ฝ่าย สามารถดึงจาก MyUser ได้ถ้าผูกไว้ แต่ถ้าไม่มี ให้เก็บแยกไว้ตรงนี้
     department_name = models.CharField(max_length=255, verbose_name="กลุ่ม/ฝ่าย ที่ยื่นคำร้อง") 
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING_HEAD', verbose_name="สถานะใบคำร้อง")
@@ -320,7 +427,29 @@ class AssetTransferRequest(models.Model):
         ordering = ('-id',)
 
     def __str__(self):
-        return f"ใบคำร้องที่ {self.id} โดย {self.requester.username}"
+        # เปลี่ยนให้แสดงผลรหัสคำร้อง ถ้ามีการสร้างรหัสแล้ว
+        code_display = self.request_code if self.request_code else f"ID:{self.id}"
+        return f"ใบคำร้องที่ {code_display} โดย {self.requester.username}"
+
+    def save(self, *args, **kwargs):
+        # สร้างเลขรหัสลำดับคำร้อง (เฉพาะตอนสร้างใหม่)
+        if not self.id: 
+            now = timezone.now()
+            current_year = now.year
+
+            self.year = current_year
+
+            # ค้นหา running_number สูงสุดของปีนี้
+            last_request = AssetTransferRequest.objects.filter(year=current_year).aggregate(max_num=Max('running_number'))
+            
+            # รันเลขลำดับใหม่
+            new_num = (last_request['max_num'] or 0) + 1
+                
+            self.running_number = new_num
+            # รูปแบบเลขที่คำร้อง เช่น 1/2025 (เปลี่ยนรูปแบบได้ตามต้องการ)
+            self.request_code = f"{new_num}/{current_year}" 
+
+        super().save(*args, **kwargs)
 
     def apply_ownership_and_location_changes(self):
         """
@@ -393,24 +522,15 @@ class AssetCheck(models.Model):
     check_date = models.DateField(auto_now_add=True, verbose_name="วันที่ตรวจเช็ค")
     status = models.BooleanField(default=False, verbose_name="สถานะการตรวจเช็ค")  # กำหนดค่าเริ่มต้น
     remarks = models.TextField(blank=True, null=True, verbose_name="หมายเหตุเพิ่มเติม")
-    month = models.PositiveIntegerField(verbose_name="เดือนที่บันทึก", editable=False)
-    year = models.PositiveIntegerField(verbose_name="ปีงบประมาณ", editable=False)
+    check_image = models.ImageField(upload_to="asset_checks/", blank=True, null=True, verbose_name="รูปภาพการตรวจนับ")
+    fiscal_year = models.PositiveIntegerField(verbose_name="ปีงบประมาณ", default=2567)
 
     class Meta:
         verbose_name = "ตารางตรวจเช็คครุภัณฑ์"
         ordering = ('-id',)
 
     def __str__(self):
-        return f"{self.asset.item_name} - {'ตรวจแล้ว' if self.status else 'ยังไม่ตรวจ'}"
-
-    def save(self, *args, **kwargs):
-        # กำหนดเดือนและปีจากวันที่ตรวจเช็ค
-        if not self.check_date:
-            self.check_date = timezone.now().date()
-        
-        self.month = self.check_date.month
-        self.year = self.check_date.year
-        super().save(*args, **kwargs)
+        return f"{self.asset.item_name} - {'ตรวจแล้ว' if self.status else 'ยังไม่ตรวจ'} ({self.fiscal_year})"
 
 #-------------------------------------------------------------------------------------------------------------------------------------------   
 
@@ -698,3 +818,15 @@ class IssuingAssetLoan(models.Model):
 #         return f"{self.asset.item_name} - {self.maintenance_date}"
 
 
+class AssetSystemSetting(models.Model):
+    is_public_check_enabled = models.BooleanField(default=False, verbose_name='เปิดสิทธิ์ให้ผู้ใช้งานทั่วไปตรวจนับครุภัณฑ์')
+    allowed_users = models.ManyToManyField(MyUser, blank=True, related_name='allowed_asset_checks', verbose_name='ผู้ใช้งานที่ได้รับสิทธิ์')
+    current_fiscal_year = models.CharField(max_length=4, blank=True, null=True, verbose_name='ปีงบประมาณปัจจุบันที่ตรวจนับ')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'ตั้งค่าระบบครุภัณฑ์'
+        verbose_name_plural = 'ตั้งค่าระบบครุภัณฑ์'
+        
+    def __str__(self):
+        return f"ตั้งค่าระบบ (เปิดสิทธิ์: {self.is_public_check_enabled})"

@@ -9,13 +9,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+import os
+
 SECRET_KEY = 'django-insecure-kr1p-zj6!vss$(xd2f7vk8nw*3g@-ao92zzg8^@u!mj(l#s)+i'
-SITE_URL = 'http://localhost:8000' # หรือ 'http://localhost:8000' สำหรับการทดสอบในเครื่อง
+SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000') 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = False
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
@@ -29,7 +29,9 @@ ALLOWED_HOSTS = ['*']
 # ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://lorina-uncombustive-armida.ngrok-free.dev","https://unselfishly-plexiform-deacon.ngrok-free.dev"
+    "https://lorina-uncombustive-armida.ngrok-free.dev",
+    "https://unselfishly-plexiform-deacon.ngrok-free.dev",
+    "https://portal.ubu-sip.synology.me"
 ]
 
 # settings.py
@@ -137,13 +139,14 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
+    'dashboard.middleware.AutoMonthlyStockMiddleware',
 ]
 
 ROOT_URLCONF = 'online_shop.urls'
@@ -165,6 +168,8 @@ TEMPLATES = [
                 'dashboard.context_processors.stock_record_exists',
                 'dashboard.context_processors.pending_outofstock',
                 'dashboard.context_processors.count_pending_orders',
+                'dashboard.context_processors.total_pending_actions',
+                'dashboard.context_processors.asset_system_setting',
             ],
         },
     },
@@ -194,11 +199,22 @@ WSGI_APPLICATION = 'online_shop.wsgi.application'
 #     }
 # }
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": "copy_database_patsadu",
+#         "HOST" : "127.0.0.1",
+#         "USER" : "root",
+#         "PASSWORD" : "root",
+#         "PORT" : "3306",
+#     }
+# }
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "database_patsadu",
-        "HOST" : "127.0.0.1",
+        "HOST" : os.environ.get('DB_HOST', '127.0.0.1'),
         "USER" : "root",
         "PASSWORD" : "root",
         "PORT" : "3306",

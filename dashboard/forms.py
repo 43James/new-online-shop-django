@@ -1,10 +1,9 @@
-import datetime
 from django import forms
 from django.forms import ModelForm
 
 from accounts.models import WorkGroup
 from shop.models import Product, Category, Receiving, Subcategory, Suppliers
-from orders.models import Issuing, Order
+from orders.models import Order
 
 
 class MonthYearForm(forms.Form):

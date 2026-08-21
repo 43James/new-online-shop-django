@@ -1,5 +1,5 @@
 from django import forms
-from .models import AssetCheck, AssetCode, AssetItem, AssetItemLoan, AssetOwnership, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan
+from .models import AssetCheck, AssetCode, AssetItem, AssetItemLoan, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan
 
 
 class AssetCodeForm(forms.ModelForm):
@@ -212,9 +212,24 @@ class AssetCheckForm(forms.ModelForm):
         label="สถานที่เก็บ"
     )
 
+    import datetime
+    current_year_th = datetime.datetime.now().year + 543
+    FISCAL_YEAR_CHOICES = [(y, str(y)) for y in range(current_year_th - 3, current_year_th + 5)]
+    
+    fiscal_year = forms.ChoiceField(
+        choices=FISCAL_YEAR_CHOICES,
+        required=True,
+        label="ปีงบประมาณ"
+    )
+
     class Meta:
         model = AssetCheck
-        fields = ["status", "damage_status", "responsible_person", "storage_location"]
+        fields = ["damage_status", "responsible_person", "storage_location", "fiscal_year", "remarks", "check_image"]
+        widgets = {
+            'remarks': forms.Textarea(attrs={'rows': 3, 'placeholder': 'เพิ่มหมายเหตุ หรือรายละเอียดการตรวจพบ...'}),
+            'responsible_person': forms.TextInput(attrs={'placeholder': 'ชื่อผู้ดูแลรับผิดชอบ...'}),
+            'check_image': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+        }
 
     def __init__(self, *args, **kwargs):
         self.asset = kwargs.pop('asset', None)  # รับค่าครุภัณฑ์ที่ต้องการตรวจเช็ค
@@ -225,12 +240,23 @@ class AssetCheckForm(forms.ModelForm):
             self.fields['damage_status'].initial = self.asset.damage_status
             self.fields['responsible_person'].initial = self.asset.responsible_person
             self.fields['storage_location'].initial = self.asset.storage_location  # กำหนดค่าเริ่มต้นให้ตรงกับสถานที่เก็บปัจจุบันของครุภัณฑ์
+            
+            import datetime
+            self.fields['fiscal_year'].initial = datetime.datetime.now().year + 543
+
+        # Add Bootstrap classes for gorgeous UI
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = 'form-select form-select-lg border-success-subtle shadow-sm'
+            else:
+                field.widget.attrs['class'] = 'form-control form-control-lg border-success-subtle shadow-sm'
 
     def save(self, commit=True, user=None):
         instance = super().save(commit=False)
         if user:
             instance.user = user  # ตั้งค่าผู้ตรวจเช็คเป็นผู้ใช้ที่ล็อกอินอยู่
         if self.asset:
+            instance.asset = self.asset # กำหนดครุภัณฑ์ที่ตรวจเช็ค
             # อัปเดตค่าใน AssetItem ด้วยค่าที่ผู้ใช้กรอก
             self.asset.damage_status = self.cleaned_data['damage_status']
             self.asset.responsible_person = self.cleaned_data['responsible_person']

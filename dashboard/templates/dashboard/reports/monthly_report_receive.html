@@ -1,0 +1,160 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% load custom_filters %}
+{% load humanize %}
+
+{% block content %}
+<head>
+    <title>{{ title }}</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .user-column1 {
+            background-color: #c7c7c7;
+        }
+
+        .user-column {
+            background-color: #ebebeb;
+        }
+    </style>
+</head>
+
+    <div class="text-end">
+        <form method="get" action="{% url 'dashboard:monthly_report_receive' %}" class="d-flex flex-wrap gap-2 align-items-center justify-content-end mb-4 w-100">
+            <div class="col-auto">
+                <label for="category">เลือกหมวดหมู่หลัก</label>
+            </div>
+            <div class="col-auto">
+                <select name="category" id="category" class="form-control">
+                    <option value="">ทั้งหมด</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category.id|stringformat:"d" == selected_category %}selected{% endif %}>
+                        {{ category.name_cate }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-auto">
+                <select name="month" id="month" class="form-select shadow-sm border-0" style="width: auto; border-radius: 20px;">
+                    {% for m in months %}
+                        <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="year" id="year" class="form-select shadow-sm border-0" style="width: auto; border-radius: 20px;">
+                    {% for y in years %}
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold" style="background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%); border: none;"><i class="bi bi-funnel-fill"></i> ค้นหา</button>
+                <a type="button" class="btn btn-light shadow-sm rounded-pill px-4 fw-bold bg-white text-secondary" style="border: none;" href="{% url 'dashboard:monthly_report_receive' %}">ยกเลิก</a>
+            </div>
+        </form>
+
+        <h3 class="text-center">รายการรับเข้าวัสดุ ประจำเดือน {{ month_name }} พ.ศ. {{ selected_year }} ({{ selected_category_name }})</h3>
+
+        <div class="col-auto">
+            <a href="{% url 'dashboard:export_to_excel_receive' %}?category={{ selected_category }}&month={{ selected_month }}&year={{ selected_year }}" class="icon-link justify-content-end">
+                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
+                    <rect width="16" height="9" x="28" y="15" fill="#21a366"></rect>
+                    <path fill="#185c37" d="M44,24H12v16c0,1.105,0.895,2,2,2h28c1.105,0,2-0.895,2-2V24z"></path>
+                    <rect width="16" height="9" x="28" y="24" fill="#107c42"></rect>
+                    <rect width="16" height="9" x="12" y="15" fill="#3fa071"></rect>
+                    <path fill="#33c481" d="M42,6H28v9h16V8C44,6.895,43.105,6,42,6z"></path>
+                    <path fill="#21a366" d="M14,6h14v9H12V8C12,6.895,12.895,6,14,6z"></path>
+                    <path d="M22.319,13H12v24h10.319C24.352,37,26,35.352,26,33.319V16.681C26,14.648,24.352,13,22.319,13z"
+                        opacity=".05"></path>
+                    <path
+                        d="M22.213,36H12V13.333h10.213c1.724,0,3.121,1.397,3.121,3.121v16.425	C25.333,34.603,23.936,36,22.213,36z"
+                        opacity=".07"></path>
+                    <path
+                        d="M22.106,35H12V13.667h10.106c1.414,0,2.56,1.146,2.56,2.56V32.44C24.667,33.854,23.52,35,22.106,35z"
+                        opacity=".09"></path>
+                    <linearGradient id="flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1" x1="4.725" x2="23.055" y1="14.725"
+                        y2="33.055" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stop-color="#18884f"></stop>
+                        <stop offset="1" stop-color="#0b6731"></stop>
+                    </linearGradient>
+                    <path fill="url(#flEJnwg7q~uKUdkX0KCyBa_UECmBSgBOvPT_gr1)"
+                        d="M22,34H6c-1.105,0-2-0.895-2-2V16c0-1.105,0.895-2,2-2h16c1.105,0,2,0.895,2,2v16	C24,33.105,23.105,34,22,34z">
+                    </path>
+                    <path fill="#fff"
+                        d="M9.807,19h2.386l1.936,3.754L16.175,19h2.229l-3.071,5l3.141,5h-2.351l-2.11-3.93L11.912,29H9.526	l3.193-5.018L9.807,19z">
+                    </path>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+
+    <div class="table-responsive col-12">
+        <table class="col-auto justify-content-center container mt-4 mb-4">
+            <thead>
+                <tr>
+                    <th class="text-center user-column1" style="width: 5%;">ลำดับ</th>
+                    <th class="text-center user-column1" style="width: 5%;">รหัสวัสดุ</th>
+                    <th class="text-center user-column1" style="width: 20%;">รายการวัสดุ</th>
+                    <th class="text-center user-column1" style="width: 8%;">หมวดหมู่</th>
+                    <th class="text-center user-column1" style="width: 15%;">ซัพพลายเออร์</th>
+                    <th class="text-center user-column1" style="width: 8%;">จำนวนที่รับเข้า</th>
+                    <th class="text-center user-column1" style="width: 2%;">หน่วย</th>
+                    <th class="text-center user-column1" style="width: 8%;">ราคา/หน่วย</th>
+                    <th class="text-center user-column1" style="width: 10%;">รวมจำนวนเงิน</th>
+                    <th class="text-center user-column1" style="width: 15%;">วันที่รับเข้า</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in receiving_data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ data.product__product_id }}</td>
+                    <td>{{ data.product__product_name }}</td>
+                    <td>{{ data.product__category__category__name_cate }}</td>
+                    <td>{{ data.suppliers__supname }}</td>
+                    <td>{{ data.quantityreceived|intcomma }} </td>
+                    <td> {{ data.product__unit }} </td>
+                    <td>{{ data.unitprice|intcomma }} บาท</td>
+                    <td>{{ data.total_price|floatformat:2|intcomma }} บาท</td>
+                    <td>{{ data.date_created|date:"d M Y , H:i นาที" }}</td>
+                </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">ไม่มีข้อมูล</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="8" class="text-right"><strong>รวมจำนวนเงินทั้งหมด:</strong></td>
+                    <td colspan="1">{{ total_price_sum|floatformat:2|intcomma }} บาท</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+<script>
+    function clearFormAndSubmit() {
+        document.getElementById("month").value = "";
+        document.getElementById("year").value = "";
+        document.querySelector('form').submit();
+    }
+</script>
+{% endblock %}

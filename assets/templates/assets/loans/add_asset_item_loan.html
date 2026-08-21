@@ -1,0 +1,398 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load form_tags %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 10px 20px rgba(230, 126, 34, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .page-header::after {
+        content: '\f067';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 30px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+    .form-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        background: white;
+        overflow: hidden;
+    }
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #e67e22;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #fef3e6;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+    }
+    .form-label .text-danger {
+        margin-left: 2px;
+    }
+    .form-control, .form-select {
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        transition: all 0.25s;
+        background-color: #fafbfc;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #e67e22;
+        box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.12);
+        background-color: #fff;
+    }
+    .form-control::placeholder {
+        color: #9ca3af;
+        font-weight: 400;
+    }
+    .form-check-input:checked {
+        background-color: #e67e22;
+        border-color: #e67e22;
+    }
+    .form-check-input:focus {
+        box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.15);
+    }
+    .toggle-card {
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 20px;
+        cursor: pointer;
+        transition: all 0.25s;
+        background: #fafbfc;
+        text-align: center;
+    }
+    .toggle-card:hover {
+        border-color: #f39c12;
+        background: #fef9f0;
+    }
+    .toggle-card.active {
+        border-color: #e67e22;
+        background: #fef3e6;
+    }
+    .toggle-card .toggle-icon {
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+    }
+    .toggle-card .toggle-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #374151;
+    }
+    .file-upload-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        background: #fafbfc;
+        transition: all 0.25s;
+        cursor: pointer;
+        position: relative;
+    }
+    .file-upload-area:hover {
+        border-color: #e67e22;
+        background: #fef9f0;
+    }
+    .file-upload-area input[type="file"] {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+    .file-upload-area .upload-icon {
+        font-size: 2rem;
+        color: #d1d5db;
+        margin-bottom: 8px;
+    }
+    .file-upload-area .upload-text {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+    .file-upload-area .upload-text strong {
+        color: #e67e22;
+    }
+    .btn-submit {
+        background: linear-gradient(135deg, #e67e22, #f39c12);
+        border: none;
+        color: white;
+        padding: 12px 36px;
+        border-radius: 50rem;
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
+        transition: all 0.3s;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(230, 126, 34, 0.4);
+        color: white;
+    }
+    .btn-cancel {
+        background: #f3f4f6;
+        border: none;
+        color: #6b7280;
+        padding: 12px 32px;
+        border-radius: 50rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    .btn-cancel:hover {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    .preview-img {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 12px;
+        object-fit: cover;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-top: 12px;
+        display: none;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-2"><i class="fas fa-plus-circle me-2"></i>เพิ่มรายการครุภัณฑ์สำหรับยืม</h2>
+            <p class="mb-0 opacity-75">กรอกข้อมูลครุภัณฑ์เพื่อเปิดให้บุคลากรยืมใช้งาน</p>
+        </div>
+        <div>
+            <a href="javascript:void(0);" onclick="window.history.back();" class="btn btn-light text-warning fw-bold rounded-pill shadow-sm px-4">
+                <i class="fas fa-arrow-left me-2"></i>ย้อนกลับ
+            </a>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <form method="POST" enctype="multipart/form-data" action="{% url 'assets:add_asset_item_loan' %}" novalidate>
+                {% csrf_token %}
+
+                <div class="form-card">
+                    <div class="card-body p-4 p-md-5">
+
+                        <!-- Section 1: ข้อมูลพื้นฐาน -->
+                        <div class="form-section-title">
+                            <i class="fas fa-info-circle"></i> ข้อมูลพื้นฐาน
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label" for="id_item_name">
+                                    ชื่อครุภัณฑ์สำหรับยืม <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="item_name" placeholder="เช่น โทรทัศน์ 65 นิ้ว, กล้อง VDO Conference..." 
+                                    class="form-control {% if form.item_name.errors %}is-invalid{% endif %}" id="id_item_name"
+                                    value="{{ form.item_name.value|default_if_none:'' }}" required>
+                                {% for error in form.item_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_asset_code">รหัสครุภัณฑ์</label>
+                                <input type="text" name="asset_code" placeholder="เช่น 7440-001-0001/60" 
+                                    class="form-control {% if form.asset_code.errors %}is-invalid{% endif %}" id="id_asset_code"
+                                    value="{{ form.asset_code.value|default_if_none:'' }}">
+                                {% for error in form.asset_code.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_subcategory">หมวดหมู่</label>
+                                <select name="subcategory" class="form-select selectpicker {% if form.subcategory.errors %}is-invalid{% endif %}" data-live-search="true" id="id_subcategory" required>
+                                    <option value="">-- เลือกหมวดหมู่ --</option>
+                                    {% for category in categories %}
+                                        <option value="" disabled>📂 {{ category }}</option>
+                                        {% for sub in category.subcategories.all %}
+                                            <option value="{{ sub.id }}" {% if form.instance.subcategory and form.instance.subcategory.id == sub.id %}selected{% endif %}>
+                                                &nbsp;&nbsp;&nbsp;├ {{ sub.name_sub }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </select>
+                                {% for error in form.subcategory.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Section 2: รายละเอียดเพิ่มเติม -->
+                        <div class="form-section-title">
+                            <i class="fas fa-cog"></i> รายละเอียดเพิ่มเติม
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_unit">หน่วย <span class="text-danger">*</span></label>
+                                <input type="text" name="unit" placeholder="เช่น เครื่อง, ตัว, ชุด..." 
+                                    class="form-control {% if form.unit.errors %}is-invalid{% endif %}" id="id_unit"
+                                    value="{{ form.unit.value|default_if_none:'' }}" required>
+                                {% for error in form.unit.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_brand_model">ยี่ห้อ/รุ่น <span class="text-danger">*</span></label>
+                                <input type="text" name="brand_model" placeholder="เช่น Samsung, Sony..." 
+                                    class="form-control {% if form.brand_model.errors %}is-invalid{% endif %}" id="id_brand_model"
+                                    value="{{ form.brand_model.value|default_if_none:'' }}" required>
+                                {% for error in form.brand_model.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_storage_location">สถานที่จัดเก็บ <span class="text-danger">*</span></label>
+                                <select name="storage_location" class="form-select selectpicker {% if form.storage_location.errors %}is-invalid{% endif %}" data-live-search="true" id="id_storage_location" required>
+                                    <option value="">-- เลือกสถานที่ --</option>
+                                    {% for value, label in form.storage_location.field.choices %}
+                                        {% if value != "" and label != "---------" %}
+                                            <option value="{{ value }}" {% if form.storage_location.value == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% for error in form.storage_location.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="id_damage_status">สถานะการใช้งาน <span class="text-danger">*</span></label>
+                                <select name="damage_status" class="form-select selectpicker {% if form.damage_status.errors %}is-invalid{% endif %}" data-live-search="true" id="id_damage_status" required>
+                                    <option value="">-- เลือกสถานะ --</option>
+                                    {% for value, label in form.damage_status.field.choices %}
+                                        {% if value != "" and label != "---------" %}
+                                            <option value="{{ value }}" {% if form.damage_status.value == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% for error in form.damage_status.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Section 3: สถานะ -->
+                        <div class="form-section-title">
+                            <i class="fas fa-toggle-on"></i> ตั้งค่าสถานะ
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <div class="toggle-card {% if form.status_borrowing.value %}active{% endif %}" id="toggleBorrowing" onclick="toggleCheck('id_status_borrowing', this)">
+                                    <input class="form-check-input d-none" type="checkbox" name="status_borrowing" id="id_status_borrowing" {% if form.status_borrowing.value %}checked{% endif %}>
+                                    <div class="toggle-icon text-success"><i class="fas fa-hand-holding"></i></div>
+                                    <div class="toggle-label">เปิดให้ยืมได้</div>
+                                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">คลิกเพื่อเปิด/ปิด</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="toggle-card {% if form.status_assetloan.value %}active{% endif %}" id="toggleAssetloan" onclick="toggleCheck('id_status_assetloan', this)">
+                                    <input class="form-check-input d-none" type="checkbox" name="status_assetloan" id="id_status_assetloan" {% if form.status_assetloan.value %}checked{% endif %}>
+                                    <div class="toggle-icon text-primary"><i class="fas fa-exchange-alt"></i></div>
+                                    <div class="toggle-label">สถานะกำลังยืม</div>
+                                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">คลิกเพื่อเปิด/ปิด</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4: รูปภาพ & หมายเหตุ -->
+                        <div class="form-section-title">
+                            <i class="fas fa-paperclip"></i> รูปภาพ & หมายเหตุ
+                        </div>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label">แนบรูปภาพครุภัณฑ์</label>
+                                <div class="file-upload-area" id="fileUploadArea">
+                                    <input type="file" name="asset_image" class="{% if form.asset_image.errors %}is-invalid{% endif %}" id="id_asset_image" accept="image/*" onchange="previewImage(this)">
+                                    <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                    <div class="upload-text">
+                                        <strong>คลิกเพื่อเลือกไฟล์</strong> หรือลากวางรูปภาพ
+                                    </div>
+                                    <small class="text-muted">รองรับ JPG, PNG ขนาดไม่เกิน 5MB</small>
+                                </div>
+                                <img id="imagePreview" class="preview-img" alt="ตัวอย่างรูปภาพ">
+                                {% for error in form.asset_image.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" for="id_notes">หมายเหตุ <small class="text-muted fw-normal">(ถ้ามี)</small></label>
+                                <textarea name="notes" class="form-control {% if form.notes.errors %}is-invalid{% endif %}" id="id_notes" rows="6"
+                                    placeholder="ระบุข้อมูลเพิ่มเติม เช่น อุปกรณ์เสริมที่มาด้วย, เงื่อนไขการยืม...">{{ form.notes.value|default_if_none:'' }}</textarea>
+                                {% for error in form.notes.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer Actions -->
+                    <div class="card-footer bg-light border-top-0 px-4 px-md-5 py-4">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a onclick="history.back()" class="btn btn-cancel">
+                                <i class="fas fa-times me-2"></i>ยกเลิก
+                            </a>
+                            <button type="submit" class="btn btn-submit"
+                                onclick="this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i>กำลังบันทึก...'; this.form.submit();">
+                                <i class="fas fa-save me-2"></i>บันทึกข้อมูล
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCheck(checkboxId, cardEl) {
+    const cb = document.getElementById(checkboxId);
+    cb.checked = !cb.checked;
+    cardEl.classList.toggle('active', cb.checked);
+}
+
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const uploadArea = document.getElementById('fileUploadArea');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(input.files[0]);
+        uploadArea.querySelector('.upload-text').innerHTML = '<strong class="text-success"><i class="fas fa-check-circle me-1"></i>' + input.files[0].name + '</strong>';
+    }
+}
+</script>
+{% endblock %}

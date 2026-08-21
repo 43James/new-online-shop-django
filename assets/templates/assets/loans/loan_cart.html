@@ -1,0 +1,466 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    .cart-header {
+        background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .cart-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 50%;
+    }
+    .cart-header::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -10%;
+        width: 200px;
+        height: 200px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+    }
+    .cart-header h2 {
+        position: relative;
+        z-index: 1;
+    }
+    .cart-header .cart-subtitle {
+        position: relative;
+        z-index: 1;
+        opacity: 0.85;
+        font-size: 0.95rem;
+    }
+    .cart-item {
+        background: rgba(255,255,255,0.97);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,0.04);
+        animation: slideIn 0.4s ease forwards;
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    .cart-item:hover {
+        box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    @keyframes slideIn {
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cart-item .item-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+    }
+    .cart-item .item-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .cart-item .item-icon i {
+        font-size: 1.3rem;
+        color: #1a73e8;
+    }
+    .cart-item .item-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+    .cart-item .item-code {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin-top: 2px;
+    }
+    .cart-item .btn-remove {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: none;
+        background: #fef2f2;
+        color: #ef4444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    .cart-item .btn-remove:hover {
+        background: #ef4444;
+        color: white;
+        transform: scale(1.1);
+    }
+    .cart-empty {
+        text-align: center;
+        padding: 50px 20px;
+    }
+    .cart-empty i {
+        font-size: 4rem;
+        color: #cbd5e1;
+    }
+    .cart-summary {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .cart-summary .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+    }
+    .cart-summary .summary-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+    .cart-summary .summary-value {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 1.1rem;
+    }
+    .checkout-section {
+        background: rgba(255,255,255,0.97);
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .checkout-section .section-title {
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .checkout-section .section-title .title-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .checkout-section .section-title .title-icon i {
+        color: #2563eb;
+    }
+    .form-floating-custom {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .form-floating-custom label {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #475569;
+        margin-bottom: 8px;
+        display: block;
+    }
+    .form-floating-custom input {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        background: #f8fafc;
+    }
+    .form-floating-custom input:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+        background: white;
+    }
+    .btn-submit-loan {
+        background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%);
+        border: none;
+        border-radius: 14px;
+        padding: 14px 28px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: white;
+        transition: all 0.3s;
+        letter-spacing: 0.3px;
+    }
+    .btn-submit-loan:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(26, 115, 232, 0.4);
+        color: white;
+    }
+    .btn-back-list {
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 12px 28px;
+        font-weight: 600;
+        color: #64748b;
+        background: white;
+        transition: all 0.2s;
+    }
+    .btn-back-list:hover {
+        border-color: #60a5fa;
+        color: #1a73e8;
+        background: #eff6ff;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-7 mt-3 mb-5">
+
+            <!-- Header -->
+            <div class="cart-header">
+                <h2 class="fw-bold mb-1"><i class="bi bi-cart3 me-2"></i> ตะกร้ายืมครุภัณฑ์</h2>
+                <p class="cart-subtitle mb-0">เลือกรายการที่ต้องการยืมแล้วกรอกวันที่เพื่อส่งคำขอ</p>
+            </div>
+
+            <!-- Cart Items -->
+            <div id="cart-list-container">
+                <div id="cart-list"></div>
+            </div>
+
+            <!-- Summary -->
+            <div class="cart-summary mb-4" id="cart-summary" style="display:none;">
+                <div class="summary-row">
+                    <span class="summary-label"><i class="bi bi-box-seam me-2"></i>จำนวนรายการ</span>
+                    <span class="summary-value text-primary"><span id="cart-count">0</span> รายการ</span>
+                </div>
+            </div>
+
+            <!-- Checkout Form -->
+            <div class="checkout-section mb-4" id="checkout-card" style="display:none;">
+                <div class="section-title">
+                    <div class="title-icon"><i class="bi bi-calendar-check"></i></div>
+                    <span>กำหนดวันยืม-คืน</span>
+                </div>
+                <form id="checkout-form" action="{% url 'assets:confirm_loan' %}" method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="form-floating-custom">
+                        <label for="date_of_use"><i class="bi bi-calendar-plus me-1"></i> วันที่เริ่มใช้งาน</label>
+                        <input type="datetime-local" name="date_of_use" class="form-control" id="date_of_use" required>
+                        <div class="invalid-feedback">
+                            กรุณาระบุวันที่และเวลาที่ต้องการใช้งาน
+                        </div>
+                    </div>
+                    <div class="form-floating-custom">
+                        <label for="date_due"><i class="bi bi-calendar-x me-1"></i> กำหนดคืนภายในวันที่</label>
+                        <input type="datetime-local" name="date_due" class="form-control" id="date_due" required>
+                        <div class="invalid-feedback">
+                            กรุณาระบุวันที่และเวลาที่กำหนดคืน
+                        </div>
+                    </div>
+                    <input type="hidden" name="asset_ids" id="asset-ids">
+                    <button type="button" class="btn btn-submit-loan w-100 mt-2" data-bs-toggle="modal" data-bs-target="#confirmLoanModal">
+                        <i class="bi bi-send-fill me-2"></i>ส่งคำขอยืมครุภัณฑ์
+                    </button>
+                </form>
+            </div>
+
+            <!-- Back Button -->
+            <div class="text-center mt-4">
+                <a href="{% url 'assets:loan_list' %}" class="btn btn-back-list w-100">
+                    <i class="bi bi-arrow-left me-2"></i>กลับไปเลือกครุภัณฑ์เพิ่ม
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal fade" id="confirmLoanModal" tabindex="-1" aria-labelledby="confirmLoanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%); border: none;">
+                <h5 class="modal-title" id="confirmLoanModalLabel"><i class="bi bi-shield-fill-check me-2"></i> ยืนยันคำขอยืมครุภัณฑ์</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="fw-bold mb-3">คุณแน่ใจหรือไม่ที่จะส่งคำขอยืมครุภัณฑ์?</p>
+                
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background: #f1f5f9;">
+                        <span class="text-muted"><i class="bi bi-box-seam me-2"></i>จำนวนครุภัณฑ์</span>
+                        <span class="fw-bold text-primary"><span id="modal-item-count">0</span> รายการ</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background: #f0fdf4;">
+                        <span class="text-muted"><i class="bi bi-calendar-plus me-2"></i>วันที่ใช้งาน</span>
+                        <span class="fw-bold text-success" id="modal-date-use"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background: #fef2f2;">
+                        <span class="text-muted"><i class="bi bi-calendar-x me-2"></i>กำหนดคืน</span>
+                        <span class="fw-bold text-danger" id="modal-date-due"></span>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning small mt-3 mb-0 rounded-3" role="alert">
+                    <i class="bi bi-info-circle-fill me-1"></i> เมื่อกดยืนยันแล้ว คำขอจะถูกส่งไปยังผู้ดูแลเพื่อพิจารณาอนุมัติ
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                <button type="button" class="btn btn-light fw-bold px-4" style="border-radius: 12px;" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-submit-loan px-4" id="confirm-submit-btn">
+                    <i class="bi bi-check-circle-fill me-1"></i> ยืนยันการยืม
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ✅ โหลดตะกร้าจาก localStorage
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+// ✅ ข้อมูลครุภัณฑ์ทั้งหมด
+const assetItems = [
+    {% for asset in asset_items %}
+    {
+        id: {{ asset.id }},
+        name: "{{ asset.item_name|escapejs }}",
+        code: "{{ asset.asset_code }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+const listContainer = document.getElementById('cart-list');
+const countEl = document.getElementById('cart-count');
+const checkoutCard = document.getElementById('checkout-card');
+const cartSummary = document.getElementById('cart-summary');
+const hiddenInput = document.getElementById('asset-ids');
+const confirmLoanModal = document.getElementById('confirmLoanModal');
+const confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+const checkoutForm = document.getElementById('checkout-form');
+const dateOfUseInput = document.getElementById('date_of_use');
+const dateDueInput = document.getElementById('date_due');
+
+function renderCart(){
+    listContainer.innerHTML = '';
+    let itemsInCart = assetItems.filter(a => cart.includes(a.id));
+
+    if(itemsInCart.length === 0){
+        listContainer.innerHTML = `
+            <div class="cart-empty glass-panel mb-4" style="border-radius:20px;">
+                <i class="bi bi-cart-x"></i>
+                <h5 class="mt-3 text-muted fw-bold">ตะกร้าว่างเปล่า</h5>
+                <p class="text-muted mb-0">ยังไม่มีครุภัณฑ์ในตะกร้า กรุณากลับไปเลือกรายการ</p>
+            </div>`;
+        countEl.textContent = 0;
+        checkoutCard.style.display = "none";
+        cartSummary.style.display = "none";
+        hiddenInput.value = '';
+        return;
+    }
+
+    itemsInCart.forEach((asset, idx) => {
+        let div = document.createElement('div');
+        div.className = 'cart-item';
+        div.style.animationDelay = `${idx * 0.08}s`;
+        div.innerHTML = `
+            <div class="item-info">
+                <div class="item-icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <div>
+                    <div class="item-name">${asset.name}</div>
+                    <div class="item-code"><i class="bi bi-upc-scan me-1"></i>${asset.code}</div>
+                </div>
+            </div>
+            <button class="btn-remove remove-item" data-id="${asset.id}" title="นำออกจากตะกร้า">
+                <i class="bi bi-trash3 remove-item" data-id="${asset.id}"></i>
+            </button>`;
+        listContainer.appendChild(div);
+    });
+
+    countEl.textContent = itemsInCart.length;
+    checkoutCard.style.display = "block";
+    cartSummary.style.display = "block";
+    hiddenInput.value = cart.join(",");
+}
+
+// ✅ ลบจากตะกร้า
+document.addEventListener('click', function(e){
+    if(e.target.classList.contains('remove-item')){
+        const id = parseInt(e.target.dataset.id);
+        cart = cart.filter(i => i !== id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+    }
+});
+
+// แปลงวันที่/เวลา ให้อ่านง่าย
+function formatDateTime(datetimeLocal) {
+    if (!datetimeLocal) return "—";
+    const date = new Date(datetimeLocal);
+    return date.toLocaleDateString('th-TH', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    }) + ' น.';
+}
+
+// เมื่อ Modal จะแสดง
+confirmLoanModal.addEventListener('show.bs.modal', function (event) {
+    if (!checkoutForm.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+        checkoutForm.classList.add('was-validated');
+        return;
+    }
+
+    confirmSubmitBtn.disabled = false;
+    confirmSubmitBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> ยืนยันการยืม';
+
+    const dateOfUse = dateOfUseInput.value;
+    const dateDue = dateDueInput.value;
+    const itemCount = countEl.textContent; 
+
+    document.getElementById('modal-item-count').textContent = itemCount;
+    document.getElementById('modal-date-use').textContent = formatDateTime(dateOfUse);
+    document.getElementById('modal-date-due').textContent = formatDateTime(dateDue);
+});
+
+// เมื่อกดปุ่ม "ยืนยันการยืม" ใน Modal
+confirmSubmitBtn.addEventListener('click', function() {
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> กำลังส่งคำขอ...';
+
+    const modalInstance = bootstrap.Modal.getInstance(confirmLoanModal);
+    modalInstance.hide();
+    
+    localStorage.removeItem("cart"); 
+
+    // แสดง Loading Overlay
+    const overlay = document.getElementById('globalLoadingOverlay');
+    if (overlay) overlay.style.display = 'flex';
+
+    checkoutForm.submit();
+});
+
+// ✅ เริ่มต้น render
+renderCart();
+</script>
+{% endblock %}

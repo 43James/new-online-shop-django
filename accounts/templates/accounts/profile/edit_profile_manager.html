@@ -1,0 +1,235 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<style>
+    /* Page Specific CSS */
+    .profile-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+    }
+    .profile-header .back-btn {
+        color: white;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        transition: transform 0.2s;
+    }
+    .profile-header .back-btn:hover {
+        transform: scale(1.1);
+        color: #e5e7eb;
+    }
+    .profile-header h2 {
+        margin: 0;
+        font-weight: 600;
+    }
+    .card-modern {
+        background: #ffffff;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        padding: 2rem;
+        height: 100%;
+    }
+    .profile-image-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    #profileCanvas {
+        border-radius: 50%;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        margin-bottom: 1.5rem;
+    }
+    .btn-pill {
+        border-radius: 50rem;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-green {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        color: white;
+    }
+    .btn-gradient-green:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-outline-secondary-pill {
+        border-radius: 50rem;
+        border: 2px solid #6c757d;
+        color: #6c757d;
+        background: transparent;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-outline-secondary-pill:hover {
+        background: #6c757d;
+        color: white;
+    }
+    .btn-danger-pill {
+        border-radius: 50rem;
+        background-color: #ef4444;
+        border: none;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-danger-pill:hover {
+        background-color: #dc2626;
+        color: white;
+    }
+    .btn-success-pill {
+        border-radius: 50rem;
+        background-color: #10b981;
+        border: none;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-success-pill:hover {
+        background-color: #059669;
+        color: white;
+    }
+    /* Form Elements styling */
+    input[type="text"], input[type="email"], input[type="password"], input[type="number"], select, textarea, .form-control, .form-select {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #f9fafb;
+        background-clip: padding-box;
+        border: 2px solid #e5e7eb;
+        appearance: none;
+        border-radius: 10px;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        margin-bottom: 1rem;
+    }
+    input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="number"]:focus, select:focus, textarea:focus, .form-control:focus, .form-select:focus {
+        border-color: #10b981;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
+        background-color: #ffffff;
+    }
+    label, .form-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #374151;
+        display: inline-block;
+    }
+    ::after {
+        pointer-events: none;
+    }
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="profile-header">
+        <a href="javascript:void(0);" onclick="window.history.back();" class="back-btn text-decoration-none">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h2>แก้ไขโปรไฟล์</h2>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row g-4">
+        <!-- Left Column: Profile Picture -->
+        <div class="col-lg-4">
+            <div class="card-modern profile-image-container">
+                <h4 class="mb-4">รูปโปรไฟล์</h4>
+                
+                {% if user.profile.img %}
+                <canvas id="profileCanvas" width="300" height="300"></canvas>
+                <script>
+                    var canvas = document.getElementById('profileCanvas');
+                    var ctx = canvas.getContext('2d');
+                    var img = new Image();
+                    img.src = "{{ user.profile.img.url }}";
+
+                    img.onload = function () {
+                        ctx.beginPath();
+                        ctx.arc(150, 150, 150, 0, 2 * Math.PI);
+                        ctx.clip();
+                        ctx.drawImage(img, 0, 0, 300, 300);
+                    };
+                </script>
+                <div class="d-flex gap-2 justify-content-center mt-3 w-100">
+                    <form method="post" action="{% url 'accounts:delete_profile_picture_manager' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger-pill"><i class="bi bi-trash3 me-1"></i> ลบ</button>
+                    </form>
+                    <a href="{% url 'accounts:upload_profile_picture_manager' %}" class="btn btn-success-pill"><i class="bi bi-camera me-1"></i> เปลี่ยนรูป</a>
+                </div>
+                {% else %}
+                <div class="mb-4 d-flex align-items-center justify-content-center" style="width: 300px; height: 300px; background-color: #f3f4f6; border-radius: 50%; border: 2px dashed #d1d5db;">
+                    <span class="text-muted text-center"><i class="bi bi-person-circle mb-2 d-block"></i>ไม่มีรูปโปรไฟล์</span>
+                </div>
+                <div class="d-flex justify-content-center w-100">
+                    <a href="{% url 'accounts:upload_profile_picture_manager' %}" class="btn btn-success-pill w-100"><i class="bi bi-upload me-2"></i> อัพโหลดรูปโปรไฟล์</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Edit Form -->
+        <div class="col-lg-8">
+            <div class="card-modern">
+                <h3 class="mb-4 border-bottom pb-2">แก้ไขข้อมูลส่วนตัว</h3>
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors or form.errors %}
+                    <div class="alert alert-danger rounded-3" role="alert">
+                        {% if form.non_field_errors %}
+                            <div class="mb-2">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        {% if form.errors %}
+                            <ul class="mb-0">
+                                {% for error in form.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="form-wrapper">
+                        {{ form.as_p }}
+                        {{ extended_form.as_p }}
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-pill btn-gradient-green flex-grow-1" type="submit" onclick="this.disabled=true; this.innerHTML='<i class=\'bi bi-arrow-repeat me-2\'></i>กำลังบันทึก...'; this.form.submit();">
+                            <i class="bi bi-save me-2"></i>บันทึกข้อมูล
+                        </button>
+                        <a href="javascript:void(0);" onclick="window.history.back();" class="btn btn-outline-secondary-pill px-4 text-decoration-none d-flex align-items-center justify-content-center">
+                            <i class="bi bi-x-lg me-2"></i>ยกเลิก
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

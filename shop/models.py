@@ -1,7 +1,6 @@
 from django.utils import timezone
 from django.db import models
 from django.urls import reverse
-from django.template.defaultfilters import slugify
 from django.db.models import Sum
 from django.utils.html import format_html
 from django.core.validators import MinValueValidator

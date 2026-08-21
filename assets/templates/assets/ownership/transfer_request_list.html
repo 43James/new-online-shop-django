@@ -1,0 +1,167 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load form_tags %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .page-header::after {
+        content: '\f0ae'; /* fa-tasks */
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 30px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+    .btn-create {
+        background: white;
+        color: #059669;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 50rem;
+        font-weight: 700;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+    .btn-create:hover {
+        background: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        color: #047857;
+    }
+    .data-table {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        background: white;
+    }
+    .table thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e9ecef;
+        padding: 15px 20px;
+    }
+    .table tbody td {
+        padding: 15px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div style="position: relative; z-index: 1;">
+            <h2 class="fw-bold mb-2"><i class="fas fa-history me-2"></i>ประวัติคำร้อง / สถานะการดำเนินการ</h2>
+            <p class="mb-0 opacity-75">ติดตามสถานะคำร้องขอเคลื่อนย้ายหรือส่งคืนครุภัณฑ์ของคุณ</p>
+        </div>
+        <div style="position: relative; z-index: 1;">
+            <a href="{% url 'assets:create_request' %}" class="btn btn-create d-flex align-items-center gap-2">
+                <i class="fas fa-plus-circle"></i> ขอเคลื่อนย้าย / ส่งคืน
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabs/Links -->
+    {% get_user_pending_transfer_count request.user as pending_request_count %}
+    <ul class="nav nav-pills mb-4 gap-2">
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-4 fw-semibold text-success bg-white border border-success" href="{% url 'assets:my_assets' %}">
+                <i class="fas fa-box-open me-2"></i> ครุภัณฑ์ที่ครอบครอง
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active rounded-pill px-4 fw-semibold" style="background-color: #059669;" href="#">
+                <i class="fas fa-history me-2"></i> ประวัติคำร้อง / สถานะ
+                {% if pending_request_count > 0 %}
+                <span class="badge bg-white text-success ms-1 rounded-pill">{{ pending_request_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+
+    <!-- Data Table -->
+    <div class="data-table border-top border-success border-4 mt-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">เลขที่คำร้อง</th>
+                        <th style="width: 25%;">ครุภัณฑ์ที่ทำรายการ</th>
+                        <th style="width: 15%;">วันที่ยื่นคำร้อง</th>
+                        <th class="text-center" style="width: 20%;">ประเภท</th>
+                        <th class="text-center" style="width: 25%;">สถานะปัจจุบัน</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in my_requests %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-light text-dark border font-monospace py-2 px-3 shadow-sm">
+                                <i class="fas fa-hashtag text-success me-1"></i> REQ-{{ req.request_code|default:"-" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-dark d-block">{{ req.asset.item_name }}</span>
+                            <small class="text-muted"><i class="fas fa-barcode"></i> {{ req.asset.asset_code }}</small>
+                        </td>
+                        <td>
+                            <span class="text-secondary fw-medium"><i class="far fa-calendar-alt text-muted me-1"></i> {{ req.request_date|date:"d M Y" }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if req.request_type == 'MOVE' %}
+                                <span class="badge bg-info text-dark px-3 py-2 rounded-pill"><i class="fas fa-people-carry me-1"></i> ย้ายสถานที่ตั้ง</span>
+                            {% elif req.request_type == 'RETURN' %}
+                                <span class="badge bg-secondary px-3 py-2 rounded-pill"><i class="fas fa-undo-alt me-1"></i> ส่งคืนส่วนกลาง</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">{{ req.get_request_type_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if req.status == 'PENDING_HEAD' %}
+                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fas fa-hourglass-half me-1"></i> รอหัวหน้าพัสดุ</span>
+                            {% elif req.status == 'PENDING_DIRECTOR' %}
+                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fas fa-hourglass-half me-1"></i> รอ ผอ. อนุมัติ</span>
+                            {% elif req.status == 'PENDING_ACTION' %}
+                                <span class="badge bg-info text-dark px-3 py-2 rounded-pill"><i class="fas fa-cog fa-spin me-1"></i> รอพัสดุดำเนินการ</span>
+                            {% elif req.status == 'COMPLETED' %}
+                                <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i> เสร็จสิ้น</span>
+                            {% else %}
+                                <span class="badge bg-danger px-3 py-2 rounded-pill" title="{{ req.head_fail_reason|default:req.director_fail_reason|default:req.officer_fail_reason }}"><i class="fas fa-times-circle me-1"></i> ถูกตีกลับ/ปฏิเสธ</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-clipboard fa-3x mb-3 text-success opacity-50"></i>
+                                <h5 class="fw-bold">คุณยังไม่มีประวัติคำร้อง</h5>
+                                <p class="mb-0">เมื่อคุณทำการย้ายสถานที่ตั้งหรือส่งคืนครุภัณฑ์ ประวัติจะแสดงที่นี่</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,462 @@
+{% extends "shop/base.html" %}
+{% load humanize %}
+{% block content %}
+
+<style>
+    /* ===== Modern Shop Cart Styles ===== */
+    .cart-wrapper {
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 24px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(10px);
+        margin-top: 30px;
+        margin-bottom: 50px;
+    }
+
+    .cart-title {
+        color: #1e293b;
+        font-weight: 800;
+        font-size: 1.8rem;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .cart-title-icon {
+        background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%);
+        color: white;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 12px;
+    }
+
+    .modern-table th {
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0 20px 10px;
+        border: none;
+    }
+
+    .modern-table td {
+        background: #f8fafc;
+        padding: 18px 20px;
+        vertical-align: middle;
+        border: none;
+    }
+
+    .modern-table tr td:first-child {
+        border-radius: 16px 0 0 16px;
+    }
+
+    .modern-table tr td:last-child {
+        border-radius: 0 16px 16px 0;
+    }
+
+    .modern-table tbody tr {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .modern-table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+    }
+
+    .product-code {
+        background: #e0e7ff;
+        color: #4f46e5;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .product-code:hover {
+        background: #4f46e5;
+        color: white;
+    }
+
+    .product-name {
+        font-weight: 700;
+        color: #334155;
+        font-size: 1.05rem;
+    }
+
+    .product-qty {
+        font-weight: 600;
+        color: #0f172a;
+        background: white;
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-remove-cart {
+        background: #fef2f2;
+        color: #ef4444;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .btn-remove-cart:hover {
+        background: #ef4444;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .countdown-timer {
+        font-weight: 700;
+        background: #fffbeb;
+        color: #d97706;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        border: 1px solid #fde68a;
+        white-space: nowrap;
+        display: inline-block;
+    }
+
+    .countdown-timer.text-danger {
+        background: #fef2f2 !important;
+        color: #ef4444 !important;
+        border-color: #fecaca !important;
+    }
+
+    .alert-note {
+        background: #fff5f5;
+        border-left: 5px solid #fc8181;
+        padding: 16px 20px;
+        border-radius: 0 12px 12px 0;
+        color: #c53030;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .btn-checkout {
+        background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%);
+        border: none;
+        color: white;
+        font-weight: 700;
+        padding: 14px 40px;
+        border-radius: 14px;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        box-shadow: 0 6px 20px rgba(26, 115, 232, 0.3);
+    }
+
+    .btn-checkout:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(26, 115, 232, 0.4);
+        color: white;
+    }
+
+    /* Modal Styling */
+    .modern-modal .modal-content {
+        border-radius: 24px;
+        border: none;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    
+    .modern-modal .modal-header {
+        background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%);
+        color: white;
+        border-radius: 24px 24px 0 0;
+        border: none;
+        padding: 20px 30px;
+    }
+
+    .modern-modal .btn-close {
+        filter: brightness(0) invert(1);
+        opacity: 0.8;
+    }
+
+    /* Empty Cart */
+    .empty-cart-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 24px;
+        padding: 60px 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        max-width: 600px;
+        margin: 50px auto;
+        text-align: center;
+    }
+
+    .empty-cart-icon {
+        font-size: 6rem;
+        color: #cbd5e1;
+        margin-bottom: 20px;
+    }
+    
+    .empty-cart-title {
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 10px;
+    }
+
+    .btn-back-shop {
+        background: #f1f5f9;
+        color: #475569;
+        font-weight: 600;
+        padding: 12px 30px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-back-shop:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+        transform: translateY(-2px);
+    }
+</style>
+
+{% if cart_count != 0 %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="cart-wrapper">
+                
+                <div class="cart-title">
+                    <div class="cart-title-icon">
+                        <i class="bi bi-cart3"></i>
+                    </div>
+                    รถเข็นเบิกวัสดุ
+                </div>
+
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="15%">รหัสพัสดุ</th>
+                                <th width="35%">รายการ</th>
+                                <th width="15%">จำนวน</th>
+                                <th width="15%">หมายเหตุ</th>
+                                <th width="10%">ลบ</th>
+                                <th width="5%">เวลา</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart %}
+                            <tr>
+                                <td class="text-muted fw-bold">{{ forloop.counter }}</td>
+                                <td>
+                                    <a class="product-code" href="{{ item.product.get_absolute_url }}">
+                                        <i class="bi bi-upc-scan me-1"></i>{{ item.product.product_id }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="product-name">{{ item.product.product_name }}</div>
+                                </td>
+                                <td>
+                                    <span class="product-qty">{{ item.quantity }} {{ item.product.unit }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ item.note|default:"-" }}</span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'cart:remove_from_cart' item.product.id item.receiving_id %}" 
+                                       class="btn-remove-cart" title="ลบรายการนี้">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="countdown-timer" data-added-time="{{ item.added_time }}"></span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr class="my-4" style="border-color: #e2e8f0;">
+
+                <div class="alert-note mb-4">
+                    <i class="bi bi-exclamation-triangle-fill fs-4 mt-1"></i>
+                    <div>
+                        <strong class="d-block mb-1">หมายเหตุสำคัญ:</strong>
+                        ถ้าวัสดุมีการตัดสต็อก ผู้เบิกมีความประสงค์จะลบรายการวัสดุ ให้ลบรายการนั้นออกทั้งสองรายการ แล้วค่อยเพิ่มรายการวัสดุใหม่อีกครั้ง เพื่อความถูกต้องในการคำนวณสต็อก
+                    </div>
+                </div>
+
+                <div class="text-center mt-5 mb-2">
+                    <button id="checkoutButton" type="button" class="btn btn-checkout" data-bs-toggle="modal" data-bs-target="#checkoutModal">
+                        <i class="bi bi-check2-square me-2"></i>ยืนยันการเบิกวัสดุ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade modern-modal" id="checkoutModal" tabindex="-1" aria-labelledby="checkoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title fw-bold m-0" id="checkoutModalLabel">
+                    <i class="bi bi-shield-check me-2"></i>ตรวจสอบและยืนยันการเบิก
+                </h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-warning rounded-3 mb-4 border-0 d-flex align-items-center gap-3">
+                    <i class="bi bi-info-circle-fill fs-3 text-warning"></i>
+                    <strong class="text-dark">กรุณาตรวจสอบความถูกต้องของรายการวัสดุและจำนวนก่อนกดยืนยัน</strong>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered rounded-3 overflow-hidden">
+                        <thead class="table-light text-muted">
+                            <tr>
+                                <th scope="col" width="5%">#</th>
+                                <th scope="col" width="15%">รหัสพัสดุ</th>
+                                <th scope="col" width="40%">รายการ</th>
+                                <th scope="col" width="15%">จำนวน</th>
+                                <th scope="col" width="25%">หมายเหตุ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart %}
+                            <tr>
+                                <th scope="row" class="text-center">{{ forloop.counter }}</th>
+                                <td>{{ item.product.product_id }}</td>
+                                <td class="fw-bold">{{ item.product.product_name }}</td>
+                                <td>{{ item.quantity }} {{ item.product.unit }}</td>
+                                <td>{{ item.note|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pb-4 pt-0 justify-content-center gap-3">
+                <button type="button" class="btn btn-light rounded-3 px-4 fw-bold" data-bs-dismiss="modal">ยกเลิก</button>
+                <a href="{% url 'orders:create_order' %}" class="btn btn-checkout m-0" id="confirmButton" onclick="handleOrderConfirmation(event);">
+                    <i class="bi bi-send-fill me-2"></i>ส่งคำขอเบิกวัสดุ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal กำลังประมวลผล -->
+<div class="modal fade modern-modal" id="processingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center p-5">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="fw-bold text-dark mb-1">กำลังประมวลผล</h5>
+                <p class="text-muted mb-0 small">กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูล...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="container">
+    <div class="empty-cart-container">
+        <i class="bi bi-cart-x empty-cart-icon"></i>
+        <h3 class="empty-cart-title">รถเข็นว่างเปล่า</h3>
+        <p class="text-muted mb-4">ยังไม่มีรายการวัสดุในรถเข็นของคุณ กรุณากลับไปเลือกรายการที่ต้องการเบิก</p>
+        <a href="{% url 'shop:home_page' %}" class="btn-back-shop">
+            <i class="bi bi-arrow-left"></i> กลับไปหน้าเบิกวัสดุ
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+  function handleOrderConfirmation(event) {
+    event.preventDefault();  // ป้องกันการ redirect ไปยัง URL โดยตรง
+
+    // แสดง Modal กำลังประมวลผล
+    $('#processingModal').modal('show');
+
+    // ซ่อนปุ่ม "ยืนยัน"
+    const button = document.getElementById('confirmButton');
+    button.style.display = 'none';
+
+    // จำลองการดำเนินการเสร็จสิ้น (เช่น การส่งข้อมูลไปยังเซิร์ฟเวอร์)
+    setTimeout(() => {
+      // ปิด Modal เมื่อดำเนินการเสร็จสิ้น
+      $('#processingModal').modal('hide');
+
+      // Redirect หลังจากดำเนินการเสร็จสิ้น (เช่นไปยัง URL การสั่งซื้อ)
+      window.location.href = button.href;
+    }, 3000);  // ระยะเวลารอเป็นเพียงตัวอย่าง (3 วินาที)
+  }
+</script>
+
+
+<!-- JavaScript: นับถอยหลัง -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const timers = document.querySelectorAll(".countdown-timer");
+    let cartCleared = false;
+    const checkoutButton = document.getElementById("checkoutButton");
+
+    timers.forEach(timer => {
+      const addedTime = new Date(timer.getAttribute("data-added-time"));
+      const expireTime = new Date(addedTime.getTime() + 5 * 60000); // เปลี่ยน 2 เป็น 5
+
+      function updateTimer() {
+        const now = new Date();
+        const diff = expireTime - now;
+
+        if (diff <= 0 && !cartCleared) {
+          timer.innerText = "หมดเวลา";
+          timer.classList.add("text-danger");
+          timer.closest("tr").classList.add("opacity-50");
+          cartCleared = true;
+
+          // ✅ ซ่อนปุ่มเบิกวัสดุ
+          if (checkoutButton) {
+            checkoutButton.style.display = "none";
+          }
+
+          fetch("{% url 'cart:auto_clear_cart' %}")
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) window.location.reload();
+            });
+        } else if (diff > 0) {
+          const minutes = Math.floor(diff / 60000);
+          const seconds = Math.floor((diff % 60000) / 1000);
+          timer.innerText = `${minutes}:${seconds.toString().padStart(2, '0')} นาที`;
+        }
+      }
+      updateTimer();
+      setInterval(updateTimer, 1000);
+    });
+  });
+</script>
+{% endblock %}

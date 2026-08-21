@@ -1,0 +1,195 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% block content %}
+
+<div style="margin-left: 10px; margin-right: 10px;">
+
+    <!-- ฟอร์มสำหรับเลือกช่วงเดือนและปี -->
+    <form method="get" action="{% url 'dashboard:dashboard_home' %}" class="d-flex flex-wrap gap-2 align-items-center justify-content-end mb-4 w-100">
+        <div class="col-auto">
+            <label for="category">เลือกหมวดหมู่หลัก</label>
+        </div>
+        <div class="col-auto">
+            <select name="category" id="category" class="form-control">
+                <option value="">ทั้งหมด</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category.id|stringformat:"d" == selected_category %}selected{% endif %}>
+                    {{ category.name_cate }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="start_month" id="start_month" class="form-select shadow-sm border-0" style="width: auto; border-radius: 20px;">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_start_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="start_year" id="start_year" class="form-select shadow-sm border-0" style="width: auto; border-radius: 20px;">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_start_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><h5>ถึง</h5></div>
+
+        <div class="col-auto">
+            <select name="end_month" id="end_month" class="form-select shadow-sm border-0" style="width: auto; border-radius: 20px;">
+                {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_end_month %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="end_year" id="end_year" class="form-select shadow-sm border-0" style="width: auto; border-radius: 20px;">
+                {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_end_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold" style="background: linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%); border: none;"><i class="bi bi-funnel-fill"></i> ค้นหา</button>
+            <a href="{% url 'dashboard:dashboard_home' %}" class="btn btn-light shadow-sm rounded-pill px-4 fw-bold bg-white text-secondary" style="border: none;">ยกเลิก</a>
+        </div>
+    </form>
+
+    <!-- แสดงกราฟข้อมูลจำนวนเงินที่เบิก -->
+    <div class="container mt-5">
+        <!-- <h5 class="text-center mb-4">กราฟแสดงข้อมูลจำนวนเงินที่เบิกวัสดุในแต่ละกลุ่มงาน</h5> -->
+        <canvas id="amountChart"></canvas>
+    </div>
+
+    <!-- แสดงกราฟข้อมูลจำนวนที่เบิก -->
+    <div class="container mt-5 mb-5">
+        <!-- <h5 class="text-center">กราฟแสดงข้อมูลจำนวนพัสดุที่เบิกในแต่ละกลุ่มงาน</h5> -->
+        <canvas id="quantityChart"></canvas>
+    </div>
+
+    <!-- กราฟการใช้วัสดุกลุ่มงานในแต่ละเดือน -->
+    <!-- <div class="container mt-5">
+        <div class="card-body">
+            <canvas id="workgroupMonthlyChart"></canvas>
+        </div>
+    </div> -->
+    
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function intcomma(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        var quantityData = JSON.parse('{{ chart_data_quantity|escapejs }}');
+        var amountData = JSON.parse('{{ chart_data_amount|escapejs }}');
+
+        var quantityCtx = document.getElementById('quantityChart').getContext('2d');
+        var quantityChart = new Chart(quantityCtx, {
+            type: 'bar', // เปลี่ยนเป็นกราฟแท่ง
+            data: quantityData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'กราฟแสดงจำนวนวัสดุที่เบิกในแต่ละกลุ่มงาน  {{ selected_categorys }} ',
+                        font: {
+                            size: 18
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ' : ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += intcomma(context.parsed.y) + ' ';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'กลุ่มงาน'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'จำนวนวัสดุ (หน่วย)'
+                        },
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        });
+
+        var amountCtx = document.getElementById('amountChart').getContext('2d');
+        var amountChart = new Chart(amountCtx, {
+            type: 'bar', // เปลี่ยนเป็นกราฟแท่ง
+            data: amountData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'กราฟแสดงจำนวนเงินที่เบิกวัสดุในแต่ละกลุ่มงาน  {{ selected_categorys }} ',
+                        font: {
+                            size: 18
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ' : ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += intcomma(context.parsed.y) + ' บาท';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'กลุ่มงาน'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'จำนวนเงิน (บาท)'
+                        },
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

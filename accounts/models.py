@@ -101,6 +101,32 @@ class Profile(models.Model):
 
     image.allow_tags = True
     # image.short_description = "รูปภาพ"
-    
 
-    
+
+class PortalApp(models.Model):
+    CATEGORY_CHOICES = [
+        ('research', 'งานวิจัย & นวัตกรรม'),
+        ('incubator', 'บ่มเพาะธุรกิจ'),
+        ('admin', 'บริหารจัดการ'),
+        ('tools', 'ไอที & เครื่องมือ'),
+    ]
+
+    code = models.CharField(max_length=20, unique=True, verbose_name='รหัสระบบ')
+    title = models.CharField(max_length=200, verbose_name='ชื่อระบบ')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='admin', verbose_name='หมวดหมู่')
+    description = models.CharField(max_length=500, blank=True, default='', verbose_name='คำอธิบาย')
+    url = models.URLField(max_length=500, verbose_name='ลิงก์ URL')
+    app_image = models.ImageField(upload_to='portal_apps/', blank=True, null=True, verbose_name='รูปภาพระบบ')
+    icon = models.CharField(max_length=50, default='fa-link', verbose_name='ไอคอน Font Awesome')
+    icon_color = models.CharField(max_length=100, default='text-sky-600 bg-sky-50', verbose_name='สีไอคอน (CSS Classes)')
+    is_favorite = models.BooleanField(default=False, verbose_name='รายการโปรด')
+    order = models.PositiveIntegerField(default=0, verbose_name='ลำดับการแสดงผล')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='วันที่สร้าง')
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'ระบบ Portal'
+        verbose_name_plural = 'ระบบ Portal ทั้งหมด'
+
+    def __str__(self):
+        return f"[{self.code}] {self.title}"

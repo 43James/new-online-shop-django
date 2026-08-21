@@ -1,0 +1,226 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load form_tags %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 10px 20px rgba(220, 53, 69, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .page-header::after {
+        content: '\f0ae'; /* fa-tasks */
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 30px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+    .filter-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+    }
+    .data-table {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        background: white;
+    }
+    .table thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e9ecef;
+        padding: 15px 20px;
+    }
+    .table tbody td {
+        padding: 15px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+    }
+    .search-input, .form-select {
+        border-radius: 10px;
+        padding: 10px 20px;
+        border: 1.5px solid #e9ecef;
+    }
+    .search-input:focus, .form-select:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div style="position: relative; z-index: 1;">
+            <h2 class="fw-bold mb-2"><i class="fas fa-clipboard-check me-2"></i>พิจารณาคำร้องเคลื่อนย้าย</h2>
+            <p class="mb-0 opacity-75">จัดการและอนุมัติคำร้องขอเคลื่อนย้าย/ส่งคืนครุภัณฑ์จากพนักงาน</p>
+        </div>
+    </div>
+
+    <!-- Tabs/Links -->
+    <ul class="nav nav-pills mb-4 mt-2 gap-2">
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-4 fw-semibold text-danger bg-white border border-danger" href="{% url 'assets:admin_ownership_list' %}">
+                <i class="fas fa-id-card me-2"></i> ทะเบียนผู้ครอบครอง
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active rounded-pill px-4 fw-semibold" style="background-color: #dc3545;" href="#">
+                <i class="fas fa-clipboard-check me-2"></i> พิจารณาคำร้องเคลื่อนย้าย
+                {% get_pending_transfer_count as transfer_pending_count %}
+                {% if transfer_pending_count > 0 %}
+                <span class="badge bg-white text-danger ms-2 rounded-pill">{{ transfer_pending_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+
+    <!-- Filter Section -->
+    <div class="card filter-card">
+        <div class="card-body p-4">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">ค้นหาคำร้อง</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted px-4" style="border-radius: 10px 0 0 10px;">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" name="q" class="form-control search-input border-start-0" placeholder="ค้นหาจากเลขที่คำร้อง, ผู้ยื่น หรือชื่อครุภัณฑ์..." value="{{ query }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small fw-bold">สถานะ</label>
+                    <select name="status" class="form-select">
+                        <option value="">-- สถานะทั้งหมด --</option>
+                        <option value="PENDING_HEAD" {% if status_filter == 'PENDING_HEAD' %}selected{% endif %}>รอหัวหน้าพัสดุ</option>
+                        <option value="PENDING_DIRECTOR" {% if status_filter == 'PENDING_DIRECTOR' %}selected{% endif %}>รอ ผอ. อนุมัติ</option>
+                        <option value="PENDING_ACTION" {% if status_filter == 'PENDING_ACTION' %}selected{% endif %}>รอพัสดุดำเนินการ</option>
+                        <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>เสร็จสิ้น</option>
+                        <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>ถูกตีกลับ/ปฏิเสธ</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid align-items-end">
+                    <button type="submit" class="btn btn-danger rounded-pill fw-bold" style="padding: 10px 20px;">
+                        <i class="fas fa-filter me-2"></i> กรองข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="data-table border-top border-danger border-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">เลขที่คำร้อง</th>
+                        <th style="width: 25%;">ผู้ยื่นคำร้อง</th>
+                        <th style="width: 15%;">วันที่ยื่น</th>
+                        <th class="text-center" style="width: 20%;">สถานะปัจจุบัน</th>
+                        <th class="text-center" style="width: 25%;">การพิจารณา</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in all_requests %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-light text-dark border font-monospace py-2 px-3 shadow-sm">
+                                <i class="fas fa-hashtag text-danger me-1"></i> REQ-{{ req.request_code|default:"-" }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px; font-weight: bold; font-size: 0.8rem;">
+                                    {{ req.requester.first_name|slice:":1"|default:req.requester.username|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <span class="fw-bold text-dark d-block">{{ req.requester.first_name }} {{ req.requester.last_name }}</span>
+                                    <small class="text-muted">{{ req.department_name }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="text-secondary fw-medium"><i class="far fa-calendar-alt text-muted me-1"></i> {{ req.request_date|date:"d M Y" }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if req.status == 'PENDING_HEAD' %}
+                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fas fa-hourglass-half me-1"></i> รอหัวหน้าพัสดุ</span>
+                            {% elif req.status == 'PENDING_DIRECTOR' %}
+                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fas fa-hourglass-half me-1"></i> รอ ผอ. อนุมัติ</span>
+                            {% elif req.status == 'PENDING_ACTION' %}
+                                <span class="badge bg-info text-dark px-3 py-2 rounded-pill"><i class="fas fa-cog fa-spin me-1"></i> รอพัสดุดำเนินการ</span>
+                            {% elif req.status == 'COMPLETED' %}
+                                <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i> เสร็จสิ้น</span>
+                            {% else %}
+                                <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i> ถูกตีกลับ/ปฏิเสธ</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="{% url 'assets:admin_request_detail' req.id %}" class="btn btn-sm btn-light border text-secondary rounded-pill px-3 fw-bold shadow-sm">
+                                    <i class="fas fa-eye me-1"></i> ดูรายละเอียด
+                                </a>
+                                {% if req.status == 'PENDING_HEAD' or req.status == 'PENDING_DIRECTOR' or req.status == 'PENDING_ACTION' %}
+                                <a href="{% url 'assets:admin_request_detail' req.id %}?action=approve" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-sm">
+                                    <i class="fas fa-clipboard-check me-1"></i> พิจารณาอนุมัติ
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-check-double fa-3x mb-3 text-success opacity-50"></i>
+                                <h5 class="fw-bold">ยอดเยี่ยม! ไม่มีรายการรอพิจารณาค้างอยู่</h5>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if all_requests.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if all_requests.has_previous %}
+            <li class="page-item"><a class="page-link shadow-sm border-0 rounded-pill px-3 me-2 text-danger fw-bold" href="?page={{ all_requests.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"><i class="fas fa-angle-left"></i></a></li>
+            {% endif %}
+            
+            {% for i in all_requests.paginator.page_range %}
+                {% if all_requests.number == i %}
+                    <li class="page-item active"><span class="page-link shadow-sm border-0 rounded-pill px-4 me-2 bg-danger text-white fw-bold">{{ i }}</span></li>
+                {% elif i > all_requests.number|add:'-3' and i < all_requests.number|add:'3' %}
+                    <li class="page-item"><a class="page-link shadow-sm border-0 rounded-pill px-4 me-2 text-danger fw-bold" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if all_requests.has_next %}
+            <li class="page-item"><a class="page-link shadow-sm border-0 rounded-pill px-3 me-2 text-danger fw-bold" href="?page={{ all_requests.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"><i class="fas fa-angle-right"></i></a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+{% endblock %}

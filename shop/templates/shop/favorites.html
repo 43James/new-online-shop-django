@@ -1,0 +1,72 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<style>
+  .product-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+  }
+  .product-card img {
+    border-radius: 12px;
+  }
+</style>
+
+{% if products %}
+<h2 class="text-white">รายการโปรดของคุณ</h2>
+<hr class="text-white">
+<div class="d-flex flex-wrap justify-content-start px-1 mt-3">
+{% for product in products %}
+<div class="card m-2 product-card" style="width: 11rem;">
+
+  {% if product.total_quantity == 0 %}
+    <div id="watermark">
+      <a href="{{ product.get_absolute_url }}">
+        {% if product.image %}
+        <img class="card-img mt-2 mx-auto d-block" style="object-fit: cover; max-width: 90%; height: 150px;"
+          src="{{ product.image.url }}">
+        {% else %}
+        <img style="object-fit: cover; opacity: 0.5; max-width: 90%; height: 150px;" class="card-img mt-2 mx-auto d-block"
+          src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+        {% endif %}
+      </a>
+      <p> &nbsp;หมดสต๊อก</p>
+    </div>
+    {% else %}
+    <a href="{{ product.get_absolute_url }}">
+      {% if product.image %}
+      <img style="object-fit: cover; max-width: 90%; height: 150px;" class="card-img mt-2 mx-auto d-block" src="{{ product.image.url }}">
+      {% else %}
+      <img style="object-fit: cover; max-width: 90%; height: 150px;" class="card-img mt-2 mx-auto d-block"
+        src="https://img2.pic.in.th/pic/no-pict.png" alt="no pict">
+      {% endif %}
+    </a>
+    {% endif %}
+
+  <div class="mt-3 text-center px-1">
+    <h6 class="card-title element" style="font-size: 0.9rem;">{{ product.product_name }}</h6>
+  </div>
+  <a href="{% url 'shop:remove_from_favorites' product.id %}" class="mb-3 mt-1 mx-3 btn btn-outline-danger rounded-pill shadow-sm">ลบ</a>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="row">
+  <div class="col-md-2"></div>
+  <div class="col-md-8 mt-5 pt-5 text-center">
+    <br>
+    <h3 class="text-muted text-capitalize">รายการโปรดว่างเปล่า..!</h3>
+    <!-- <h3 class="text-muted text-capitalize">favorites list is empty..!</h3> -->
+    <a href="{% url 'shop:home_page' %}" class="text-primary text-decoration-none"><i style="font-size: 30px;" class="bi bi-arrow-left-circle"></i></a>
+  </div>
+  <div class="col-md-2"></div>
+</div>
+{% endif %}
+{% endblock %}

@@ -8,10 +8,11 @@ app_name = "assets"
 urlpatterns = [
 	# path('base_sidebar/', views.base, name='base_sidebar'),
     # หน้าแรก
-	path('home/', views.home_assets, name='home_assets'),
+	path('dashboard/', views.home_assets, name='home_assets'),
     # เพิ่ม เช็ค รายการ ครุภัณฑ์
     path('add-asset/', views.add_asset_item, name='add_asset_item'),
-    path("check-asset/", views.check_asset, name="check_asset"),
+    path("asset/<int:asset_id>/check/", views.check_asset, name="check_asset"),
+    path("asset-check-list/", views.asset_check_list, name="asset_check_list"),
     path("asset-list/", views.asset_list, name="asset_list"),
     path('asset/<int:pk>/', views.asset_detail, name='asset_detail'),
     path('asset/<int:pk>/edit/', views.asset_edit, name='asset_edit'),
@@ -28,7 +29,9 @@ urlpatterns = [
     path('admin/add-ownership/', views.admin_add_ownership_view, name='admin_add_ownership'),
     path('admin-ownerships/', views.admin_ownership_list_view, name='admin_ownership_list'),
     path('admin-complete-request/<int:request_id>/', views.admin_complete_request_view, name='admin_complete_request'),
+    path('admin-transfer-requests/', views.admin_transfer_request_list_view, name='admin_transfer_request_list'),
     path('request/<int:request_id>/', views.request_detail_view, name='request_detail'),
+    path('admin-request/<int:request_id>/', views.request_detail_view, name='admin_request_detail'),
     path('transfer-requests/', views.transfer_request_list_view, name='transfer_request_list'),
 
 
@@ -53,6 +56,7 @@ urlpatterns = [
     path("loan-approval-list/", views.loan_approval_list, name="loan_approval_list"),
     path("loan-approval/<int:pk>/", views.loan_approval, name="loan_approval"),
     path('import/', views.import_assets, name='import_assets'),
+    path('export/', views.export_assets, name='export_assets'),
     
     path("loan-orders-user/", views.loan_orders_user, name="loan_orders_user"),
     path("loan-approval-user/<int:pk>/", views.loan_approval_user, name="loan_approval_user"),
@@ -94,5 +98,9 @@ urlpatterns = [
     path('storage_location/edit/<int:pk>/', views.edit_storage_location_asset, name='edit_storage_location_asset'),
     path('storage_location/delete/<int:pk>/', views.delete_storage_location_asset, name='delete_storage_location_asset'),
 
+    # เปิด-ปิด สิทธิ์
+    path('toggle-public-check/', views.toggle_public_check, name='toggle_public_check'),
+    path('allowed-checkers/', views.update_allowed_checkers, name='update_allowed_checkers'),
+    path('import/template/', views.download_asset_template, name='download_asset_template'),
 ]
 

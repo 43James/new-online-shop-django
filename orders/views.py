@@ -3,9 +3,6 @@ from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from django.views.decorators.http import require_POST
-from django.utils import timezone
-from requests.exceptions import ConnectTimeout
 from app_linebot.views import notify_admin, notify_admin_receive_confirmation, notify_user, notify_admin_out_of_stock
 from dashboard.views import convert_to_buddhist_era, thai_month_name
 from orders.forms import UserApproveForm, UserOutOfStockNotificationForm
@@ -13,12 +10,12 @@ from shop.models import Product, Receiving
 from shop.views import count_unconfirmed_orders
 from .models import Order, Issuing, OutOfStockNotification
 from cart.utils.cart import Cart
-from django.http import Http404, HttpResponse
-import requests
+from django.http import Http404
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.core.paginator import Paginator
+from django.db.models import Q
 
 
 # def thai_month_name(month):
@@ -168,7 +165,7 @@ def create_order(request):
 def checkout(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     context = {'title':'Checkout' ,'order':order}
-    return render(request, 'checkout.html', context)
+    return render(request, 'orders/checkout.html', context)
 
 
 @user_passes_test(is_authorized)
@@ -195,11 +192,14 @@ def user_orders(request):
     # แปลงปี พ.ศ. เป็น ค.ศ. สำหรับการค้นหาในฐานข้อมูล
     year_ad = year_buddhist - 543
 
-    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน
-    orders = request.user.orders.filter(
-        month=month,
-        year=year_ad
-     ).select_related('user')
+    # ดึงข้อมูลรับเข้าสินค้าที่มีเดือนและปีที่ระบุสำหรับผู้ใช้งานปัจจุบัน หรือรายการที่ยังไม่เสร็จสมบูรณ์
+    orders_query = request.user.orders.all().select_related('user')
+    
+    q_month = Q(month=month, year=year_ad)
+    q_incomplete = Q(status=True) & (Q(pay_item=False) | Q(confirm=False))
+    q_pending = Q(status=None)
+    
+    orders = orders_query.filter(q_month | q_incomplete | q_pending).distinct()
     
     unconfirmed_count = count_unconfirmed_orders(request.user)
     
@@ -220,7 +220,7 @@ def user_orders(request):
     previous_year = year_ad if month > 1 else year_ad - 1
     context['previous_month_name'] = thai_month_name(previous_month)
     context['previous_year_buddhist'] = convert_to_buddhist_era(previous_year)
-    return render(request, 'user_orders.html', context)
+    return render(request, 'orders/user_orders.html', context)
 
 
 @user_passes_test(is_authorized)
@@ -245,7 +245,7 @@ def monthly_totals_view(request):
         'monthly_totals': monthly_totals_float,
         'count_unconfirmed_orders': count_unconfirmed,
     }
-    return render(request, 'monthly_totals.html', context)
+    return render(request, 'orders/monthly_totals.html', context)
 
 
 # เพิ่มการเรียกใช้ฟังก์ชัน notify_admin_receive_confirmation ใน view function user_approve
@@ -266,7 +266,7 @@ def user_approve(request, order_id):
     else:
         form = UserApproveForm(instance=ap)
         
-    return render(request, 'orders.html', {
+    return render(request, 'dashboard/orders_and_stock/orders.html', {
         'ap': ap,
         'form': form,
     })
@@ -310,7 +310,7 @@ def out_of_stock_notification(request):
         'notifications': notifications,
         'products': products,  
     }
-    return render(request, 'out_of_stock_notification.html', context)
+    return render(request, 'orders/out_of_stock_notification.html', context)
 
 
 

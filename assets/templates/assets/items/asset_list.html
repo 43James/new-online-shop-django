@@ -1,0 +1,395 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Premium Modern Design CSS */
+    .dashboard-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .dashboard-header i {
+        font-size: 2.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .filter-card {
+        background: white;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        margin-bottom: 24px;
+    }
+
+    .filter-card .card-body {
+        padding: 20px;
+    }
+
+    .table-card {
+        background: white;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .premium-table {
+        margin-bottom: 0;
+    }
+
+    .premium-table thead th {
+        background: #f8f9fa;
+        border-bottom: 2px solid #e9ecef;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        padding: 12px 10px;
+        white-space: nowrap;
+    }
+
+    .premium-table tbody td {
+        padding: 12px 10px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    .premium-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .premium-table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .asset-img {
+        width: 45px;
+        height: 45px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+    }
+    
+    .asset-img:hover {
+        transform: scale(1.1);
+    }
+
+    .btn-action {
+        border-radius: 8px;
+        padding: 6px 12px;
+        transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 30px;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    /* Custom Input Styling */
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 10px 15px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+    }
+
+    .page-title {
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        .hide-on-mobile {
+            display: none !important;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1 class="page-title"><i class="fas fa-boxes text-success me-2"></i> รายการครุภัณฑ์</h1>
+        <div class="d-flex gap-2">
+            {% if user.is_staff or user.is_superuser %}
+            <a href="{% url 'assets:import_assets' %}" class="btn btn-outline-success rounded-pill px-4">
+                <i class="fas fa-upload me-1"></i> อัปโหลด
+            </a>
+            <a href="{% url 'assets:export_assets' %}" class="btn btn-outline-primary rounded-pill px-4">
+                <i class="fas fa-download me-1"></i> ส่งออก
+            </a>
+            <a href="{% url 'assets:add_asset_item' %}" class="btn btn-success rounded-pill px-4 shadow-sm">
+                <i class="fas fa-plus me-1"></i> เพิ่มรายการ
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary Bar -->
+    <div class="dashboard-header">
+        <i class="fas fa-cubes"></i>
+        <div>
+            <h3 class="mb-1 fw-bold">{{ assets.paginator.count|default:0 }} รายการ</h3>
+            <p class="mb-0 text-white-50">จำนวนครุภัณฑ์ทั้งหมดในระบบ</p>
+        </div>
+    </div>
+
+    <!-- Search/Filter Section -->
+    <div class="card filter-card">
+        <div class="card-body">
+            <form method="GET" action="{% url 'assets:asset_list' %}" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold">ค้นหา</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="q" class="form-control border-start-0 ps-0" placeholder="ชื่อหรือรหัสครุภัณฑ์..." value="{{ query }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold">หมวดหมู่</label>
+                    <select name="category" class="form-select">
+                        <option value="">ทั้งหมด</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.name_cate }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold">สถานที่เก็บ</label>
+                    <select name="storage_location" class="form-select">
+                        <option value="">ทั้งหมด</option>
+                        {% for loc in storage_locations %}
+                            <option value="{{ loc.id }}" {% if selected_location == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold">สถานะ</label>
+                    <select name="damage_status" class="form-select">
+                        <option value="">ทั้งหมด</option>
+                        <option value="ใช้งานได้" {% if selected_status == 'ใช้งานได้' %}selected{% endif %}>ใช้งานได้</option>
+                        <option value="ชำรุด" {% if selected_status == 'ชำรุด' %}selected{% endif %}>ชำรุด</option>
+                        <option value="เสื่อมสภาพ" {% if selected_status == 'เสื่อมสภาพ' %}selected{% endif %}>เสื่อมสภาพ</option>
+                        <option value="สูญไป" {% if selected_status == 'สูญไป' %}selected{% endif %}>สูญไป</option>
+                        <option value="ไม่ใช้" {% if selected_status == 'ไม่ใช้' %}selected{% endif %}>ไม่ใช้</option>
+                    </select>
+                </div>
+                <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                    <a href="{% url 'assets:asset_list' %}" class="btn btn-light px-4 rounded-pill">
+                        <i class="fas fa-undo me-1"></i> ล้างตัวกรอง
+                    </a>
+                    <button type="submit" class="btn btn-success px-4 rounded-pill">
+                        <i class="fas fa-filter me-1"></i> กรองข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card table-card">
+        <div class="table-container">
+            <table class="table premium-table">
+                <thead>
+                    <tr>
+                        <th class="text-center">#</th>
+                        <th>รูป</th>
+                        <th>ชื่อครุภัณฑ์</th>
+                        <th>รหัส</th>
+                        <th class="hide-on-mobile">หมวดหมู่</th>
+                        <th class="hide-on-mobile">สถานที่เก็บ</th>
+                        <th class="hide-on-mobile">ผู้ดูแล</th>
+                        <th class="text-center">สถานะ</th>
+                        <th class="text-center text-nowrap">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asset in assets %}
+                    <tr>
+                        <td class="text-center text-muted fw-bold">{{ assets.start_index|add:forloop.counter0 }}</td>
+                        <td>
+                            {% if asset.asset_image %}
+                                <img src="{{ asset.asset_image.url }}" alt="{{ asset.item_name }}" class="asset-img">
+                            {% else %}
+                                <div class="asset-img bg-light d-flex align-items-center justify-content-center text-muted">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-dark">{{ asset.item_name }}</td>
+                        <td class="text-nowrap">
+                            <small class="text-muted">SP-{{ asset.asset_code }}</small>
+                        </td>
+                        <td class="hide-on-mobile">
+                            {{ asset.subcategory.category.name_cate|default:"-" }}
+                        </td>
+                        <td class="hide-on-mobile">
+                            <span class="text-muted"><i class="fas fa-map-marker-alt me-1"></i> {{ asset.storage_location.name|default:"-" }}</span>
+                        </td>
+                        <td class="hide-on-mobile">
+                            <span class="text-muted"><i class="fas fa-user me-1"></i> {{ asset.responsible_person|default:"-" }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if asset.damage_status == 'ใช้งานได้' or asset.damage_status == 'ใช้อยู่' %}
+                                <span class="badge bg-success status-badge w-100">{{ asset.damage_status }}</span>
+                            {% elif asset.damage_status == 'ชำรุด' %}
+                                <span class="badge bg-danger status-badge w-100">{{ asset.damage_status }}</span>
+                            {% elif asset.damage_status == 'เสื่อมสภาพ' or asset.damage_status == 'เสื่อม' %}
+                                <span class="badge bg-warning text-dark status-badge w-100">{{ asset.damage_status }}</span>
+                            {% elif asset.damage_status == 'สูญไป' %}
+                                <span class="badge bg-dark status-badge w-100">{{ asset.damage_status }}</span>
+                            {% elif asset.damage_status == 'ไม่ใช้' %}
+                                <span class="badge bg-secondary status-badge w-100">{{ asset.damage_status }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary status-badge w-100">{{ asset.damage_status|default:"-" }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center text-nowrap">
+                            <div class="d-flex gap-1 justify-content-center">
+                                <a href="{% url 'assets:asset_detail' asset.pk %}" class="btn btn-sm btn-info text-white" title="ดูรายละเอียด">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if user.is_staff or user.is_superuser %}
+                                <a href="{% url 'assets:asset_edit' asset.pk %}" class="btn btn-sm btn-warning text-white" title="แก้ไข">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger" title="ลบ" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal" 
+                                        data-asset-name="{{ asset.item_name }}" 
+                                        data-delete-url="{% url 'assets:asset_delete' asset.pk %}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-box-open fa-3x mb-3 text-light"></i>
+                                <h5>ไม่พบรายการครุภัณฑ์</h5>
+                                <p>ลองปรับเปลี่ยนเงื่อนไขการค้นหาหรือตัวกรอง</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if assets.has_other_pages %}
+        <div class="card-footer bg-white border-top py-3">
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    {% if assets.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link text-success" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&storage_location={{ selected_location }}{% endif %}{% if selected_status %}&damage_status={{ selected_status }}{% endif %}"><i class="fas fa-angle-double-left"></i></a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link text-success" href="?page={{ assets.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&storage_location={{ selected_location }}{% endif %}{% if selected_status %}&damage_status={{ selected_status }}{% endif %}"><i class="fas fa-angle-left"></i></a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in assets.paginator.page_range %}
+                        {% if assets.number == i %}
+                            <li class="page-item active"><span class="page-link bg-success border-success">{{ i }}</span></li>
+                        {% elif i > assets.number|add:'-3' and i < assets.number|add:'3' %}
+                            <li class="page-item"><a class="page-link text-success" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&storage_location={{ selected_location }}{% endif %}{% if selected_status %}&damage_status={{ selected_status }}{% endif %}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if assets.has_next %}
+                    <li class="page-item">
+                        <a class="page-link text-success" href="?page={{ assets.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&storage_location={{ selected_location }}{% endif %}{% if selected_status %}&damage_status={{ selected_status }}{% endif %}"><i class="fas fa-angle-right"></i></a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link text-success" href="?page={{ assets.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_location %}&storage_location={{ selected_location }}{% endif %}{% if selected_status %}&damage_status={{ selected_status }}{% endif %}"><i class="fas fa-angle-double-right"></i></a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white border-0">
+                    <h5 class="modal-title" id="deleteModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>ยืนยันการลบข้อมูล</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <p class="mb-1">คุณต้องการลบรายการครุภัณฑ์</p>
+                    <h5 class="fw-bold text-dark" id="asset-name"></h5>
+                    <p class="text-muted small mt-2">การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-light px-4 rounded-pill" data-bs-dismiss="modal">ยกเลิก</button>
+                    <form id="deleteForm" method="post" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger px-4 rounded-pill" onclick="this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-1\'></i> กำลังลบ..'; this.form.submit();">ยืนยันการลบ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var deleteModal = document.getElementById('deleteModal');
+            if(deleteModal) {
+                deleteModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var assetName = button.getAttribute('data-asset-name');
+                    var deleteUrl = button.getAttribute('data-delete-url');
+                    
+                    var modalBody = deleteModal.querySelector('#asset-name');
+                    var deleteForm = deleteModal.querySelector('#deleteForm');
+                    
+                    modalBody.textContent = '"' + assetName + '"';
+                    deleteForm.action = deleteUrl;
+                });
+            }
+        });
+    </script>
+</div>
+{% endblock %}

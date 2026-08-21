@@ -1,0 +1,279 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'assets:home_assets' %}" class="text-decoration-none text-success"><i class="fas fa-home"></i> หน้าหลัก</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'assets:asset_list' %}" class="text-decoration-none text-success">รายการครุภัณฑ์</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ asset.item_name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="card shadow-sm rounded-4 border-0 mb-4">
+        <div class="row g-0">
+            <div class="col-md-4 p-4 text-center">
+                {% if asset.asset_image %}
+                    <img src="{{ asset.asset_image.url }}" class="img-fluid rounded-4 shadow-sm" alt="{{ asset.item_name }}" style="max-height: 300px; object-fit: cover; width: 100%;">
+                {% else %}
+                    <div class="bg-light rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="height: 300px; width: 100%;">
+                        <i class="fas fa-box-open text-muted" style="font-size: 5rem;"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-8 p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <h2 class="fw-bold mb-2">{{ asset.item_name }}</h2>
+                    <h5 class="text-muted mb-4">
+                        <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3 py-2">
+                            <i class="fas fa-barcode me-2"></i>SP-{{ asset.asset_code }}
+                        </span>
+                    </h5>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        <!-- Damage Status Badge -->
+                        <span class="badge rounded-pill px-3 py-2
+                            {% if asset.damage_status == 'ใช้งานได้' or asset.damage_status == 'ใช้อยู่' %} bg-success 
+                            {% elif asset.damage_status == 'ชำรุด' %} bg-danger 
+                            {% elif asset.damage_status == 'เสื่อมสภาพ' or asset.damage_status == 'เสื่อม' %} bg-warning 
+                            {% elif asset.damage_status == 'สูญไป' %} bg-dark 
+                            {% else %} bg-secondary {% endif %}">
+                            <i class="fas fa-shield-alt me-1"></i> สภาพ: {{ asset.get_damage_status_display|default:asset.damage_status }}
+                        </span>
+
+                        <!-- Borrowing Status Badge -->
+                        <span class="badge rounded-pill px-3 py-2 {% if asset.status_borrowing %} bg-success {% else %} bg-danger {% endif %}">
+                            <i class="fas fa-hand-holding me-1"></i> {% if asset.status_borrowing %} ยืมได้ {% else %} ยืมไม่ได้ {% endif %}
+                        </span>
+
+                        <!-- Loan Status Badge -->
+                        <span class="badge rounded-pill px-3 py-2 {% if asset.status_assetloan %} bg-warning {% else %} bg-success {% endif %}">
+                            <i class="fas fa-exchange-alt me-1"></i> {% if asset.status_assetloan %} ถูกยืมแล้ว {% else %} ว่าง {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-4 border-top">
+                    <div class="d-flex justify-content-between text-muted small">
+                        <span><i class="fas fa-clock me-1"></i> วันที่เพิ่ม: {{ asset.date_asset_created|date:"d M Y H:i น." }}</span>
+                        <span><i class="fas fa-history me-1"></i> อัพเดทล่าสุด: {{ asset.date_asset_updated|date:"d M Y H:i น." }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Cards Grid -->
+    <div class="row mb-4">
+        <!-- ข้อมูลทั่วไป -->
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="fw-bold text-success"><i class="fas fa-info-circle me-2"></i>ข้อมูลทั่วไป</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-layer-group me-2" style="width: 20px; text-align: center;"></i> หมวดหมู่หลัก</span>
+                            <span class="fw-medium">{{ asset.subcategory.category.name_cate|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-tags me-2" style="width: 20px; text-align: center;"></i> หมวดหมู่ย่อย</span>
+                            <span class="fw-medium">{{ asset.subcategory|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-trademark me-2" style="width: 20px; text-align: center;"></i> ยี่ห้อ/รุ่น</span>
+                            <span class="fw-medium">{{ asset.brand_model|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-map-marker-alt me-2" style="width: 20px; text-align: center;"></i> สถานที่เก็บ</span>
+                            <span class="fw-medium">{{ asset.storage_location|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-user me-2" style="width: 20px; text-align: center;"></i> ผู้รับผิดชอบ</span>
+                            <span class="fw-medium">{{ asset.responsible_person|default:"-" }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ข้อมูลทางการเงิน -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="fw-bold text-success"><i class="fas fa-coins me-2"></i>ข้อมูลทางการเงิน</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-money-bill-wave me-2" style="width: 20px; text-align: center;"></i> ราคาที่ซื้อ</span>
+                            <span class="fw-medium">{{ asset.purchase_price|intcomma|default:"0" }} บาท</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-calendar-alt me-2" style="width: 20px; text-align: center;"></i> วันที่ซื้อ</span>
+                            <span class="fw-medium">{{ asset.purchase_date|date:"d M Y"|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-file-invoice-dollar me-2" style="width: 20px; text-align: center;"></i> ปีงบประมาณ</span>
+                            <span class="fw-medium">{{ asset.fiscal_year|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-calendar-plus me-2" style="width: 20px; text-align: center;"></i> อายุการใช้งาน</span>
+                            <span class="fw-medium">{{ asset.lifetime|default:"0" }} ปี</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-hourglass-half me-2" style="width: 20px; text-align: center;"></i> ใช้มาแล้ว</span>
+                            <span class="fw-medium">{{ asset.used_years|default:"0" }} ปี</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted"><i class="fas fa-chart-line me-2" style="width: 20px; text-align: center;"></i> ค่าเสื่อมราคาต่อปี</span>
+                            <span class="fw-medium text-danger">{{ annual_depreciation|intcomma|default:"0" }} บาท/ปี</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Inventory Check, Notes, QR Code -->
+    <div class="row mb-4">
+        <!-- Inventory Check Section -->
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow-sm rounded-4 border-0 bg-success-subtle border-start border-success border-5">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8 mb-3 mb-md-0">
+                            <h4 class="fw-bold text-success mb-3"><i class="fas fa-clipboard-check me-2"></i>ระบบตรวจนับประจำปี</h4>
+                            {% with last_check=asset.assetcheck_set.first %}
+                                {% if last_check %}
+                                    <div class="bg-white p-3 rounded-3 shadow-sm d-inline-block">
+                                        <div class="mb-1"><i class="fas fa-check-circle text-success me-2"></i> <strong>ตรวจนับล่าสุด:</strong> {{ last_check.check_date|date:"d M Y" }} (ปีงบฯ {{ last_check.fiscal_year }})</div>
+                                        <div><i class="fas fa-user-check text-success me-2"></i> <strong>ผู้ตรวจนับ:</strong> {{ last_check.user.get_full_name|default:last_check.user.username }}</div>
+                                        {% if last_check.remarks %}
+                                        <div class="mt-1"><i class="fas fa-comment-dots text-success me-2"></i> <strong>หมายเหตุ:</strong> {{ last_check.remarks }}</div>
+                                        {% endif %}
+                                        {% if last_check.check_image %}
+                                        <div class="mt-2">
+                                            <a href="{{ last_check.check_image.url }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill">
+                                                <i class="fas fa-image me-1"></i> ดูรูปภาพแนบ
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i> ยังไม่มีประวัติการตรวจนับครุภัณฑ์</p>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        <div class="col-md-4 text-md-end text-center">
+                            <a href="{% url 'assets:check_asset' asset.id %}" class="btn btn-success btn-lg rounded-pill shadow-sm px-4 fw-bold">
+                                <i class="fas fa-qrcode me-2"></i> บันทึกการตรวจนับ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if asset.notes or asset.qr_code %}
+            {% if asset.notes %}
+            <div class="{% if asset.qr_code %}col-md-8{% else %}col-12{% endif %} mb-4 mb-md-0">
+                <div class="card shadow-sm rounded-4 border-0 h-100">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                        <h5 class="fw-bold text-warning"><i class="fas fa-sticky-note me-2"></i>หมายเหตุ</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="bg-light p-3 rounded-3">
+                            {{ asset.notes|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if asset.qr_code %}
+            <div class="{% if asset.notes %}col-md-4{% else %}col-12{% endif %}">
+                <div class="card shadow-sm rounded-4 border-0 h-100">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 text-center">
+                        <h5 class="fw-bold"><i class="fas fa-qrcode me-2"></i>QR Code</h5>
+                    </div>
+                    <div class="card-body text-center d-flex align-items-center justify-content-center">
+                        <img src="{{ asset.qr_code.url }}" alt="QR Code" class="img-fluid border p-2 rounded-3" style="max-width: 150px;">
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mt-5 mb-2 gap-3">
+        <a href="{% url 'assets:asset_list' %}" class="btn btn-secondary rounded-pill px-4 shadow-sm">
+            <i class="fas fa-arrow-left me-2"></i>กลับหน้ารายการ
+        </a>
+        
+        {% if user.is_staff or user.is_superuser %}
+        <div class="d-flex gap-2">
+            <a href="{% url 'assets:asset_edit' asset.pk %}" class="btn btn-warning rounded-pill px-4 shadow-sm text-dark">
+                <i class="fas fa-edit me-2"></i>แก้ไข
+            </a>
+            <button type="button" class="btn btn-danger rounded-pill px-4 shadow-sm" title="ลบ" data-bs-toggle="modal" 
+                    data-bs-target="#deleteModal" data-asset-name="{{ asset.item_name }}" 
+                    data-delete-url="{% url 'assets:asset_delete' asset.pk %}">
+                <i class="fas fa-trash-alt me-2"></i>ลบ
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal Delete -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title fw-bold text-danger" id="deleteModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>ยืนยันการลบข้อมูล</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
+                    <p class="mb-0 fs-5">คุณต้องการลบรายการครุภัณฑ์</p>
+                    <p class="fw-bold fs-4 text-dark my-2">"<span id="asset-name"></span>"</p>
+                    <p class="text-muted small">ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+                </div>
+                <div class="modal-footer border-top-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                    <form id="deleteForm" method="post" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm" onclick="this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i>กำลังลบ...'; this.form.submit();">
+                            ยืนยันการลบ
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var deleteModal = document.getElementById('deleteModal');
+            if(deleteModal) {
+                deleteModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var assetName = button.getAttribute('data-asset-name');
+                    var deleteUrl = button.getAttribute('data-delete-url');
+                    
+                    var modalBody = deleteModal.querySelector('#asset-name');
+                    var deleteForm = deleteModal.querySelector('#deleteForm');
+                    
+                    modalBody.textContent = assetName;
+                    deleteForm.action = deleteUrl;
+                });
+            }
+        });
+    </script>
+</div>
+{% endblock %}

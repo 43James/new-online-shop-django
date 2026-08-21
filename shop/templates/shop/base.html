@@ -1,0 +1,623 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- google fonts -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <!-- bootstrap css cdn -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+  <!-- Google Fonts: Prompt & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <title>{% if title %} {{ title }} {% else %} เบิกวัสดุออนไลน์ {% endif %}</title>
+  <style>
+    :root {
+      --bs-font-sans-serif: 'Prompt', 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+      --bs-body-font-family: var(--bs-font-sans-serif);
+    }
+    body {
+      font-family: var(--bs-body-font-family) !important;
+    }
+    .modern-dropdown {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      padding: 10px;
+    }
+    .modern-dropdown .dropdown-item {
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+      padding: 8px 16px;
+    }
+    .modern-dropdown .dropdown-item:hover {
+      background-color: #f1f3f5;
+      transform: translateX(3px);
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .form-control, .form-select, 
+    input[type="text"], input[type="password"], input[type="email"], input[type="number"], select, textarea {
+      border-radius: 12px !important;
+      border: 1px solid #ced4da;
+      padding: 10px 15px;
+      transition: all 0.3s ease;
+      background-color: rgba(255, 255, 255, 0.8) !important;
+      width: 100%;
+      box-sizing: border-box;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-control:focus, .form-select:focus,
+    input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+      border-color: #86b7fe;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+      background-color: #fff !important;
+    }
+    .btn {
+      border-radius: 12px !important;
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    #watermark p {
+      position: absolute;
+      color: rgb(255, 0, 0);
+      font-size: 30px;
+      top: 30%;
+      /* text-align: center; */
+      font-weight: bold;
+      width: 100%;
+      pointer-events: none;
+      -webkit-transform: rotate(-20deg);
+      -moz-transform: rotate(-45deg);
+      text-shadow: 2px 2px 4px rgba(255, 255, 0, 0.904);
+    }
+
+    .element {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    html,body {
+      position: relative;
+      background-color: rgba(255, 255, 255, 0);
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      width: 100%;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .background-blur {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('{% static "sidebar/logo-sip-ubu-new.png" %}');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      filter: blur(10px); 
+      z-index: -1; 
+    }
+
+
+    .content {
+      position: relative;
+      z-index: 1; /* ทำให้เนื้อหาอยู่ด้านบน */
+      background: rgba(255, 255, 255, 0.8); /* ปรับความโปร่งใสเพื่อให้เห็นพื้นหลังเบลอ */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body>
+{% if user.is_general %}
+<div class="background-blur"></div>
+<header class="p-2 border-bottom"
+    style="background-color: rgb(255, 255, 255); position: sticky; top: 0; z-index: 1000;">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+
+        <!-- ✅ โลโก้ -->
+        <a href="{% url 'shop:home_page' %}" 
+          class="d-flex align-items-center mb-2 mb-md-0 me-4 text-decoration-none">
+            <img id="logo-img" src="{% static 'sidebar/logo-ubu-sip.png' %}" 
+              alt="UBU Spark Logo" 
+              style="height: 38px; object-fit: contain;">
+        </a>
+
+        <!-- cart icon -->
+        {% if request.user.is_authenticated %}
+        <b class="text-primary">{{ cart_count }}</b>
+        {% endif %}
+        <a href="{% url 'cart:show_cart' %}" class="text-primary mt-2 me-2"><i
+            class="material-icons h3">&#xe8cc;</i></a>
+        <b class="text-warning">{{ count_unconfirmed_orders }}</b>
+        <a href="{% url 'orders:user_orders' %}" class="text-warning mt-2 me-2"><i
+            class="material-icons h3">&#xe85d;</i></a>
+          
+        <!-- favorite icon -->
+        {% if request.user.is_authenticated %}
+        <b class="text-danger">{{ request.user.get_likes_count }}</b>
+        {% endif %}
+        <a href="{% url 'shop:favorites' %}" class="text-danger mt-2 me-1"><i
+            class="material-icons h3">&#xe87d;</i></a>
+            
+        <!-- Menu -->
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <!-- <li><a href="{% url 'shop:home_page' %}" class="nav-link px-2">หน้าหลัก</a></li> -->
+          <!-- <li><a href="#" class="nav-link px-2 text-dark">Shop</a></li> -->
+
+          {% if request.user.is_authenticated %}
+          <!-- categories dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              หมวดหมู่หลัก
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              {% for category in categories %}
+              <li class="dropdown-item">
+                <a class="dropdown-item" href="{% url 'shop:filter_by_category' category.id %}">
+                  {{ category.name_cate }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </li>
+
+          <!-- subcategories dropdown -->
+          {% if selected_category %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownSub" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">หมวดหมู่ย่อย</a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownSub">
+              {% for subcategory in subcategories %}
+              <li class="dropdown-item">
+                <a class="dropdown-item" href="{% url 'shop:filter_by_category' selected_category.id subcategory.id %}">
+                  {{ subcategory.name_sub }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </li>
+          {% endif %}
+
+          <!-- favorite icon -->
+          <!-- <li><a href="#" class="nav-link px-2 text-dark">FAQs</a></li> -->
+          <li><a href="#" class="nav-link px-2 text-dark">
+              <div class="line-it-button" data-lang="th" data-type="friend" data-env="REAL text-end"
+                data-lineId="@339uiekk" style="display: none;">
+              </div>
+              <script src="https://www.line-website.com/social-plugins/js/thirdparty/loader.min.js" async="async"
+                defer="defer"></script>
+            </a></li>
+          <li><a href="#" class="nav-link px-2 text-dark">ID : @339uiekk</a></li>
+          <!-- <li><a href="#" class="btn btn-warning nav-link px-2 text-dark">ยืมครุภัณฑ์</a></li> -->
+        </ul>
+
+        <!-- search form -->
+
+        <!-- <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3">
+          <input id="searchInput" type="search" class="form-control form-control-dark" placeholder="Search..."
+            aria-label="Search" onkeyup="searchProduct()">
+        </form> -->
+
+        <form method="GET" action="{% url 'shop:home_page' %}" class="d-flex">
+          <input class="form-control me-2" type="search" placeholder="ค้นหาวัสดุ" aria-label="Search" name="q" value="{{ query }}" onkeyup="searchProduct()">
+          <!-- <button class="btn btn-outline-primary" type="submit">ค้นหา</button> -->
+        </form>
+        <!-- <a href="#" class="btn btn-warning nav-link px-2 text-dark">ยืมครุภัณฑ์</a> -->
+
+        <!-- user profile dropdown -->
+        <!-- <div class="dropdown text-end">
+          <a href="#" class="btn btn-primary text-white me-4 d-block link-dark text-decoration-none dropdown-toggle"
+            id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">เมนู</a>
+
+          <ul class="dropdown-menu" aria-labelledby="dropdownUser1">
+            <li class="btn btn-success"><a href="{% url 'shop:favorites' %}" class="dropdown-item"><i class="bi bi-boombox-fill"></i> ยืมครุภัณฑ์</a></li>
+
+            <li><a href="{% url 'orders:user_orders' %}" class="dropdown-item"><i class="bi bi-card-list text-warning"></i>
+              รายการเบิก <b class="text-warning">{{ count_unconfirmed_orders }}</b></a></li>
+
+            <li><a href="{% url 'orders:out_of_stock_notification' %}" class="dropdown-item"><i class="bi bi-bell-fill text-danger"></i></i>
+              แจ้งวัสดุหมด <b class="text-warning"></b></a></li>
+
+            <li><a href="{% url 'orders:monthly_totals_view' %}" class="dropdown-item"><i class="bi bi-cash-coin text-success"></i></i>
+              ยอดที่เบิกวัสดุ</a></li>
+
+            <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}"><i
+                  class="bi bi-person-lines-fill text-primary"></i> ดูโปรไฟล์</a></li>
+
+            <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key-fill text-info"></i>
+                เปลี่ยนรหัสผ่าน</a></li>
+
+            {% if user.is_manager or user.is_warehouse_manager or user.is_admin or user.is_executive%}
+            <li><a class="dropdown-item text-primary" href="{% url 'dashboard:orders' %}"><i
+                  class="bi bi-person-check"> Dashboard</i></a></li>
+            {% endif %}
+            
+            <li><a class="dropdown-item text-danger" href="{% url 'accounts:user_logout' %}"><i
+                  class="bi bi-box-arrow-right"></i> Log out</a></li>
+          </ul>
+        </div> -->
+        <div class="dropdown text-end">
+            <a href="#" class="btn btn-primary text-white me-4 d-block link-dark text-decoration-none dropdown-toggle"
+                id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">เมนู</a>
+
+            <ul class="dropdown-menu modern-dropdown" aria-labelledby="dropdownUser1">
+                
+                <li><a href="{% url 'orders:user_orders' %}" class="dropdown-item"><i class="bi bi-card-list text-warning"></i>
+                    รายการเบิก <b class="text-warning">{{ count_unconfirmed_orders }}</b></a></li>
+
+                <li><a href="{% url 'orders:out_of_stock_notification' %}" class="dropdown-item"><i class="bi bi-bell-fill text-danger"></i>
+                    แจ้งวัสดุหมด <b class="text-warning"></b></a></li>
+
+                <li><a href="{% url 'orders:monthly_totals_view' %}" class="dropdown-item"><i class="bi bi-cash-coin text-success"></i>
+                    ยอดที่เบิกวัสดุ</a></li>
+
+                <li><a class="dropdown-item" href="{% url 'accounts:user_profile_detail' user.username %}"><i
+                        class="bi bi-person-lines-fill text-primary"></i> ดูโปรไฟล์</a></li>
+
+                <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key-fill text-info"></i>
+                    เปลี่ยนรหัสผ่าน</a></li>
+
+                {% if user.is_manager or user.is_warehouse_manager or user.is_admin or user.is_executive%}
+                <li class="px-2 mt-2">
+                    <a class="dropdown-item text-white fw-bold py-2 shadow-sm" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 8px; text-align: center;" href="{% url 'dashboard:orders' %}">
+                        <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="px-2 mt-2">
+                    <a href="{% url 'assets:calendar' %}" class="dropdown-item text-dark fw-bold py-2 shadow-sm" style="background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); border-radius: 8px; text-align: center;">
+                        <i class="bi bi-calendar-event me-1"></i> ระบบยืมครุภัณฑ์
+                    </a>
+                </li>
+                
+                <li class="px-2 mt-2 mb-2">
+                    <a class="dropdown-item text-white fw-bold py-2 shadow-sm" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 8px; text-align: center;" href="{% url 'accounts:user_logout' %}">
+                        <i class="bi bi-box-arrow-right me-1"></i> ออกจากระบบ
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+         <!-- <a href="#" class="btn btn-warning me-4 d-block">ยืมครุภัณฑ์</a> -->
+        <div class="d-flex align-items-center gap-2"
+          style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
+                 padding: 6px 16px 6px 6px; 
+                 border-radius: 50px; 
+                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                 border: 1px solid rgba(255,255,255,0.1);">
+          <div>
+            {% if user.profile.img.url == user.profile.img.url %}
+            <a href="{% url 'accounts:user_profile_detail' user.username %}">
+              <img src="{{ user.profile.img.url }}"
+                style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 2px solid transparent; background: linear-gradient(white, white) padding-box, linear-gradient(135deg, #3b82f6, #10b981) border-box;">
+            </a>
+
+            {% else %}
+            <a href="{% url 'accounts:user_profile_detail' user.username %}">
+              <img src="https://i.pinimg.com/564x/5e/57/c8/5e57c8344039bc815bd95d8b6abec92d.jpg"
+                style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 2px solid transparent; background: linear-gradient(white, white) padding-box, linear-gradient(135deg, #3b82f6, #10b981) border-box;">
+            </a>
+            {% endif %}
+
+          </div>
+          <div style="font-size: 0.9rem; font-weight: 700; color: white; letter-spacing: 0.5px;">
+            {{user.username}}
+          </div>
+        </div>
+        {% else %}
+        <!-- login, sign-up btn -->
+        <!-- <div class="text-end">
+          <a href="{% url 'accounts:user_login' %}" class="btn btn-outline-primary me-2">Login</a>
+          <a href="{% url 'accounts:user_register' %}" class="btn btn-primary">Sign-up</a>
+        </div> -->
+        {% endif %}
+      </div>
+    </div>
+  </header>
+  <main class="container flex-grow-1">
+    <div class="row mt-2">
+      <!-- messages -->
+      {% if messages %}
+      <div class="messages justify-content-center">
+        {% for message in messages %}
+        {% if 'error' in message.tags %} <ul class="alert alert-danger text-center">
+          <h6>{{ message }}</h6>
+        </ul> {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if messages %}
+      <div class=" messages justify-content-center">
+        {% for message in messages %}
+        {% if 'success' in message.tags %} <ul class="alert alert-success text-center">
+          <h6>{{ message }}</h6>
+        </ul> {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      <!-- content -->
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+
+<!-- Bootstrap JavaScript Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script type="text/javascript">
+  $(document).ready(function () {
+
+    window.setTimeout(function () {
+      $(".alert").fadeTo(1000, 0).slideUp(1000, function () {
+        $(this).remove();
+      });
+    }, 1500);
+
+  });
+</script>
+<script>
+  const passwordInput = document.querySelector('[name="{{ user_form.password1.name }}"]');
+  const showPasswordButton = document.getElementById('show-password');
+
+  showPasswordButton.addEventListener('click', function () {
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      showPasswordButton.textContent = 'ซ่อนรหัสผ่าน';
+    } else {
+      passwordInput.type = 'password';
+      showPasswordButton.textContent = 'แสดงรหัสผ่าน';
+    }
+  });
+</script>
+
+<!-- search form home_page และ user_orders -->
+<script>
+  function searchProduct() {
+    // รับค่าของอินพุทที่กรอกเข้ามา
+    var input = document.getElementById("searchInput");
+    var filter = input.value.toUpperCase();
+
+    // ตรวจสอบว่าอยู่ในหน้า home_page หรือ user_orders
+    if (document.body.classList.contains('home-page')) {
+      var cards = document.getElementsByClassName("card");
+
+      // วนลูปทุกการ์ดในหน้า home_page
+      for (var i = 0; i < cards.length; i++) {
+        var title = cards[i].getElementsByClassName("card-title")[0];
+        var txtValue = title.textContent || title.innerText;
+
+        // ตรวจสอบว่าชื่อสินค้าตรงกับคำค้นหาหรือไม่
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          cards[i].style.display = "";
+        } else {
+          cards[i].style.display = "none";
+        }
+      }
+    } else if (document.body.classList.contains('user-orders')) {
+      var orders = document.getElementsByClassName("order-card");
+
+      // วนลูปทุกการ์ดในหน้า user_orders
+      for (var i = 0; i < orders.length; i++) {
+        var orderId = orders[i].getElementsByClassName("order-id")[0];
+        var txtValue = orderId.textContent || orderId.innerText;
+
+        // ตรวจสอบว่า order.id ตรงกับคำค้นหาหรือไม่
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          orders[i].style.display = "";
+        } else {
+          orders[i].style.display = "none";
+        }
+      }
+    }
+  }
+</script>
+
+<script>
+  function handleOrderConfirmation(event) {
+    event.preventDefault();  // ป้องกันการ redirect ไปยัง URL โดยตรง
+    
+    // แสดง Modal กำลังประมวลผล
+    $('#processingModal').modal('show');
+    
+    // ซ่อนปุ่ม "ยืนยัน"
+    const button = document.getElementById('confirmButton');
+    button.style.display = 'none';
+  
+    // จำลองการดำเนินการเสร็จสิ้น (เช่น การส่งข้อมูลไปยังเซิร์ฟเวอร์)
+    setTimeout(() => {
+      // ปิด Modal เมื่อดำเนินการเสร็จสิ้น
+      $('#processingModal').modal('hide');
+      
+      // Redirect หลังจากดำเนินการเสร็จสิ้น (เช่นไปยัง URL การสั่งซื้อ)
+      window.location.href = button.href;
+    }, 3000);  // ระยะเวลารอเป็นเพียงตัวอย่าง (3 วินาที)
+  }
+</script>
+
+
+{% endif %}
+
+<div style="width: 100%; text-align: center; background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(4px); color: #64748b; font-size: 11px; padding: 8px 0; margin-top: auto; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+    Copyright &copy; 2026 Science and Innovation Park, Ubon Ratchathani University. All rights reserved.<br>
+    (ลิขสิทธิ์ของอุทยานวิทยาศาสตร์และนวัตกรรม มหาวิทยาลัยอุบลราชธานี)
+</div>
+
+<!-- ===== Global Loading Overlay ===== -->
+<div id="globalLoadingOverlay" style="display:none;">
+    <div class="loading-backdrop"></div>
+    <div class="loading-content">
+        <div class="loading-spinner-ring">
+            <div class="spinner-circle"></div>
+            <i class="bi bi-box-seam loading-center-icon"></i>
+        </div>
+        <h5 class="loading-title mt-4">กำลังดำเนินการ</h5>
+        <p class="loading-subtitle">กรุณารอสักครู่...</p>
+        <div class="loading-dots">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</div>
+
+<style>
+    #globalLoadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #globalLoadingOverlay .loading-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+    #globalLoadingOverlay .loading-content {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        background: white;
+        border-radius: 24px;
+        padding: 40px 50px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+        animation: loadingPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes loadingPopIn {
+        0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .loading-spinner-ring {
+        width: 80px;
+        height: 80px;
+        position: relative;
+        margin: 0 auto;
+    }
+    .spinner-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid #1a73e8;
+        border-right: 4px solid #60a5fa;
+        animation: spinRing 1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    @keyframes spinRing {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .loading-center-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.8rem;
+        color: #1a73e8;
+        animation: iconPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes iconPulse {
+        0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        50% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.85); }
+    }
+    .loading-title {
+        color: #1e293b;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .loading-subtitle {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin-bottom: 16px;
+    }
+    .loading-dots {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+    }
+    .loading-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #1a73e8;
+        animation: dotBounce 1.4s ease-in-out infinite;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes dotBounce {
+        0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+        40% { opacity: 1; transform: scale(1.2); }
+    }
+</style>
+
+<script>
+(function() {
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        if (form.classList.contains('no-loading')) return;
+        const overlay = document.getElementById('globalLoadingOverlay');
+        if (overlay) overlay.style.display = 'flex';
+    });
+
+    const originalSubmit = HTMLFormElement.prototype.submit;
+    HTMLFormElement.prototype.submit = function() {
+        if (!this.classList.contains('no-loading')) {
+            const overlay = document.getElementById('globalLoadingOverlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+        originalSubmit.call(this);
+    };
+})();
+</script>
+<!-- ===== End Global Loading Overlay ===== -->
+
+</body>
+</html>

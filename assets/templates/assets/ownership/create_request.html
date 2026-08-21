@@ -1,0 +1,226 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load form_tags %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .page-header::after {
+        content: '\f4b9';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 30px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+    .form-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        background: white;
+        overflow: hidden;
+    }
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #059669;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #ecfdf5;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-submit {
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none;
+        color: white;
+        padding: 12px 36px;
+        border-radius: 50rem;
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        transition: all 0.3s;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+    .btn-cancel {
+        background: #f3f4f6;
+        border: none;
+        color: #6b7280;
+        padding: 12px 32px;
+        border-radius: 50rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    .btn-cancel:hover {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    .radio-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 50rem;
+        border: 2px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-check:checked + .radio-label-move {
+        border-color: #0d6efd;
+        background-color: #cfe2ff;
+        color: #084298;
+    }
+    .btn-check:checked + .radio-label-return {
+        border-color: #dc3545;
+        background-color: #f8d7da;
+        color: #842029;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div style="position: relative; z-index: 1;">
+            <h2 class="fw-bold mb-2"><i class="fas fa-exchange-alt me-2"></i>ทำรายการย้ายสถานที่ / ส่งคืนครุภัณฑ์</h2>
+            <p class="mb-0 opacity-75">สร้างคำร้องสำหรับครุภัณฑ์ที่คุณครอบครอง</p>
+        </div>
+        <div style="position: relative; z-index: 1;">
+            <a href="{% url 'assets:my_assets' %}" class="btn btn-light text-success fw-bold rounded-pill shadow-sm px-4">
+                <i class="fas fa-arrow-left me-2"></i>ย้อนกลับ
+            </a>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <form method="POST" action="{% url 'assets:create_request' %}">
+                {% csrf_token %}
+
+                <div class="form-card mb-4">
+                    <div class="card-body p-4 p-md-5">
+                        
+                        <div class="form-section-title">
+                            <i class="fas fa-info-circle"></i> 1. เลือกครุภัณฑ์ที่ต้องการทำรายการ <span class="text-danger ms-1">*</span>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <select name="asset_ids" id="asset_ids" class="selectpicker form-control border border-2" multiple data-actions-box="true" data-live-search="true" title="-- เลือกครุภัณฑ์ที่ต้องการย้ายหรือส่งคืน --" data-width="100%" data-size="6" required>
+                                {% for asset in my_assets %}
+                                    <option value="{{ asset.id }}" {% if asset.has_pending_request %}disabled data-subtext="(ติดคำร้องค้าง)"{% endif %}>
+                                        {{ asset.asset_code }} - {{ asset.item_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-section-title mt-5">
+                            <i class="fas fa-clipboard-list"></i> 2. รายละเอียดคำร้อง
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold d-block">ความประสงค์ <span class="text-danger">*</span></label>
+                                <div class="d-flex flex-wrap gap-3 mt-2">
+                                    <div>
+                                        <input type="radio" class="btn-check" name="action_type" id="actionMove" value="MOVE" required>
+                                        <label class="radio-label radio-label-move fw-bold" for="actionMove">
+                                            <i class="fas fa-people-carry fs-5"></i> เคลื่อนย้ายสถานที่
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <input type="radio" class="btn-check" name="action_type" id="actionReturn" value="RETURN">
+                                        <label class="radio-label radio-label-return fw-bold" for="actionReturn">
+                                            <i class="fas fa-undo-alt fs-5"></i> ส่งคืนส่วนกลาง
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="condition" class="form-label fw-bold">สภาพการใช้งานปัจจุบัน <span class="text-danger">*</span></label>
+                                <select name="condition" id="condition" class="form-select border border-2" required>
+                                    <option value="" selected disabled>-- ระบุสภาพการใช้งาน --</option>
+                                    <option value="ใช้งานได้">ใช้งานได้ปกติ</option>
+                                    <option value="ชำรุด">ชำรุด / มีปัญหา</option>
+                                    <option value="เสื่อมสภาพ">เสื่อมสภาพตามอายุ</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6" id="new_location_group">
+                                <label class="form-label fw-bold" for="transferLocation">ไปยังสถานที่ใหม่ <span class="text-danger">*</span></label>
+                                <select name="transfer_to_location" id="transferLocation" class="selectpicker form-control border border-2" data-live-search="true" title="-- กรุณาเลือกสถานที่ใหม่ --" data-width="100%" data-size="6">
+                                    {% for loc in locations %}
+                                        <option value="{{ loc.id }}">{{ loc.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text text-muted">กรณีส่งคืน ไม่จำเป็นต้องระบุสถานที่</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold" for="remark">เหตุผล / หมายเหตุ</label>
+                                <textarea name="remark" class="form-control border border-2" id="remark" rows="3" placeholder="ระบุเหตุผลในการขอย้ายสถานที่ หรือข้อมูลเพิ่มเติมในการส่งคืน..."></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer Actions -->
+                    <div class="card-footer bg-light border-top-0 px-4 px-md-5 py-4">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{% url 'assets:my_assets' %}" class="btn btn-cancel">
+                                <i class="fas fa-times me-2"></i>ยกเลิก
+                            </a>
+                            <button type="submit" class="btn btn-submit"
+                                onclick="this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i>กำลังส่งคำร้อง...'; this.form.submit();">
+                                <i class="fas fa-paper-plane me-2"></i>ยืนยันส่งคำร้อง
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const actionMove = document.getElementById('actionMove');
+        const actionReturn = document.getElementById('actionReturn');
+        const locationGroup = document.getElementById('new_location_group');
+        const transferLocation = document.getElementById('transferLocation');
+        
+        function toggleLocation() {
+            if (actionReturn.checked) {
+                // ถ้าส่งคืน ให้ปิดการเลือกสถานที่
+                $(transferLocation).val('').selectpicker('refresh');
+                $(transferLocation).prop('disabled', true).selectpicker('refresh');
+            } else {
+                // ถ้าเคลื่อนย้าย ให้เปิดช่องเลือกสถานที่
+                $(transferLocation).prop('disabled', false).selectpicker('refresh');
+            }
+        }
+        
+        $('input[type=radio][name=action_type]').change(toggleLocation);
+        toggleLocation(); // initial check
+    });
+</script>
+{% endblock %}

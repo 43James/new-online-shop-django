@@ -1,5 +1,3 @@
-from shop.models import Category, Subcategory
-from django import forms
 
 # class RecordMonthlyStockForm(forms.Form):
 #     confirm = forms.BooleanField(label="ยืนยันการบันทึกยอดสินค้าคงเหลือประจำเดือน")

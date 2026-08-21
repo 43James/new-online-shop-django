@@ -31,3 +31,25 @@ def count_pending_orders(request):
     # ดึงข้อมูลออเดอร์ทั้งหมดที่รอการยืนยัน
     pending_orders = Order.objects.filter(status=None).count()
     return {'pending_orders_count': pending_orders}
+
+def total_pending_actions(request):
+    from django.db.models import Q
+    count = Order.objects.filter(
+        Q(status__isnull=True) | 
+        Q(status=True, confirm=False)
+    ).count()
+    return {'total_pending_actions_count': count}
+
+def asset_system_setting(request):
+    try:
+        from assets.models import AssetSystemSetting
+        setting, created = AssetSystemSetting.objects.get_or_create(id=1)
+        can_check = False
+        if request.user.is_authenticated:
+            if request.user.is_staff or request.user.is_superuser:
+                can_check = True
+            elif setting.is_public_check_enabled and setting.allowed_users.filter(id=request.user.id).exists():
+                can_check = True
+        return {'system_setting': setting, 'can_user_check_asset': can_check}
+    except Exception:
+        return {'system_setting': None}

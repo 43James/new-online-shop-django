@@ -1,0 +1,466 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-3">
+        <h3 class="mb-0 fw-bold"><i class="fas fa-clipboard-check text-success me-2"></i>ประวัติการตรวจนับครุภัณฑ์ประจำปี</h3>
+        <div class="d-flex gap-3 align-items-center">
+            {% if user.is_staff or user.is_superuser %}
+            <div class="form-check form-switch me-3 d-flex align-items-center">
+                <input class="form-check-input ms-0 me-2" type="checkbox" id="publicCheckToggle" style="width: 2.5em; height: 1.25em; cursor: pointer;"
+                       {% if system_setting.is_public_check_enabled %}checked{% endif %}
+                       onchange="togglePublicCheck(this)">
+                <label class="form-check-label fw-bold me-2" for="publicCheckToggle" style="cursor: pointer;">เปิดให้บุคคลทั่วไปตรวจนับ</label>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" onclick="openAllowedUsersModal()" title="จัดการรายชื่อผู้มีสิทธิ์">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+            {% endif %}
+            <button type="button" class="btn btn-success btn-lg rounded-pill shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+                <i class="fas fa-qrcode me-2"></i> สแกนเพื่อตรวจนับ
+            </button>
+        </div>
+    </div>
+
+    <!-- ส่วนของการกรองและค้นหา -->
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body bg-light rounded-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label text-muted small fw-bold">ค้นหาครุภัณฑ์</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="q" class="form-control" placeholder="ชื่อ หรือ รหัสครุภัณฑ์..." value="{{ query }}">
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold">ปีงบประมาณ</label>
+                    <select name="fiscal_year" class="form-select">
+                        <option value="">-- ทั้งหมด --</option>
+                        {% for year in available_years %}
+                            <option value="{{ year }}" {% if fiscal_year_filter == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold">สถานะการใช้งาน</label>
+                    <select name="damage_status" class="form-select">
+                        <option value="">-- ทั้งหมด --</option>
+                        {% for val, label in DAMAGE_STATUS_CHOICES %}
+                            <option value="{{ val }}" {% if damage_status_filter == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2 d-flex gap-2 align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3" title="กรองข้อมูล"><i class="bi bi-funnel-fill me-1"></i> กรอง</button>
+                    <a href="{% url 'assets:asset_check_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3" title="ยกเลิกการกรอง"><i class="bi bi-x-lg"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- แถบสถิติการตรวจนับ -->
+    {% if selected_year %}
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body py-3 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clipboard-data text-primary" style="font-size: 1.3rem;"></i>
+                    <h6 class="mb-0 fw-bold text-dark">สถิติการตรวจนับ ปีงบประมาณ {{ selected_year }}</h6>
+                </div>
+                <div class="d-flex gap-3 align-items-center">
+                    <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-2 rounded-pill" style="font-size: 0.85rem;">
+                        <i class="bi bi-check-circle-fill me-1"></i> ตรวจแล้ว {{ checked_count }} รายการ
+                    </span>
+                    <span class="badge bg-warning bg-opacity-10 text-warning fw-bold px-3 py-2 rounded-pill" style="font-size: 0.85rem;">
+                        <i class="bi bi-hourglass-split me-1"></i> ยังไม่ตรวจ {{ unchecked_count }} รายการ
+                    </span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-2 rounded-pill" style="font-size: 0.85rem;">
+                        <i class="bi bi-boxes me-1"></i> ทั้งหมด {{ total_assets_count }} รายการ
+                    </span>
+                </div>
+            </div>
+            <div class="progress rounded-pill" style="height: 22px; background-color: #f1f5f9;">
+                <div class="progress-bar bg-success rounded-pill fw-bold" role="progressbar" 
+                     style="width: {{ check_percentage }}%; font-size: 0.8rem;"
+                     aria-valuenow="{{ check_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                    {% if check_percentage > 5 %}{{ check_percentage }}%{% endif %}
+                </div>
+            </div>
+            {% if check_percentage <= 5 and check_percentage > 0 %}
+            <div class="text-center mt-1">
+                <small class="text-muted fw-bold">{{ check_percentage }}%</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ตารางประวัติการตรวจนับ -->
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4 py-3">วันที่ตรวจนับ</th>
+                            <th class="py-3">รหัสครุภัณฑ์</th>
+                            <th class="py-3">ชื่อรายการครุภัณฑ์</th>
+                            <th class="py-3">ปีงบฯ (ตรวจสอบ)</th>
+                            <th class="py-3">ผู้รับผิดชอบ</th>
+                            <th class="py-3 text-center">สถานะการใช้งาน</th>
+                            <th class="py-3">ผู้ตรวจนับ / หมายเหตุ</th>
+                            <th class="py-3 text-center">รายละเอียด</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for check in checks %}
+                        <tr>
+                            <td class="px-4 text-muted">{{ check.check_date|date:"d M Y" }}</td>
+                            <td><span class="badge bg-secondary">{{ check.asset.asset_code }}</span></td>
+                            <td class="fw-semibold">
+                                <a href="{% url 'assets:asset_detail' check.asset.id %}" class="text-decoration-none">{{ check.asset.item_name }}</a>
+                            </td>
+                            <td><span class="badge bg-primary fs-6">{{ check.fiscal_year }}</span></td>
+                            <td>{{ check.asset.responsible_person|default:"-" }}</td>
+                            <td class="text-center">
+                                {% if check.asset.damage_status == 'ใช้งานได้' %}
+                                    <span class="badge bg-success rounded-pill px-3 py-2"><i class="fas fa-check-circle me-1"></i> ใช้งานได้</span>
+                                {% elif check.asset.damage_status == 'ชำรุด' %}
+                                    <span class="badge bg-danger rounded-pill px-3 py-2"><i class="fas fa-times-circle me-1"></i> ชำรุด</span>
+                                {% elif check.asset.damage_status == 'เสื่อมสภาพ' %}
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="fas fa-exclamation-triangle me-1"></i> เสื่อมสภาพ</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill px-3 py-2">{{ check.asset.damage_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted d-block"><i class="fas fa-user-circle me-1"></i> {{ check.user.get_full_name|default:check.user.username }}</small>
+                                {% if check.remarks %}
+                                    <small class="text-secondary fst-italic"><i class="fas fa-comment-dots me-1"></i> {{ check.remarks }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#checkDetailModal{{ check.id }}">
+                                    <i class="fas fa-search me-1"></i> ดูรายละเอียด
+                                </button>
+                                
+                                <!-- Modal แสดงรายละเอียด -->
+                                <div class="modal fade text-start" id="checkDetailModal{{ check.id }}" tabindex="-1" aria-labelledby="checkDetailModalLabel{{ check.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content border-0 shadow-lg rounded-4">
+                                            <div class="modal-header bg-info text-white rounded-top-4">
+                                                <h5 class="modal-title fw-bold" id="checkDetailModalLabel{{ check.id }}"><i class="fas fa-info-circle me-2"></i> รายละเอียดการตรวจนับครุภัณฑ์</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <div class="row g-4">
+                                                    <div class="col-md-6">
+                                                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">ข้อมูลครุภัณฑ์</h6>
+                                                        <p class="mb-2"><strong>ชื่อ:</strong> {{ check.asset.item_name }}</p>
+                                                        <p class="mb-2"><strong>รหัส:</strong> {{ check.asset.asset_code }}</p>
+                                                        <p class="mb-2"><strong>ผู้รับผิดชอบ:</strong> {{ check.asset.responsible_person|default:"-" }}</p>
+                                                        <p class="mb-2"><strong>สถานที่เก็บ:</strong> {{ check.asset.storage_location.name|default:"-" }}</p>
+                                                        <p class="mb-0"><strong>สถานะการใช้งาน:</strong> 
+                                                            {% if check.asset.damage_status == 'ใช้งานได้' %}
+                                                                <span class="text-success"><i class="fas fa-check-circle"></i> ใช้งานได้</span>
+                                                            {% elif check.asset.damage_status == 'ชำรุด' %}
+                                                                <span class="text-danger"><i class="fas fa-times-circle"></i> ชำรุด</span>
+                                                            {% elif check.asset.damage_status == 'เสื่อมสภาพ' %}
+                                                                <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> เสื่อมสภาพ</span>
+                                                            {% else %}
+                                                                <span>{{ check.asset.damage_status }}</span>
+                                                            {% endif %}
+                                                        </p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">ข้อมูลการตรวจนับ</h6>
+                                                        <p class="mb-2"><strong>วันที่ตรวจนับ:</strong> {{ check.check_date|date:"d M Y" }}</p>
+                                                        <p class="mb-2"><strong>ปีงบประมาณ:</strong> {{ check.fiscal_year }}</p>
+                                                        <p class="mb-2"><strong>ผู้ตรวจนับ:</strong> {{ check.user.get_full_name|default:check.user.username }}</p>
+                                                        <p class="mb-2"><strong>หมายเหตุ:</strong> {{ check.remarks|default:"-" }}</p>
+                                                    </div>
+                                                    {% if check.check_image %}
+                                                    <div class="col-12 mt-4 text-center">
+                                                        <h6 class="fw-bold text-muted border-bottom pb-2 mb-3 text-start">รูปภาพประกอบ</h6>
+                                                        <img src="{{ check.check_image.url }}" alt="รูปภาพตรวจนับ" class="img-fluid rounded shadow-sm" style="max-height: 400px; object-fit: contain;">
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-top-0">
+                                                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิด</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fas fa-box-open fs-1 text-light mb-3 d-block"></i>
+                                ยังไม่มีข้อมูลการตรวจนับครุภัณฑ์
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if checks.has_other_pages %}
+        <div class="card-footer bg-white border-0 py-3">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0 pagination-sm">
+                    {% if checks.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if fiscal_year_filter %}&fiscal_year={{ fiscal_year_filter }}{% endif %}{% if damage_status_filter %}&damage_status={{ damage_status_filter }}{% endif %}">หน้าแรก</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ checks.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if fiscal_year_filter %}&fiscal_year={{ fiscal_year_filter }}{% endif %}{% if damage_status_filter %}&damage_status={{ damage_status_filter }}{% endif %}">ก่อนหน้า</a>
+                    </li>
+                    {% endif %}
+            
+                    {% for i in checks.paginator.page_range %}
+                        {% if checks.number == i %}
+                            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% elif i > checks.number|add:'-3' and i < checks.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if fiscal_year_filter %}&fiscal_year={{ fiscal_year_filter }}{% endif %}{% if damage_status_filter %}&damage_status={{ damage_status_filter }}{% endif %}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+            
+                    {% if checks.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ checks.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if fiscal_year_filter %}&fiscal_year={{ fiscal_year_filter }}{% endif %}{% if damage_status_filter %}&damage_status={{ damage_status_filter }}{% endif %}">ถัดไป</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ checks.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if fiscal_year_filter %}&fiscal_year={{ fiscal_year_filter }}{% endif %}{% if damage_status_filter %}&damage_status={{ damage_status_filter }}{% endif %}">หน้าสุดท้าย</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal เลือกผู้มีสิทธิ์ -->
+<div class="modal fade" id="allowedUsersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold"><i class="fas fa-users-cog text-primary me-2"></i>เลือกผู้มีสิทธิ์ตรวจนับ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <p class="text-muted small mb-3">เลือกรายชื่อผู้ใช้งานทั่วไปที่ได้รับอนุญาตให้เข้ามาช่วยตรวจนับครุภัณฑ์</p>
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" id="searchUsersInput" class="form-control" placeholder="ค้นหาชื่อ..." onkeyup="filterUsers()">
+                </div>
+                <div class="list-group" id="usersListContainer" style="max-height: 300px; overflow-y: auto;">
+                    <!-- รายชื่อผู้ใช้จะแสดงที่นี่ผ่าน JS -->
+                    <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>กำลังโหลดข้อมูล...</div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="saveAllowedUsers()"><i class="fas fa-save me-2"></i>บันทึกสิทธิ์</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal สำหรับ สแกน QR Code -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1" aria-labelledby="qrScannerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header bg-success text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" id="qrScannerModalLabel"><i class="fas fa-qrcode me-2"></i> สแกน QR Code ครุภัณฑ์</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="closeQrModal"></button>
+      </div>
+      <div class="modal-body text-center p-4">
+        <div id="reader" width="600px"></div>
+        <p class="mt-3 text-muted small">นำกล้องไปส่องที่ QR Code ของครุภัณฑ์ ระบบจะพาไปยังหน้าต่างบันทึกการตรวจนับโดยอัตโนมัติ</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let html5QrcodeScanner = null;
+        
+        function onScanSuccess(decodedText, decodedResult) {
+            // ปิด scanner หลังจากสแกนเจอ
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+            }
+            // ปิด Modal
+            document.getElementById('closeQrModal').click();
+            
+            // ดึงตัวเลข ID ของครุภัณฑ์จาก URL ที่สแกนได้
+            // คาดหวังว่า QR Code จะมีรูปแบบ .../asset/123/ หรือ .../123/
+            let match = decodedText.match(/\/(\d+)\/?$/);
+            if (match && match[1]) {
+                let assetId = match[1];
+                // ใช้ Django URL template เพื่อสร้าง URL ที่ถูกต้องเสมอ
+                let checkUrl = "{% url 'assets:check_asset' 0 %}".replace('0', assetId);
+                window.location.href = checkUrl;
+            } else {
+                alert("QR Code ไม่ถูกต้องหรือไม่รองรับรูปแบบนี้: " + decodedText);
+                // ถ้าอยากให้แสกนต่อ ให้เปิด scanner ใหม่
+                // html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            }
+        }
+
+        function onScanFailure(error) {
+            // handle scan failure, usually better to ignore and keep scanning.
+            // console.warn(`Code scan error = ${error}`);
+        }
+
+        const qrModal = document.getElementById('qrScannerModal');
+        
+        qrModal.addEventListener('shown.bs.modal', function () {
+            // เริ่มต้นการสแกนเมื่อเปิด modal
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader",
+                { fps: 10, qrbox: {width: 250, height: 250} },
+                /* verbose= */ false);
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        });
+        
+        qrModal.addEventListener('hidden.bs.modal', function () {
+            // หยุดการทำงานเมื่อปิด modal
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().catch(error => {
+                    console.error("Failed to clear html5QrcodeScanner. ", error);
+                });
+                html5QrcodeScanner = null;
+            }
+        });
+    });
+
+    function togglePublicCheck(checkbox) {
+        fetch("{% url 'assets:toggle_public_check' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: data.is_enabled ? 'เปิดระบบแล้ว' : 'ปิดระบบแล้ว',
+                    text: data.is_enabled ? 'บุคคลทั่วไปสามารถใช้งานตรวจนับครุภัณฑ์ได้แล้ว' : 'บุคคลทั่วไปไม่สามารถใช้งานตรวจนับครุภัณฑ์ได้แล้ว',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire('ข้อผิดพลาด', data.message || 'เกิดข้อผิดพลาด', 'error');
+                checkbox.checked = !checkbox.checked; // Revert
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+            checkbox.checked = !checkbox.checked; // Revert
+        });
+    }
+
+    let allowedUsersModalInstance;
+    function openAllowedUsersModal() {
+        if (!allowedUsersModalInstance) {
+            allowedUsersModalInstance = new bootstrap.Modal(document.getElementById('allowedUsersModal'));
+        }
+        allowedUsersModalInstance.show();
+        
+        // Fetch users
+        fetch("{% url 'assets:update_allowed_checkers' %}")
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('usersListContainer');
+            container.innerHTML = '';
+            if (data.users && data.users.length > 0) {
+                data.users.forEach(user => {
+                    const isChecked = data.allowed_ids.includes(user.id) ? 'checked' : '';
+                    const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+                    
+                    const label = document.createElement('label');
+                    label.className = 'list-group-item d-flex gap-3 align-items-center user-item';
+                    label.style.cursor = 'pointer';
+                    label.innerHTML = `
+                        <input class="form-check-input flex-shrink-0 user-checkbox" type="checkbox" value="${user.id}" ${isChecked} style="font-size: 1.2rem;">
+                        <span class="pt-1 form-checked-content user-name">
+                            <strong>${name}</strong>
+                            <small class="d-block text-muted">${user.email}</small>
+                        </span>
+                    `;
+                    container.appendChild(label);
+                });
+            } else {
+                container.innerHTML = '<div class="text-center py-4 text-muted">ไม่พบผู้ใช้งาน</div>';
+            }
+        });
+    }
+
+    function filterUsers() {
+        const input = document.getElementById('searchUsersInput');
+        const filter = input.value.toLowerCase();
+        const items = document.querySelectorAll('.user-item');
+        
+        items.forEach(item => {
+            const name = item.querySelector('.user-name').textContent.toLowerCase();
+            if (name.indexOf(filter) > -1) {
+                item.style.setProperty('display', 'flex', 'important');
+            } else {
+                item.style.setProperty('display', 'none', 'important');
+            }
+        });
+    }
+
+    function saveAllowedUsers() {
+        const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+        const userIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        
+        fetch("{% url 'assets:update_allowed_checkers' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ user_ids: userIds })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allowedUsersModalInstance.hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกสำเร็จ',
+                    text: 'อัปเดตรายชื่อผู้มีสิทธิ์ตรวจนับครุภัณฑ์เรียบร้อยแล้ว',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire('ข้อผิดพลาด', data.message || 'เกิดข้อผิดพลาดในการบันทึก', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+        });
+    }
+</script>
+
+{% endblock %}

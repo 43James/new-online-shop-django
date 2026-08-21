@@ -1,0 +1,177 @@
+{% extends "assets/home/base_sidebar.html" %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .page-header::after {
+        content: '\f3c5'; /* map-marker-alt icon */
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 30px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+    .btn-create {
+        background: white;
+        color: #059669;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 50rem;
+        font-weight: 700;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+    .btn-create:hover {
+        background: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        color: #047857;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div style="position: relative; z-index: 1;">
+            <h2 class="fw-bold mb-2"><i class="fas fa-map-marker-alt me-2"></i>จัดการสถานที่เก็บครุภัณฑ์</h2>
+            <p class="mb-0 opacity-75">เพิ่ม แก้ไข ลบ และค้นหาข้อมูลสถานที่จัดเก็บครุภัณฑ์</p>
+        </div>
+        <div style="position: relative; z-index: 1;">
+            <button type="button" class="btn btn-create d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addModal">
+                <i class="fas fa-plus-circle"></i> เพิ่มสถานที่
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="card shadow-sm border-0 mb-4 rounded-4">
+        <div class="card-body p-2">
+            <form method="get" class="d-flex w-100">
+                <div class="input-group input-group-lg border-0">
+                    <span class="input-group-text bg-white border-0 text-muted ps-4">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ query|default:'' }}" class="form-control border-0 bg-white fs-6" placeholder="ค้นหาสถานที่เก็บครุภัณฑ์...">
+                    {% if query %}
+                        <a href="{% url 'assets:asset_list_storage_location' %}" class="btn btn-light px-3 m-1 rounded-pill text-danger" title="ยกเลิกการค้นหา">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    {% endif %}
+                    <button class="btn btn-success px-4 rounded-pill m-1 fw-semibold" style="background-color: #059669; border: none;" type="submit">
+                        ค้นหา
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-borderless align-middle mb-0">
+                    <thead class="table-light text-secondary border-bottom">
+                        <tr>
+                            <th class="ps-4 py-3 fw-semibold text-center" style="width: 10%;">ลำดับ</th>
+                            <th class="py-3 fw-semibold">สถานที่เก็บครุภัณฑ์</th>
+                            <th class="pe-4 py-3 text-center fw-semibold" style="width: 25%;">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for storagelocation in storagelocations %}
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td class="ps-4 py-3 text-center">
+                                <span class="badge bg-light text-dark border rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">{{ forloop.counter }}</span>
+                            </td>
+                            <td class="py-3">
+                                <span class="text-dark fw-bold fs-6">{{ storagelocation.name }}</span>
+                            </td>
+                            <td class="pe-4 py-3 text-center">
+                                <button class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-semibold me-1" data-bs-toggle="modal" data-bs-target="#editModal{{ storagelocation.id }}">
+                                    <i class="fas fa-edit me-1"></i> แก้ไข
+                                </button>
+                                <a href="{% url 'assets:delete_storage_location_asset' storagelocation.id %}" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold" onclick="return confirm('คุณต้องการลบสถานที่เก็บครุภัณฑ์นี้ใช่หรือไม่?');">
+                                    <i class="fas fa-trash-alt me-1"></i> ลบ
+                                </a>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModal{{ storagelocation.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ storagelocation.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 rounded-4 shadow">
+                                    <form method="POST" action="{% url 'assets:edit_storage_location_asset' storagelocation.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header border-bottom-0 pb-0">
+                                            <h5 class="modal-title fw-bold text-success" id="editModalLabel{{ storagelocation.id }}"><i class="fas fa-edit me-2"></i>แก้ไขสถานที่เก็บครุภัณฑ์</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body py-4">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold text-muted small">ชื่อสถานที่เก็บครุภัณฑ์ <span class="text-danger">*</span></label>
+                                                <input type="text" name="name" class="form-control form-control-lg fs-6 border-2" value="{{ storagelocation.name }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-top-0 pt-0">
+                                            <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">ยกเลิก</button>
+                                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold" style="background-color: #059669;" onclick="this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i>กำลังบันทึก...'; this.form.submit();">บันทึก</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-map-marked-alt fs-1 text-light mb-3"></i>
+                                    <p class="fs-5 mb-1 fw-bold text-dark">ไม่พบข้อมูลสถานที่เก็บครุภัณฑ์</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <form method="POST" action="{% url 'assets:asset_list_storage_location' %}">
+                    {% csrf_token %}
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold text-success" id="addModalLabel"><i class="fas fa-plus-circle me-2"></i>เพิ่มสถานที่เก็บครุภัณฑ์</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body py-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small">ชื่อสถานที่เก็บครุภัณฑ์ <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control form-control-lg fs-6 border-2" placeholder="กรอกชื่อสถานที่เก็บครุภัณฑ์" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold" style="background-color: #059669;" onclick="this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i>กำลังบันทึก...'; this.form.submit();">บันทึก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

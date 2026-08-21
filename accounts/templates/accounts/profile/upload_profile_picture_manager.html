@@ -1,0 +1,258 @@
+{% extends "dashboard/home/dashboard.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<style>
+    /* CSS Styles for Modern Profile Upload */
+    .upload-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-bottom: 2rem;
+    }
+    
+    .gradient-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem 1rem 0 0;
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+
+    .main-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-body-custom {
+        padding: 2.5rem;
+    }
+
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        background-color: #f8fafc;
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .upload-area:hover, .upload-area:focus-within {
+        border-color: #10b981;
+        background-color: #f0fdf4;
+    }
+    
+    .upload-area::after {
+        pointer-events: none;
+    }
+
+    .preview-section {
+        background: #f8fafc;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .image-preview-container {
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        background: #e2e8f0;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #imagePreview {
+        max-width: 100%;
+        display: block;
+    }
+
+    .btn-pill {
+        border-radius: 50rem;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-upload {
+        background-color: #10b981;
+        color: white;
+        border: none;
+    }
+
+    .btn-upload:hover {
+        background-color: #059669;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-cancel {
+        background-color: #64748b;
+        color: white;
+        border: none;
+    }
+
+    .btn-cancel:hover {
+        background-color: #475569;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(100, 116, 139, 0.3);
+    }
+
+    .btn-crop {
+        background-color: #10b981;
+        color: white;
+        border: none;
+    }
+
+    .btn-crop:hover {
+        background-color: #059669;
+        color: white;
+    }
+
+    #croppedImageCanvas {
+        background: white;
+        border-radius: 1rem;
+        padding: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin: 0 auto;
+        max-width: 100%;
+    }
+
+    .back-btn-header {
+        position: absolute;
+        left: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: white;
+        font-size: 1.2rem;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .back-btn-header:hover {
+        color: #e2e8f0;
+    }
+
+</style>
+
+<div class="upload-container mt-4">
+    <div class="main-card">
+        <div class="gradient-header">
+            <a href="{% url 'accounts:manager_profile_detail' request.user.username %}" class="back-btn-header" title="กลับ">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h2 class="h3 mb-0 fw-bold"><i class="bi bi-camera text-white me-2"></i>อัพโหลดรูปโปรไฟล์</h2>
+        </div>
+        
+        <div class="card-body-custom">
+            <form id="uploadForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="upload-area">
+                    <div class="mb-3">
+                        <i class="bi bi-cloud-upload fa-3x text-secondary mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="text-secondary">เลือกไฟล์ภาพของคุณ</h5>
+                    </div>
+                    {{ form|crispy }}
+                </div>
+
+                <div class="preview-section">
+                    <h5 class="text-center mb-3"><i class="bi bi-crop me-2 text-secondary"></i>ปรับแต่งภาพ</h5>
+                    
+                    <div class="image-preview-container">
+                        <img id="imagePreview" style="max-width: 100%;">
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <button id="cropButton" class="btn btn-crop btn-pill shadow-sm" type="button">
+                            <i class="bi bi-scissors me-1"></i> ครอปภาพ
+                        </button>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <canvas id="croppedImageCanvas" style="display: none; width: 200px;"></canvas>
+                    </div>
+                </div>
+
+                <!-- เพิ่มฟิลด์ที่ซ่อนไว้สำหรับรับภาพที่ครอปแล้ว -->
+                <input type="hidden" name="cropped_image" id="croppedImageField">
+
+                <div class="d-flex justify-content-center gap-3 mt-5">
+                    <button type="submit" class="btn btn-upload btn-pill px-4" onclick="this.disabled=true; this.innerHTML='<i class=\'bi bi-arrow-repeat me-2\'></i>กำลังประมวลผล...'; this.form.submit();">
+                        <i class="bi bi-check-circle me-1"></i> อัพโหลด
+                    </button>
+                    <a href="{% url 'accounts:manager_profile_detail' request.user.username %}" class="btn btn-cancel btn-pill px-4">
+                        <i class="bi bi-x-circle me-1"></i> ยกเลิก
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet" />
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var imagePreview = document.getElementById('imagePreview');
+        var cropButton = document.getElementById('cropButton');
+        var croppedImageCanvas = document.getElementById('croppedImageCanvas');
+        var croppedImageField = document.getElementById('croppedImageField');
+        var cropper;
+    
+        document.querySelector('input[type="file"]').addEventListener('change', function (e) {
+            var files = e.target.files;
+            if (files.length > 0) {
+                var file = files[0];
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.src = e.target.result;
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    cropper = new Cropper(imagePreview, {
+                        aspectRatio: 1,
+                        viewMode: 1
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    
+        cropButton.addEventListener('click', function () {
+            var canvas = cropper.getCroppedCanvas();
+            croppedImageCanvas.style.display = 'block';
+            croppedImageCanvas.width = canvas.width;
+            croppedImageCanvas.height = canvas.height;
+            var ctx = croppedImageCanvas.getContext('2d');
+            ctx.drawImage(canvas, 0, 0);
+            
+            // Get the cropped image as data URL
+            var croppedImageDataURL = canvas.toDataURL('image/png');
+            
+            // Set the data URL to the hidden input field
+            croppedImageField.value = croppedImageDataURL;
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', function (e) {
+            if (!croppedImageField.value) {
+                e.preventDefault();
+                alert('กรุณาครอปภาพก่อนทำการอัพโหลด');
+            }
+        });
+    });
+</script>
+{% endblock %}

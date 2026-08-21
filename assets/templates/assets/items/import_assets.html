@@ -1,0 +1,317 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .page-header::after {
+        content: '\f1c3';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 30px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+    .form-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        background: white;
+        overflow: hidden;
+    }
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #059669;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #ecfdf5;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .file-upload-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        background: #fafbfc;
+        transition: all 0.25s;
+        cursor: pointer;
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .file-upload-area:hover, .file-upload-area.dragover {
+        border-color: #10b981;
+        background: #ecfdf5;
+    }
+    .file-upload-area input[type="file"] {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        opacity: 0;
+        cursor: pointer;
+        height: 100%;
+        width: 100%;
+    }
+    .file-upload-area .upload-icon {
+        font-size: 3rem;
+        color: #d1d5db;
+        margin-bottom: 15px;
+        transition: color 0.3s;
+    }
+    .file-upload-area:hover .upload-icon, .file-upload-area.dragover .upload-icon {
+        color: #10b981;
+    }
+    .file-upload-area .upload-text {
+        color: #6b7280;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
+    .file-upload-area .upload-text strong {
+        color: #10b981;
+    }
+    .file-name-display {
+        display: none;
+        background: #f3f4f6;
+        padding: 12px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #e5e7eb;
+    }
+    .file-name-display i {
+        font-size: 1.5rem;
+        color: #10b981;
+    }
+    .btn-submit {
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none;
+        color: white;
+        padding: 12px 36px;
+        border-radius: 50rem;
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        transition: all 0.3s;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+    .btn-submit:disabled {
+        background: #9ca3af;
+        box-shadow: none;
+        transform: none;
+        cursor: not-allowed;
+    }
+    .btn-cancel {
+        background: #f3f4f6;
+        border: none;
+        color: #6b7280;
+        padding: 12px 32px;
+        border-radius: 50rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    .btn-cancel:hover {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    .guidance-box {
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 8px 8px 0;
+        padding: 20px;
+    }
+    .guidance-box h5 {
+        color: #b45309;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+    .guidance-box ul {
+        margin-bottom: 0;
+        padding-left: 20px;
+        color: #78350f;
+    }
+    .guidance-box li {
+        margin-bottom: 8px;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-2"><i class="fas fa-file-excel me-2"></i>นำเข้าข้อมูลครุภัณฑ์ (Excel Import)</h2>
+            <p class="mb-0 opacity-75">เพิ่มรายการครุภัณฑ์ทีละหลายรายการด้วยไฟล์ Excel</p>
+        </div>
+        <div>
+            <a href="{% url 'assets:asset_list' %}" class="btn btn-light text-success fw-bold rounded-pill shadow-sm px-4">
+                <i class="fas fa-list me-2"></i>รายการครุภัณฑ์
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3 shadow-sm border-0 border-start border-4 {% if message.tags == 'success' %}border-success{% elif message.tags == 'error' %}border-danger{% else %}border-info{% endif %}" role="alert">
+                {{ message|safe }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Form Card -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="form-card">
+                <div class="card-body p-4 p-md-5">
+                    
+                    <div class="row">
+                        <div class="col-lg-7 mb-4 mb-lg-0">
+                            <div class="form-section-title">
+                                <i class="fas fa-upload"></i> อัปโหลดไฟล์ Excel
+                            </div>
+                            
+                            <form method="post" enctype="multipart/form-data" id="importForm">
+                                {% csrf_token %}
+                                
+                                <div class="file-upload-area" id="dropArea">
+                                    <input type="file" name="excel_file" id="excel_file" accept=".xlsx, .xls" required onchange="handleFileSelect(this)">
+                                    <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                    <div class="upload-text">
+                                        <strong>คลิกเพื่อเลือกไฟล์</strong> หรือลากไฟล์มาวางที่นี่
+                                    </div>
+                                    <div class="text-muted mt-2">รองรับไฟล์นามสกุล .xlsx และ .xls เท่านั้น</div>
+                                </div>
+
+                                <div class="file-name-display d-flex" id="fileDisplay">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-excel me-3"></i>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold text-dark" id="fileName">ชื่อไฟล์.xlsx</span>
+                                            <span class="text-muted small" id="fileSize">0 KB</span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" style="width: 32px; height: 32px; padding: 0;" onclick="removeFile()" title="ลบไฟล์">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="d-flex gap-3 mt-4">
+                                    <a onclick="history.back()" class="btn btn-cancel">
+                                        <i class="fas fa-times me-2"></i>ยกเลิก
+                                    </a>
+                                    <button type="submit" class="btn btn-submit flex-grow-1" id="submitBtn" disabled
+                                        onclick="this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i>กำลังประมวลผล...';">
+                                        <i class="fas fa-file-import me-2"></i>อัปโหลดและบันทึกข้อมูล
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="col-lg-5 ps-lg-4">
+                            <div class="guidance-box h-100">
+                                <h5><i class="fas fa-lightbulb me-2"></i>ข้อแนะนำการเตรียมไฟล์</h5>
+                                <ul>
+                                    <li>โครงสร้างหัวคอลัมน์ในแถวแรกต้องตรงกับรูปแบบที่ระบบกำหนด</li>
+                                    <li>คอลัมน์ <strong class="text-danger">"ลำดับ/ปี"</strong> ห้ามซ้ำกับรหัสครุภัณฑ์ที่มีอยู่เดิมในระบบ (unique=True)</li>
+                                    <li>ค่า <strong class="text-dark">"สถานะการใช้งาน"</strong> ต้องระบุให้ตรงกับตัวเลือกในระบบเท่านั้น ได้แก่:
+                                        <ul class="mt-2 text-muted" style="list-style-type: circle;">
+                                            <li>ใช้งานได้</li>
+                                            <li>ชำรุด</li>
+                                            <li>เสื่อมสภาพ</li>
+                                            <li>สูญไป</li>
+                                            <li>ไม่ใช้</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                                <div class="mt-4 pt-3 border-top border-warning opacity-75 text-center">
+                                    <a href="{% url 'assets:download_asset_template' %}" class="btn btn-sm btn-outline-warning text-dark rounded-pill fw-bold">
+                                        <i class="fas fa-download me-2"></i>ดาวน์โหลดไฟล์ Template
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('excel_file');
+    const fileDisplay = document.getElementById('fileDisplay');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const submitBtn = document.getElementById('submitBtn');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect(fileInput);
+        }
+    });
+
+    function handleFileSelect(input) {
+        if (input.files && input.files.length > 0) {
+            const file = input.files[0];
+            const size = (file.size / 1024).toFixed(2);
+            
+            fileName.textContent = file.name;
+            fileSize.textContent = size > 1024 ? (size / 1024).toFixed(2) + ' MB' : size + ' KB';
+            
+            dropArea.style.display = 'none';
+            fileDisplay.style.display = 'flex';
+            fileDisplay.classList.remove('d-none');
+            submitBtn.disabled = false;
+        }
+    }
+
+    function removeFile() {
+        fileInput.value = '';
+        dropArea.style.display = 'block';
+        fileDisplay.style.display = 'none';
+        fileDisplay.classList.add('d-none');
+        submitBtn.disabled = true;
+    }
+</script>
+{% endblock %}

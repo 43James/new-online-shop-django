@@ -2,39 +2,110 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from accounts.models import MyUser, Profile
-from app_linebot.models import UserLine, UserLine_Asset
+from app_linebot.models import UserLine_Asset
 from app_linebot.views import notify_admin_assetloan, notify_admin_on_auto_loan, notify_admin_on_return, notify_borrower, notify_overdue_asset_loan
-from assets.models import AssetCode, AssetItem, AssetCheck, AssetItemLoan, AssetOwnership, AssetReservation, AssetTransferItem, AssetTransferRequest, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan,IssuingAssetLoan
+from assets.models import AssetCheck, AssetCode, AssetItem, AssetItemLoan, AssetOwnership, AssetReservation, AssetTransferItem, AssetTransferRequest, StorageLocation, AssetCategory, Subcategory, OrderAssetLoan,IssuingAssetLoan, AssetSystemSetting
 from dashboard.views import thai_month_name
-from .forms import ApproveLoanForm, AssetCheckForm, AssetCodeForm, AssetItemForm, AssetItemLoanForm, CategoryForm, LoanForm, ReservationForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
+from .forms import AssetCheckForm, AssetCodeForm, AssetItemForm, AssetItemLoanForm, CategoryForm, LoanForm, ReservationForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
 from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Q, Prefetch
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.conf import settings
-import qrcode
-from django.views.decorators.http import require_POST
 from django.http import JsonResponse
+import json
 from django.db import IntegrityError, transaction
-from io import BytesIO
-from datetime import date
-from django.core.files.base import ContentFile
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.http import JsonResponse
-import json # นำเข้าโมดูล json
-from linebot import LineBotApi
-from linebot.models import TextSendMessage
-from django.conf import settings
+import json
 import pandas as pd
 
 
 
 @login_required
 def home_assets(request):
+    from django.db.models import Count, Sum
+    
+    # === สถิติรวม ===
+    total_assets = AssetItem.objects.count()
+    ready_assets = AssetItem.objects.filter(damage_status='ใช้งานได้').count()
+    repairing_assets = AssetItem.objects.filter(damage_status='ชำรุด').count()
+    broken_assets = AssetItem.objects.filter(
+        damage_status__in=['เสื่อมสภาพ', 'สูญไป', 'ไม่ใช้']
+    ).count()
+    
+    # === มูลค่ารวม ===
+    total_value = AssetItem.objects.aggregate(total=Sum('purchase_price'))['total'] or 0
+    
+    # === สถิติตามหมวดหมู่ (สำหรับกราฟ) ===
+    categories_data = AssetCategory.objects.annotate(
+        asset_count=Count('subcategories__asset_items')
+    ).values('name_cate', 'asset_count').order_by('-asset_count')
+    
+    chart_labels = [c['name_cate'] for c in categories_data]
+    chart_values = [c['asset_count'] for c in categories_data]
+    
+    # === สถิติตามสถานที่เก็บ (สำหรับกราฟวงกลม) ===
+    location_data = StorageLocation.objects.annotate(
+        asset_count=Count('assetitem')
+    ).filter(asset_count__gt=0).values('name', 'asset_count').order_by('-asset_count')[:8]
+    
+    location_labels = [l['name'] for l in location_data]
+    location_values = [l['asset_count'] for l in location_data]
+    
+    # === รายการครุภัณฑ์ล่าสุด 5 รายการ ===
+    recent_assets = AssetItem.objects.select_related(
+        'asset_code', 'storage_location', 'subcategory'
+    ).order_by('-date_asset_created')[:5]
+    
+    # === การยืมครุภัณฑ์ล่าสุด ===
+    recent_loans = OrderAssetLoan.objects.select_related('user').order_by('-date_created')[:5]
+    
+    # === คำร้องเคลื่อนย้ายล่าสุด ===
+    pending_transfers = AssetTransferRequest.objects.filter(
+        status__in=['PENDING_HEAD', 'PENDING_DIRECTOR', 'PENDING_ACTION']
+    ).count()
+    
+    # === สรุปการยืม ===
+    active_loans = OrderAssetLoan.objects.filter(status__in=['borrowed', 'approved', 'overdue']).count()
+    pending_loan_approvals = OrderAssetLoan.objects.filter(status='pending').count()
+    overdue_loans = OrderAssetLoan.objects.filter(status='overdue').count()
+    
+    # === สถิติการตรวจนับครุภัณฑ์ ===
+    available_check_years = AssetCheck.objects.values_list('fiscal_year', flat=True).distinct().order_by('-fiscal_year')
+    current_check_year = available_check_years.first() if available_check_years.exists() else None
+    
+    if current_check_year and total_assets > 0:
+        checked_count = AssetCheck.objects.filter(fiscal_year=current_check_year).values('asset').distinct().count()
+        check_percentage = round((checked_count / total_assets) * 100, 1)
+        unchecked_count = total_assets - checked_count
+    else:
+        checked_count = 0
+        check_percentage = 0
+        unchecked_count = total_assets
+    
     context = {
         "loan_pending_count": count_pending_asset_loans(),
+        "total_assets": total_assets,
+        "ready_assets": ready_assets,
+        "repairing_assets": repairing_assets,
+        "broken_assets": broken_assets,
+        "total_value": total_value,
+        "chart_labels": chart_labels,
+        "chart_values": chart_values,
+        "location_labels": location_labels,
+        "location_values": location_values,
+        "recent_assets": recent_assets,
+        "recent_loans": recent_loans,
+        "pending_transfers": pending_transfers,
+        "active_loans": active_loans,
+        "pending_loan_approvals": pending_loan_approvals,
+        "overdue_loans": overdue_loans,
+        "current_check_year": current_check_year,
+        "checked_count": checked_count,
+        "unchecked_count": unchecked_count,
+        "check_percentage": check_percentage,
     }
-    return render(request, 'home_assets.html' , context)
+    return render(request, 'assets/home/home_assets.html', context)
 
 
 
@@ -79,44 +150,65 @@ def import_assets(request):
                             name=str(row['สถานที่เก็บ']).strip()
                         )
 
+                        raw_serial = row.get('ลำดับ/ปี')
+                        if pd.isna(raw_serial) or not str(raw_serial).strip():
+                            raise ValueError("ข้อมูล 'ลำดับ/ปี' ว่างเปล่าไม่ได้")
+                            
                         # 4. จัดการ รหัสครุภัณฑ์ (AssetCode)
-                        # ต้องระวังเรื่อง unique ของ serial_year ตามโมเดลที่คุณให้มา
                         asset_code_obj, created = AssetCode.objects.get_or_create(
-                            serial_year=str(row['ลำดับ/ปี']).strip(),
+                            serial_year=str(raw_serial).strip(),
                             defaults={
-                                'asset_type': str(row['ประเภท']).strip(),
-                                'asset_kind': str(row['ชนิด']).strip(),
-                                'asset_character': str(row['ลักษณะ']).strip(),
+                                'asset_type': str(row.get('ประเภท', '-')).strip() if pd.notna(row.get('ประเภท')) else '-',
+                                'asset_kind': str(row.get('ชนิด', '-')).strip() if pd.notna(row.get('ชนิด')) else '-',
+                                'asset_character': str(row.get('ลักษณะ', '-')).strip() if pd.notna(row.get('ลักษณะ')) else '-',
                             }
                         )
                         
-                        # กรณีที่มีรหัสนี้อยู่แล้ว แต่อาจจะอยากอัพเดทข้อมูลประเภท/ชนิด (ถ้าจำเป็น)
                         if not created:
-                             asset_code_obj.asset_type = str(row['ประเภท']).strip()
-                             asset_code_obj.asset_kind = str(row['ชนิด']).strip()
-                             asset_code_obj.asset_character = str(row['ลักษณะ']).strip()
+                             asset_code_obj.asset_type = str(row.get('ประเภท', '-')).strip() if pd.notna(row.get('ประเภท')) else '-'
+                             asset_code_obj.asset_kind = str(row.get('ชนิด', '-')).strip() if pd.notna(row.get('ชนิด')) else '-'
+                             asset_code_obj.asset_character = str(row.get('ลักษณะ', '-')).strip() if pd.notna(row.get('ลักษณะ')) else '-'
                              asset_code_obj.save()
 
-                        # 5. สร้างรายการครุภัณฑ์ (AssetItem)
-                        # แปลงวันที่ (Excel อาจส่งมาเป็น Timestamp หรือ String)
-                        p_date = pd.to_datetime(row['วันที่ซื้อ']).date()
+                        # ฟังก์ชันช่วยเหลือแปลงข้อมูล
+                        def safe_int(val, default=0):
+                            try:
+                                return int(float(val)) if pd.notna(val) else default
+                            except:
+                                return default
+                                
+                        def safe_decimal(val, default=0):
+                            try:
+                                return float(val) if pd.notna(val) else default
+                            except:
+                                return default
 
+                        raw_date = row.get('วันที่ซื้อ')
+                        if pd.isna(raw_date):
+                            p_date = timezone.now().date()
+                        else:
+                            try:
+                                p_date = pd.to_datetime(raw_date).date()
+                            except:
+                                p_date = timezone.now().date()
+
+                        # 5. สร้างรายการครุภัณฑ์ (AssetItem)
                         asset_item = AssetItem(
-                            item_name=str(row['ชื่อรายการครุภัณฑ์']).strip(),
-                            subcategory=subcategory,
                             asset_code=asset_code_obj,
-                            unit=str(row['หน่วยนับ']).strip(),
-                            purchase_price=row['ราคาที่ซื้อ'],
+                            item_name=str(row.get('ชื่อรายการครุภัณฑ์', 'ไม่มีชื่อ')).strip() if pd.notna(row.get('ชื่อรายการครุภัณฑ์')) else 'ไม่มีชื่อ',
+                            subcategory=subcategory,
+                            unit=str(row.get('หน่วยนับ', 'ชิ้น')).strip() if pd.notna(row.get('หน่วยนับ')) else 'ชิ้น',
+                            purchase_price=safe_decimal(row.get('ราคาที่ซื้อ')),
                             purchase_date=p_date,
-                            fiscal_year=int(row['ปีที่ใช้งาน']),
-                            lifetime=int(row['อายุการใช้งาน']),
-                            used_years=int(row['ใช้มาแล้วกี่ปี']), # หรือคำนวณจากปีปัจจุบันลบปีที่ซื้อก็ได้
-                            responsible_person=str(row['ผู้รับผิดชอบ']).strip(),
+                            fiscal_year=safe_int(row.get('ปีที่ใช้งาน'), timezone.now().year),
+                            lifetime=safe_int(row.get('อายุการใช้งาน'), 0),
+                            used_years=safe_int(row.get('ใช้มาแล้วกี่ปี'), 0),
+                            responsible_person=str(row.get('ผู้รับผิดชอบ', '-')).strip() if pd.notna(row.get('ผู้รับผิดชอบ')) else '-',
                             storage_location=location,
-                            brand_model=str(row['ยี่ห้อ/รุ่น']).strip(),
-                            notes=str(row['หมายเหตุ']) if pd.notna(row['หมายเหตุ']) else "",
-                            damage_status=str(row['สถานะการใช้งาน']).strip(), # ต้องตรงกับ Choice: ชำรุด, เสื่อม, ฯลฯ
-                            status_borrowing=True if str(row['ยืมได้หรือไม่']).lower() in ['yes', 'true', 'ได้', '1'] else False
+                            brand_model=str(row.get('ยี่ห้อ/รุ่น', '-')).strip() if pd.notna(row.get('ยี่ห้อ/รุ่น')) else '-',
+                            notes=str(row.get('หมายเหตุ', '')) if pd.notna(row.get('หมายเหตุ')) else "",
+                            damage_status=str(row.get('สถานะการใช้งาน', 'ใช้งานได้')).strip() if pd.notna(row.get('สถานะการใช้งาน')) else "ใช้งานได้",
+                            status_borrowing=True if pd.notna(row.get('ยืมได้หรือไม่')) and str(row.get('ยืมได้หรือไม่')).lower() in ['yes', 'true', 'ได้', '1'] else False
                         )
                         
                         # เรียก save() เพื่อให้คำนวณค่าเสื่อมและสร้าง QR Code อัตโนมัติ
@@ -136,14 +228,88 @@ def import_assets(request):
         except Exception as e:
             messages.error(request, f'เกิดข้อผิดพลาดในการอ่านไฟล์: {str(e)}')
 
-    return render(request, 'import_assets.html')
+    return render(request, 'assets/items/import_assets.html')
+
+import io
+from django.http import HttpResponse
+
+@login_required
+def export_assets(request):
+    assets = AssetItem.objects.select_related(
+        'subcategory__category', 
+        'asset_code', 
+        'storage_location'
+    ).all()
+    
+    data = []
+    for index, asset in enumerate(assets, start=1):
+        # คำนวณค่าเสื่อมรายวัน
+        annual_depreciation = float(asset.annual_depreciation) if asset.annual_depreciation else 0
+        daily_depreciation = annual_depreciation / 365 if annual_depreciation > 0 else 0
+        
+        data.append({
+            'ลำดับ': index,
+            'หมวดหมู่หลัก': asset.subcategory.category.name_cate if asset.subcategory and asset.subcategory.category else '',
+            'หมวดหมู่ย่อย': asset.subcategory.name_sub if asset.subcategory else '',
+            'ชื่อรายการครุภัณฑ์': asset.item_name,
+            'ประเภท': asset.asset_code.asset_type if asset.asset_code else '',
+            'ชนิด': asset.asset_code.asset_kind if asset.asset_code else '',
+            'ลักษณะ': asset.asset_code.asset_character if asset.asset_code else '',
+            'ลำดับ/ปี': asset.asset_code.serial_year if asset.asset_code else '',
+            'หน่วยนับ': asset.unit,
+            'ราคาที่ซื้อ': float(asset.purchase_price) if asset.purchase_price else 0,
+            'วันที่ซื้อ': asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date else '',
+            'ปีที่ใช้งาน': asset.fiscal_year,
+            'อายุการใช้งาน': asset.lifetime,
+            'ใช้มาแล้วกี่ปี': asset.used_years,
+            'ค่าความเสื่อมต่อปี': annual_depreciation,
+            'ค่าเสื่อมราคาประจำปี (บาท)/วัน': daily_depreciation,
+            'ผู้รับผิดชอบ': asset.responsible_person,
+            'สถานที่เก็บ': asset.storage_location.name if asset.storage_location else '',
+            'ยี่ห้อ/รุ่น': asset.brand_model,
+            'หมายเหตุ': asset.notes if asset.notes else '',
+            'สถานะการใช้งาน': asset.damage_status,
+            'ยืมได้หรือไม่': 'Yes' if asset.status_borrowing else 'No'
+        })
+        
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    # openpyxl should be available since pd.read_excel works for .xlsx
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Assets')
+        
+    output.seek(0)
+    response = HttpResponse(
+        output, 
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="assets_export.xlsx"'
+    return response
+
 
 
 # รายการครุภัณฑ์
 @login_required
 def asset_list(request):
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category', '')
+    location_id = request.GET.get('storage_location', '')
+    status = request.GET.get('damage_status', '')
+
     # ดึงข้อมูลรายการครุภัณฑ์ทั้งหมด
-    assets_list = AssetItem.objects.all().order_by('id')
+    assets_list = AssetItem.objects.select_related('asset_code', 'subcategory__category', 'storage_location').all().order_by('id')
+
+    if query:
+        assets_list = assets_list.filter(Q(item_name__icontains=query) | Q(asset_code__serial_year__icontains=query))
+    
+    if category_id:
+        assets_list = assets_list.filter(subcategory__category__id=category_id)
+        
+    if location_id:
+        assets_list = assets_list.filter(storage_location__id=location_id)
+        
+    if status:
+        assets_list = assets_list.filter(damage_status=status)
 
     # สร้าง Paginator object
     paginator = Paginator(assets_list, 10) # แสดง 10 รายการต่อหน้า
@@ -157,9 +323,25 @@ def asset_list(request):
     except EmptyPage:
         # ถ้าหมายเลขหน้าเกินจำนวนหน้าทั้งหมด ให้แสดงหน้าสุดท้าย
         assets = paginator.page(paginator.num_pages)
+        
+    categories = AssetCategory.objects.all()
+    storage_locations = StorageLocation.objects.all()
+    damage_statuses = AssetItem.objects.exclude(damage_status__isnull=True).exclude(damage_status='').values_list('damage_status', flat=True).distinct()
+    
+    context = {
+        'assets': assets,
+        'query': query,
+        'selected_category': int(category_id) if category_id.isdigit() else '',
+        'selected_location': int(location_id) if location_id.isdigit() else '',
+        'selected_status': status,
+        'categories': categories,
+        'storage_locations': storage_locations,
+        'damage_statuses': damage_statuses,
+        "loan_pending_count": count_pending_asset_loans(),
+    }
     
     # ส่งข้อมูล assets ที่ถูกแบ่งหน้าแล้วไปยัง template
-    return render(request, 'asset_list.html', {'assets': assets})
+    return render(request, 'assets/items/asset_list.html', context)
 
 @login_required
 def add_asset_item(request):
@@ -195,7 +377,7 @@ def add_asset_item(request):
         asset_code_form = AssetCodeForm()
         asset_item_form = AssetItemForm()
 
-    return render(request, "add_asset_item.html", {
+    return render(request, "assets/items/add_asset_item.html", {
         "asset_code_form": asset_code_form,
         "asset_item_form": asset_item_form,
         "categories": categories,
@@ -210,9 +392,10 @@ def asset_detail(request, pk):
     asset = get_object_or_404(AssetItem, pk=pk)
     # หากต้องการใช้ฟังก์ชัน calculate_annual_depreciation
     annual_depreciation = asset.calculate_annual_depreciation()
-    return render(request, 'asset_detail.html', {
+    return render(request, 'assets/items/asset_detail.html', {
         'asset': asset,
-        'annual_depreciation': annual_depreciation
+        'annual_depreciation': annual_depreciation,
+        'loan_pending_count': count_pending_asset_loans(),
     })
 
 
@@ -255,7 +438,7 @@ def asset_edit(request, pk):
     
     categories = AssetCategory.objects.prefetch_related("subcategories").all()
     
-    return render(request, 'asset_edit.html', {
+    return render(request, 'assets/items/asset_edit.html', {
         'asset_item_form': asset_item_form,
         'asset_code_form': asset_code_form,
         'asset': asset,
@@ -297,20 +480,40 @@ def asset_delete(request, pk):
 #             return redirect('assets:ownership_list')  # เปลี่ยนไปหน้ารายการการครอบครองครุภัณฑ์
 #     else:
 #         form = AssetOwnershipForm()
-#     return render(request, 'create_asset_ownership.html', {'form': form})
+#     return render(request, 'assets/home/create_asset_ownership.html', {'form': form})
 
-# ==========================================
-# ฝั่งผู้ใช้งาน (User)
-# ==========================================
 @login_required
 def my_assets_view(request):
     """ฟังก์ชันแสดงรายการครุภัณฑ์ที่ผู้ใช้งานครอบครองอยู่ปัจจุบัน"""
-    my_ownerships = AssetOwnership.objects.filter(user=request.user, is_active=True).select_related('asset')
+    from django.db.models import Exists, OuterRef
+    from assets.models import AssetTransferItem
+
+    query = request.GET.get('q', '')
+    
+    pending_items = AssetTransferItem.objects.filter(
+        asset=OuterRef('asset'),
+        request_form__status__in=['PENDING_HEAD', 'PENDING_DIRECTOR', 'PENDING_ACTION']
+    )
+    
+    my_ownerships = AssetOwnership.objects.filter(user=request.user, is_active=True).select_related('asset').annotate(
+        has_pending_request=Exists(pending_items)
+    )
+    
+    if query:
+        my_ownerships = my_ownerships.filter(
+            Q(asset__item_name__icontains=query) |
+            Q(asset__asset_code__asset_type__icontains=query) |
+            Q(asset__asset_code__asset_kind__icontains=query) |
+            Q(asset__asset_code__asset_character__icontains=query) |
+            Q(asset__asset_code__serial_year__icontains=query)
+        )
     
     context = {
-        'my_ownerships': my_ownerships
+        'my_ownerships': my_ownerships,
+        'query': query,
+        "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'ownership/my_assets.html', context)
+    return render(request, 'assets/ownership/my_assets.html', context)
 
 # @login_required
 # def create_request_view(request):
@@ -354,7 +557,7 @@ def my_assets_view(request):
 #         'my_assets': [own.asset for own in my_active_assets],
 #         'locations': all_locations
 #     }
-#     return render(request, 'ownership/create_request.html', context)
+#     return render(request, 'assets/ownership/create_request.html', context)
 
 # @login_required
 # def create_request_view(request):
@@ -404,12 +607,22 @@ def my_assets_view(request):
 #         'my_assets': [own.asset for own in my_active_assets],
 #         'locations': all_locations
 #     }
-#     return render(request, 'ownership/create_request.html', context)
+#     return render(request, 'assets/ownership/create_request.html', context)
 
 @login_required
 def create_request_view(request):
     """ฟังก์ชันสร้างใบคำร้อง (อัปเดตดึง 'กลุ่มงาน' จาก Profile)"""
-    my_active_assets = AssetOwnership.objects.filter(user=request.user, is_active=True)
+    from django.db.models import Exists, OuterRef
+    from assets.models import AssetTransferItem
+
+    pending_items = AssetTransferItem.objects.filter(
+        asset=OuterRef('asset'),
+        request_form__status__in=['PENDING_HEAD', 'PENDING_DIRECTOR', 'PENDING_ACTION']
+    )
+    my_active_assets = AssetOwnership.objects.filter(user=request.user, is_active=True).annotate(
+        has_pending_request=Exists(pending_items)
+    )
+    
     all_locations = StorageLocation.objects.all()
 
     if request.method == 'POST':
@@ -453,11 +666,18 @@ def create_request_view(request):
         messages.success(request, f'สร้างใบคำร้องจำนวน {len(asset_ids)} รายการสำเร็จ ระบบกำลังส่งเรื่องให้หัวหน้างาน')
         return redirect('assets:transfer_request_list') 
 
+    my_assets_list = []
+    for own in my_active_assets:
+        asset = own.asset
+        asset.has_pending_request = own.has_pending_request
+        my_assets_list.append(asset)
+
     context = {
-        'my_assets': [own.asset for own in my_active_assets],
-        'locations': all_locations
+        'my_assets': my_assets_list,
+        'locations': all_locations,
+        "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'ownership/create_request.html', context)
+    return render(request, 'assets/ownership/create_request.html', context)
 
 
 @login_required
@@ -473,8 +693,9 @@ def transfer_request_list_view(request):
     context = {
         'my_requests': my_requests,
         'all_requests': all_requests,
+        "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'ownership/transfer_request_list.html', context)
+    return render(request, 'assets/ownership/transfer_request_list.html', context)
 
 
 
@@ -540,9 +761,9 @@ def transfer_request_list_view(request):
 #         'can_approve_director': can_approve_director,
 #         'can_execute_action': can_execute_action,
 #     }
-#     return render(request, 'ownership/request_detail.html', context)
+#     return render(request, 'assets/ownership/request_detail.html', context)
 
-from django.contrib.auth import get_user_model
+
 
 @login_required
 def request_detail_view(request, request_id):
@@ -611,25 +832,79 @@ def request_detail_view(request, request_id):
         'can_approve_head': can_approve_head,
         'can_approve_director': can_approve_director,
         'can_execute_action': can_execute_action,
+        "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'ownership/request_detail.html', context)
+    return render(request, 'assets/ownership/request_detail.html', context)
 
 
 @login_required
 def transfer_request_list_view(request):
-    """ฟังก์ชันแสดงหน้ารวมคำร้อง (แยกสิทธิ์การมองเห็น)"""
-    my_requests = AssetTransferRequest.objects.filter(requester=request.user).order_by('-id')
+    """ฟังก์ชันแสดงหน้ารวมคำร้อง (คำร้องของฉัน)"""
+    query = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '')
 
-    all_requests = None
-    # ✅ ตรวจสอบสิทธิ์ว่ามีสิทธิ์เป็น แอดมิน/ผู้จัดการ/พัสดุ/ผู้บริหาร หรือไม่ ถ้ามีให้เห็นรายการรออนุมัติ
-    if request.user.is_admin or request.user.is_manager or request.user.is_warehouse_manager or request.user.is_executive:
-        all_requests = AssetTransferRequest.objects.all().order_by('-id')
+    # --- 1. คำร้องของฉัน ---
+    my_requests = AssetTransferRequest.objects.filter(requester=request.user).order_by('-id')
+    if query:
+        my_requests = my_requests.filter(
+            Q(id__icontains=query) |
+            Q(request_items__asset__item_name__icontains=query) |
+            Q(request_items__asset__asset_code__serial_year__icontains=query)
+        ).distinct()
+    if status_filter:
+        my_requests = my_requests.filter(status=status_filter)
+
+    # ระบบ Pagination สำหรับ "คำร้องของฉัน"
+    my_paginator = Paginator(my_requests, 10)
+    my_page_number = request.GET.get('page')
+    my_page_obj = my_paginator.get_page(my_page_number)
 
     context = {
-        'my_requests': my_requests,
-        'all_requests': all_requests,
+        'my_requests': my_page_obj,
+        'query': query,
+        'status_filter': status_filter,
+        "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'ownership/transfer_request_list.html', context)
+    return render(request, 'assets/ownership/transfer_request_list.html', context)
+
+
+@login_required
+def admin_transfer_request_list_view(request):
+    """ฟังก์ชันแสดงรายการคำร้องขอเคลื่อนย้ายสำหรับเจ้าหน้าที่ (รอพิจารณา)"""
+    if not (request.user.is_admin or request.user.is_manager or request.user.is_warehouse_manager or request.user.is_executive):
+        messages.error(request, 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้')
+        return redirect('assets:transfer_request_list')
+
+    query = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '')
+
+    all_requests = AssetTransferRequest.objects.all().order_by('-id')
+    
+    if query:
+        all_requests = all_requests.filter(
+            Q(id__icontains=query) |
+            Q(requester__first_name__icontains=query) |
+            Q(requester__last_name__icontains=query) |
+            Q(requester__username__icontains=query) |
+            Q(request_items__asset__item_name__icontains=query)
+        ).distinct()
+    if status_filter:
+        all_requests = all_requests.filter(status=status_filter)
+    else:
+        # Default view might be just pending ones, or all. Let's keep all and allow filtering.
+        pass
+        
+    all_paginator = Paginator(all_requests, 10)
+    all_page_number = request.GET.get('page')
+    all_page_obj = all_paginator.get_page(all_page_number)
+
+    context = {
+        'all_requests': all_page_obj,
+        'query': query,
+        'status_filter': status_filter,
+        "loan_pending_count": count_pending_asset_loans(),
+    }
+    return render(request, 'assets/ownership/admin_transfer_request_list.html', context)
 
 
 # @login_required
@@ -691,7 +966,7 @@ def transfer_request_list_view(request):
 #         'can_approve_director': can_approve_director,
 #         'can_execute_action': can_execute_action,
 #     }
-#     return render(request, 'ownership/request_detail.html', context)
+#     return render(request, 'assets/ownership/request_detail.html', context)
 
 # ==========================================
 # ฝั่งแอดมิน / เจ้าหน้าที่พัสดุ (Admin)
@@ -742,7 +1017,7 @@ def transfer_request_list_view(request):
 #         'users': all_users,
 #         'assets': all_assets,
 #     }
-#     return render(request, 'ownership/admin_add_ownership.html', context)
+#     return render(request, 'assets/ownership/admin_add_ownership.html', context)
 
 @login_required
 def admin_add_ownership_view(request):
@@ -795,8 +1070,9 @@ def admin_add_ownership_view(request):
     context = {
         'users': all_users,
         'assets': all_assets,
+        "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'ownership/admin_add_ownership.html', context)
+    return render(request, 'assets/ownership/admin_add_ownership.html', context)
 
 @login_required
 def admin_ownership_list_view(request):
@@ -806,12 +1082,29 @@ def admin_ownership_list_view(request):
         messages.error(request, 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้')
         return redirect('my_assets')
 
-    all_active_ownerships = AssetOwnership.objects.filter(is_active=True).select_related('user', 'asset')
+    query = request.GET.get('q', '').strip()
+    all_active_ownerships = AssetOwnership.objects.all().select_related('user', 'asset', 'asset__asset_code')
+    
+    if query:
+        all_active_ownerships = all_active_ownerships.filter(
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query) |
+            Q(user__username__icontains=query) |
+            Q(asset__item_name__icontains=query) |
+            Q(asset__asset_code__serial_year__icontains=query)
+        )
+        
+    # ระบบ Pagination
+    paginator = Paginator(all_active_ownerships, 20) # แสดง 20 รายการต่อหน้า
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
     context = {
-        'ownerships': all_active_ownerships
+        'ownerships': page_obj,
+        'query': query,
+        "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'ownership/admin_ownership_list.html', context)
+    return render(request, 'assets/ownership/admin_ownership_list.html', context)
 
 @login_required
 def admin_complete_request_view(request, request_id):
@@ -844,7 +1137,7 @@ def admin_complete_request_view(request, request_id):
 
         return redirect('admin_ownership_list') # หรือกลับไปหน้าจัดการคำร้อง
 
-    return render(request, 'ownership/admin_complete_request.html', {'transfer_request': transfer_request})
+    return render(request, 'assets/ownership/admin_complete_request.html', {'transfer_request': transfer_request,"loan_pending_count": count_pending_asset_loans(),},)
 
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -854,22 +1147,127 @@ def admin_complete_request_view(request, request_id):
 # บันทึกการตรวจเช็คครุภัณฑ์
 @login_required
 def check_asset(request, asset_id):
+    setting, _ = AssetSystemSetting.objects.get_or_create(id=1)
+    if not request.user.is_staff and not request.user.is_superuser:
+        if not setting.is_public_check_enabled or not setting.allowed_users.filter(id=request.user.id).exists():
+            messages.warning(request, "ขณะนี้ระบบยังไม่เปิดให้บุคคลทั่วไปทำการตรวจนับครุภัณฑ์")
+            return redirect('assets:home_assets')
+
     # ดึงข้อมูลครุภัณฑ์ที่ต้องการตรวจเช็ค
     asset = get_object_or_404(AssetItem, id=asset_id)
     storage_locations = StorageLocation.objects.all()  # ดึงสถานที่เก็บทั้งหมด
 
     if request.method == "POST":
-        form = AssetCheckForm(request.POST, asset=asset)
+        # ตรวจสอบว่ามีการตรวจนับในปีงบประมาณนี้ไปแล้วหรือไม่
+        fiscal_year = request.POST.get("fiscal_year")
+        existing_check = AssetCheck.objects.filter(asset=asset, fiscal_year=fiscal_year).first()
+        
+        if existing_check:
+            messages.error(request, f'❌ ไม่สามารถบันทึกได้! ครุภัณฑ์ "{asset.item_name}" ได้รับการตรวจนับในปีงบประมาณ {fiscal_year} ไปแล้ว')
+            return redirect('assets:asset_detail', pk=asset.id)
+            
+        form = AssetCheckForm(request.POST, request.FILES, asset=asset)
+
         if form.is_valid():
-            form.save(user=request.user)
+            check = form.save(commit=False, user=request.user)
+            check.status = True # ถือว่ากดบันทึกคือตรวจแล้ว
+            check.save()
+            
             # อัปเดตสถานที่เก็บ
             asset.storage_location_id = request.POST.get("storage_location")
             asset.save()
-            return redirect('assets:asset_list')  # เปลี่ยนไปหน้ารายการครุภัณฑ์หลังบันทึก
+            
+            messages.success(request, f'✅ บันทึกการตรวจนับ "{asset.item_name}" เรียบร้อยแล้ว')
+            return redirect('assets:asset_detail', pk=asset.id)
     else:
+        # หากเข้ามาหน้าฟอร์ม ให้เช็คก่อนว่าปีนี้ตรวจไปหรือยัง (สมมติปีปัจจุบัน)
+        import datetime
+        current_year_th = str(datetime.datetime.now().year + 543)
+        existing_check = AssetCheck.objects.filter(asset=asset, fiscal_year=current_year_th).first()
+        
+        if existing_check:
+            messages.warning(request, f'⚠️ ครุภัณฑ์ "{asset.item_name}" ได้รับการตรวจนับในปีงบประมาณ {current_year_th} ไปแล้ว หากต้องการตรวจนับสำหรับปีถัดไป กรุณาเปลี่ยนช่อง "ปีงบประมาณ"')
+            
         form = AssetCheckForm(asset=asset)
 
-    return render(request, "asset_check_form.html", {"form": form, "asset": asset, "storage_locations": storage_locations})
+    return render(request, "assets/items/asset_check_form.html", {"form": form, "asset": asset, "storage_locations": storage_locations, "loan_pending_count": count_pending_asset_loans(),})
+
+@login_required
+def asset_check_list(request):
+    """
+    ฟังก์ชันสำหรับแสดงรายการประวัติการตรวจนับครุภัณฑ์
+    """
+    setting, _ = AssetSystemSetting.objects.get_or_create(id=1)
+    if not request.user.is_staff and not request.user.is_superuser:
+        if not setting.is_public_check_enabled or not setting.allowed_users.filter(id=request.user.id).exists():
+            messages.warning(request, "ขณะนี้ระบบยังไม่เปิดให้บุคคลทั่วไปทำการตรวจนับครุภัณฑ์")
+            return redirect('assets:home_assets')
+
+    checks = AssetCheck.objects.all().order_by('-id')
+    
+    # การค้นหา
+    query = request.GET.get('q', '')
+    if query:
+        checks = checks.filter(
+            Q(asset__item_name__icontains=query) |
+            Q(asset__asset_code__serial_year__icontains=query)
+        )
+        
+    # กรองตามปีงบประมาณ
+    fiscal_year = request.GET.get('fiscal_year', '')
+    if fiscal_year:
+        checks = checks.filter(fiscal_year=fiscal_year)
+        
+    # กรองตามสถานะการใช้งาน (ชำรุด, เสื่อมสภาพ, ใช้งานได้)
+    damage_status = request.GET.get('damage_status', '')
+    if damage_status:
+        checks = checks.filter(asset__damage_status=damage_status)
+
+    paginator = Paginator(checks, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # รายการปีงบประมาณที่เคยมีการตรวจนับ เพื่อให้เลือกใน dropdown ได้ง่ายๆ
+    available_years = AssetCheck.objects.values_list('fiscal_year', flat=True).distinct().order_by('-fiscal_year')
+
+    # === สถิติการตรวจนับ ===
+    total_assets_count = AssetItem.objects.count()
+    
+    # ถ้ามีการเลือกปีงบ ให้ใช้ปีที่เลือก ไม่งั้นใช้ปีงบล่าสุดที่มีข้อมูล
+    if fiscal_year:
+        selected_year = int(fiscal_year)
+    elif available_years.exists():
+        selected_year = available_years.first()
+    else:
+        selected_year = None
+    
+    if selected_year and total_assets_count > 0:
+        checked_count = AssetCheck.objects.filter(fiscal_year=selected_year).values('asset').distinct().count()
+        check_percentage = round((checked_count / total_assets_count) * 100, 1)
+        unchecked_count = total_assets_count - checked_count
+    else:
+        checked_count = 0
+        check_percentage = 0
+        unchecked_count = total_assets_count
+
+    setting, created = AssetSystemSetting.objects.get_or_create(id=1)
+    
+    context = {
+        'checks': page_obj,
+        'query': query,
+        'fiscal_year_filter': fiscal_year,
+        'damage_status_filter': damage_status,
+        'available_years': available_years,
+        'DAMAGE_STATUS_CHOICES': AssetItem.DAMAGE_STATUS_CHOICES,
+        'loan_pending_count': count_pending_asset_loans(),
+        'total_assets_count': total_assets_count,
+        'checked_count': checked_count,
+        'unchecked_count': unchecked_count,
+        'check_percentage': check_percentage,
+        'selected_year': selected_year,
+        'system_setting': setting,
+    }
+    return render(request, 'assets/items/asset_check_list.html', context)
 
 # ------------------------------------------------------------------------------------------------------------------------------------
 
@@ -893,9 +1291,10 @@ def add_asset_item_loan(request):
     else:
         form = AssetItemLoanForm()
     
-    return render(request, 'add_asset_item_loan.html', 
+    return render(request, 'assets/loans/add_asset_item_loan.html', 
                   {'form': form,
                   "categories": categories,
+                  "loan_pending_count": count_pending_asset_loans(),
                   })
 
 # ------------------------------------
@@ -922,7 +1321,7 @@ def edit_asset_item_loan(request, pk):
         'categories': categories,
         "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'edit_asset_item_loan.html', context)
+    return render(request, 'assets/loans/edit_asset_item_loan.html', context)
 
 
 def delete_asset_item_loan(request, pk):
@@ -945,7 +1344,7 @@ def calendar_view(request):
     context = {
         "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, "calendar.html" , context)
+    return render(request, "assets/home/calendar.html" , context)
 
 
 
@@ -1100,7 +1499,7 @@ def calendar_events(request):
 #         'has_line_account': has_line_account,
 #         "loan_pending_count": count_pending_asset_loans(),
 #     }
-#     return render(request, "loan_list.html", context)
+#     return render(request, "assets/loans/loan_list.html", context)
 
 
 @login_required
@@ -1163,7 +1562,7 @@ def loan_list(request):
         'has_line_account': has_line_account,
         "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, "loan_list.html", context)
+    return render(request, "assets/loans/loan_list.html", context)
 
 
 # ------------------------------
@@ -1177,7 +1576,7 @@ def loan_cart(request):
         "asset_items": asset_items,
         "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, "loan_cart.html", context)
+    return render(request, "assets/loans/loan_cart.html", context)
 
 
 # ------------------------------
@@ -1190,7 +1589,7 @@ def loan_detail_view(request, loan_id):
         'loan': loan,
         "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'loan_detail.html', context)
+    return render(request, 'assets/loans/loan_detail.html', context)
 
 
 
@@ -1355,7 +1754,7 @@ def reserve_asset_item(request, pk):
         'asset_item': asset_item,
         "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, "reserve_modal.html", context)
+    return render(request, "assets/loans/reserve_modal.html", context)
 
 # ------------------------------
 # ฟังก์ชันแยกที่คำนวณจำนวนรายการที่รออนุมัติ
@@ -1404,8 +1803,11 @@ def loan_approval_list(request):
     # ถ้าไม่มีค่าใน GET จะถือว่าเป็น False (ซ่อนรายการที่ปฏิเสธ/ยกเลิก)
     show_rejected = request.GET.get('show_rejected')
 
-    # เริ่มต้น QuerySet
-    loans = OrderAssetLoan.objects.filter(month=month, year=year)
+    # เริ่มต้น QuerySet (รายการของเดือน/ปี ที่เลือก + รายการที่ยังไม่คืนจากเดือนก่อนๆ)
+    loans = OrderAssetLoan.objects.filter(
+        Q(month=month, year=year) |
+        Q(status__in=['pending', 'approved', 'borrowed', 'returned_pending', 'overdue'])
+    )
 
     # เพิ่มเงื่อนไขการค้นหา
     if query:
@@ -1503,7 +1905,7 @@ def loan_approval_list(request):
         "show_rejected": show_rejected is not None, # ส่งค่า Boolean ไปยัง Template
 
     }
-    return render(request, "loan_approval_list.html", context)
+    return render(request, "assets/loans/loan_approval_list.html", context)
 
 # ส่งการแจ้งเตือนเมื่อยืมเกินกำหนด
 @login_required
@@ -1557,9 +1959,10 @@ def loan_orders_user(request):
     # ดึงรายการคำขออนุมัติและรออนุมัติการคืนทั้งหมดที่มีสถานะและเดือน/ปีตรงกับที่เลือก
     # และเรียงลำดับจากใหม่ไปเก่า
     qs = OrderAssetLoan.objects.filter(
-        user=request.user, # บรรทัดนี้คือส่วนสำคัญที่เพิ่มเข้ามา
-        month=month,
-        year=year_ad
+        Q(user=request.user) & (
+            Q(month=month, year=year_ad) |
+            Q(status__in=['pending', 'approved', 'borrowed', 'returned_pending', 'overdue'])
+        )
     ).order_by('-date_created')
 
     # แก้ไขส่วนการค้นหาที่ถูกต้องตามโครงสร้างโมเดล
@@ -1591,7 +1994,7 @@ def loan_orders_user(request):
         'month_name': thai_month_name(month),
         "loan_pending_count": count_pending_asset_loans(),
     }
-    return render(request, 'loan_orders_user.html', context)
+    return render(request, 'assets/loans/loan_orders_user.html', context)
 
 
 # ------------------------------
@@ -1856,7 +2259,7 @@ def asset_list_cate(request):
     except:
         categories = p.page(1)
 
-    return render(request, 'asset_list_cate.html', {
+    return render(request, 'assets/items/asset_list_cate.html', {
         'categories': categories,
         'form': form,
         'query': query,  # ส่งค่าการค้นหาไปยัง template เพื่อแสดงผล
@@ -1875,7 +2278,7 @@ def add_category_asset(request):
             messages.error(request, '❌ ไม่สามารถเพิ่มหมวดหมู่หลักได้ กรุณาตรวจสอบข้อมูล')
     else:
         form = CategoryForm()
-    return render(request, 'add_category_asset.html', {'form': form})
+    return render(request, 'assets/items/add_category_asset.html', {'form': form})
 
 # แก้ไขหมวดหมู่
 def edit_category_asset(request, pk):
@@ -1891,7 +2294,7 @@ def edit_category_asset(request, pk):
     else:
         form = CategoryForm(instance=category)
 
-    return render(request, 'asset_list_cate.html', {'form': form})
+    return render(request, 'assets/items/asset_list_cate.html', {'form': form})
 
 # ลบหมวดหมู่หลัก
 def delete_category_asset(request, pk):
@@ -1943,7 +2346,7 @@ def asset_list_subcate(request):
     except EmptyPage:
         subcategories = p.page(p.num_pages)
 
-    return render(request, 'asset_list_subcate.html', {
+    return render(request, 'assets/items/asset_list_subcate.html', {
         'subcategories': subcategories,
         'categories': categories,
         'form': form,
@@ -1963,7 +2366,7 @@ def add_subcategory_asset(request):
             messages.error(request, '❌ ไม่สามารถเพิ่มหมวดหมู่ย่อยได้ กรุณาตรวจสอบข้อมูล')
     else:
         form = SubcategoryForm()
-    return render(request, 'add_subcategory_asset.html', {'form': form})
+    return render(request, 'assets/items/add_subcategory_asset.html', {'form': form})
 
 # แก้ไขหมวดหมู่ย่อย
 def edit_subcategory_asset(request, pk):
@@ -1979,7 +2382,7 @@ def edit_subcategory_asset(request, pk):
     else:
         form = SubcategoryForm(instance=category)
 
-    return render(request, 'asset_list_subcate.html', {'form': form})
+    return render(request, 'assets/items/asset_list_subcate.html', {'form': form})
 
 # ลบหมวดหมู่ย่อย
 def delete_subcategory_asset(request, pk):
@@ -2014,7 +2417,7 @@ def asset_list_storage_location(request):
     else:
         form = StorageLocationForm()
 
-    return render(request, 'asset_list_location.html', {
+    return render(request, 'assets/items/asset_list_location.html', {
         'storagelocations': storagelocations,
         'form': form,
         'query': query,  # ส่งค่าการค้นหาไปยัง template เพื่อแสดงผล
@@ -2037,7 +2440,7 @@ def edit_storage_location_asset(request, pk):
     else:
         form = StorageLocationForm(instance=storagelocation)
 
-    return render(request, 'asset_list_location.html', {'form': form})
+    return render(request, 'assets/items/asset_list_location.html', {'form': form})
 
 
 # ✅ ลบรายการสถานที่เก็บครุภัณฑ์
@@ -2046,3 +2449,79 @@ def delete_storage_location_asset(request, pk):
     storagelocation.delete()
     messages.success(request, '🗑 ลบรายการสถานที่เก็บครุภัณฑ์เรียบร้อยแล้ว')
     return redirect('assets:asset_list_storage_location')  # เปลี่ยนชื่อให้ตรงกับ url ที่ใช้งาน
+
+from django.http import JsonResponse
+import json
+@login_required
+def toggle_public_check(request):
+    if not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Permission denied'})
+    
+    setting, created = AssetSystemSetting.objects.get_or_create(id=1)
+    setting.is_public_check_enabled = not setting.is_public_check_enabled
+    setting.save()
+    
+    return JsonResponse({'success': True, 'is_enabled': setting.is_public_check_enabled})
+
+@login_required
+def update_allowed_checkers(request):
+    if not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Permission denied'})
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            user_ids = data.get('user_ids', [])
+            setting, _ = AssetSystemSetting.objects.get_or_create(id=1)
+            setting.allowed_users.set(user_ids)
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+            
+    # GET method
+    setting, _ = AssetSystemSetting.objects.get_or_create(id=1)
+    allowed_ids = list(setting.allowed_users.values_list('id', flat=True))
+    all_users = MyUser.objects.filter(is_active=True).values('id', 'first_name', 'last_name', 'email')
+    return JsonResponse({
+        'users': list(all_users),
+        'allowed_ids': allowed_ids
+    })
+
+from django.http import HttpResponse
+
+@login_required
+def download_asset_template(request):
+    """
+    สร้างไฟล์ Excel Template สำหรับการนำเข้าข้อมูลครุภัณฑ์
+    """
+    # กำหนดคอลัมน์ตามที่ระบุมา
+    columns = [
+        'ลำดับ', 'หมวดหมู่หลัก', 'หมวดหมู่ย่อย', 'ชื่อรายการครุภัณฑ์',
+        'ประเภท', 'ชนิด', 'ลักษณะ', 'ลำดับ/ปี', 
+        'หน่วยนับ', 'ราคาที่ซื้อ', 'วันที่ซื้อ', 'ปีที่ใช้งาน', 
+        'อายุการใช้งาน', 'ใช้มาแล้วกี่ปี', 'ค่าความเสื่อมต่อปี', 'ค่าเสื่อมราคาประจำปี (บาท)/วัน',
+        'ผู้รับผิดชอบ', 'สถานที่เก็บ', 'ยี่ห้อ/รุ่น', 'หมายเหตุ',
+        'สถานะการใช้งาน', 'ยืมได้หรือไม่'
+    ]
+    
+    # ข้อมูลตัวอย่าง
+    sample_data = [[
+        '1', 'เฟอร์นิเจอร์', 'โต๊ะสำนักงาน', 'โต๊ะทำงานเหล็ก 3 ลิ้นชัก',
+        'โต๊ะ', 'โต๊ะทำงาน', 'เหล็ก', '001/67',
+        'ตัว', '2500.00', '2024-01-15', '2567',
+        '5', '0', '500.00', '1.37',
+        'นาย สมชาย', 'ห้องคลัง 1', 'ยี่ห้อ A รุ่น B', 'ใช้งานได้ดี',
+        'ใช้งานได้', 'ได้'
+    ]]
+    
+    df = pd.DataFrame(sample_data, columns=columns)
+    
+    # สร้าง HTTP Response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="asset_import_template.xlsx"'
+    
+    # ใช้ openpyxl ในการสร้างไฟล์
+    with pd.ExcelWriter(response, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+        
+    return response
