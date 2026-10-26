@@ -124,8 +124,8 @@ class WorkGroupAdmin(admin.ModelAdmin):
 # ----------------------------------------------------
 @admin.register(PortalApp)
 class PortalAppAdmin(admin.ModelAdmin):
-    list_display = ['code', 'title', 'category', 'url', 'is_favorite', 'order']
-    list_filter = ['category', 'is_favorite']
+    list_display = ['code', 'title', 'category', 'url', 'is_favorite', 'is_hidden', 'order']
+    list_filter = ['category', 'is_favorite', 'is_hidden']
     search_fields = ['code', 'title', 'description']
-    list_editable = ['order', 'is_favorite']
+    list_editable = ['order', 'is_favorite', 'is_hidden']
     ordering = ['order', 'id']

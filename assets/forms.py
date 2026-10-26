@@ -1,5 +1,11 @@
+import datetime
 from django import forms
-from .models import AssetCheck, AssetCode, AssetItem, AssetItemLoan, AssetReservation, StorageLocation, AssetCategory, Subcategory, StorageLocation,OrderAssetLoan
+from django.utils import timezone
+from .models import (
+    AssetCheck, AssetCode, AssetItem, AssetItemLoan, AssetReservation,
+    StorageLocation, AssetCategory, Subcategory, OrderAssetLoan,
+    MeetingRoom, MeetingRoomBooking
+)
 
 
 class AssetCodeForm(forms.ModelForm):
@@ -56,11 +62,18 @@ class AssetItemForm(forms.ModelForm):
 
 
 class AssetItemLoanForm(forms.ModelForm):
+    category = forms.ChoiceField(
+        choices=[('', '-- เลือกหมวดหมู่ --')] + AssetItemLoan.CATEGORY_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='หมวดหมู่'
+    )
+
     class Meta:
         model = AssetItemLoan
         fields = [
             'item_name', 
-            'subcategory', 
+            'category', 
             'asset_code', 
             'unit', 
             'storage_location', 
@@ -73,7 +86,7 @@ class AssetItemLoanForm(forms.ModelForm):
         ]
         widgets = {
             'item_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'subcategory': forms.Select(attrs={'class': 'form-control'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
             'asset_code': forms.TextInput(attrs={'class': 'form-control'}),
             'unit': forms.TextInput(attrs={'class': 'form-control'}),
             'storage_location': forms.Select(attrs={'class': 'form-control'}),
@@ -312,3 +325,101 @@ class AssetCheckForm(forms.ModelForm):
 #         widgets = {
 #             "status": forms.Select(attrs={"class": "form-control"}),
 #         }
+
+
+class MeetingRoomForm(forms.ModelForm):
+    category = forms.ChoiceField(
+        choices=MeetingRoom.ROOM_CATEGORY_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='หมวดหมู่'
+    )
+
+    class Meta:
+        model = MeetingRoom
+        fields = [
+            'name',
+            'category',
+            'room_code',
+            'location',
+            'location_detail',
+            'room_image',
+            'status_assetloan',
+            'is_active',
+            'notes',
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'เช่น ห้องประชุม 1 (Co-Working), ห้องประชุมบอร์ดรูม'}),
+            'room_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'เช่น R-101, SP-ROOM-01'}),
+            'location': forms.Select(attrs={'class': 'form-select'}),
+            'location_detail': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'เช่น อาคารอำนวยการ ชั้น 2'}),
+            'status_assetloan': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'อุปกรณ์อำนวยความสะดวก เช่น โปรเจกเตอร์, ไมโครโฟน, ความจุ 20 ที่นั่ง...'}),
+        }
+        labels = {
+            'name': 'ชื่อห้องประชุม',
+            'category': 'หมวดหมู่',
+            'room_code': 'รหัสหรือเลขที่ห้อง',
+            'location': 'สถานที่',
+            'location_detail': 'รายละเอียดสถานที่เพิ่มเติม/ชั้น/อาคาร',
+            'room_image': 'รูปภาพห้อง',
+            'status_assetloan': 'สถานะการยืม (ติ๊กถูกหากห้องกำลังถูกยืม/ไม่ว่าง)',
+            'is_active': 'เปิดใช้งานให้จอง',
+            'notes': 'หมายเหตุ / สิ่งอำนวยความสะดวก',
+        }
+
+
+class MeetingRoomBookingForm(forms.ModelForm):
+    start_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-control',
+            'type': 'datetime-local',
+        }),
+        label='วัน-เวลาเริ่มต้น'
+    )
+    end_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-control',
+            'type': 'datetime-local',
+        }),
+        label='วัน-เวลาสิ้นสุด'
+    )
+
+    class Meta:
+        model = MeetingRoomBooking
+        fields = [
+            'title',
+            'start_time',
+            'end_time',
+            'attendees_count',
+            'notes',
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'เช่น ประชุมฝ่ายบริหาร, นัดคุยงานโครงการ...'}),
+            'attendees_count': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'value': '1'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'หมายเหตุเพิ่มเติม เช่น ต้องการใช้โปรเจกเตอร์และชุดไมค์ลอย'}),
+        }
+        labels = {
+            'title': 'หัวข้อการประชุม/การใช้งาน',
+            'start_time': 'วัน-เวลาเริ่มต้นใช้งาน',
+            'end_time': 'วัน-เวลาสิ้นสุด',
+            'attendees_count': 'จำนวนผู้เข้าร่วม (คน)',
+            'notes': 'หมายเหตุเพิ่มเติม',
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+
+        if start_time and end_time:
+            if end_time <= start_time:
+                self.add_error('end_time', 'วัน-เวลาสิ้นสุดต้องมากกว่าวัน-เวลาเริ่มต้น')
+            
+            # ไม่สามารถจองเวลาย้อนหลังในอดีตได้
+            if start_time < timezone.now():
+                self.add_error('start_time', 'ไม่สามารถจองเวลาย้อนหลังในอดีตได้ กรุณาเลือกวัน-เวลาปัจจุบันหรือในอนาคต')
+
+        return cleaned_data
+

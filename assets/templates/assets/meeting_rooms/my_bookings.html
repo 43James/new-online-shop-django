@@ -1,0 +1,185 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 28px 36px;
+        box-shadow: 0 10px 25px rgba(79, 70, 229, 0.2);
+        margin-bottom: 28px;
+        position: relative;
+        overflow: hidden;
+    }
+    .table-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+        color: #fff; border: none; border-radius: 50rem; font-weight: 600;
+        padding: 10px 24px;
+        transition: all 0.3s;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-2"><i class="fas fa-history me-2"></i>ประวัติการจองห้องประชุมของฉัน</h2>
+            <p class="mb-0 opacity-85">ตรวจสอบรายการจองห้องประชุมของคุณ และยกเลิกการจองได้หากยังไม่ถึงเวลา</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'assets:meeting_room_list' %}" class="btn btn-light text-primary fw-bold rounded-pill shadow-sm px-4">
+                <i class="fas fa-door-open me-2"></i>จองห้องประชุมเพิ่ม
+            </a>
+            <a href="{% url 'assets:meeting_room_calendar' %}" target="_blank" class="btn btn-warning text-dark fw-bold rounded-pill shadow-sm px-4">
+                <i class="fas fa-calendar-alt me-2"></i>ดูปฏิทินรวม
+            </a>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">ห้องประชุม</th>
+                        <th>หัวข้อการใช้งาน</th>
+                        <th>เวลาเริ่มต้น</th>
+                        <th>เวลาสิ้นสุด</th>
+                        <th>ผู้เข้าร่วม</th>
+                        <th>สถานะ</th>
+                        <th class="text-end pe-4">การจัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-3">
+                                {% if b.room.room_image %}
+                                    <img src="{{ b.room.room_image.url }}" alt="{{ b.room.name }}" style="width: 54px; height: 54px; object-fit: cover; border-radius: 10px;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center text-secondary rounded-3" style="width: 54px; height: 54px;">
+                                        <i class="fas fa-building fa-lg"></i>
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold text-dark">{{ b.room.name }}</div>
+                                    <div class="small text-muted">{{ b.room.room_code|default:'' }} {{ b.room.location.name|default:'' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ b.title }}</span>
+                            {% if b.notes %}
+                                <div class="small text-muted text-truncate" style="max-width: 200px;">{{ b.notes }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-success">{{ b.start_time|date:"d M Y" }}</div>
+                            <small class="text-muted">{{ b.start_time|date:"H:i" }} น.</small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-danger">{{ b.end_time|date:"d M Y" }}</div>
+                            <small class="text-muted">{{ b.end_time|date:"H:i" }} น.</small>
+                        </td>
+                        <td>{{ b.attendees_count }} คน</td>
+                        <td>
+                            {% if b.status == 'cancelled' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">
+                                    <i class="fas fa-times-circle me-1"></i> ยกเลิกแล้ว
+                                </span>
+                            {% elif b.is_ongoing %}
+                                <span class="badge bg-success text-white px-3 py-2 rounded-pill shadow-xs">
+                                    <i class="fas fa-user-clock me-1"></i> กำลังใช้งาน
+                                </span>
+                            {% elif b.is_past or b.status == 'completed' %}
+                                <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 rounded-pill">
+                                    <i class="fas fa-check-circle me-1"></i> เสร็จสิ้นแล้ว
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-2 rounded-pill">
+                                    <i class="fas fa-hourglass-half me-1"></i> กำลังจอง
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if b.status == 'active' and not b.is_past %}
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                        data-bs-toggle="modal" data-bs-target="#cancelModal"
+                                        data-booking-id="{{ b.pk }}" data-room-name="{{ b.room.name }}"
+                                        data-action-url="{% url 'assets:cancel_room_booking' b.pk %}">
+                                    <i class="fas fa-times me-1"></i> ยกเลิกการจอง
+                                </button>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-calendar-times fa-3x mb-3 text-secondary opacity-50"></i>
+                            <h5 class="fw-bold">ยังไม่มีประวัติการจองห้องประชุม</h5>
+                            <p class="mb-3">คุณยังไม่เคยทำการจองห้องประชุมใดๆ ในระบบ</p>
+                            <a href="{% url 'assets:meeting_room_list' %}" class="btn btn-gradient-primary">
+                                <i class="fas fa-door-open me-2"></i>ไปที่หน้ารายการห้องประชุม
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal ยืนยันยกเลิกการจอง -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-warning text-dark border-0">
+                <h5 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>ยืนยันการยกเลิกการจอง</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="mb-1 text-muted">คุณต้องการยกเลิกการจองห้องประชุมนี้ใช่หรือไม่?</p>
+                <h5 class="fw-bold text-dark my-3" id="cancelRoomName"></h5>
+                <p class="small text-danger mb-0">เมื่อยกเลิกแล้ว ช่วงเวลานี้จะเปิดว่างให้ผู้อื่นสามารถจองได้ทันที</p>
+            </div>
+            <div class="modal-footer border-0 p-3 bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ไม่ยกเลิก</button>
+                <form id="cancelForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">ยืนยันยกเลิก</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cancelModal = document.getElementById('cancelModal');
+    if (cancelModal) {
+        cancelModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const roomName = button.getAttribute('data-room-name');
+            const actionUrl = button.getAttribute('data-action-url');
+
+            document.getElementById('cancelRoomName').textContent = roomName;
+            document.getElementById('cancelForm').action = actionUrl;
+        });
+    }
+});
+</script>
+{% endblock %}

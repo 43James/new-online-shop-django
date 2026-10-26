@@ -24,7 +24,8 @@
 from django.contrib import admin
 from .models import (
     AssetCategory, AssetOwnership, AssetReservation, AssetTransferItem, AssetTransferRequest, Subcategory, StorageLocation,
-    AssetCode, AssetItem, OrderAssetLoan, IssuingAssetLoan, AssetItemLoan
+    AssetCode, AssetItem, OrderAssetLoan, IssuingAssetLoan, AssetItemLoan,
+    MeetingRoom, MeetingRoomBooking
 )
 
 
@@ -274,3 +275,17 @@ class AssetTransferRequestAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(MeetingRoom)
+class MeetingRoomAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'category', 'room_code', 'location', 'status_assetloan', 'is_active', 'date_created')
+    list_filter = ('category', 'status_assetloan', 'is_active', 'location')
+    search_fields = ('name', 'room_code', 'notes')
+
+
+@admin.register(MeetingRoomBooking)
+class MeetingRoomBookingAdmin(admin.ModelAdmin):
+    list_display = ('id', 'room', 'user', 'title', 'start_time', 'end_time', 'attendees_count', 'status', 'date_created')
+    list_filter = ('status', 'room', 'start_time')
+    search_fields = ('title', 'user__username', 'user__first_name', 'user__last_name', 'room__name')

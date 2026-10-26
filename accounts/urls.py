@@ -9,6 +9,7 @@ app_name = 'accounts'
 urlpatterns = [
     path('', views.portal_hub, name='portal_hub'),
     path('portal/toggle-favorite/<int:app_id>/', views.toggle_portal_favorite, name='toggle_portal_favorite'),
+    path('portal/toggle-hide/<int:app_id>/', views.toggle_portal_hide, name='toggle_portal_hide'),
     path('portal/add/', views.add_portal_app, name='add_portal_app'),
     path('portal/edit/<int:app_id>/', views.edit_portal_app, name='edit_portal_app'),
     path('login/', views.user_login, name='user_login'),

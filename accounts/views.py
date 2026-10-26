@@ -42,8 +42,31 @@ def toggle_portal_favorite(request, app_id):
     except PortalApp.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'App not found'}, status=404)
 
+@require_POST
+@login_required
+def toggle_portal_hide(request, app_id):
+    if not (getattr(request.user, 'is_admin', False) or request.user.is_superuser):
+        return JsonResponse({'success': False, 'error': 'ไม่มีสิทธิ์เข้าถึง'}, status=403)
+    try:
+        app = PortalApp.objects.get(id=app_id)
+        app.is_hidden = not app.is_hidden
+        app.save()
+        return JsonResponse({
+            'success': True,
+            'is_hidden': app.is_hidden,
+            'title': app.title,
+            'code': app.code
+        })
+    except PortalApp.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'App not found'}, status=404)
+
 def portal_hub(request):
-    apps = PortalApp.objects.all()
+    is_admin_user = request.user.is_authenticated and (getattr(request.user, 'is_admin', False) or request.user.is_superuser)
+    if is_admin_user:
+        apps = PortalApp.objects.all()
+    else:
+        apps = PortalApp.objects.filter(is_hidden=False)
+
     apps_list = []
     for app in apps:
         apps_list.append({
@@ -57,15 +80,17 @@ def portal_hub(request):
             'url': app.url,
             'imageUrl': app.app_image.url if app.app_image else '',
             'isFav': app.is_favorite,
+            'isHidden': app.is_hidden,
         })
     context = {
         'portal_apps_json': json.dumps(apps_list, ensure_ascii=False),
+        'is_portal_admin': is_admin_user,
     }
     return render(request, 'accounts/portal_sip_web.html', context)
 
 @login_required
 def add_portal_app(request):
-    if not request.user.is_admin:
+    if not (getattr(request.user, 'is_admin', False) or request.user.is_superuser):
         return JsonResponse({'success': False, 'error': 'ไม่มีสิทธิ์เข้าถึง'}, status=403)
     
     if request.method == 'POST':
@@ -84,6 +109,8 @@ def add_portal_app(request):
             else:
                 new_code = 'SIP-01'
             
+            is_hidden = data.get('is_hidden') in ['true', 'True', '1', True]
+
             app = PortalApp.objects.create(
                 code=new_code,
                 title=data.get('title', ''),
@@ -94,6 +121,7 @@ def add_portal_app(request):
                 icon=data.get('icon', 'fa-link'),
                 icon_color=data.get('iconColor', 'text-sky-600 bg-sky-50'),
                 is_favorite=False,
+                is_hidden=is_hidden,
             )
             return JsonResponse({
                 'success': True,
@@ -108,6 +136,7 @@ def add_portal_app(request):
                     'url': app.url,
                     'imageUrl': app.app_image.url if app.app_image else '',
                     'isFav': app.is_favorite,
+                    'isHidden': app.is_hidden,
                 }
             })
         except Exception as e:
@@ -117,7 +146,7 @@ def add_portal_app(request):
 
 @login_required
 def edit_portal_app(request, app_id):
-    if not request.user.is_admin:
+    if not (getattr(request.user, 'is_admin', False) or request.user.is_superuser):
         return JsonResponse({'success': False, 'error': 'ไม่มีสิทธิ์เข้าถึง'}, status=403)
     
     app = get_object_or_404(PortalApp, id=app_id)
@@ -132,6 +161,9 @@ def edit_portal_app(request, app_id):
             app.description = data.get('desc', app.description)
             app.url = data.get('url', app.url)
             
+            if 'is_hidden' in data:
+                app.is_hidden = data.get('is_hidden') in ['true', 'True', '1', True]
+
             if app_image:
                 app.app_image = app_image
                 
@@ -150,6 +182,7 @@ def edit_portal_app(request, app_id):
                     'url': app.url,
                     'imageUrl': app.app_image.url if app.app_image else '',
                     'isFav': app.is_favorite,
+                    'isHidden': app.is_hidden,
                 }
             })
         except Exception as e:

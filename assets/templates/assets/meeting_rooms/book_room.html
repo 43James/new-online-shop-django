@@ -1,0 +1,191 @@
+{% extends "assets/home/base_sidebar.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 28px 36px;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+        margin-bottom: 28px;
+        position: relative;
+        overflow: hidden;
+    }
+    .form-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    .room-preview-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+    }
+    .btn-gradient-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #fff; border: none; border-radius: 50rem; font-weight: 700;
+        padding: 14px 40px;
+        font-size: 1.05rem;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+    .btn-gradient-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        color: #fff;
+    }
+    .busy-time-badge {
+        display: inline-block;
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 4px;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-2"><i class="fas fa-calendar-plus me-2"></i>จองห้องประชุม: {{ room.name }}</h2>
+            <p class="mb-0 opacity-85">เลือกวัน-เวลาเริ่มต้นและสิ้นสุด เพื่อยืนยันการจองใช้งานทันที</p>
+        </div>
+        <div>
+            <a href="{% url 'assets:meeting_room_list' %}" class="btn btn-light text-success fw-bold rounded-pill shadow-sm px-4">
+                <i class="fas fa-arrow-left me-2"></i>เลือกห้องอื่น
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- รายละเอียดห้องประชุม & คิวที่ถูกจองแล้ว -->
+        <div class="col-12 col-lg-5">
+            <div class="room-preview-box shadow-sm mb-4">
+                {% if room.room_image %}
+                    <img src="{{ room.room_image.url }}" alt="{{ room.name }}" class="w-100 rounded-3 mb-3" style="max-height: 220px; object-fit: cover;">
+                {% endif %}
+                <h4 class="fw-bold text-dark mb-1">{{ room.name }}</h4>
+                <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary">{{ room.room_code|default:'ไม่มีรหัส' }}</span>
+                    <span class="badge bg-info text-dark">{{ room.category }}</span>
+                    {% if room.location %}
+                    <span class="badge bg-secondary">{{ room.location.name }}</span>
+                    {% endif %}
+                </div>
+
+                {% if room.notes %}
+                <div class="p-3 bg-white rounded-3 border mb-3 small">
+                    <strong class="text-dark d-block mb-1"><i class="fas fa-info-circle text-primary me-1"></i>สิ่งอำนวยความสะดวก:</strong>
+                    {{ room.notes }}
+                </div>
+                {% endif %}
+
+                <!-- ตารางคิวการจองห้องนี้ -->
+                <div class="mt-4">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fas fa-calendar-times text-danger me-1"></i>ช่วงเวลาที่มีการจองแล้ว (ห้ามเลือกซ้ำ):</h6>
+                    {% if upcoming_bookings %}
+                        <div class="d-flex flex-column gap-2 mt-2">
+                            {% for b in upcoming_bookings %}
+                            <div class="p-2 px-3 bg-white rounded-3 border-start border-danger border-4 shadow-xs d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold text-dark small">{{ b.title }}</div>
+                                    <div class="text-muted" style="font-size: 0.8rem;">
+                                        <i class="fas fa-user me-1"></i>{{ b.user.get_full_name|default:b.user.username }}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.78rem;">
+                                        {{ b.start_time|date:"d/m H:i" }} - {{ b.end_time|date:"H:i" }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success small mb-0 rounded-3">
+                            <i class="fas fa-check-circle me-1"></i> ยังไม่มีการจองในเร็วๆ นี้ สามารถเลือกวันเวลาที่ต้องการได้ทันที
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ฟอร์มการจอง -->
+        <div class="col-12 col-lg-7">
+            <div class="form-card p-4 p-md-5">
+                <h5 class="fw-bold text-success mb-4 border-bottom pb-2">
+                    <i class="fas fa-edit me-2"></i>กรอกข้อมูลการจองห้องประชุม
+                </h5>
+
+                <form method="post" novalidate id="bookingForm">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger rounded-3 py-2 px-3 small mb-3">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            {% for err in form.non_field_errors %}
+                                {{ err }}{% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="id_title">หัวข้อการประชุม / เรื่องที่ใช้งาน <span class="text-danger">*</span></label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold" for="id_start_time">วัน-เวลาเริ่มต้นใช้งาน <span class="text-danger">*</span></label>
+                            {{ form.start_time }}
+                            {% if form.start_time.errors %}
+                                <div class="text-danger small mt-1">{{ form.start_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold" for="id_end_time">วัน-เวลาสิ้นสุด <span class="text-danger">*</span></label>
+                            {{ form.end_time }}
+                            {% if form.end_time.errors %}
+                                <div class="text-danger small mt-1">{{ form.end_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="id_attendees_count">จำนวนผู้เข้าร่วม (โดยประมาณ)</label>
+                        {{ form.attendees_count }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" for="id_notes">หมายเหตุเพิ่มเติม</label>
+                        {{ form.notes }}
+                    </div>
+
+                    <div class="alert alert-info small rounded-3 mb-4">
+                        <i class="fas fa-info-circle me-1"></i> <strong>ไม่ต้องรออนุมัติ:</strong> เมื่อกดปุ่มยืนยันการจอง ระบบจะบันทึกสถานะเป็น <strong>"กำลังจอง"</strong> ทันที และจะขึ้นในปฏิทินของหน่วยงานโดยอัตโนมัติ
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3">
+                        <a href="{% url 'assets:meeting_room_list' %}" class="btn btn-light rounded-pill px-4">ยกเลิก</a>
+                        <button type="submit" class="btn btn-gradient-success">
+                            <i class="fas fa-check-circle me-2"></i>ยืนยันการจองห้องประชุม
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

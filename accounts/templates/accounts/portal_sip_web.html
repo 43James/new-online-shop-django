@@ -136,7 +136,7 @@
 
             <!-- Quick Action Links -->
             <div class="flex items-center gap-2">
-                {% if request.user.is_authenticated and request.user.is_admin %}
+                {% if is_portal_admin %}
                 <button onclick="openAddModal()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sip-600 hover:bg-sip-700 text-white text-xs font-medium shadow-sm transition-all active:scale-95">
                     <i class="fa-solid fa-plus text-xs"></i>
                     <span class="hidden sm:inline">เพิ่มระบบ</span>
@@ -151,7 +151,7 @@
     <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-6">
         
         <!-- Search & Category Header Section -->
-        <div class="max-w-3xl mx-auto text-center space-y-4">
+        <div class="max-w-5xl mx-auto text-center space-y-4">
             <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">
                 เลือกเข้าใช้งาน <span class="text-sip-600">ระบบงาน Portal</span>
             </h2>
@@ -170,7 +170,7 @@
             </div>
 
             <!-- Minimal Category Pills -->
-            <div class="flex items-center justify-center gap-1.5 overflow-x-auto py-2 no-scrollbar text-xs">
+            <div class="flex flex-wrap items-center justify-center gap-2 py-2 text-xs">
                 <button onclick="setCategory('all')" data-cat="all" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-sip-600 text-white shadow-sm transition-all">
                     ทั้งหมด (<span id="countAll">0</span>)
                 </button>
@@ -189,6 +189,11 @@
                 <button onclick="setCategory('tools')" data-cat="tools" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all">
                     ไอที & เครื่องมือ
                 </button>
+                {% if is_portal_admin %}
+                <button onclick="setCategory('hidden')" data-cat="hidden" class="cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-rose-600 border border-rose-200 hover:bg-rose-50 transition-all">
+                    <i class="fa-solid fa-eye-slash text-rose-500 mr-1"></i> รายการที่ซ่อน (<span id="countHidden">0</span>)
+                </button>
+                {% endif %}
             </div>
         </div>
 
@@ -284,6 +289,14 @@
                         class="w-full px-3 py-2 rounded-xl clean-input text-slate-800 focus:outline-none">
                 </div>
 
+                <div class="flex items-center gap-2 pt-1 pb-1">
+                    <input type="checkbox" id="formIsHidden" class="rounded text-sip-600 focus:ring-sip-500 h-4 w-4 border-slate-300 cursor-pointer">
+                    <label for="formIsHidden" class="text-slate-700 font-medium cursor-pointer flex items-center gap-1.5 select-none">
+                        <i class="fa-solid fa-eye-slash text-rose-500 text-xs"></i>
+                        <span>ซ่อนระบบนี้ (ไม่แสดงให้ผู้ใช้ทั่วไปเห็น)</span>
+                    </label>
+                </div>
+
                 <div class="flex items-center justify-end gap-2 pt-3">
                     <button type="button" onclick="closeAppModal()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium">
                         ยกเลิก
@@ -297,7 +310,7 @@
     </div>
 
     <script>
-        const isAdmin = {% if request.user.is_admin %}true{% else %}false{% endif %};
+        const isAdmin = {% if is_portal_admin %}true{% else %}false{% endif %};
         // Apps data loaded from database via Django context
         let appsData = {{ portal_apps_json|safe }};
         let currentCategory = 'all';
@@ -310,6 +323,10 @@
         function updateCounts() {
             document.getElementById('countAll').textContent = appsData.length;
             document.getElementById('countFav').textContent = appsData.filter(a => a.isFav).length;
+            const countHiddenEl = document.getElementById('countHidden');
+            if (countHiddenEl) {
+                countHiddenEl.textContent = appsData.filter(a => a.isHidden).length;
+            }
         }
 
         function filterApps() {
@@ -335,11 +352,20 @@
             currentCategory = cat;
             
             document.querySelectorAll('.cat-pill').forEach(pill => {
-                const isSelected = pill.getAttribute('data-cat') === cat;
+                const pillCat = pill.getAttribute('data-cat');
+                const isSelected = pillCat === cat;
                 if (isSelected) {
-                    pill.className = 'cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-sip-600 text-white shadow-sm transition-all';
+                    if (cat === 'hidden') {
+                        pill.className = 'cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-rose-600 text-white shadow-sm transition-all';
+                    } else {
+                        pill.className = 'cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-sip-600 text-white shadow-sm transition-all';
+                    }
                 } else {
-                    pill.className = 'cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all';
+                    if (pillCat === 'hidden') {
+                        pill.className = 'cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-rose-600 border border-rose-200 hover:bg-rose-50 transition-all';
+                    } else {
+                        pill.className = 'cat-pill px-4 py-1.5 rounded-full font-medium whitespace-nowrap bg-white/80 text-slate-600 border border-slate-200 hover:bg-white transition-all';
+                    }
                 }
             });
 
@@ -372,6 +398,84 @@
             }
         }
 
+        function toggleHideApp(id, e) {
+            e.stopPropagation();
+            const app = appsData.find(a => a.id === id);
+            if (!app) return;
+
+            const isCurrentlyHidden = !!app.isHidden;
+            const actionTitle = isCurrentlyHidden ? 'ยกเลิกการซ่อนระบบ?' : 'ยืนยันการซ่อนระบบ?';
+            const actionText = isCurrentlyHidden
+                ? `ต้องการแสดงระบบ "${app.title}" หรือไม่? ผู้ใช้ทั่วไปจะกลับมาเห็นระบบนี้ตามปกติ`
+                : `ต้องการซ่อนระบบ "${app.title}" หรือไม่? ผู้ใช้ทั่วไปจะไม่เห็นระบบนี้ในหน้า Portal`;
+            const confirmBtnText = isCurrentlyHidden ? 'แสดงระบบ' : 'ซ่อนระบบ';
+            const confirmBtnColor = isCurrentlyHidden ? '#0ea5e9' : '#ef4444';
+
+            Swal.fire({
+                title: actionTitle,
+                text: actionText,
+                icon: isCurrentlyHidden ? 'question' : 'warning',
+                showCancelButton: true,
+                confirmButtonColor: confirmBtnColor,
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: confirmBtnText,
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl text-xs font-semibold px-4 py-2',
+                    cancelButton: 'rounded-xl text-xs font-medium px-4 py-2'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const dbId = id.replace('app-', '');
+                    fetch(`/portal/toggle-hide/${dbId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            app.isHidden = data.is_hidden;
+                            updateCounts();
+                            renderApps();
+
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 2500,
+                                timerProgressBar: true
+                            });
+                            Toast.fire({
+                                icon: 'success',
+                                title: data.is_hidden ? `ซ่อนระบบ "${app.title}" เรียบร้อยแล้ว` : `แสดงระบบ "${app.title}" เรียบร้อยแล้ว`
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'ผิดพลาด',
+                                text: data.error || 'ไม่สามารถบันทึกสถานะได้',
+                                icon: 'error',
+                                confirmButtonText: 'ตกลง'
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error toggling hide:', err);
+                        Swal.fire({
+                            title: 'ข้อผิดพลาดเครือข่าย',
+                            text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้',
+                            icon: 'error',
+                            confirmButtonText: 'ตกลง'
+                        });
+                    });
+                }
+            });
+        }
+
         function renderApps() {
             const container = document.getElementById('appsContainer');
             const emptyState = document.getElementById('emptyState');
@@ -380,9 +484,16 @@
             updateCounts();
 
             let filtered = appsData.filter(app => {
-                const matchesCategory = (currentCategory === 'all') || 
-                                        (currentCategory === 'favorites' && app.isFav) || 
-                                        (app.category === currentCategory);
+                let matchesCategory = false;
+                if (currentCategory === 'all') {
+                    matchesCategory = true;
+                } else if (currentCategory === 'favorites') {
+                    matchesCategory = app.isFav;
+                } else if (currentCategory === 'hidden') {
+                    matchesCategory = !!app.isHidden;
+                } else {
+                    matchesCategory = (app.category === currentCategory);
+                }
                 
                 const matchesSearch = app.title.toLowerCase().includes(searchQuery) ||
                                       app.code.toLowerCase().includes(searchQuery) ||
@@ -407,21 +518,26 @@
             // Render Minimal Grid Blocks
             container.innerHTML = filtered.map(app => `
                 <div onclick="window.open('${app.url}', '_blank')" 
-                     class="clean-glass-card rounded-2xl p-4 flex flex-col justify-between cursor-pointer group relative">
+                     class="clean-glass-card rounded-2xl p-4 flex flex-col justify-between cursor-pointer group relative ${app.isHidden ? 'border-2 border-dashed border-rose-300 bg-rose-50/25' : ''}">
                     
                     <!-- Top Info Header -->
                     <div>
                         <div class="flex items-start justify-between gap-2 mb-3">
                             ${app.imageUrl ? 
-                                `<img src="${app.imageUrl}" class="w-20 h-20 object-contain rounded-xl shrink-0 transition-transform group-hover:scale-105" alt="Logo">`
+                                `<img src="${app.imageUrl}" class="w-20 h-20 object-contain rounded-xl shrink-0 transition-transform group-hover:scale-105 ${app.isHidden ? 'opacity-70 grayscale-[25%]' : ''}" alt="Logo">`
                                 :
-                                `<div class="w-10 h-10 rounded-xl ${app.iconColor || 'text-sip-600 bg-sip-50'} flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105">
+                                `<div class="w-10 h-10 rounded-xl ${app.iconColor || 'text-sip-600 bg-sip-50'} flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105 ${app.isHidden ? 'opacity-70' : ''}">
                                     <i class="fa-solid ${app.icon || 'fa-globe'}"></i>
                                 </div>`
                             }
                             
                             <div class="flex items-center gap-1.5">
-                                ${isAdmin ? `<button onclick="openEditModal('${app.id}', event)" class="p-1 text-slate-300 hover:text-sky-500 transition-colors" title="แก้ไขระบบ"><i class="fa-solid fa-pen-to-square text-sm"></i></button>` : ''}
+                                ${isAdmin ? `
+                                    <button onclick="toggleHideApp('${app.id}', event)" class="p-1 transition-colors ${app.isHidden ? 'text-rose-500 hover:text-rose-700' : 'text-slate-300 hover:text-rose-500'}" title="${app.isHidden ? 'ระบบนี้ถูกซ่อนอยู่ (คลิกเพื่อแสดง)' : 'คลิกเพื่อซ่อนระบบนี้'}">
+                                        <i class="fa-solid ${app.isHidden ? 'fa-eye-slash' : 'fa-eye'} text-sm"></i>
+                                    </button>
+                                    <button onclick="openEditModal('${app.id}', event)" class="p-1 text-slate-300 hover:text-sky-500 transition-colors" title="แก้ไขระบบ"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                                ` : ''}
                                 <span class="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200/60 px-2 py-0.5 rounded-md">
                                     ${app.code}
                                 </span>
@@ -432,9 +548,16 @@
                         </div>
 
                         <!-- Title & Short Description -->
-                        <h3 class="font-bold text-slate-800 text-lg group-hover:text-sip-600 transition-colors line-clamp-1 mb-1">
-                            ${app.title}
-                        </h3>
+                        <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                            <h3 class="font-bold text-slate-800 text-lg group-hover:text-sip-600 transition-colors line-clamp-1">
+                                ${app.title}
+                            </h3>
+                            ${app.isHidden ? `
+                                <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md">
+                                    <i class="fa-solid fa-eye-slash text-[9px]"></i> ซ่อนอยู่
+                                </span>
+                            ` : ''}
+                        </div>
                         <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">
                             ${app.desc}
                         </p>
@@ -455,6 +578,7 @@
             document.getElementById('appModal').classList.remove('hidden');
             document.getElementById('appForm').reset();
             document.getElementById('formAppId').value = '';
+            document.getElementById('formIsHidden').checked = false;
             document.getElementById('currentImagePreviewContainer').classList.add('hidden');
             document.querySelector('#appModal h3').innerText = 'เพิ่มระบบลิงก์ใหม่';
         }
@@ -471,6 +595,7 @@
                 document.getElementById('formCategory').value = app.category;
                 document.getElementById('formUrl').value = app.url;
                 document.getElementById('formDesc').value = app.desc;
+                document.getElementById('formIsHidden').checked = !!app.isHidden;
                 
                 if (app.imageUrl) {
                     document.getElementById('currentImagePreview').src = app.imageUrl;
@@ -494,6 +619,7 @@
             const url = document.getElementById('formUrl').value.trim();
             const desc = document.getElementById('formDesc').value.trim();
             const imageFile = document.getElementById('formImage').files[0];
+            const isHidden = document.getElementById('formIsHidden').checked;
 
             const formData = new FormData();
             formData.append('title', title);
@@ -502,6 +628,7 @@
             formData.append('desc', desc || 'ระบบงาน Portal-SIP');
             formData.append('icon', category === 'research' ? 'fa-microscope' : category === 'incubator' ? 'fa-rocket' : category === 'admin' ? 'fa-building' : 'fa-laptop-code');
             formData.append('iconColor', 'text-sip-600 bg-sip-50');
+            formData.append('is_hidden', isHidden ? 'true' : 'false');
             if (imageFile) {
                 formData.append('app_image', imageFile);
             }

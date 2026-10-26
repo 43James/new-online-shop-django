@@ -4,9 +4,17 @@ from django.contrib.auth.decorators import login_required
 from accounts.models import MyUser, Profile
 from app_linebot.models import UserLine_Asset
 from app_linebot.views import notify_admin_assetloan, notify_admin_on_auto_loan, notify_admin_on_return, notify_borrower, notify_overdue_asset_loan
-from assets.models import AssetCheck, AssetCode, AssetItem, AssetItemLoan, AssetOwnership, AssetReservation, AssetTransferItem, AssetTransferRequest, StorageLocation, AssetCategory, Subcategory, OrderAssetLoan,IssuingAssetLoan, AssetSystemSetting
+from assets.models import (
+    AssetCheck, AssetCode, AssetItem, AssetItemLoan, AssetOwnership, AssetReservation,
+    AssetTransferItem, AssetTransferRequest, StorageLocation, AssetCategory, Subcategory,
+    OrderAssetLoan, IssuingAssetLoan, AssetSystemSetting, MeetingRoom, MeetingRoomBooking
+)
 from dashboard.views import thai_month_name
-from .forms import AssetCheckForm, AssetCodeForm, AssetItemForm, AssetItemLoanForm, CategoryForm, LoanForm, ReservationForm, SubcategoryForm, StorageLocationForm,StorageLocationForm
+from .forms import (
+    AssetCheckForm, AssetCodeForm, AssetItemForm, AssetItemLoanForm,
+    CategoryForm, LoanForm, ReservationForm, SubcategoryForm, StorageLocationForm,
+    MeetingRoomForm, MeetingRoomBookingForm
+)
 from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Q, Prefetch
@@ -1441,6 +1449,414 @@ def calendar_events(request):
 
     return JsonResponse(events, safe=False)
 
+
+def meeting_room_calendar_view(request):
+    """หน้าปฏิทินการจองห้องประชุมแบบเต็มจอ (พนักงานดูได้โดยไม่ต้องล็อกอิน)"""
+    return render(request, "assets/home/meeting_room_calendar.html", {})
+
+
+def meeting_room_calendar_events(request):
+    """ส่งข้อมูลการยืม/จองเฉพาะห้องประชุมเป็น JSON ให้ FullCalendar (เข้าถึงได้โดยไม่ต้องล็อกอิน)"""
+    events = []
+    now = timezone.now()
+
+    # 1. การจองห้องประชุมจากระบบใหม่ (MeetingRoomBooking)
+    room_bookings = (
+        MeetingRoomBooking.objects
+        .filter(status__in=['active', 'completed'])
+        .select_related('room', 'user')
+    )
+
+    for b in room_bookings:
+        # กำหนดสถานะและสีตามช่วงเวลา
+        if b.status == 'cancelled':
+            continue
+        elif b.start_time <= now <= b.end_time:
+            status_text = "กำลังใช้งาน"
+            status_color = "#10b981"  # เขียว
+        elif now > b.end_time:
+            status_text = "เสร็จสิ้น"
+            status_color = "#64748b"  # เทา
+        else:
+            status_text = "กำลังจอง"
+            status_color = "#f59e0b"  # ส้ม
+
+        image_urls = []
+        if b.room.room_image:
+            image_urls.append(request.build_absolute_uri(b.room.room_image.url))
+
+        user_display = b.user.get_full_name() or b.user.username
+
+        start_local = timezone.localtime(b.start_time)
+        end_local = timezone.localtime(b.end_time)
+
+        # รูปแบบวันเวลาภาษาไทย พ.ศ. เช่น 15/9/2569 13:00 น.
+        th_year_start = start_local.year + 543
+        th_year_end = end_local.year + 543
+        start_display = f"{start_local.day}/{start_local.month}/{th_year_start} {start_local.strftime('%H:%M')} น."
+        end_display = f"{end_local.day}/{end_local.month}/{th_year_end} {end_local.strftime('%H:%M')} น."
+
+        # วันที่ทำรายการจอง (date_created)
+        if b.date_created:
+            created_local = timezone.localtime(b.date_created) if timezone.is_aware(b.date_created) else b.date_created
+            created_display = f"{created_local.day}/{created_local.month}/{created_local.year + 543} {created_local.strftime('%H:%M')} น."
+        else:
+            created_display = "-"
+
+        events.append({
+            "id": f"room_booking_{b.id}",
+            "title": f"🏢 {b.room.name} ({user_display}) - {b.title}",
+            "start": start_local.strftime("%Y-%m-%dT%H:%M:%S"),
+            "end": end_local.strftime("%Y-%m-%dT%H:%M:%S"),
+            "color": status_color,
+            "extendedProps": {
+                "status": status_text,
+                "status_color": status_color,
+                "user": user_display,
+                "room_name": b.room.name,
+                "room_code": b.room.room_code or "-",
+                "location": str(b.room.location or b.room.location_detail or "-"),
+                "title": b.title,
+                "attendees_count": b.attendees_count,
+                "note": b.notes or "",
+                "asset_names": b.room.name,
+                "asset_images": image_urls,
+                "booking_type": "จองห้องประชุม",
+                "is_current_user": hasattr(request, 'user') and request.user.is_authenticated and b.user_id == request.user.id,
+                "booking_id": b.id,
+                "start_display": start_display,
+                "end_display": end_display,
+                "created_display": created_display,
+            }
+        })
+
+    # 2. รายการยืมห้องประชุมเดิม (OrderAssetLoan) ถ้ามี
+    loans = (
+        OrderAssetLoan.objects
+        .filter(status__in=["approved", "borrowed", "pending", "overdue"])
+        .filter(
+            Q(items__asset__category="ห้องประชุม") | Q(items__asset__item_name__icontains="ห้องประชุม")
+        )
+        .distinct()
+        .select_related("user")
+    )
+
+    for loan in loans:
+        issued_assets = loan.items.filter(
+            Q(asset__category="ห้องประชุม") | Q(asset__item_name__icontains="ห้องประชุม")
+        ).select_related("asset")
+        
+        asset_images_urls = []
+        asset_names = []
+        asset_codes = []
+        asset_locations = []
+        for issued_asset in issued_assets:
+            if issued_asset.asset:
+                if issued_asset.asset.asset_image:
+                    asset_images_urls.append(request.build_absolute_uri(issued_asset.asset.asset_image.url))
+                asset_names.append(issued_asset.asset.item_name)
+                if issued_asset.asset.asset_code:
+                    asset_codes.append(issued_asset.asset.asset_code)
+                if issued_asset.asset.storage_location:
+                    asset_locations.append(str(issued_asset.asset.storage_location))
+        
+        if not asset_names:
+            continue
+
+        start_time_loan = loan.date_of_use 
+        end_time_loan = loan.date_due 
+        
+        if start_time_loan:
+            start_local = timezone.localtime(start_time_loan) if timezone.is_aware(start_time_loan) else start_time_loan
+            start_iso = start_local.strftime("%Y-%m-%dT%H:%M:%S")
+            start_display = f"{start_local.day}/{start_local.month}/{start_local.year + 543} {start_local.strftime('%H:%M')} น."
+        else:
+            start_iso = None
+            start_display = "-"
+
+        if end_time_loan:
+            end_local = timezone.localtime(end_time_loan) if timezone.is_aware(end_time_loan) else end_time_loan
+            end_iso = end_local.strftime("%Y-%m-%dT%H:%M:%S")
+            end_display = f"{end_local.day}/{end_local.month}/{end_local.year + 543} {end_local.strftime('%H:%M')} น."
+        else:
+            end_iso = None
+            end_display = "-"
+
+        # วันที่ทำรายการยืม (date_created)
+        if loan.date_created:
+            created_local = timezone.localtime(loan.date_created) if timezone.is_aware(loan.date_created) else loan.date_created
+            created_display = f"{created_local.day}/{created_local.month}/{created_local.year + 543} {created_local.strftime('%H:%M')} น."
+        else:
+            created_display = "-"
+
+        room_name = ", ".join(asset_names)
+        room_code = ", ".join(asset_codes) if asset_codes else "-"
+        room_location = ", ".join(asset_locations) if asset_locations else "-"
+        user_display = loan.user.get_full_name() or loan.user.username
+
+        events.append({
+            "id": f"loan_{loan.id}",
+            "title": f"🏢 {room_name} ({user_display})",
+            "start": start_iso,
+            "end": end_iso,
+            "color": "#10b981" if loan.status in ['approved', 'borrowed'] else "#f59e0b",
+            "extendedProps": {
+                "status": loan.get_status_display(),
+                "status_color": "#10b981" if loan.status in ['approved', 'borrowed'] else "#f59e0b",
+                "user": user_display,
+                "room_name": room_name,
+                "room_code": room_code,
+                "location": room_location,
+                "title": f"คำร้องยืม #{loan.order_code}",
+                "note": loan.note or "",
+                "asset_names": room_name,
+                "asset_images": asset_images_urls,
+                "booking_type": "การใช้งานห้องประชุม (ครุภัณฑ์)",
+                "start_display": start_display,
+                "end_display": end_display,
+                "created_display": created_display,
+            }
+        })
+
+    return JsonResponse(events, safe=False)
+
+
+# ============================================================================================
+# วิวการจัดการห้องประชุมและการจอง (Meeting Room Views)
+# ============================================================================================
+
+def meeting_room_list(request):
+    """หน้ารายการห้องประชุมทั้งหมด พร้อมสถานะว่าง/กำลังจอง แบบ Real-time"""
+    rooms = MeetingRoom.objects.filter(is_active=True).select_related('location')
+    
+    query = request.GET.get('q', '').strip()
+    category = request.GET.get('category', '').strip()
+
+    if query:
+        rooms = rooms.filter(
+            Q(name__icontains=query) |
+            Q(room_code__icontains=query) |
+            Q(location__name__icontains=query) |
+            Q(location_detail__icontains=query)
+        )
+    if category:
+        rooms = rooms.filter(category=category)
+
+    # อัปเดตสถานะการจองที่หมดเวลาแล้วให้เป็น completed
+    MeetingRoomBooking.objects.filter(
+        status='active',
+        end_time__lt=timezone.now()
+    ).update(status='completed')
+
+    # อัปเดต status_assetloan ของแต่ละห้องให้สะท้อนสถานะปัจจุบัน
+    now = timezone.now()
+    room_list_data = []
+    for room in rooms:
+        active_booking = room.bookings.filter(
+            status='active',
+            start_time__lte=now,
+            end_time__gte=now
+        ).select_related('user').first()
+
+        upcoming_booking = room.bookings.filter(
+            status='active',
+            start_time__gt=now
+        ).select_related('user').order_by('start_time').first()
+
+        is_busy = bool(active_booking or room.status_assetloan)
+
+        room_list_data.append({
+            'room': room,
+            'is_busy': is_busy,
+            'active_booking': active_booking,
+            'upcoming_booking': upcoming_booking,
+        })
+
+    categories = [c[0] for c in MeetingRoom.ROOM_CATEGORY_CHOICES]
+
+    context = {
+        'room_data': room_list_data,
+        'categories': categories,
+        'selected_category': category,
+        'query': query,
+        'loan_pending_count': count_pending_asset_loans(),
+    }
+    return render(request, 'assets/meeting_rooms/room_list.html', context)
+
+
+@login_required
+def add_meeting_room(request):
+    """หน้าเพิ่มห้องประชุมใหม่ (สำหรับแอดมิน/ผู้จัดการคลัง)"""
+    if not (request.user.is_admin or request.user.is_warehouse_manager or request.user.is_staff):
+        messages.error(request, "คุณไม่มีสิทธิ์ในการเพิ่มห้องประชุม")
+        return redirect('assets:meeting_room_list')
+
+    if request.method == 'POST':
+        form = MeetingRoomForm(request.POST, request.FILES)
+        if form.is_valid():
+            room = form.save()
+            messages.success(request, f"✅ เพิ่มห้องประชุม '{room.name}' เรียบร้อยแล้ว")
+            return redirect('assets:meeting_room_list')
+        else:
+            messages.error(request, "❌ ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง")
+    else:
+        form = MeetingRoomForm()
+
+    context = {
+        'form': form,
+        'loan_pending_count': count_pending_asset_loans(),
+    }
+    return render(request, 'assets/meeting_rooms/add_room.html', context)
+
+
+@login_required
+def edit_meeting_room(request, pk):
+    """หน้าแก้ไขห้องประชุม"""
+    if not (request.user.is_admin or request.user.is_warehouse_manager or request.user.is_staff):
+        messages.error(request, "คุณไม่มีสิทธิ์ในการแก้ไขห้องประชุม")
+        return redirect('assets:meeting_room_list')
+
+    room = get_object_or_404(MeetingRoom, pk=pk)
+
+    if request.method == 'POST':
+        form = MeetingRoomForm(request.POST, request.FILES, instance=room)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"✅ แก้ไขข้อมูลห้องประชุม '{room.name}' เรียบร้อยแล้ว")
+            return redirect('assets:meeting_room_list')
+        else:
+            messages.error(request, "❌ ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง")
+    else:
+        form = MeetingRoomForm(instance=room)
+
+    context = {
+        'form': form,
+        'room': room,
+        'loan_pending_count': count_pending_asset_loans(),
+    }
+    return render(request, 'assets/meeting_rooms/edit_room.html', context)
+
+
+@login_required
+def delete_meeting_room(request, pk):
+    """ลบห้องประชุม"""
+    if not (request.user.is_admin or request.user.is_warehouse_manager or request.user.is_staff):
+        messages.error(request, "คุณไม่มีสิทธิ์ในการลบห้องประชุม")
+        return redirect('assets:meeting_room_list')
+
+    room = get_object_or_404(MeetingRoom, pk=pk)
+    room_name = room.name
+    room.delete()
+    messages.success(request, f"🗑 ลบห้องประชุม '{room_name}' เรียบร้อยแล้ว")
+    return redirect('assets:meeting_room_list')
+
+
+@login_required
+def book_meeting_room(request, pk):
+    """ฟังก์ชันจองห้องประชุม พร้อมระบบเช็ควัน-เวลาซ้ำซ้อน"""
+    room = get_object_or_404(MeetingRoom, pk=pk, is_active=True)
+
+    if request.method == 'POST':
+        form = MeetingRoomBookingForm(request.POST)
+        if form.is_valid():
+            start_time = form.cleaned_data['start_time']
+            end_time = form.cleaned_data['end_time']
+
+            # 🛑 ตรวจสอบการจองซ้ำซ้อน (Conflict / Overlap Checking)
+            conflicting_bookings = MeetingRoomBooking.objects.filter(
+                room=room,
+                status='active',
+                start_time__lt=end_time,
+                end_time__gt=start_time
+            ).select_related('user').first()
+
+            if conflicting_bookings:
+                booked_by = conflicting_bookings.user.get_full_name() or conflicting_bookings.user.username
+                start_th = conflicting_bookings.start_time.strftime("%d/%m/%Y %H:%M")
+                end_th = conflicting_bookings.end_time.strftime("%d/%m/%Y %H:%M")
+                messages.error(
+                    request,
+                    f"⚠️ ไม่สามารถจองได้! ห้อง '{room.name}' ถูกจองแล้วในช่วงเวลาดังกล่าว "
+                    f"({start_th} น. ถึง {end_th} น. โดย {booked_by})"
+                )
+                return render(request, 'assets/meeting_rooms/book_room.html', {
+                    'room': room,
+                    'form': form,
+                    'loan_pending_count': count_pending_asset_loans(),
+                })
+
+            booking = form.save(commit=False)
+            booking.room = room
+            booking.user = request.user
+            booking.status = 'active'  # อนุมัติทันที ไม่มีรออนุมัติ
+            booking.save()
+
+            messages.success(
+                request,
+                f"🎉 จองห้องประชุม '{room.name}' สำเร็จแล้ว! "
+                f"วันที่ {start_time.strftime('%d/%m/%Y %H:%M')} ถึง {end_time.strftime('%d/%m/%Y %H:%M')} น."
+            )
+            return redirect('assets:my_room_bookings')
+        else:
+            messages.error(request, "❌ กรุณาตรวจสอบข้อมูลวัน-เวลาการจองให้ถูกต้อง")
+    else:
+        form = MeetingRoomBookingForm()
+
+    # ดึงรายการจองที่กำลังจะมีขึ้นของห้องนี้ เพื่อแสดงให้ผู้ใช้ดูช่วงเวลาที่ว่าง
+    upcoming_bookings = room.bookings.filter(
+        status='active',
+        end_time__gte=timezone.now()
+    ).select_related('user').order_by('start_time')[:10]
+
+    context = {
+        'room': room,
+        'form': form,
+        'upcoming_bookings': upcoming_bookings,
+        'loan_pending_count': count_pending_asset_loans(),
+    }
+    return render(request, 'assets/meeting_rooms/book_room.html', context)
+
+
+@login_required
+def my_room_bookings(request):
+    """หน้ารายการจองห้องประชุมของผู้ใช้ปัจจุบัน"""
+    # อัปเดตรายการที่หมดเวลาให้เป็น completed
+    MeetingRoomBooking.objects.filter(
+        status='active',
+        end_time__lt=timezone.now()
+    ).update(status='completed')
+
+    bookings = MeetingRoomBooking.objects.filter(
+        user=request.user
+    ).select_related('room', 'room__location').order_by('-start_time')
+
+    context = {
+        'bookings': bookings,
+        'now': timezone.now(),
+        'loan_pending_count': count_pending_asset_loans(),
+    }
+    return render(request, 'assets/meeting_rooms/my_bookings.html', context)
+
+
+@login_required
+def cancel_room_booking(request, pk):
+    """ยกเลิกการจองห้องประชุม"""
+    booking = get_object_or_404(MeetingRoomBooking, pk=pk)
+
+    # ผู้ใช้สามารถยกเลิกของตัวเองได้ หรือแอดมินยกเลิกได้
+    if booking.user != request.user and not (request.user.is_admin or request.user.is_warehouse_manager):
+        messages.error(request, "คุณไม่มีสิทธิ์ยกเลิกการจองนี้")
+        return redirect('assets:my_room_bookings')
+
+    if request.method == 'POST':
+        booking.status = 'cancelled'
+        booking.save()
+        messages.success(request, f"🗑 ยกเลิกการจองห้อง '{booking.room.name}' เรียบร้อยแล้ว")
+
+    return redirect('assets:my_room_bookings')
+
+
+
 # ------------------------------
 # แสดงรายการครุภัณฑ์ สำหรับยืม
 # ------------------------------
@@ -1507,17 +1923,27 @@ def loan_list(request):
     # สถานะที่ถือว่าเป็นการยืมที่มีผลอยู่ (Active Loans)
     ACTIVE_LOAN_STATUS = ['pending', 'approved', 'overdue', 'returned_pending']
     
-    # 1. เริ่มต้นด้วยการ query ครุภัณฑ์ทั้งหมด
-    asset_items_query = AssetItemLoan.objects.all()
+    # ตรวจสอบสิทธิ์ผู้ดูแลระบบ
+    is_manager_or_admin = request.user.is_authenticated and (request.user.is_admin or getattr(request.user, 'is_warehouse_manager', False))
+    show_hidden = request.GET.get("show_hidden", "false").lower() == "true" and is_manager_or_admin
+
+    # 1. การดึงข้อมูล: ถ้าเป็นแอดมินและเลือกดูทั้งหมด/ซ่อน จะแสดงตามตัวเลือก ถ้าผู้ใช้ทั่วไปจะเห็นเฉพาะที่เปิดให้ยืม
+    if show_hidden:
+        asset_items_query = AssetItemLoan.objects.all().order_by('-id')
+    else:
+        asset_items_query = AssetItemLoan.objects.filter(status_borrowing=True).order_by('-id')
     
     has_line_account = False
     if request.user.is_authenticated:
         # ตรวจสอบว่าผู้ใช้มีบัญชี LINE ที่ผูกไว้หรือไม่
         has_line_account = UserLine_Asset.objects.filter(user=request.user).exists()
 
+    # นับจำนวนรายการที่ซ่อนอยู่ (สำหรับแสดงบนปุ่มของแอดมิน)
+    hidden_count = 0
+    if is_manager_or_admin:
+        hidden_count = AssetItemLoan.objects.filter(status_borrowing=False).count()
+
     # 2. **Prefetch ข้อมูลรายการยืมที่กำลังมีผล (Active Loans) และตัดการ Prefetch การจองออก**
-    
-    # สร้าง Prefetch Object สำหรับ Active Loans
     active_loans_prefetch = Prefetch(
         'issued_loans', # ใช้ related_name จาก IssuingAssetLoan.order_asset
         queryset=IssuingAssetLoan.objects.filter(
@@ -1528,11 +1954,9 @@ def loan_list(request):
     )
     asset_items_query = asset_items_query.prefetch_related(active_loans_prefetch)
     
-    
-    # 3. การกรองและค้นหา (Logic เดิม)
+    # 3. การกรองและค้นหา
     query = request.GET.get("q", "")
-    category_id = request.GET.get("category")
-    subcategory_id = request.GET.get("subcategory")
+    category = request.GET.get("category", "")
     
     if query:
         asset_items_query = asset_items_query.filter(
@@ -1540,27 +1964,21 @@ def loan_list(request):
             Q(asset_code__icontains=query)
         )
 
-    selected_category = None
-    if category_id:
-        selected_category = get_object_or_404(AssetCategory, id=category_id)
-        asset_items_query = asset_items_query.filter(subcategory__category=selected_category)
-
-    selected_subcategory = None
-    if subcategory_id:
-        selected_subcategory = get_object_or_404(Subcategory, id=subcategory_id)
-        asset_items_query = asset_items_query.filter(subcategory=selected_subcategory)
+    if category:
+        asset_items_query = asset_items_query.filter(category=category)
         
     asset_items = asset_items_query.all()
 
     context = {
         "asset_items": asset_items,
-        "categories": AssetCategory.objects.all(),
-        "subcategories": Subcategory.objects.all(),
-        "selected_category": selected_category,
-        "selected_subcategory": selected_subcategory,
+        "loan_categories": [c[0] for c in AssetItemLoan.CATEGORY_CHOICES],
+        "selected_category": category,
         "query": query,
         'has_line_account': has_line_account,
         "loan_pending_count": count_pending_asset_loans(),
+        "show_hidden": show_hidden,
+        "hidden_count": hidden_count,
+        "is_manager_or_admin": is_manager_or_admin,
     }
     return render(request, "assets/loans/loan_list.html", context)
 

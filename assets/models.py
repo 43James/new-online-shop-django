@@ -543,8 +543,16 @@ class AssetItemLoan(models.Model):
         ('ไม่ใช้', 'ไม่ใช้'),
         ('ใช้อยู่', 'ใช้อยู่'),
     ]
+    CATEGORY_CHOICES = [
+        ('ครุภัณฑ์', 'ครุภัณฑ์'),
+        ('ห้องประชุม', 'ห้องประชุม'),
+        ('ครุภัณฑ์จากการเช่าซื้อ', 'ครุภัณฑ์จากการเช่าซื้อ'),
+        ('รถจักรยานยนต์', 'รถจักรยานยนต์'),
+        ('อื่นๆ', 'อื่นๆ'),
+    ]
     item_name = models.CharField(max_length=255, verbose_name="ชื่อรายการครุภัณฑ์สำหรับยืม")
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='asset_items_loan', null=True, blank=True, verbose_name='หมวดหมู่')
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True, null=True, verbose_name='หมวดหมู่')
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='asset_items_loan', null=True, blank=True, verbose_name='หมวดหมู่ย่อย')
     asset_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="รหัสครุภัณฑ์")
     unit = models.CharField(max_length=50, verbose_name="หน่วยนับ")
     storage_location = models.ForeignKey(StorageLocation, on_delete=models.CASCADE, verbose_name="สถานที่เก็บ")
@@ -830,3 +838,102 @@ class AssetSystemSetting(models.Model):
         
     def __str__(self):
         return f"ตั้งค่าระบบ (เปิดสิทธิ์: {self.is_public_check_enabled})"
+
+
+# ============================================================================================
+# ระบบห้องประชุม (Meeting Room & Booking)
+# ============================================================================================
+
+class MeetingRoom(models.Model):
+    ROOM_CATEGORY_CHOICES = [
+        ('ห้องประชุม', 'ห้องประชุม'),
+        ('ห้องสัมมนา', 'ห้องสัมมนา'),
+        ('Co-Working Space', 'Co-Working Space'),
+        ('ห้องอบรมเชิงปฏิบัติการ', 'ห้องอบรมเชิงปฏิบัติการ'),
+        ('อื่นๆ', 'อื่นๆ'),
+    ]
+
+    name = models.CharField(max_length=255, verbose_name="ชื่อห้องประชุม")
+    category = models.CharField(max_length=100, choices=ROOM_CATEGORY_CHOICES, default='ห้องประชุม', verbose_name="หมวดหมู่")
+    room_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="รหัสหรือเลขที่ห้อง")
+    location = models.ForeignKey(StorageLocation, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="สถานที่")
+    location_detail = models.CharField(max_length=255, blank=True, null=True, verbose_name="รายละเอียดสถานที่เพิ่มเติม/ชั้น/อาคาร")
+    room_image = models.ImageField(upload_to="meeting_rooms/", blank=True, null=True, verbose_name="รูปภาพห้อง")
+    status_assetloan = models.BooleanField(default=False, verbose_name="สถานะการยืม")
+    notes = models.TextField(blank=True, null=True, verbose_name="หมายเหตุ/อุปกรณ์ประจำห้อง")
+    is_active = models.BooleanField(default=True, verbose_name="เปิดใช้งาน")
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name="วันที่สร้าง")
+    date_updated = models.DateTimeField(auto_now=True, verbose_name="อัปเดตล่าสุด")
+
+    class Meta:
+        verbose_name = "ห้องประชุม"
+        verbose_name_plural = "ข้อมูลห้องประชุม"
+        ordering = ('name',)
+
+    def __str__(self):
+        code_str = f" ({self.room_code})" if self.room_code else ""
+        return f"{self.name}{code_str}"
+
+    @property
+    def current_active_booking(self):
+        """ส่งคืนการจองที่กำลังใช้งานอยู่ ณ วินาทีนี้ (ถ้ามี)"""
+        now = timezone.now()
+        return self.bookings.filter(
+            status='active',
+            start_time__lte=now,
+            end_time__gte=now
+        ).select_related('user').first()
+
+    @property
+    def next_upcoming_booking(self):
+        """ส่งคืนการจองคิวถัดไปที่ยังมาไม่ถึง"""
+        now = timezone.now()
+        return self.bookings.filter(
+            status='active',
+            start_time__gt=now
+        ).select_related('user').order_by('start_time').first()
+
+    @property
+    def is_currently_busy(self):
+        """เช็คว่าปัจจุบันห้องถูกใช้งานอยู่หรือไม่"""
+        if self.status_assetloan:
+            return True
+        return self.current_active_booking is not None
+
+
+class MeetingRoomBooking(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'กำลังจอง'),
+        ('completed', 'เสร็จสิ้น'),
+        ('cancelled', 'ยกเลิก'),
+    ]
+
+    room = models.ForeignKey(MeetingRoom, on_delete=models.CASCADE, related_name="bookings", verbose_name="ห้องประชุม")
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name="meeting_bookings", verbose_name="ผู้จอง")
+    start_time = models.DateTimeField(verbose_name="วัน-เวลาเริ่มต้น")
+    end_time = models.DateTimeField(verbose_name="วัน-เวลาสิ้นสุด")
+    title = models.CharField(max_length=255, verbose_name="หัวข้อการประชุม/การใช้งาน", default="ประชุมทั่วไป")
+    attendees_count = models.PositiveIntegerField(default=1, verbose_name="จำนวนผู้เข้าร่วม (คน)")
+    notes = models.TextField(blank=True, null=True, verbose_name="หมายเหตุเพิ่มเติม")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name="สถานะ")
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name="วันที่ทำรายการ")
+    date_updated = models.DateTimeField(auto_now=True, verbose_name="อัปเดตล่าสุด")
+
+    class Meta:
+        verbose_name = "การจองห้องประชุม"
+        verbose_name_plural = "รายการจองห้องประชุม"
+        ordering = ('-start_time',)
+
+    def __str__(self):
+        return f"{self.room.name} - {self.user.get_full_name() or self.user.username} ({self.start_time.strftime('%d/%m/%Y %H:%M')})"
+
+    @property
+    def is_ongoing(self):
+        now = timezone.now()
+        return self.status == 'active' and self.start_time <= now <= self.end_time
+
+    @property
+    def is_past(self):
+        now = timezone.now()
+        return now > self.end_time
+

@@ -259,15 +259,33 @@
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-4 border-bottom">
-    <h1 class="h2 text-primary fw-bold"><i class="bi bi-box-seam me-2"></i> รายการครุภัณฑ์ที่ยืมได้</h1>
-    <div class="d-flex align-items-center">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-3 pb-3 mb-4 border-bottom">
+    <h1 class="h2 text-primary fw-bold mb-0 d-flex align-items-center">
+        <i class="bi bi-box-seam me-2"></i> รายการครุภัณฑ์ที่ยืมได้
+    </h1>
+    <div class="d-flex align-items-center flex-wrap gap-2">
         {% if request.user.is_admin or request.user.is_warehouse_manager %}
-        <a href="{% url 'assets:add_asset_item_loan' %}" type="button" class="btn btn-gradient-add me-3 px-3 py-2">
-            <i class="bi bi-plus-circle me-1"></i> เพิ่มครุภัณฑ์ใหม่
-        </a>
+            {% if show_hidden %}
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'show_hidden' %}{{ key }}={{ value }}&{% endif %}{% endfor %}show_hidden=false" 
+               class="btn btn-warning rounded-pill px-3 py-2 fw-semibold shadow-sm d-inline-flex align-items-center" 
+               title="คลิกเพื่อกลับไปดูเฉพาะรายการที่เปิดยืม">
+                <i class="bi bi-eye-slash me-1"></i> ซ่อนรายการที่ปิดยืม
+            </a>
+            {% else %}
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'show_hidden' %}{{ key }}={{ value }}&{% endif %}{% endfor %}show_hidden=true" 
+               class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold shadow-sm d-inline-flex align-items-center" 
+               title="คลิกเพื่อดูรายการที่ปิดยืม/ซ่อนไว้ทั้งหมด">
+                <i class="bi bi-eye me-1"></i> รายการที่ปิดยืม
+                {% if hidden_count > 0 %}
+                <span class="badge bg-danger rounded-pill ms-2 px-2">{{ hidden_count }}</span>
+                {% endif %}
+            </a>
+            {% endif %}
+            <a href="{% url 'assets:add_asset_item_loan' %}" class="btn btn-gradient-add rounded-pill px-3 py-2 fw-semibold shadow-sm d-inline-flex align-items-center">
+                <i class="bi bi-plus-circle me-1"></i> เพิ่มครุภัณฑ์ใหม่
+            </a>
         {% endif %}
-        <button type="button" class="btn btn-gradient-info px-3 py-2" data-bs-toggle="modal" data-bs-target="#helpModal">
+        <button type="button" class="btn btn-gradient-info rounded-pill px-3 py-2 fw-semibold shadow-sm d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#helpModal">
             <i class="bi bi-question-circle me-1"></i> วิธีใช้
         </button>
     </div>
@@ -289,21 +307,12 @@
             <input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อ, รหัสครุภัณฑ์..." value="{{ query }}">
         </div>
     </div>
-    <div class="col-12 col-md-3">
-        <label for="category" class="form-label visually-hidden">หมวดหลัก</label>
+    <div class="col-12 col-md-6">
+        <label for="category" class="form-label visually-hidden">หมวดหมู่</label>
         <select name="category" id="category" class="form-select">
-            <option value="">-- เลือกหมวดหลักทั้งหมด --</option>
-            {% for category in categories %}
-            <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %} selected {% endif %}>{{ category.name_cate }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-12 col-md-3">
-        <label for="subcategory" class="form-label visually-hidden">หมวดย่อย</label>
-        <select name="subcategory" id="subcategory" class="form-select">
-            <option value="">-- เลือกหมวดย่อยทั้งหมด --</option>
-            {% for subcategory in subcategories %}
-            <option value="{{ subcategory.id }}" {% if selected_subcategory and selected_subcategory.id == subcategory.id %}selected{% endif %}>{{ subcategory.name_sub }}</option>
+            <option value="">-- เลือกหมวดหมู่ทั้งหมด --</option>
+            {% for cat in loan_categories %}
+            <option value="{{ cat }}" {% if selected_category == cat %} selected {% endif %}>{{ cat }}</option>
             {% endfor %}
         </select>
     </div>
@@ -329,7 +338,11 @@
                 <h5 class="card-title fw-bold text-primary mb-1">{{ asset.item_name }}</h5>
                 <p class="card-text small text-muted mb-3"><i class="bi bi-upc-scan"></i> {{ asset.asset_code }}</p>
                 <div class="mb-3">
-                    <span class="badge bg-white text-dark border shadow-sm p-2"><i class="bi bi-geo-alt-fill text-danger"></i> {{ asset.storage_location }}</span>
+                    <span class="badge bg-warning-subtle text-warning-emphasis border shadow-sm p-2 me-1"><i class="bi bi-tag-fill me-1"></i>{{ asset.category }}</span>
+                    <span class="badge bg-white text-dark border shadow-sm p-2 me-1"><i class="bi bi-geo-alt-fill text-danger"></i> {{ asset.storage_location }}</span>
+                    {% if not asset.status_borrowing %}
+                    <span class="badge bg-secondary-subtle text-secondary border shadow-sm p-2"><i class="bi bi-eye-slash me-1"></i>ปิดให้ยืม (ซ่อนอยู่)</span>
+                    {% endif %}
                 </div>
                 
                 <div class="mt-auto">
@@ -363,13 +376,21 @@
                                 </div>
                             </div>
                         {% empty %}
+                            {% if asset.status_borrowing %}
                             <button class="btn btn-gradient-success add-to-cart w-100 py-2 fw-bold" title="ครุภัณฑ์ว่าง สามารถยืมได้ทันที"><i class="bi bi-cart-plus-fill fs-5 me-1"></i> เพิ่มลงตะกร้ายืม</button>
+                            {% else %}
+                            <button class="btn btn-secondary w-100 py-2 fw-bold" disabled title="รายการนี้ถูกปิดให้ยืม"><i class="bi bi-slash-circle me-1"></i> ปิดให้ยืม</button>
+                            {% endif %}
                         {% endfor %}
 
                         {% if active_loan_found > 0 %}
+                            {% if asset.status_borrowing %}
                             <button class="btn btn-gradient-info add-to-cart w-100 mt-2 py-2 fw-bold" 
                                     data-is-reserve="true" 
-                                    title="ยืมต่อจากผู้ใช้คนปัจจุบัน (เพิ่มลงตะกร้า)"><i class="bi bi-arrow-repeat fs-5 me-1"></i> ยืมต่อคิว</button>
+                                     title="ยืมต่อจากผู้ใช้คนปัจจุบัน (เพิ่มลงตะกร้า)"><i class="bi bi-arrow-repeat fs-5 me-1"></i> ยืมต่อคิว</button>
+                            {% else %}
+                            <button class="btn btn-secondary w-100 mt-2 py-2 fw-bold" disabled title="รายการนี้ถูกปิดให้ยืม"><i class="bi bi-slash-circle me-1"></i> ปิดให้ยืม</button>
+                            {% endif %}
                         {% endif %}
                         </div>
                     {% endwith %}

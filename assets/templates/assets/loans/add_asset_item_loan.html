@@ -226,19 +226,16 @@
                             </div>
 
                             <div class="col-md-3">
-                                <label class="form-label" for="id_subcategory">หมวดหมู่</label>
-                                <select name="subcategory" class="form-select selectpicker {% if form.subcategory.errors %}is-invalid{% endif %}" data-live-search="true" id="id_subcategory" required>
-                                    <option value="">-- เลือกหมวดหมู่ --</option>
-                                    {% for category in categories %}
-                                        <option value="" disabled>📂 {{ category }}</option>
-                                        {% for sub in category.subcategories.all %}
-                                            <option value="{{ sub.id }}" {% if form.instance.subcategory and form.instance.subcategory.id == sub.id %}selected{% endif %}>
-                                                &nbsp;&nbsp;&nbsp;├ {{ sub.name_sub }}
-                                            </option>
-                                        {% endfor %}
-                                    {% endfor %}
+                                <label class="form-label" for="id_category">หมวดหมู่ <span class="text-danger">*</span></label>
+                                <select name="category" class="form-select {% if form.category.errors %}is-invalid{% endif %}" id="id_category" required>
+                                    <option value="" {% if not form.category.value %}selected{% endif %}>-- เลือกหมวดหมู่ --</option>
+                                    <option value="ครุภัณฑ์" {% if form.category.value == 'ครุภัณฑ์' %}selected{% endif %}>ครุภัณฑ์</option>
+                                    <option value="ห้องประชุม" {% if form.category.value == 'ห้องประชุม' %}selected{% endif %}>ห้องประชุม</option>
+                                    <option value="ครุภัณฑ์จากการเช่าซื้อ" {% if form.category.value == 'ครุภัณฑ์จากการเช่าซื้อ' %}selected{% endif %}>ครุภัณฑ์จากการเช่าซื้อ</option>
+                                    <option value="รถจักรยานยนต์" {% if form.category.value == 'รถจักรยานยนต์' %}selected{% endif %}>รถจักรยานยนต์</option>
+                                    <option value="อื่นๆ" {% if form.category.value == 'อื่นๆ' %}selected{% endif %}>อื่นๆ</option>
                                 </select>
-                                {% for error in form.subcategory.errors %}
+                                {% for error in form.category.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
                                 {% endfor %}
                             </div>

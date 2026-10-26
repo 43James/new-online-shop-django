@@ -120,6 +120,7 @@ class PortalApp(models.Model):
     icon = models.CharField(max_length=50, default='fa-link', verbose_name='ไอคอน Font Awesome')
     icon_color = models.CharField(max_length=100, default='text-sky-600 bg-sky-50', verbose_name='สีไอคอน (CSS Classes)')
     is_favorite = models.BooleanField(default=False, verbose_name='รายการโปรด')
+    is_hidden = models.BooleanField(default=False, verbose_name='ซ่อนระบบ')
     order = models.PositiveIntegerField(default=0, verbose_name='ลำดับการแสดงผล')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='วันที่สร้าง')
 

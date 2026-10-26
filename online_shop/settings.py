@@ -199,27 +199,27 @@ WSGI_APPLICATION = 'online_shop.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.mysql",
-#         "NAME": "copy_database_patsadu",
-#         "HOST" : "127.0.0.1",
-#         "USER" : "root",
-#         "PASSWORD" : "root",
-#         "PORT" : "3306",
-#     }
-# }
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "database_patsadu",
-        "HOST" : os.environ.get('DB_HOST', '127.0.0.1'),
+        "NAME": "copy_database_patsadu",
+        "HOST" : "127.0.0.1",
         "USER" : "root",
         "PASSWORD" : "root",
         "PORT" : "3306",
     }
 }
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": "database_patsadu",
+#         "HOST" : os.environ.get('DB_HOST', '127.0.0.1'),
+#         "USER" : "root",
+#         "PASSWORD" : "root",
+#         "PORT" : "3306",
+#     }
+# }
 
 AUTH_USER_MODEL = 'accounts.MyUser'
 

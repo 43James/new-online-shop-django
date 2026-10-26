@@ -66,6 +66,17 @@ urlpatterns = [
 
     path("calendar/", views.calendar_view, name="calendar"),
     path("calendar-events/", views.calendar_events, name="calendar_events"),
+    path("meeting-room-calendar/", views.meeting_room_calendar_view, name="meeting_room_calendar"),
+    path("meeting-room-calendar-events/", views.meeting_room_calendar_events, name="meeting_room_calendar_events"),
+
+    # ระบบห้องประชุม
+    path("meeting-rooms/", views.meeting_room_list, name="meeting_room_list"),
+    path("meeting-room/add/", views.add_meeting_room, name="add_meeting_room"),
+    path("meeting-room/<int:pk>/edit/", views.edit_meeting_room, name="edit_meeting_room"),
+    path("meeting-room/<int:pk>/delete/", views.delete_meeting_room, name="delete_meeting_room"),
+    path("meeting-room/<int:pk>/book/", views.book_meeting_room, name="book_meeting_room"),
+    path("my-room-bookings/", views.my_room_bookings, name="my_room_bookings"),
+    path("my-room-bookings/<int:pk>/cancel/", views.cancel_room_booking, name="cancel_room_booking"),
 
 
     # path("loan-approval/<int:loan_id>/", views.loan_approval, name="loan_approval"),
